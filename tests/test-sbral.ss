@@ -1,0 +1,1 @@
+(assert "sbral add 1" (sbral-cons 1 sbral-empty) '(2))
