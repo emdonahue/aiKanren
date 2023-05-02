@@ -1,6 +1,6 @@
 (library (vkanren)
   (export)
-  (import (chezscheme) (sbral))
+  (import (chezscheme) (sbral) (substitution))
 
 
   (define x 1))
