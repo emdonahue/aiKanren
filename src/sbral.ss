@@ -15,7 +15,7 @@
     (cond
      [(null? s) -1] ; Just a fake tail for empty-sbral, so invalid length.
      [(sbral-tree? (sbral-tree s)) (sbral-tree-size (sbral-tree s))]
-     [else 1]))
+     [else 1])) ; The tree is a single value, which is implicitly considered a 1-depth sbral-tree.
 
   (define (sbral-cons e s)
     ;; If the first two existing trees are equal in size, merge them into a balanced binary tree with the new element as root.
