@@ -1,2 +1,5 @@
-
 (tassert "sbral add 1" (sbral-cons 1 sbral-empty) (vector 'sbral 1 1 sbral-empty))
+(tassert "sbral add 2" (sbral-cons 2 (sbral-cons 1 sbral-empty))
+	 (vector 'sbral 2 2 (vector 'sbral 1 1 sbral-empty)))
+(tassert "sbral add 3" (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))
+	 (vector 'sbral 3 3 (vector 'sbral 2 2 (vector 'sbral 1 1 sbral-empty))))
