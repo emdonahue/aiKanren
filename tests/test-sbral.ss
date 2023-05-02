@@ -7,3 +7,8 @@
 	 (vector 'sbral 4 4 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty)))
 (tassert "sbral add 5" (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))))
 	 (vector 'sbral 5 5 (vector 'sbral 4 4 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty))))
+(tassert "sbral add 6" (sbral-cons 6 (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty))))))
+	 (vector 'sbral (vector 'sbral-tree 6 3 5 4) 6 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty)))
+(tassert "sbral add 7"
+	 (sbral-cons 7 (sbral-cons 6 (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))))))
+	 (vector 'sbral (vector 'sbral-tree 7 7 (vector 'sbral-tree 6 3 5 4) (vector 'sbral-tree 3 3 2 1)) 7 sbral-empty))
