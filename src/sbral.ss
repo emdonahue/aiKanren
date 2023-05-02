@@ -13,23 +13,18 @@
 
   (define (sbral-tree-length s)
     (cond
-     [(sbral-tree? s) (sbral-tree-size s)]
+     [(null? s) 0]
+     [(sbral-tree? (sbral-tree s)) (sbral-tree-size (sbral-tree s))]
      [else 1]))
 
   (define (sbral-cons e s)
     (cond
      [(null? s) (make-sbral e 1 s)]
-     [(null? (sbral-rest s)) (make-sbral e (+ 1 (sbral-length s)) s)]
-
-
-     [(= (sbral-tree-length (sbral-tree s)) (sbral-tree-length (sbral-tree (sbral-rest s))))
+     [(= (sbral-tree-length s) (sbral-tree-length (sbral-rest s)))
       (let* ([rest (sbral-rest s)]
-	    [t1 (sbral-tree s)]
-	    [t2 (sbral-tree rest)]
-	    [tlen (+ 1 (sbral-tree-length t1) (sbral-tree-length t2))])
+	    [tlen (+ 1 (sbral-tree-length s) (sbral-tree-length rest))])
 	  (make-sbral
-	   (make-sbral-tree e tlen t1 t2)
+	   (make-sbral-tree e tlen (sbral-tree s) (sbral-tree rest))
 	   (+ tlen (sbral-length (sbral-rest rest)))
 	   (sbral-rest rest)))]
-     [else (make-sbral e (+ 1 (sbral-length s)) s)]))
-  )
+     [else (make-sbral e (+ 1 (sbral-length s)) s)])))
