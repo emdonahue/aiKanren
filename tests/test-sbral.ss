@@ -13,8 +13,12 @@
 	 (sbral-cons 7 (sbral-cons 6 (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))))))
 	 (vector 'sbral (vector 'sbral-tree 7 7 (vector 'sbral-tree 6 3 5 4) (vector 'sbral-tree 3 3 2 1)) 7 sbral-empty))
 
+(tassert "sbral-ref 1" (sbral-ref (sbral-cons 1 sbral-empty) 1) 1)
+(display (sbral-cons 2 (sbral-cons 1 sbral-empty)))
+(tassert "sbral-ref 2" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1) 2)
+
 (do ([i 1 (+ i 1)]) ((= i 4)) ; Build a sbral of this length, 
   (let ([s (fold-left (lambda (r e) (sbral-cons e r)) sbral-empty (iota i))])
     (do ([j 1 (+ j 1)]) ((< i j)) ;and confirm it contains these values
-     (tassert "sbral-ref" (sbral-ref s j) j))))
+     (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j) (- i j)))))
 
