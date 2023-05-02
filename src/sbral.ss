@@ -27,8 +27,8 @@
 	(make-sbral e (+ 1 (sbral-length s)) s)))
 
   (define (sbral-ref s n)
-    (assert (<= n (sbral-length s)))
-    (if (<= n (sbral-tree-length s))
+    (assert (< n (sbral-length s)))
+    (if (< n (sbral-tree-length s))
 	(sbral-tree-ref (sbral-tree s) n)
 	(sbral-ref (sbral-rest s) (- n (sbral-tree-length s)))))
 
@@ -37,6 +37,6 @@
   
   (define (sbral-tree-ref t n)
     (cond
-     [(= n 1) (sbral-tree-value t)]
-     [(<= n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (- n 1))]
+     [(zero? n) (sbral-tree-value t)]
+     [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (- n 1))]
      [else (sbral-tree-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)))])))
