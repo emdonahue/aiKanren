@@ -5,3 +5,5 @@
 	 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty))
 (tassert "sbral add 4" (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty))))
 	 (vector 'sbral 4 4 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty)))
+(tassert "sbral add 5" (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))))
+	 (vector 'sbral 5 5 (vector 'sbral 4 4 (vector 'sbral (vector 'sbral-tree 3 3 2 1) 3 sbral-empty))))

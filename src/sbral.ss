@@ -30,5 +30,6 @@
 	  (make-sbral
 	   (make-sbral-tree e tlen t1 t2)
 	   (+ tlen (sbral-length (sbral-rest rest)))
-	   (sbral-rest rest)))]))
+	   (sbral-rest rest)))]
+     [else (make-sbral e (+ 1 (sbral-length s)) s)]))
   )
