@@ -1,1 +1,6 @@
-(load "src/sbral.ss")
+(library (vkanren)
+  (export)
+  (import (chezscheme) (sbral))
+
+
+  (define x 1))
