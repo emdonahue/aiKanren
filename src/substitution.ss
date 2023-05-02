@@ -7,5 +7,7 @@
 
   (define substitution-empty (make-substitution sbral-empty))
 
-  (define (walk v s)
-    v))
+  (define (walk s v)
+    (if (var? v)
+	(walk (sbral-ref s (var-id v)) v)
+	v)))

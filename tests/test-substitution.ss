@@ -1,1 +1,1 @@
-(tassert "substitution walk ground" (walk 1 substitution-empty) 1)
+(tassert "substitution walk ground" (walk substitution-empty 1) 1)
