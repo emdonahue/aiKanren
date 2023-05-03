@@ -17,6 +17,8 @@
 (tassert "sbral-ref 2" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 0) 2)
 (tassert "sbral-ref 2" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1) 1)
 
+(tassert "sbral-set-ref 1" (sbral-ref (sbral-set-ref (sbral-cons 1 sbral-empty) 0 2 3) 0) 2)
+
 (do ([i 1 (+ i 1)]) ((= i 50)) ; Build a sbral of this length, 
   (let ([s (fold-left (lambda (r e) (sbral-cons e r)) sbral-empty (iota i))])
     (do ([j 0 (+ j 1)]) ((= i j)) ;and confirm it contains these values

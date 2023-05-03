@@ -1,18 +1,12 @@
-;; Skew Binary Random Access List
 (library (sbral)
-  (export sbral-empty sbral-cons sbral-length sbral-ref)
+  ;; Skew Binary Random Access List
+  (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref)
   (import (chezscheme))
 
   (define-structure (sbral tree length rest))
   (define-structure (sbral-tree root size left right))
 
   (define sbral-empty (make-sbral (make-sbral-tree #f 0 #f #f) 0 '()))
-
-  (define (sbral-tree-length s)
-    (cond
-     [(null? s) -1] ; Just a fake tail for sbral-empty, so invalid length.
-     [(sbral-tree? (sbral-tree s)) (sbral-tree-size (sbral-tree s))]
-     [else 1])) ; The tree is a single value, which is implicitly considered a 1-depth sbral-tree.
 
   (define (sbral-cons e s)
     ;; If the first two existing trees are equal in size, merge them into a balanced binary tree with the new element as root.
@@ -26,17 +20,46 @@
 	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
 	(make-sbral e (+ 1 (sbral-length s)) s)))
 
+  (define (sbral-set-ref s n elt nil)
+    (cond
+     [(< (sbral-length s) n) (sbral-set-ref (sbral-cons nil s) (- n 1) elt nil)]
+     [(= (sbral-length s) n) (sbral-cons elt s)]
+     [else (sbral-set-ref-existing s n elt)]))
+
+  (define (sbral-set-ref-existing s n elt)
+    (if (< n (sbral-tree-length s))
+	(make-sbral (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-length s) (sbral-rest s))
+	(make-sbral (sbral-tree s) (sbral-length s) (sbral-set-ref-existing (sbral-rest s) (- n (sbral-tree-length s)) elt))))
+  
   (define (sbral-ref s n)
     (assert (< n (sbral-length s)))
     (if (< n (sbral-tree-length s))
 	(sbral-tree-ref (sbral-tree s) n)
 	(sbral-ref (sbral-rest s) (- n (sbral-tree-length s)))))
 
-  (define (sbral-tree-value t)
-    (if (sbral-tree? t) (sbral-tree-root t) t))
+  (define (sbral-tree-length s)
+    ;; sbral->number; Length of the initial tree of sbral s.
+    (cond
+     [(null? s) -1] ; Just a fake tail for sbral-empty, so invalid length.
+     [(sbral-tree? (sbral-tree s)) (sbral-tree-size (sbral-tree s))]
+     [else 1])) ; The tree is a single value, which is implicitly considered a 1-depth sbral-tree.
   
   (define (sbral-tree-ref t n)
     (cond
      [(zero? n) (sbral-tree-value t)]
      [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (- n 1))]
-     [else (sbral-tree-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)))])))
+     [else (sbral-tree-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)))]))
+
+  (define (sbral-tree-set-ref t n elt)
+    (cond
+     [(zero? n) (sbral-tree-set-value t elt)]
+     [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (- n 1))]
+     [else (sbral-tree-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)))]))
+
+  (define (sbral-tree-value t)
+    (if (sbral-tree? t) (sbral-tree-root t) t))
+  
+  (define (sbral-tree-set-value t elt)
+    (if (sbral-tree? t)
+	(make-sbral-tree elt (sbral-tree-size t) (sbral-tree-left t) (sbral-tree-right t))
+	t)))
