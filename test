@@ -1,8 +1,9 @@
 #!/usr/bin/env -S scheme --libdirs src:. --script
-(import (chezscheme) (testrunner) (vkanren) (sbral) (substitution) (goals) (state))
+(import (chezscheme) (testrunner) (vkanren) (sbral) (substitution) (goals) (state) (streams) (ui))
 
 (load "tests/test-sbral.ss")
 (load "tests/test-substitution.ss")
 (load "tests/test-goals.ss")
+(load "tests/test-streams.ss")
 
 (display "Testing Complete\n")
