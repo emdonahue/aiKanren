@@ -28,9 +28,10 @@
      [(< n (sbral-tree-length s)) (sbral-tree-ref (sbral-tree s) n)]
      [else (sbral-ref (sbral-rest s) (- n (sbral-tree-length s)) default)]))
   
-  (define (sbral-set-ref s n elt nil)
+  (define (sbral-set-ref s n elt default)
+    (assert (< n (sbral-length s)))
     (cond
-     [(< n -1) (sbral-set-ref (sbral-cons nil s) (+ n 1) elt nil)]
+     [(< n -1) (sbral-set-ref (sbral-cons default s) (+ n 1) elt default)]
      [(= n -1) (sbral-cons elt s)]
      [else (_sbral-set-ref s n elt)]))
 
