@@ -22,7 +22,7 @@
     (cond
      [(not s) '()]
      [(state? s) (list (reify s q))]
-     [(pair? s) (cons (car s) (run-stream (cdr s) q))]
+     [(pair? s) (cons (reify (car s) q) (run-stream (cdr s) q))]
      [else (run-stream (step s) q)]))
   
 )
