@@ -1,5 +1,5 @@
 (library (substitution)
-  (export substitution-empty walk unify make-var)
+  (export substitution-empty walk unify make-var var?)
   (import (chezscheme) (sbral))
 
   (define-structure (var id))
