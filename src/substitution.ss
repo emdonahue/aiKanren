@@ -25,8 +25,7 @@
       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)))
   
   (define (unify s x y)
-    (let ([x (walk s x)]
-	  [y (walk s y)])
+    (let ([x (walk s x)] [y (walk s y)])
       (cond
        [(eq? x y) s]
        [(and (var? x) (var? y))
