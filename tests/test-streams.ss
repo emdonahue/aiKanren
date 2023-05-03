@@ -1,5 +1,4 @@
 (let ([x0 (make-var 0)])
   (tassert "step fail stream" (step #f) #f)
-  (display (reify (run-goal (== x0 1) empty-state) x0))
-  #;(tassert "run state stream" (run-stream (run-goal (== x0 1) empty-state) x0) 1)
+  (tassert "run state stream" (run-stream (run-goal (== x0 1) empty-state) x0) '(1))
   )
