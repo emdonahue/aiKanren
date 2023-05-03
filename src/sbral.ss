@@ -1,6 +1,6 @@
 (library (sbral)
   ;; Skew Binary Random Access List
-  (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref)
+  (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty?)
   (import (chezscheme))
 
   (define-structure (sbral tree length rest))
@@ -8,6 +8,8 @@
 
   (define sbral-empty (make-sbral (make-sbral-tree #f 0 #f #f) 0 '()))
 
+  (define (sbral-empty? s) (eq? s sbral-empty))
+  
   (define (sbral-cons e s)
     ;; If the first two existing trees are equal in size, merge them into a balanced binary tree with the new element as root.
     (if (= (sbral-tree-length s) (sbral-tree-length (sbral-rest s)))
@@ -20,11 +22,11 @@
 	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
 	(make-sbral e (+ 1 (sbral-length s)) s)))
 
-  (define (sbral-ref s n)
-    (assert (< n (sbral-length s)))
-    (if (< n (sbral-tree-length s))
-	(sbral-tree-ref (sbral-tree s) n)
-	(sbral-ref (sbral-rest s) (- n (sbral-tree-length s)))))
+  (define (sbral-ref s n default)    
+    (cond
+     [(or (< n 0) (<= (sbral-length s) n)) default]
+     [(< n (sbral-tree-length s)) (sbral-tree-ref (sbral-tree s) n)]
+     [else (sbral-ref (sbral-rest s) (- n (sbral-tree-length s)) default)]))
   
   (define (sbral-set-ref s n elt nil)
     (cond

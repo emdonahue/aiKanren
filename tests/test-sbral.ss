@@ -13,20 +13,21 @@
 	 (sbral-cons 7 (sbral-cons 6 (sbral-cons 5 (sbral-cons 4 (sbral-cons 3 (sbral-cons 2 (sbral-cons 1 sbral-empty)))))))
 	 (vector 'sbral (vector 'sbral-tree 7 7 (vector 'sbral-tree 6 3 5 4) (vector 'sbral-tree 3 3 2 1)) 7 sbral-empty))
 
-(tassert "sbral-ref 1" (sbral-ref (sbral-cons 1 sbral-empty) 0) 1)
-(tassert "sbral-ref 2.0" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 0) 2)
-(tassert "sbral-ref 2.1" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1) 1)
+(tassert "sbral-ref 1" (sbral-ref (sbral-cons 1 sbral-empty) 0 -1) 1)
+(tassert "sbral-ref -11" (sbral-ref (sbral-cons 1 sbral-empty) -1 -2) -2)
+(tassert "sbral-ref 2.0" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 0 -1) 2)
+(tassert "sbral-ref 2.1" (sbral-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1 -1) 1)
 
-(tassert "sbral-set-ref 1" (sbral-ref (sbral-set-ref (sbral-cons 1 sbral-empty) 0 2 3) 0) 2)
-(tassert "sbral-set-ref 2.0" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 0 3 4) 0) 3)
-(tassert "sbral-set-ref 2.1" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1 3 4) 1) 3)
-(tassert "sbral-set-ref 2.-1" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -1 3 4) 0) 3)
-(tassert "sbral-set-ref 2.-2" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 0) 3)
-(tassert "sbral-set-ref 2.-2 nil" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 1) 4)
+(tassert "sbral-set-ref 1" (sbral-ref (sbral-set-ref (sbral-cons 1 sbral-empty) 0 2 3) 0 -3) 2)
+(tassert "sbral-set-ref 2.0" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 0 3 4) 0 -3) 3)
+(tassert "sbral-set-ref 2.1" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) 1 3 4) 1 -3) 3)
+(tassert "sbral-set-ref 2.-1" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -1 3 4) 0 -3) 3)
+(tassert "sbral-set-ref 2.-2" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 0 -3) 3)
+(tassert "sbral-set-ref 2.-2 nil" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 1 -3) 4)
 
 (do ([i 1 (+ i 1)]) ((= i 50)) ; Build a sbral of this length, 
   (let ([s (fold-left (lambda (r e) (sbral-cons e r)) sbral-empty (iota i))])
     (do ([j 0 (+ j 1)]) ((= i j)) ;and confirm it contains these values
-      (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j) (- i j 1))
-      (tassert (string-append "sbral-set-ref " (number->string i) "@" (number->string j)) (sbral-ref (sbral-set-ref s j -1 -2) j) -1))))
+      (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j -3) (- i j 1))
+      (tassert (string-append "sbral-set-ref " (number->string i) "@" (number->string j)) (sbral-ref (sbral-set-ref s j -1 -2) j -3) -1))))
 
