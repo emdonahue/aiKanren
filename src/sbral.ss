@@ -20,22 +20,22 @@
 	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
 	(make-sbral e (+ 1 (sbral-length s)) s)))
 
-  (define (sbral-set-ref s n elt nil)
-    (cond
-     [(< (sbral-length s) n) (sbral-set-ref (sbral-cons nil s) (- n 1) elt nil)]
-     [(= (sbral-length s) n) (sbral-cons elt s)]
-     [else (sbral-set-ref-existing s n elt)]))
-
-  (define (sbral-set-ref-existing s n elt)
-    (if (< n (sbral-tree-length s))
-	(make-sbral (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-length s) (sbral-rest s))
-	(make-sbral (sbral-tree s) (sbral-length s) (sbral-set-ref-existing (sbral-rest s) (- n (sbral-tree-length s)) elt))))
-  
   (define (sbral-ref s n)
     (assert (< n (sbral-length s)))
     (if (< n (sbral-tree-length s))
 	(sbral-tree-ref (sbral-tree s) n)
 	(sbral-ref (sbral-rest s) (- n (sbral-tree-length s)))))
+  
+  (define (sbral-set-ref s n elt nil)
+    (cond
+     [(< n -1) (sbral-set-ref (sbral-cons nil s) (+ n 1) elt nil)]
+     [(= n -1) (sbral-cons elt s)]
+     [else (_sbral-set-ref s n elt)]))
+
+  (define (_sbral-set-ref s n elt)
+    (if (< n (sbral-tree-length s))
+	(make-sbral (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-length s) (sbral-rest s))
+	(make-sbral (sbral-tree s) (sbral-length s) (_sbral-set-ref (sbral-rest s) (- n (sbral-tree-length s)) elt))))
 
   (define (sbral-tree-length s)
     ;; sbral->number; Length of the initial tree of sbral s.
@@ -53,8 +53,8 @@
   (define (sbral-tree-set-ref t n elt)
     (cond
      [(zero? n) (sbral-tree-set-value t elt)]
-     [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (- n 1))]
-     [else (sbral-tree-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)))]))
+     [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-set-ref (sbral-tree-left t) (- n 1) elt)]
+     [else (sbral-tree-set-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)) elt)]))
 
   (define (sbral-tree-value t)
     (if (sbral-tree? t) (sbral-tree-root t) t))
@@ -62,4 +62,4 @@
   (define (sbral-tree-set-value t elt)
     (if (sbral-tree? t)
 	(make-sbral-tree elt (sbral-tree-size t) (sbral-tree-left t) (sbral-tree-right t))
-	t)))
+	elt)))
