@@ -1,5 +1,5 @@
 (library (streams)
-  (export step mplus)
+  (export step mplus run-stream)
   (import (chezscheme) (state))
 
   (define-structure (mplus lhs rhs))
@@ -17,5 +17,12 @@
     (cond
      [(not s) #f]
      [(mplus? s) (mplus (step (mplus-rhs s)) (mplus-lhs s))]))
+
+  (define (run-stream s q)
+    (cond
+     [(not s) '()]
+     [(state? s) (list (reify s q))]
+     [(pair? s) (cons (car s) (run-stream (cdr s) q))]
+     [else (run-stream (step s) q)]))
   
 )

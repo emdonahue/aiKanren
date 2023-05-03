@@ -9,7 +9,7 @@
   (define (run-goal g s)
     (cond
      [(unification? g)
-      (let ([substitution (unify s (unification-lhs g) (unification-rhs g))])
+      (let ([substitution (unify (state-substitution s) (unification-lhs g) (unification-rhs g))])
 	(if substitution (make-state substitution) #f))]
      [(disj? g) (mplus (run-goal (disj-lhs g) s) (run-goal (disj-rhs g) s))]
      ))
