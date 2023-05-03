@@ -27,5 +27,6 @@
 (do ([i 1 (+ i 1)]) ((= i 50)) ; Build a sbral of this length, 
   (let ([s (fold-left (lambda (r e) (sbral-cons e r)) sbral-empty (iota i))])
     (do ([j 0 (+ j 1)]) ((= i j)) ;and confirm it contains these values
-     (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j) (- i j 1)))))
+      (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j) (- i j 1))
+      (tassert (string-append "sbral-set-ref " (number->string i) "@" (number->string j)) (sbral-ref (sbral-set-ref s j -1 -2) j) -1))))
 

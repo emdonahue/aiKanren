@@ -53,8 +53,13 @@
   (define (sbral-tree-set-ref t n elt)
     (cond
      [(zero? n) (sbral-tree-set-value t elt)]
-     [(< n (quotient (+ 1 (sbral-tree-size t)) 2)) (sbral-tree-set-ref (sbral-tree-left t) (- n 1) elt)]
-     [else (sbral-tree-set-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)) elt)]))
+     [(< n (quotient (+ 1 (sbral-tree-size t)) 2))
+      (make-sbral-tree (sbral-tree-root t) (sbral-tree-size t)
+		       (sbral-tree-set-ref (sbral-tree-left t) (- n 1) elt)
+		       (sbral-tree-right t))]
+     [else
+      (make-sbral-tree (sbral-tree-root t) (sbral-tree-size t) (sbral-tree-left t)
+		       (sbral-tree-set-ref (sbral-tree-right t) (- n (quotient (+ 1 (sbral-tree-size t)) 2)) elt))]))
 
   (define (sbral-tree-value t)
     (if (sbral-tree? t) (sbral-tree-root t) t))
