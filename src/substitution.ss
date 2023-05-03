@@ -11,25 +11,28 @@
 
   (define substitution-empty (make-substitution sbral-empty))
 
-  (trace-define (walk s v)
+  (define (walk s v)
     (if (var? v)
 	(let* ([dict (substitution-dict s)]
 	       [walked (sbral-ref dict (- (sbral-length dict) (var-id v) 1) unbound)])
 	  (if (unbound? walked) v (walk s walked)))
 	v))
 
-  (trace-define (extend s x y)
+  (define (extend s x y)
     (make-substitution
      (sbral-set-ref
       (substitution-dict s)
       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)))
   
-  (trace-define (unify s x y)
+  (define (unify s x y)
     (let ([x (walk s x)]
 	  [y (walk s y)])
       (cond
        [(eq? x y) s]
-       [(and (var? x) (var? y)) (assert #f)]
+       [(and (var? x) (var? y))
+	(cond [(var-equal? x y) s]
+	      [(< (var-id x) (var-id y)) (extend s x y)]
+	      [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)])
       )
