@@ -34,6 +34,4 @@
 	   [(var? y) (extend s y x)]
 	   [(and(pair? x) (pair? y))
 	    (unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	   [else #f])
-	  ))
-    ))
+	   [else #f])))))
