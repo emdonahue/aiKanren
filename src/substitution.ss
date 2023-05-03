@@ -23,13 +23,17 @@
       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)))
   
   (define (unify s x y)
-    (let ([x (walk s x)] [y (walk s y)])
-      (cond
-       [(eq? x y) s]
-       [(and (var? x) (var? y))
-	(if (< (var-id x) (var-id y)) (extend s x y)
-	    (extend s y x))]
-       [(var? x) (extend s x y)]
-       [(var? y) (extend s y x)])
-      )
+    (if (not s) #f 
+	(let ([x (walk s x)] [y (walk s y)])
+	  (cond
+	   [(eq? x y) s]
+	   [(and (var? x) (var? y))
+	    (if (< (var-id x) (var-id y)) (extend s x y)
+		(extend s y x))]
+	   [(var? x) (extend s x y)]
+	   [(var? y) (extend s y x)]
+	   [(and(pair? x) (pair? y))
+	    (unify (unify s (car x) (car y)) (cdr x) (cdr y))]
+	   [else #f])
+	  ))
     ))
