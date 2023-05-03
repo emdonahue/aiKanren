@@ -3,8 +3,6 @@
   (import (chezscheme) (sbral))
 
   (define-structure (var id))
-  (define (var-equal? x y) (= (var-id x) (var-id y)))
-  
   (define-structure (substitution dict))
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
@@ -29,9 +27,8 @@
       (cond
        [(eq? x y) s]
        [(and (var? x) (var? y))
-	(cond [(var-equal? x y) s]
-	      [(< (var-id x) (var-id y)) (extend s x y)]
-	      [else (extend s y x)])]
+	(if (< (var-id x) (var-id y)) (extend s x y)
+	    (extend s y x))]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)])
       )
