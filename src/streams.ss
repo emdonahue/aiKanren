@@ -1,10 +1,10 @@
 (library (streams)
-  (export step mplus run-stream bind* make-unification make-disj run-goal make-runner)
+  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take)
   (import (chezscheme) (state))
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
-  (define-structure (suspended goal))
+  (define-structure (suspended goal state))
   
   (define-structure (unification lhs rhs))
   (define-structure (conj lhs rhs))
@@ -17,13 +17,13 @@
       (set-runner-stream! r s) s))
 
   (define (stream? s)
-    (or (mplus? s) (bind? s) (suspended? s) (procedure? s)))
+    (or (mplus? s) (bind? s) (suspended? s) (procedure? s) (null? s) (state? s)))
 
-  (define (run-goal g s)
-    (cond
+  (define (run-goal g s r)
+    (cond     
+     [(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
+     [(procedure? g) (make-suspended g s)]
      [(unification? g) (unify s (unification-lhs g) (unification-rhs g))]
-     [(disj? g) (mplus (run-goal (disj-lhs g) s) (run-goal (disj-rhs g) s))]
-     [(procedure? g) (make-suspended g)]
      ))
   
   (define (mplus lhs rhs)
@@ -43,12 +43,16 @@
   (define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
     (cond
-     [(not s) #f]
+     [(null? s) (set-runner-stream r '())]
+     [(suspended? s) 3]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]))
 
   (define (runner-step r)
     (assert (runner? r))
-    )
+    (stream-step (runner-stream r) r))
+
+  (define (runner-take n r)
+    (runner-step r))
 
   (define (run-stream s q)
     (cond
@@ -57,13 +61,15 @@
      [(pair? s) (cons (reify (car s) q) (run-stream (cdr s) q))]
      [else (run-stream (step s) q)]))
 
+  #;
   (define (bind g s)
     (cond
      [(null? s) '()]
      [(state? s) (run-goal g s)]
-     [mplus? (make-bind g s)]
+     [(mplus? s) (make-bind g s)]
      [else (assert #f)]))
-  
+
+  #;
   (define-syntax bind*
     (syntax-rules ()
       [(_ s) s]

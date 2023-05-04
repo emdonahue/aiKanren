@@ -11,10 +11,14 @@
   (define-syntax run
     (syntax-rules ()
       ((_ n (q) g0)
-       (make-runner
-	(fresh (q)
-	  (make-runner #t q #f)
-	  ) #f #f)
+       (runner-take
+	n
+	(make-runner
+	 (run-goal
+	  (fresh (q)
+	    (make-runner #t q #f))
+	  empty-state
+	  (make-runner #f #f #f)) #f #f))
        )
       ))
   
