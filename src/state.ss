@@ -28,8 +28,10 @@
 	      (cond
 	       [(eq? x y) s]
 	       [(and (var? x) (var? y))
-		(if (< (var-id x) (var-id y)) (extend s x y)
-		    (extend s y x))]
+		(cond
+		 [(< (var-id x) (var-id y)) (extend s x y)]
+		 [(= (var-id x) (var-id y)) s] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+		 [else (extend s y x)])]
 	       [(var? x) (extend s x y)]
 	       [(var? y) (extend s y x)]
 	       [(and(pair? x) (pair? y))

@@ -4,16 +4,16 @@
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
+  (define-structure (suspended goal))
   (define-structure (unification lhs rhs))
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
-  (define-structure (fresh ctn))
 
   (define (run-goal g s)
     (cond
      [(unification? g) (unify s (unification-lhs g) (unification-rhs g))]
      [(disj? g) (mplus (run-goal (disj-lhs g) s) (run-goal (disj-rhs g) s))]
-     [(procedure? g) (g s)]
+     [(procedure? g) (make-suspended g)]
      ))
   
   (define (mplus lhs rhs)

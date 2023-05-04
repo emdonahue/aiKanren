@@ -1,5 +1,5 @@
 #!/usr/bin/env -S scheme --debug-on-exception --libdirs src:. --script
-(import (chezscheme) (testrunner) (vkanren) (sbral) (substitution) (goals) (state) (streams) (ui))
+(import (chezscheme) (testrunner) (vkanren) (sbral) (substitution) (goals) (state) (streams) (ui) (runner))
 
 (load "tests/test-sbral.ss")
 (load "tests/test-substitution.ss")
