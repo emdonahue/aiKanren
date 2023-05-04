@@ -16,12 +16,9 @@
 	(run-goal
 	 (fresh (q)
 	   (lambda (s r)
-	     (run-goal
-	      g0
-	      s
-	      (make-runner #t q #f))))
+	     (run-goal g0 s (make-runner 'dummy-stream q #f))))
 	 empty-state
-	 (make-runner #f #f #f)))
+	 (make-runner 'top 'level 'runner)))
        )
       ))
   

@@ -22,7 +22,7 @@
   (define (goal? g)
     (or (procedure? g) (unification? g) (conj? g) (disj? g)))
 
-  (trace-define (run-goal g s r)
+  (define (run-goal g s r)
     (assert (and (goal? g) (stream? s) (runner? r)))
     (cond     
      ;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
@@ -45,21 +45,57 @@
      [(not s) #f]
      [(mplus? s) (mplus (step (mplus-rhs s)) (mplus-lhs s))]))
 
-  (trace-define (stream-step s r)
+  (define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
     (cond
      [(null? s) (set-runner-stream r '())]
+     [(state? (runner-stream r)) (stream-step '() r)]
      [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) r)]
-     [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]))
+     [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
+     [else (assert #f)]))
 
-  (trace-define (runner-step r)
+  (define (runner-step r)
     (assert (runner? r))
     (stream-step (runner-stream r) r))
 
+  (define (runner-next r)
+    (assert (runner? r))
+    (if (runner-quiescent? r) r (runner-next (runner-step r))))
+
+  (define (runner-quiescent? r)
+    (assert (runner? r))
+    (or (runner-null? r) (runner-has-answer? r) (runner-has-answers? r)))
+
+  (define (runner-has-answer? r)
+    (assert (runner? r))
+    (and (state? (runner-stream r)) (not (state-guarded? (runner-stream r)))))
+
+  (define (runner-has-answers? r)
+    (assert (runner? r))
+    (pair? (runner-stream r)))
+  
+  (define (runner-answer r)
+    (assert (runner? r))
+    (cond
+     [(runner-has-answer? r) (runner-stream r)]
+     [(runner-has-answers? r) (car (runner-stream r))]
+     [else (assert #f)]))
+  
+  (define (runner-null? r)
+    (assert (runner? r))
+    (null? (runner-stream r)))
+  
   (define (runner-take n r)
-					;(runner-step (runner-step (runner-step r)))
-    (runner-step r)
-    )
+		(assert (runner? r))
+		(if (runner-quiescent? r)
+		    (if (runner-null? r) '()
+			(cons (reify (runner-answer r) (runner-query r))
+			      (runner-take (- n 1) (runner-step r))))
+		    (runner-take n (runner-next r)))
+		#;
+    (if (or (= 0 n) (runner-null? r)) '()
+	(let ([r (runner-next (runner-step r))])
+	 (cons (runner-answer r) (runner-take (- n 1) r)))))
 
   (define (run-stream s q)
     (cond

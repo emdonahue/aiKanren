@@ -1,14 +1,18 @@
 (library (state)
-  (export make-state empty-state state? reify state-substitution unify instantiate-var set-state-substitution walk)
+  (export make-state empty-state state? reify state-substitution unify instantiate-var set-state-substitution walk state-guarded?)
   (import (chezscheme) (substitution))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
-  (define empty-state (make-state substitution-empty #f #f #f 0))
+  (define empty-state (make-state substitution-empty #f '() #f 0))
 
   (define (set-state-substitution s substitution)
     (if substitution
 	(let ([s (vector-copy s)])
 	  (set-state-substitution! s substitution) s) #f))
+
+  (define (state-guarded? s)
+    (not (null? (state-guards s))))
+  
   
   (define (increment-varid s)
     (let ([s (vector-copy s)])
