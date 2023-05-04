@@ -1,5 +1,5 @@
 (library (streams)
-  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take)
+  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-suspended set-runner-stream)
   (import (chezscheme) (state))
 
   (define-structure (mplus lhs rhs))
@@ -14,16 +14,21 @@
 
   (define (set-runner-stream r s)
     (let ([r (vector-copy r)])
-      (set-runner-stream! r s) s))
+      (set-runner-stream! r s) r))
 
   (define (stream? s)
     (or (mplus? s) (bind? s) (suspended? s) (procedure? s) (null? s) (state? s)))
 
-  (define (run-goal g s r)
+  (define (goal? g)
+    (or (procedure? g) (unification? g) (conj? g) (disj? g)))
+
+  (trace-define (run-goal g s r)
+    (assert (and (goal? g) (stream? s) (runner? r)))
     (cond     
-     [(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
-     [(procedure? g) (make-suspended g s)]
-     [(unification? g) (unify s (unification-lhs g) (unification-rhs g))]
+     ;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
+     [(procedure? g) (g s r)]
+     [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
+     [else (assert #f)]
      ))
   
   (define (mplus lhs rhs)
@@ -40,19 +45,21 @@
      [(not s) #f]
      [(mplus? s) (mplus (step (mplus-rhs s)) (mplus-lhs s))]))
 
-  (define (stream-step s r)
+  (trace-define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
     (cond
      [(null? s) (set-runner-stream r '())]
-     [(suspended? s) 3]
+     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) r)]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]))
 
-  (define (runner-step r)
+  (trace-define (runner-step r)
     (assert (runner? r))
     (stream-step (runner-stream r) r))
 
   (define (runner-take n r)
-    (runner-step r))
+					;(runner-step (runner-step (runner-step r)))
+    (runner-step r)
+    )
 
   (define (run-stream s q)
     (cond

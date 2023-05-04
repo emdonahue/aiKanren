@@ -13,21 +13,27 @@
       ((_ n (q) g0)
        (runner-take
 	n
-	(make-runner
-	 (run-goal
-	  (fresh (q)
-	    (make-runner #t q #f))
-	  empty-state
-	  (make-runner #f #f #f)) #f #f))
+	(run-goal
+	 (fresh (q)
+	   (lambda (s r)
+	     (run-goal
+	      g0
+	      s
+	      (make-runner #t q #f))))
+	 empty-state
+	 (make-runner #f #f #f)))
        )
       ))
   
   (define-syntax fresh
     (syntax-rules ()
       ((_ (x) g0)
-       (lambda (s)
+       (lambda (s r)
 	 (let-values ([(x s) (instantiate-var s)])
-	   (run-goal g0 s))))))
+	   (set-runner-stream
+	    r
+	    (make-suspended
+	     g0 s)))))))
   
   #;
   (define-syntax fresh
