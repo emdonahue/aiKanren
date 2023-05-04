@@ -1,7 +1,7 @@
 (library (runner)
-  (export make-runner)
+  (export)
   (import (chezscheme))
 
-  (define-structure (runner stream query tables))
+  
   
 )

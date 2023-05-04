@@ -11,7 +11,10 @@
   (define-syntax run
     (syntax-rules ()
       ((_ n (q) g0)
-       (make-runner 1 2 3)
+       (make-runner
+	(fresh (q)
+	  (make-runner #t q #f)
+	  ) #f #f)
        )
       ))
   
