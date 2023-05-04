@@ -1,5 +1,5 @@
 (library (substitution)
-  (export substitution-empty walk unify make-var var?)
+  (export substitution-empty walk make-var var? var-id extend)
   (import (chezscheme) (sbral))
 
   (define-structure (var id))
@@ -20,18 +20,4 @@
     (make-substitution
      (sbral-set-ref
       (substitution-dict s)
-      (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)))
-  
-  (define (unify s x y)
-    (if (not s) #f 
-	(let ([x (walk s x)] [y (walk s y)])
-	  (cond
-	   [(eq? x y) s]
-	   [(and (var? x) (var? y))
-	    (if (< (var-id x) (var-id y)) (extend s x y)
-		(extend s y x))]
-	   [(var? x) (extend s x y)]
-	   [(var? y) (extend s y x)]
-	   [(and(pair? x) (pair? y))
-	    (unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	   [else #f])))))
+      (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound))))
