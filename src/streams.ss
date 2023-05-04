@@ -13,6 +13,7 @@
     (cond
      [(unification? g) (unify s (unification-lhs g) (unification-rhs g))]
      [(disj? g) (mplus (run-goal (disj-lhs g) s) (run-goal (disj-rhs g) s))]
+     [(procedure? g) (g s)]
      ))
   
   (define (mplus lhs rhs)
