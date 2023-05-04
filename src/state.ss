@@ -1,9 +1,9 @@
 (library (state)
-  (export make-state empty-state state? reify state-substitution unify)
+  (export make-state empty-state state? reify state-substitution unify instantiate-var set-state-substitution)
   (import (chezscheme) (substitution))
 
-  (define-structure (state substitution))
-  (define empty-state (make-state substitution-empty))
+  (define-structure (state substitution constraints guards pseudocounts varid))
+  (define empty-state (make-state substitution-empty #f #f #f 0))
 
   (define (set-state-substitution s substitution)
     (if substitution
@@ -30,4 +30,7 @@
 	       [(var? y) (extend s y x)]
 	       [(and(pair? x) (pair? y))
 		(unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	       [else #f]))])))
+	       [else #f]))]))
+
+   (define (instantiate-var s)
+     (values (make-var (state-varid s)))))
