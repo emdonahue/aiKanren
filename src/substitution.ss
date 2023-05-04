@@ -1,5 +1,5 @@
 (library (substitution)
-  (export substitution-empty walk make-var var? var-id extend)
+  (export substitution-empty substitution-walk make-var var? var-id extend)
   (import (chezscheme) (sbral))
 
   (define-structure (var id))
@@ -9,11 +9,11 @@
 
   (define substitution-empty (make-substitution sbral-empty))
 
-  (define (walk s v)
+  (define (substitution-walk s v)
     (if (var? v)
 	(let* ([dict (substitution-dict s)]
 	       [walked (sbral-ref dict (- (sbral-length dict) (var-id v) 1) unbound)])
-	  (if (unbound? walked) v (walk s walked)))
+	  (if (unbound? walked) v (substitution-walk s walked)))
 	v))
 
   (define (extend s x y)
