@@ -1,6 +1,6 @@
 ;;TODO break up streams.ss
 (library (streams)
-  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-suspended set-runner-stream)
+  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-incomplete set-runner-stream)
   (import (chezscheme) (state))  
 
   ;; === GOALS ===
@@ -25,31 +25,36 @@
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
-  (define-structure (suspended goal state))
+  (define-structure (incomplete goal state))
 
+  (define complete? pair?) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as a list of answer?s, possibly with an improper stream tail.
+
+  (define failure #f)
+  (define failure? not)
+  
   (define (stream? s)
-    (or (mplus? s) (bind? s) (suspended? s) (procedure? s) (null? s) (state? s)))
+    (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
   
   (define (mplus lhs rhs)
     (cond
-     [(not lhs) rhs]
-     [(not rhs) lhs]
+     [(failure? lhs) rhs]
+     [(failure? rhs) lhs]
      [(runner? lhs) (set-runner-stream lhs (mplus (runner-stream lhs) rhs))]
-     [(state? lhs) (cons lhs rhs)]
-     [(state? rhs) (cons rhs lhs)]
+     [(answer? lhs) (cons lhs rhs)]
+     [(answer? rhs) (cons rhs lhs)]
      [(make-mplus lhs rhs)]))
 
   (define (step s)
     (cond
-     [(not s) #f]
+     [(failure? s) #f]
      [(mplus? s) (mplus (step (mplus-rhs s)) (mplus-lhs s))]))
 
   (define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
     (cond
-     [(null? s) (set-runner-stream r '())]
-     [(state? (runner-stream r)) (stream-step '() r)]
-     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) r)]
+     [(failure? s) (set-runner-stream r s)]
+     [(state? (runner-stream r)) (stream-step failure r)]
+     [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
      [else (assert #f)]))
 
@@ -90,7 +95,7 @@
   
   (define (runner-null? r)
     (assert (runner? r))
-    (null? (runner-stream r)))
+    (failure? (runner-stream r)))
   
   (define (runner-take n r)
 		(assert (runner? r))
@@ -106,7 +111,7 @@
 
   (define (run-stream s q)
     (cond
-     [(not s) '()]
+     [(failure? s) failure]
      [(state? s) (list (reify s q))]
      [(pair? s) (cons (reify (car s) q) (run-stream (cdr s) q))]
      [else (run-stream (step s) q)]))

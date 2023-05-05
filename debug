@@ -1,2 +1,2 @@
 #!/bin/bash
-scheme --debug-on-exception --libdirs src:. --script test
+scheme --debug-on-exception --libdirs src:tests:. --script test

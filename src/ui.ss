@@ -29,7 +29,7 @@
 	 (let-values ([(x s) (instantiate-var s)])
 	   (set-runner-stream
 	    r
-	    (make-suspended
+	    (make-incomplete
 	     g0 s)))))))
   
   #;
