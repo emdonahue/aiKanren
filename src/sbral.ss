@@ -1,3 +1,4 @@
+;TODO Abstract out some of the math checks for navigating sbral
 (library (sbral)
   ;; Skew Binary Random Access List
   (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty?)

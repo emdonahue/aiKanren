@@ -1,6 +1,6 @@
 (library (runner)
   (export make-runner set-runner-stream runner? runner-stream runner-query runner-tables)
-  (import (chezscheme))
+  (import (chezscheme) (failure))
 
   (define-structure (runner stream query tables))
   

@@ -1,18 +1,7 @@
 ;;TODO break up streams.ss
 (library (streams)
-  (export mplus make-unification make-disj run-goal make-incomplete stream-step complete?)
+  (export mplus make-unification make-disj run-goal make-incomplete stream-step complete? bind bind*)
   (import (chezscheme) (state) (failure) (runner) (goals))  
-
-  (define (run-goal g s r)
-    (assert (and (goal? g) (stream? s) (runner? r)))
-    (cond     
-     ;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
-     [(procedure? g) (g s r)]
-     [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
-     [else (assert #f)]
-     ))
-
-  ;; === STREAMS ===
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
@@ -23,6 +12,16 @@
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
   
+  (define (run-goal g s r)
+    (assert (and (goal? g) (state? s) (runner? r)))
+    (cond     
+     ;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
+     [(fresh? g) (g s r)]
+     [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
+     [(conj? g) (bind (conj-rhs g) (run-goal (conj-lhs g) s r))]
+     [else (assert #f)]
+     ))
+  
   (define (mplus lhs rhs)
     (cond
      [(failure? lhs) rhs]
@@ -32,15 +31,13 @@
      [(answer? rhs) (cons rhs lhs)]
      [(make-mplus lhs rhs)]))
 
-    #;
-  (define (bind g s)
+  (define (bind g r)
+    (assert (and (goal? g) (runner? r)))
     (cond
-     [(null? s) '()]
-     [(state? s) (run-goal g s)]
-     [(mplus? s) (make-bind g s)]
+     [(failure? (runner-stream r)) failure]
+     [(state? (runner-stream r)) (run-goal g (runner-stream r) r)]
      [else (assert #f)]))
 
-  #;
   (define-syntax bind*
     (syntax-rules ()
       [(_ s) s]

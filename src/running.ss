@@ -1,14 +1,14 @@
 (library (running)
-  (export runner-next runner-step runner-null? runner-car runner-pair? runner-take)
+  (export runner-next runner-step runner-car runner-pair? runner-take runner-null?)
   (import (chezscheme) (runner) (streams) (failure) (state))
 
-  (define (runner-step r)
-    (assert (runner? r))
-    (stream-step (runner-stream r) r))
-  
   (define (runner-null? r)
     (assert (runner? r))
     (failure? (runner-stream r)))
+  
+  (define (runner-step r)
+    (assert (runner? r))
+    (stream-step (runner-stream r) r))
   
   (define (runner-pair? r)
     (assert (runner? r))
