@@ -1,6 +1,6 @@
 ;;TODO break up streams.ss
 (library (streams)
-  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-incomplete set-runner-stream runner-next runner-step runner-null? runner-car runner-pair?)
+  (export mplus make-unification make-disj run-goal make-runner runner-take make-incomplete set-runner-stream runner-next runner-step runner-null? runner-car runner-pair?)
   (import (chezscheme) (state) (failure))  
 
   ;; === GOALS ===
@@ -41,10 +41,19 @@
      [(answer? rhs) (cons rhs lhs)]
      [(make-mplus lhs rhs)]))
 
-  (define (step s)
+    #;
+  (define (bind g s)
     (cond
-     [(failure? s) #f]
-     [(mplus? s) (mplus (step (mplus-rhs s)) (mplus-lhs s))]))
+     [(null? s) '()]
+     [(state? s) (run-goal g s)]
+     [(mplus? s) (make-bind g s)]
+     [else (assert #f)]))
+
+  #;
+  (define-syntax bind*
+    (syntax-rules ()
+      [(_ s) s]
+      [(_ s g0 g ...) (bind* (bind g0 s) g ...)]))
 
   (define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
@@ -66,11 +75,6 @@
   (define (runner-step r)
     (assert (runner? r))
     (stream-step (runner-stream r) r))
-
-  #;
-  (define (runner-next r)
-    (assert (runner? r))
-    (if (runner-quiescent? r) r (runner-next (runner-step r))))
   
   (define (runner-null? r)
     (assert (runner? r))
@@ -99,27 +103,4 @@
     (assert (runner? r))
     (if (zero? n) '()
 	(let-values ([(reified state r) (runner-next r)])
-	  (if (runner-null? r) '() (cons reified (runner-take (- n 1) r))))))
-
-  (define (run-stream s q)
-    (cond
-     [(failure? s) failure]
-     [(state? s) (list (reify s q))]
-     [(pair? s) (cons (reify (car s) q) (run-stream (cdr s) q))]
-     [else (run-stream (step s) q)]))
-
-  #;
-  (define (bind g s)
-    (cond
-     [(null? s) '()]
-     [(state? s) (run-goal g s)]
-     [(mplus? s) (make-bind g s)]
-     [else (assert #f)]))
-
-  #;
-  (define-syntax bind*
-    (syntax-rules ()
-      [(_ s) s]
-      [(_ s g0 g ...) (bind* (bind g0 s) g ...)]))
-  
-)
+	  (if (runner-null? r) '() (cons reified (runner-take (- n 1) r)))))))
