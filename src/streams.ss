@@ -68,7 +68,7 @@
 
   (define (runner-has-answer? r)
     (assert (runner? r))
-    (and (state? (runner-stream r)) (not (state-guarded? (runner-stream r)))))
+    (and (state? (runner-stream r)) (not (guarded? (runner-stream r)))))
 
   (define (runner-has-answers? r)
     (assert (runner? r))
