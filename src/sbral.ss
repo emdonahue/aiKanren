@@ -7,7 +7,7 @@
   (define-structure (sbral tree length rest))
   (define-structure (sbral-tree root size left right))
 
-  (define sbral-empty (make-sbral (make-sbral-tree #f 0 #f #f) 0 '()))
+  (define sbral-empty (make-sbral (make-sbral-tree 'empty-sbral 0 '_ '_) 0 '()))
 
   (define (sbral-empty? s) (eq? s sbral-empty))
   

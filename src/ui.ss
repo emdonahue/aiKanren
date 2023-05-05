@@ -7,8 +7,17 @@
 
   (define (conde x y)
     (make-disj x y))
-
-  (define-syntax runner
+  
+ (define-syntax fresh
+   (syntax-rules ()
+     [(_ () g ...)
+      (lambda (start-state r)
+	(set-runner-stream r (make-incomplete (conj* g ...) start-state)))]
+     [(_ (q ...) g ...)
+      (fresh ()
+	(fresh-vars start-state end-state (q ...) (conj* g ...)))]))
+ 
+  (define-syntax runner2
     (syntax-rules ()
       [(_ (q) g0 g ...)
        (run-goal
@@ -17,6 +26,13 @@
 	     (run-goal (conj* g0 g ...) s (make-runner 'dummy-stream q #f))))
 	 empty-state
 	 (make-runner 'dummy-stream 'top-level 'runner))]))
+
+  (define-syntax runner
+    (syntax-rules ()
+      [(_ (q) g ...)
+       (fresh-vars
+	empty-state start-state (q)
+	(make-runner (make-incomplete (conj* g ...) start-state) q 'table))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -26,21 +42,14 @@
   (define-syntax run*
     (syntax-rules ()
       ((_ (q ...) g ...) (run -1 (q ...) g ...))))
-  
-  (define-syntax fresh
+
+  ;; === UTILITIES ===
+
+    (define-syntax fresh-vars
     (syntax-rules ()
-      ((_ (x) g0)
-       (lambda (s r)
-	 (let-values ([(x s) (instantiate-var s)])
-	   (set-runner-stream
-	    r
-	    (make-incomplete
-	     g0 s)))))))
-  
-  #;
-  (define-syntax fresh
-    (syntax-rules ()
-      [(_ (x) g0 g ...)
-       (lambda (s)
-	 (let-values ([(x s) (instantiate-var s)])
-	   (bind* (run-goal g0 s) g ...)))])))
+      [(_ start-state end-state (q) body ...)
+       (let-values ([(q end-state) (instantiate-var start-state)])
+	 body ...)]
+      [(_ start-state end-state (q0 q ...) body ...)
+       (let-values ([(q0 intermediate-state) (instantiate-var start-state)])
+	 (fresh-vars intermediate-state end-state (q ...) body ...))])))
