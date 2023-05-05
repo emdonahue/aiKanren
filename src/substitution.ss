@@ -1,6 +1,6 @@
 (library (substitution)
   (export empty-substitution walk unify make-var var? var-id extend)
-  (import (chezscheme) (sbral) (var))
+  (import (chezscheme) (sbral) (var) (failure))
 
   (define-structure (substitution dict))
   (define empty-substitution (make-substitution sbral-empty))
@@ -14,7 +14,7 @@
 
   (define (unify s x y)
      (cond
-      [(not s) #f]
+      [(failure? s) s]
       [else (let ([x (walk s x)] [y (walk s y)])
 	      (cond
 	       [(eq? x y) s]
@@ -27,7 +27,7 @@
 	       [(var? y) (extend s y x)]
 	       [(and(pair? x) (pair? y))
 		(unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	       [else #f]))]))
+	       [else failure]))]))
 
   (define (extend s x y)
     (make-substitution

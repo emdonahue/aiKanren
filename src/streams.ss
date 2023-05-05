@@ -1,7 +1,7 @@
 ;;TODO break up streams.ss
 (library (streams)
-  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-incomplete set-runner-stream)
-  (import (chezscheme) (state))  
+  (export step mplus run-stream make-unification make-disj run-goal make-runner runner-take make-incomplete set-runner-stream runner-next runner-step runner-null? runner-car runner-pair?)
+  (import (chezscheme) (state) (failure))  
 
   ;; === GOALS ===
 
@@ -28,9 +28,6 @@
   (define-structure (incomplete goal state))
 
   (define complete? pair?) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as a list of answer?s, possibly with an improper stream tail.
-
-  (define failure #f)
-  (define failure? not)
   
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
@@ -70,44 +67,39 @@
     (assert (runner? r))
     (stream-step (runner-stream r) r))
 
+  #;
   (define (runner-next r)
     (assert (runner? r))
     (if (runner-quiescent? r) r (runner-next (runner-step r))))
-
-  (define (runner-quiescent? r)
-    (assert (runner? r))
-    (or (runner-null? r) (runner-has-answer? r) (runner-has-answers? r)))
-
-  (define (runner-has-answer? r)
-    (assert (runner? r))
-    (and (state? (runner-stream r)) (not (guarded? (runner-stream r)))))
-
-  (define (runner-has-answers? r)
-    (assert (runner? r))
-    (pair? (runner-stream r)))
-  
-  (define (runner-answer r)
-    (assert (runner? r))
-    (cond
-     [(runner-has-answer? r) (runner-stream r)]
-     [(runner-has-answers? r) (car (runner-stream r))]
-     [else (assert #f)]))
   
   (define (runner-null? r)
     (assert (runner? r))
     (failure? (runner-stream r)))
   
+  (define (runner-pair? r)
+    (assert (runner? r))
+    (not (failure? (runner-car r))))
+  
+  (define (runner-car r)
+    (assert (runner? r))
+    (cond
+     [(answer? (runner-stream r)) (runner-stream r)]
+     [(complete? (runner-stream r)) (car (runner-stream r))]
+     [else failure]))
+  
+  (define (runner-next r)
+    (assert (runner? r))
+    (let ([r (runner-step r)])
+      (cond
+       [(runner-null? r) (values (void) (void) r)]
+       [(runner-pair? r) (values (reify (runner-car r) (runner-query r)) (runner-car r) r)]
+       [else (runner-next r)])))
+  
   (define (runner-take n r)
-		(assert (runner? r))
-		(if (runner-quiescent? r)
-		    (if (runner-null? r) '()
-			(cons (reify (runner-answer r) (runner-query r))
-			      (runner-take (- n 1) (runner-step r))))
-		    (runner-take n (runner-next r)))
-		#;
-    (if (or (= 0 n) (runner-null? r)) '()
-	(let ([r (runner-next (runner-step r))])
-	 (cons (runner-answer r) (runner-take (- n 1) r)))))
+    (assert (runner? r))
+    (if (zero? n) '()
+	(let-values ([(reified state r) (runner-next r)])
+	  (if (runner-null? r) '() (cons reified (runner-take (- n 1) r))))))
 
   (define (run-stream s q)
     (cond
