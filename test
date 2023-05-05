@@ -1,8 +1,4 @@
 #!/usr/bin/env -S scheme --libdirs src:tests:. --script
-(import (chezscheme) (sbral-tests) (substitution-tests))
-
-;(load "tests/test-substitution.ss")
-;(load "tests/test-goals.ss")
-;(load "tests/test-streams.ss")
+(import (chezscheme) (sbral-tests) (substitution-tests) (state-tests))
 
 (display "Testing Complete\n")

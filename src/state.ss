@@ -1,6 +1,6 @@
 (library (state)
   (export make-state empty-state state? reify state-substitution unify instantiate-var set-state-substitution walk state-guarded?)
-  (import (chezscheme) (substitution))
+  (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
   (define empty-state (make-state empty-substitution #f '() #f 0))
@@ -21,14 +21,14 @@
   (define (reify s v)
     (cond
      [(pair? v) (cons (reify s (car v)) (reify s (cdr v)))]
-     [(var? v) (reify s (substitution-walk (state-substitution s) v))]
+     [(var? v) (reify s (substitution:walk (state-substitution s) v))]
      [else v]))
 
    (define (unify s x y)
      (cond
       [(not s) #f]
       [(state? s) (set-state-substitution s (unify (state-substitution s) x y))]
-      [else (let ([x (substitution-walk s x)] [y (substitution-walk s y)])
+      [else (let ([x (substitution:walk s x)] [y (substitution:walk s y)])
 	      (cond
 	       [(eq? x y) s]
 	       [(and (var? x) (var? y))
@@ -43,7 +43,7 @@
 	       [else #f]))]))
 
    (define (walk s v)
-     (substitution-walk (state-substitution s) v))
+     (substitution:walk (state-substitution s) v))
    
    (define (instantiate-var s)
      (values (make-var (state-varid s)) (increment-varid s))))
