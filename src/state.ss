@@ -3,7 +3,7 @@
   (import (chezscheme) (substitution))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
-  (define empty-state (make-state substitution-empty #f '() #f 0))
+  (define empty-state (make-state empty-substitution #f '() #f 0))
 
   (define (set-state-substitution s substitution)
     (if substitution

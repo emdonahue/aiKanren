@@ -1,5 +1,5 @@
 (library (substitution)
-  (export substitution-empty substitution-walk make-var var? var-id extend)
+  (export empty-substitution walk unify make-var var? var-id extend)
   (import (chezscheme) (sbral))
 
   (define-structure (var id))
@@ -7,14 +7,31 @@
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
 
-  (define substitution-empty (make-substitution sbral-empty))
+  (define empty-substitution (make-substitution sbral-empty))
 
-  (define (substitution-walk s v)
+  (define (walk s v)
     (if (var? v)
 	(let* ([dict (substitution-dict s)]
 	       [walked (sbral-ref dict (- (sbral-length dict) (var-id v) 1) unbound)])
-	  (if (unbound? walked) v (substitution-walk s walked)))
+	  (if (unbound? walked) v (walk s walked)))
 	v))
+
+  (define (unify s x y)
+     (cond
+      [(not s) #f]
+      [else (let ([x (walk s x)] [y (walk s y)])
+	      (cond
+	       [(eq? x y) s]
+	       [(and (var? x) (var? y))
+		(cond
+		 [(< (var-id x) (var-id y)) (extend s x y)]
+		 [(= (var-id x) (var-id y)) s] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+		 [else (extend s y x)])]
+	       [(var? x) (extend s x y)]
+	       [(var? y) (extend s y x)]
+	       [(and(pair? x) (pair? y))
+		(unify (unify s (car x) (car y)) (cdr x) (cdr y))]
+	       [else #f]))]))
 
   (define (extend s x y)
     (make-substitution
