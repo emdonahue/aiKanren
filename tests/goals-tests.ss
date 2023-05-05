@@ -1,3 +1,4 @@
+;;TODO delete goal-tests
 (library (goals-tests)
   (export)
   (import (chezscheme) (streams) (test-runner))
