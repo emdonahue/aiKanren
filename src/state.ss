@@ -25,22 +25,7 @@
      [else v]))
 
    (define (unify s x y)
-     (cond
-      [(not s) #f]
-      [(state? s) (set-state-substitution s (unify (state-substitution s) x y))]
-      [else (let ([x (substitution:walk s x)] [y (substitution:walk s y)])
-	      (cond
-	       [(eq? x y) s]
-	       [(and (var? x) (var? y))
-		(cond
-		 [(< (var-id x) (var-id y)) (extend s x y)]
-		 [(= (var-id x) (var-id y)) s] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-		 [else (extend s y x)])]
-	       [(var? x) (extend s x y)]
-	       [(var? y) (extend s y x)]
-	       [(and(pair? x) (pair? y))
-		(unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	       [else #f]))]))
+     (set-state-substitution s (substitution:unify (state-substitution s) x y)))
 
    (define (walk s v)
      (substitution:walk (state-substitution s) v))
