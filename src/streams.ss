@@ -1,16 +1,7 @@
 ;;TODO break up streams.ss
 (library (streams)
   (export mplus make-unification make-disj run-goal make-incomplete stream-step complete?)
-  (import (chezscheme) (state) (failure) (runner))  
-
-  ;; === GOALS ===
-
-  (define-structure (unification lhs rhs))
-  (define-structure (conj lhs rhs))
-  (define-structure (disj lhs rhs))
-
-  (define (goal? g)
-    (or (procedure? g) (unification? g) (conj? g) (disj? g)))
+  (import (chezscheme) (state) (failure) (runner) (goals))  
 
   (define (run-goal g s r)
     (assert (and (goal? g) (stream? s) (runner? r)))
