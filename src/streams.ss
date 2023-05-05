@@ -34,7 +34,7 @@
   (define (bind g r)
     (assert (and (goal? g) (runner? r)))
     (cond
-     [(failure? (runner-stream r)) failure]
+     [(failure? (runner-stream r)) (set-runner-stream r failure)]
      [(state? (runner-stream r)) (run-goal g (runner-stream r) r)]
      [else (assert #f)]))
 
