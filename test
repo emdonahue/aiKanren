@@ -2,4 +2,9 @@
 
 (import (chezscheme) (sbral-tests) (substitution-tests) (state-tests) (runner-tests))
 
+(run-sbral-tests)
+(run-substitution-tests)
+(run-state-tests)
+(run-runner-tests)
+
 (display "Testing Complete\n")
