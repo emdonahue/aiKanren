@@ -1,6 +1,6 @@
 (library (ui)
-  (export == conde run run* fresh runner runner-next runner-step runner-null? runner-take)
-  (import (chezscheme) (streams) (state) (runner) (running) (goals) (package))
+  (export == conde run run* fresh runner runner-next runner-step runner-take failure?)
+  (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure))
 
   (define (== x y)
     (make-unification x y))

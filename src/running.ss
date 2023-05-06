@@ -1,5 +1,5 @@
 (library (running)
-  (export runner-next runner-step runner-car runner-pair? runner-take runner-null?)
+  (export runner-next runner-step runner-take)
   (import (chezscheme) (runner) (streams) (failure) (state))
 
   (define (runner-null? r)
@@ -26,7 +26,7 @@
     (assert (runner? r))
     (let ([r (runner-step r)])
       (cond
-       [(runner-null? r) (values (void) (void) r)]
+       [(runner-null? r) (values (void) failure r)]
        [(runner-pair? r) (values (reify (runner-car r) (runner-query r)) (runner-car r) r)]
        [else (runner-next r)])))
   
@@ -34,4 +34,4 @@
     (assert (runner? r))
     (if (zero? n) '()
 	(let-values ([(reified state r) (runner-next r)])
-	  (if (runner-null? r) '() (cons reified (runner-take (- n 1) r)))))))
+	  (if (failure? state) '() (cons reified (runner-take (- n 1) r)))))))

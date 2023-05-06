@@ -1,16 +1,11 @@
-;;TODO break up streams.ss
 (library (streams)
   (export mplus make-unification run-goal make-incomplete stream-step complete? bind)
-  (import (chezscheme) (state) (failure) (runner) (goals) (package)) 
+  (import (chezscheme) (state) (failure) (goals) (package)) 
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
   (define-structure (incomplete goal state))
   (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
-
-  (define-syntax with-values ;TODO remove with-values
-    (syntax-rules ()
-      [(_ v ... proc) (call-with-values (lambda () (values v ...)) proc)]))
   
   (define (stream? s)
     (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
