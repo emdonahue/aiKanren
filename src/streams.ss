@@ -46,20 +46,16 @@
     ;;TODO streamline run-disj
     (let* ([lhs (run-goal (disj-car g) s r)]
 	   [rhs (run-goal (disj-cdr g) s lhs)])
-      (mplus lhs rhs)))
+      (set-runner-stream rhs (mplus (runner-stream lhs) (runner-stream rhs)))))
   
   (define (mplus lhs rhs)
-    (assert (and (runner? lhs) (runner? rhs)))
-    (let ([lhs2 (runner-stream lhs)]
-	  [rhs2 (runner-stream rhs)])
-     (cond
-      [(failure? lhs2) rhs]
-      [(failure? rhs2) lhs]
-      [(answer? lhs2)
-       (set-runner-stream lhs (complete lhs2 rhs2))]
-      [(complete? lhs2)
-       (set-runner-stream lhs (complete (complete-car lhs2) (runner-stream (mplus rhs (set-runner-stream lhs (complete-cdr lhs2))))))]
-      [else (assert #f)])))
+    (assert (and (stream? lhs) (stream? rhs)))
+    (cond
+     [(failure? lhs) rhs]
+     [(failure? rhs) lhs]
+     [(answer? lhs) (complete lhs rhs)]
+     [(complete? lhs) (complete (complete-car lhs) (mplus rhs (complete-cdr lhs)))]
+     [else (assert #f)]))
 
   (define (bind r g)
     (assert (and (goal? g) (runner? r)))
@@ -73,7 +69,8 @@
     (define (bind-complete g r)
 ;    (assert (and (goal? g) (package? p) (complete? (runner-stream r))))
     (let ([h (run-goal g (complete-car (runner-stream r)) r)])
-      (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
+      (let ([r (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)])
+	(set-runner-stream h (mplus (runner-stream h) (runner-stream r)))))
     )
   
   (define (stream-step s r)
@@ -82,6 +79,7 @@
      [(failure? s) (set-runner-stream r s)]
      [(state? (runner-stream r)) (stream-step failure r)]
      [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
-     [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
+     [(mplus? s) (let ([r (stream-step (mplus-rhs s) r)])
+		   (set-runner-stream r (mplus (runner-stream r) (mplus-lhs s))))]
      [(complete? s) (set-runner-stream r (complete-cdr (runner-stream r)))]
      [else (assert #f)])))
