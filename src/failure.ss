@@ -3,5 +3,5 @@
   (export failure failure?)
   (import (chezscheme))
 
-  (define failure #f)
-  (define failure? not))
+  (define failure '())
+  (define failure? null?))

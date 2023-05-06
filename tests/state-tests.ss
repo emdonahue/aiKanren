@@ -1,6 +1,6 @@
 (library (state-tests)
   (export run-state-tests)
-  (import (chezscheme) (state) (var) (test-runner))
+  (import (chezscheme) (state) (var) (test-runner) (failure))
 
   (define (run-state-tests)
     (define x0 (make-var 0))
@@ -15,6 +15,6 @@
     (tassert "unify free-free" (walk (unify empty-state x0 x1) x0) x1)
     (tassert "unify free-free inverse priority" (walk (unify empty-state x1 x0) x0) x1)
     (tassert "unify cars" (walk (unify empty-state (cons x0 0) (cons 1 0)) x0) 1)
-    (tassert "unify cars fail" (unify empty-state (cons 0 x0) (cons 1 0)) #f)
+    (tassert "unify cars fail" (unify empty-state (cons 0 x0) (cons 1 0)) failure)
     (tassert "unify cdrs" (walk (unify empty-state (cons 0 x0) (cons 0 1)) x0) 1)
-    (tassert "unify cdrs fail" (unify empty-state (cons x0 1) (cons 1 0)) #f)))
+    (tassert "unify cdrs fail" (unify empty-state (cons x0 1) (cons 1 0)) failure)))

@@ -1,7 +1,7 @@
 ;;TODO break up streams.ss
 (library (streams)
   (export mplus make-unification run-goal make-incomplete stream-step complete? bind)
-  (import (chezscheme) (state) (failure) (runner) (goals))  
+  (import (chezscheme) (state) (failure) (runner) (goals) (package)) 
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
@@ -49,19 +49,17 @@
       (mplus lhs rhs)))
   
   (define (mplus lhs rhs)
-    ;; lhs contains the most recent table, so that runner should be used regardless of which stream is returned.
     (assert (and (runner? lhs) (runner? rhs)))
-    (cond
-     [(failure? (runner-stream lhs)) (set-runner-stream lhs (runner-stream rhs))]
-     [(failure? (runner-stream rhs)) lhs]
-     [(answer? (runner-stream lhs))
-      (set-runner-stream lhs (complete (runner-stream lhs) (runner-stream rhs)))]
-     [(complete? (runner-stream lhs))
-      (set-runner-stream lhs (complete (complete-car (runner-stream lhs)) (runner-stream (mplus rhs (set-runner-stream lhs (complete-cdr (runner-stream lhs)))))))]
-     ;;[(runner? lhs) (set-runner-stream lhs (mplus (runner-stream lhs) rhs))]
-     ;;[(answer? lhs) (cons lhs rhs)]
-     ;;[(answer? rhs) (cons rhs lhs)]
-     [else (assert #f)]))
+    (let ([lhs2 (runner-stream lhs)]
+	  [rhs2 (runner-stream rhs)])
+     (cond
+      [(failure? lhs2) rhs]
+      [(failure? rhs2) lhs]
+      [(answer? lhs2)
+       (set-runner-stream lhs (complete lhs2 rhs2))]
+      [(complete? lhs2)
+       (set-runner-stream lhs (complete (complete-car lhs2) (runner-stream (mplus rhs (set-runner-stream lhs (complete-cdr lhs2))))))]
+      [else (assert #f)])))
 
   (define (bind r g)
     (assert (and (goal? g) (runner? r)))
@@ -69,11 +67,11 @@
      [(failure? (runner-stream r)) (set-runner-stream r failure)]
      [(state? (runner-stream r)) (run-goal g (runner-stream r) r)]
      [(incomplete? (runner-stream r)) (set-runner-stream r (make-incomplete g (runner-stream r)))]
-     [(complete? (runner-stream r)) (bind-complete r g)]
+     [(complete? (runner-stream r)) (bind-complete g r)]
      [else (assert #f)]))
 
-    (define (bind-complete r g)
-    (assert (and (goal? g) (runner? r) (complete? (runner-stream r))))
+    (define (bind-complete g r)
+;    (assert (and (goal? g) (package? p) (complete? (runner-stream r))))
     (let ([h (run-goal g (complete-car (runner-stream r)) r)])
       (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
     )

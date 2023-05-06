@@ -1,6 +1,6 @@
 (library (ui)
   (export == conde run run* fresh runner runner-next runner-step runner-null? runner-take)
-  (import (chezscheme) (streams) (state) (runner) (running) (goals))
+  (import (chezscheme) (streams) (state) (runner) (running) (goals) (package))
 
   (define (== x y)
     (make-unification x y))
@@ -55,7 +55,7 @@
 	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
 
     (define (top-level-runner state query . conjuncts)
-      (make-runner (make-incomplete (conj conjuncts) state) query 'table))
+      (make-runner (make-incomplete (conj conjuncts) state) query empty-package))
 
     (define (fresh-runner runner state . conjuncts)
       (set-runner-stream runner (make-incomplete (conj conjuncts) state))))
