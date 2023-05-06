@@ -6,33 +6,14 @@
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
   (define-structure (incomplete goal state))
-
-  (define complete cons) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
-  (define complete? pair?)
-  (define complete-car car)
-  (define complete-cdr cdr)
+  (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
   
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
 
-  ;;TODO consider simplifying bind/mplus with stream-case
-  #;
-  (define-syntax stream-case
-    (syntax-rules (else)
-      [(_ in-runner in-stream [else out-runner ...])
-       (begin out-runner ...)]
-      [(_ in-runner in-stream [type? out-runner ...])
-       (if (type? (in-stream)))]
-      [(_ in-runner in-stream [type? out-stream] ...)
-       (if (type? (runner-stream in-runner))
-
-	   )
-       3]))
-  
   (define (run-goal g s r)
     (assert (and (goal? g) (state? s) (runner? r)))
     (cond     
-					;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
      [(succeed? g) (set-runner-stream r s)]
      [(fail? g) (set-runner-stream r failure)]
      [(fresh? g) (g s r)]
