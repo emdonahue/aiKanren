@@ -54,7 +54,7 @@
       (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
     )
   
-  (trace-define (mplus lhs rhs)
+  (define (mplus lhs rhs)
     ;; lhs contains the most recent table, so that runner should be used regardless of which stream is returned.
     (assert (and (runner? lhs) (runner? rhs)))
     (cond
@@ -69,7 +69,7 @@
      ;;[(answer? rhs) (cons rhs lhs)]
      [else (assert #f)]))
 
-  (trace-define (bind r g)
+  (define (bind r g)
     (assert (and (goal? g) (runner? r)))
     (cond
      [(failure? (runner-stream r)) (set-runner-stream r failure)]
@@ -85,5 +85,5 @@
      [(state? (runner-stream r)) (stream-step failure r)]
      [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
-     [(complete? s) (set-runner-stream r (complete-cdr s))]
+     [(complete? s) (set-runner-stream r (complete-cdr ))]
      [else (assert #f)])))
