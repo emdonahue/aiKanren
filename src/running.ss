@@ -8,7 +8,8 @@
   
   (define (runner-step r)
     (assert (runner? r))
-    (stream-step (runner-stream r) r))
+    (let-values ([(s p) (stream-step (runner-stream r) (runner-package r))])
+      (make-runner s (runner-query r) p)))
   
   (define (runner-pair? r)
     (assert (runner? r))

@@ -13,13 +13,13 @@
  (define-syntax fresh
    (syntax-rules ()
      [(_ () g ...)
-      (lambda (start-state r)
-	(fresh-runner r start-state g ...))]
+      (lambda (start-state p)
+	(fresh-suspend p start-state g ...))]
      [(_ (q ...) g ...)
-      (lambda (start-state r)
+      (lambda (start-state p)
 	(fresh-vars
 	 start-state end-state (q ...)
-	 (fresh-runner r end-state g ...)))]))
+	 (fresh-suspend p end-state g ...)))]))
 
   (define-syntax runner
     (syntax-rules ()
@@ -57,5 +57,5 @@
     (define (top-level-runner state query . conjuncts)
       (make-runner (make-incomplete (conj conjuncts) state) query empty-package))
 
-    (define (fresh-runner runner state . conjuncts)
-      (set-runner-stream runner (make-incomplete (conj conjuncts) state))))
+    (define (fresh-suspend package state . conjuncts)
+      (values (make-incomplete (conj conjuncts) state) package)))

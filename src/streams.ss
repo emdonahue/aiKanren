@@ -7,27 +7,32 @@
   (define-structure (bind goal stream))
   (define-structure (incomplete goal state))
   (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+
+  (define-syntax with-values ;TODO remove with-values
+    (syntax-rules ()
+      [(_ v ... proc) (call-with-values (lambda () (values v ...)) proc)]))
   
   (define (stream? s)
-    (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
+    (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
 
-  (define (run-goal g s r)
-    (assert (and (goal? g) (state? s) (runner? r)))
+  (define (run-goal g s p)
+    (assert (and (goal? g) (state? s) (package? p)))
     (cond     
-     [(succeed? g) (set-runner-stream r s)]
-     [(fail? g) (set-runner-stream r failure)]
-     [(fresh? g) (g s r)]
-     [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
-     [(conj? g) (bind (run-goal (conj-car g) s r) (conj-cdr g))]
-     [(disj? g) (run-disj g s r)]
-     [else (assert #f)]
-     ))
+     [(succeed? g) (values s p)]
+     [(fail? g) (values failure p)]
+     [(fresh? g) (g s p)]
+     [(unification? g) (values (unify s (unification-lhs g) (unification-rhs g)) p)]
+     [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
+		  (bind (conj-cdr g) s p))]
+     [(disj? g) (run-disj g s p)]
+     [else (assert #f)]))
 
-  (define (run-disj g s r)
+  (define (run-disj g s p)
     ;;TODO streamline run-disj
-    (let* ([lhs (run-goal (disj-car g) s r)]
-	   [rhs (run-goal (disj-cdr g) s lhs)])
-      (set-runner-stream rhs (mplus (runner-stream lhs) (runner-stream rhs)))))
+    (let*-values
+     ([(lhs p) (run-goal (disj-car g) s p)]
+      [(rhs p) (run-goal (disj-cdr g) s p)])
+     (values (mplus lhs rhs) p)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs)))
@@ -38,29 +43,29 @@
      [(complete? lhs) (complete (complete-car lhs) (mplus rhs (complete-cdr lhs)))]
      [else (assert #f)]))
 
-  (define (bind r g)
-    (assert (and (goal? g) (runner? r)))
+  (define (bind g s p)
+    (assert (and (goal? g) (stream? s) (package? p)))
     (cond
-     [(failure? (runner-stream r)) (set-runner-stream r failure)]
-     [(state? (runner-stream r)) (run-goal g (runner-stream r) r)]
-     [(incomplete? (runner-stream r)) (set-runner-stream r (make-incomplete g (runner-stream r)))]
-     [(complete? (runner-stream r)) (bind-complete g r)]
+     [(failure? s) (values s p)]
+     [(state? s) (run-goal g s p)]
+     [(incomplete? s) (make-incomplete g s)]
+     [(complete? s) (bind-complete g s p)]
      [else (assert #f)]))
 
-    (define (bind-complete g r)
-;    (assert (and (goal? g) (package? p) (complete? (runner-stream r))))
-    (let ([h (run-goal g (complete-car (runner-stream r)) r)])
-      (let ([r (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)])
-	(set-runner-stream h (mplus (runner-stream h) (runner-stream r)))))
+  (define (bind-complete g s p)
+    (assert (and (goal? g) (stream? s) (package? p)))
+    (let-values ([(h p) (run-goal g (complete-car s) p)])
+      (let-values ([(r p) (bind g (complete-cdr s) p)])
+	(values (mplus h r) p)))
     )
   
-  (define (stream-step s r)
-    (assert (and (stream? s) (runner? r)))
+  (define (stream-step s p)
+    (assert (and (stream? s) (package? p)))
     (cond
-     [(failure? s) (set-runner-stream r s)]
-     [(state? (runner-stream r)) (stream-step failure r)]
-     [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
-     [(mplus? s) (let ([r (stream-step (mplus-rhs s) r)])
-		   (set-runner-stream r (mplus (runner-stream r) (mplus-lhs s))))]
-     [(complete? s) (set-runner-stream r (complete-cdr (runner-stream r)))]
+     [(failure? s) (values s p)]
+     [(state? s) (values failure p)]
+     [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) p)]
+     [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
+		   (values (mplus (mplus-rhs s) s) p))]
+     [(complete? s) (values (complete-cdr s) p)]
      [else (assert #f)])))
