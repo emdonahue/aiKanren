@@ -14,25 +14,21 @@
       (lambda (start-state r)
 	(set-runner-stream r (make-incomplete (conj* g ...) start-state)))]
      [(_ (q ...) g ...)
-      (fresh ()
-	(fresh-vars start-state end-state (q ...) (conj* g ...)))]))
- 
-  (define-syntax runner2
-    (syntax-rules ()
-      [(_ (q) g0 g ...)
-       (run-goal
-	 (fresh (q)
-	   (lambda (s r)
-	     (run-goal (conj* g0 g ...) s (make-runner 'dummy-stream q #f))))
-	 empty-state
-	 (make-runner 'dummy-stream 'top-level 'runner))]))
+      (lambda (start-state r)
+	(fresh-vars
+	 start-state end-state (q ...)
+	 (set-runner-stream r (make-incomplete (conj* g ...) end-state))))]))
 
   (define-syntax runner
     (syntax-rules ()
       [(_ (q) g ...)
        (fresh-vars
 	empty-state start-state (q)
-	(make-runner (make-incomplete (conj* g ...) start-state) q 'table))]))
+	(make-runner (make-incomplete (conj* g ...) start-state) q 'table))]
+      [(_ (q0 q ...) g ...)
+       (fresh-vars
+	empty-state start-state (q0 q ...)
+	(make-runner (make-incomplete (conj* g ...) start-state) (list q0 q ...) 'table))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -52,4 +48,7 @@
 	 body ...)]
       [(_ start-state end-state (q0 q ...) body ...)
        (let-values ([(q0 intermediate-state) (instantiate-var start-state)])
-	 (fresh-vars intermediate-state end-state (q ...) body ...))])))
+	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
+#;
+    (define (build-runner state query . conjuncts)
+      (make-runner (make-incomplete (conj* conjuncts)))))
