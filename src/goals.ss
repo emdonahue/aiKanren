@@ -7,8 +7,7 @@
   (define-structure (disj disjuncts))
 
   ;;TODO convert succeed, fail, and failure to lists with symbols
-  (define succeed 'succeed)
-  (define fail 'fail)
+  (define-values (succeed fail) (values '(succeed) '(fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
 
