@@ -7,7 +7,10 @@
   (define-structure (bind goal stream))
   (define-structure (incomplete goal state))
 
-  (define complete? pair?) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as a list of answer?s, possibly with an improper stream tail.
+  (define complete cons) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+  (define complete? pair?)
+  (define complete-car car)
+  (define complete-cdr cdr)
   
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
@@ -31,29 +34,48 @@
     (cond     
 					;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
      [(succeed? g) r]
+     [(fail? g) (set-runner-stream r failure)]
      [(fresh? g) (g s r)]
      [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
-     [(conj? g) (bind (conj-cdr g) (run-goal (conj-car g) s r))]
-     [(disj? g) (mplus (run-goal (disj-car g) s r))]
+     [(conj? g) (bind (run-goal (conj-car g) s r) (conj-cdr g))]
+     [(disj? g) (run-disj g s r)]
      [else (assert #f)]
      ))
-  
-  (define (mplus lhs rhs)
-    (assert #f)
-    (cond
-     [(failure? lhs) rhs]
-     [(failure? rhs) lhs]
-     [(runner? lhs) (set-runner-stream lhs (mplus (runner-stream lhs) rhs))]
-     [(answer? lhs) (cons lhs rhs)]
-     [(answer? rhs) (cons rhs lhs)]
-     [(make-mplus lhs rhs)]))
 
-  (define (bind g r)
+  (define (run-disj g s r)
+    ;;TODO streamline run-disj
+    (let* ([lhs (run-goal (disj-car g) s r)]
+	   [rhs (run-goal (disj-cdr g) s lhs)])
+      (mplus (set-runner-stream rhs (runner-stream lhs)) rhs)))
+
+  (define (bind-complete r g)
+    (assert (and (goal? g) (runner? r) (complete? (runner-stream r))))
+    (let ([h (run-goal g (complete-car (runner-stream r)) r)])
+      (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
+    )
+  
+  (trace-define (mplus lhs rhs)
+    ;; lhs contains the most recent table, so that runner should be used regardless of which stream is returned.
+    (assert (and (runner? lhs) (runner? rhs)))
+    (cond
+     [(failure? (runner-stream lhs)) (set-runner-stream lhs (runner-stream rhs))]
+     [(failure? (runner-stream rhs)) lhs]
+     [(answer? (runner-stream lhs))
+      (set-runner-stream lhs (complete (runner-stream lhs) (runner-stream rhs)))]
+     [(complete? (runner-stream lhs))
+      (set-runner-stream lhs (complete (complete-car (runner-stream lhs)) (runner-stream (mplus rhs (set-runner-stream lhs (complete-cdr (runner-stream lhs)))))))]
+     ;;[(runner? lhs) (set-runner-stream lhs (mplus (runner-stream lhs) rhs))]
+     ;;[(answer? lhs) (cons lhs rhs)]
+     ;;[(answer? rhs) (cons rhs lhs)]
+     [else (assert #f)]))
+
+  (trace-define (bind r g)
     (assert (and (goal? g) (runner? r)))
     (cond
      [(failure? (runner-stream r)) (set-runner-stream r failure)]
      [(state? (runner-stream r)) (run-goal g (runner-stream r) r)]
      [(incomplete? (runner-stream r)) (set-runner-stream r (make-incomplete g (runner-stream r)))]
+     [(complete? (runner-stream r)) (bind-complete r g)]
      [else (assert #f)]))
 
   (define (stream-step s r)
@@ -63,4 +85,5 @@
      [(state? (runner-stream r)) (stream-step failure r)]
      [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
+     [(complete? s) (set-runner-stream r (complete-cdr s))]
      [else (assert #f)])))

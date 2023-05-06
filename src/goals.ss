@@ -6,6 +6,7 @@
   (define-structure (conj conjuncts))
   (define-structure (disj disjuncts))
 
+  ;;TODO convert succeed, fail, and failure to lists with symbols
   (define succeed 'succeed)
   (define fail 'fail)
   (define (succeed? g) (eq? g succeed))
@@ -31,7 +32,7 @@
     (conj (cdr (conj-conjuncts c))))
 
   (define (disj disjuncts)
-    (if (null? disjuncts) succeed (make-disj disjuncts)))
+    (if (null? disjuncts) fail (make-disj disjuncts)))
 
   (define (disj* . disjuncts)
     (disj disjuncts))
