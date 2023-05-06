@@ -11,6 +11,6 @@
 
 	     ;;(display (runner-step (runner (q) (== 2 2) (== q q) (== q 1) (== 2 2))))
 	     
-    (display (conde [(== 1 1)] [(== 2 2) (== 3 3)]))
+					;    (display (conde [(== 1 1)] [(== 2 2) (== 3 3)]))
 
     ))

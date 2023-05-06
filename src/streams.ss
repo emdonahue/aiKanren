@@ -33,7 +33,7 @@
     (assert (and (goal? g) (state? s) (runner? r)))
     (cond     
 					;[(disj? g) (mplus (run-goal (disj-lhs g) s r) (run-goal (disj-rhs g) s r))]
-     [(succeed? g) r]
+     [(succeed? g) (set-runner-stream r s)]
      [(fail? g) (set-runner-stream r failure)]
      [(fresh? g) (g s r)]
      [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
@@ -46,13 +46,7 @@
     ;;TODO streamline run-disj
     (let* ([lhs (run-goal (disj-car g) s r)]
 	   [rhs (run-goal (disj-cdr g) s lhs)])
-      (mplus (set-runner-stream rhs (runner-stream lhs)) rhs)))
-
-  (define (bind-complete r g)
-    (assert (and (goal? g) (runner? r) (complete? (runner-stream r))))
-    (let ([h (run-goal g (complete-car (runner-stream r)) r)])
-      (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
-    )
+      (mplus lhs rhs)))
   
   (define (mplus lhs rhs)
     ;; lhs contains the most recent table, so that runner should be used regardless of which stream is returned.
@@ -78,6 +72,12 @@
      [(complete? (runner-stream r)) (bind-complete r g)]
      [else (assert #f)]))
 
+    (define (bind-complete r g)
+    (assert (and (goal? g) (runner? r) (complete? (runner-stream r))))
+    (let ([h (run-goal g (complete-car (runner-stream r)) r)])
+      (mplus h (bind (set-runner-stream r (complete-cdr (runner-stream r))) g)))
+    )
+  
   (define (stream-step s r)
     (assert (and (stream? s) (runner? r)))
     (cond
@@ -85,5 +85,5 @@
      [(state? (runner-stream r)) (stream-step failure r)]
      [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) r)]
      [(mplus? s) (mplus (stream-step (mplus-rhs s) r) (mplus-lhs s))]
-     [(complete? s) (set-runner-stream r (complete-cdr ))]
+     [(complete? s) (set-runner-stream r (complete-cdr (runner-stream r)))]
      [else (assert #f)])))
