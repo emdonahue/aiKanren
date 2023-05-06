@@ -16,26 +16,24 @@
     (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
 
   (define (run-goal g s p)
-    (assert (and (goal? g) (state? s) (package? p)))
+    (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
     (cond     
      [(succeed? g) (values s p)]
      [(fail? g) (values failure p)]
      [(fresh? g) (g s p)]
      [(unification? g) (values (unify s (unification-lhs g) (unification-rhs g)) p)]
-     [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
-		  (bind (conj-cdr g) s p))]
-     [(disj? g) (run-disj g s p)]
+     [(conj? g)
+      (let-values ([(s p) (run-goal (conj-car g) s p)])
+	(bind (conj-cdr g) s p))]
+     [(disj? g)
+      (let*-values
+	  ([(lhs p) (run-goal (disj-car g) s p)]
+	   [(rhs p) (run-goal (disj-cdr g) s p)])
+     (values (mplus lhs rhs) p))]
      [else (assert #f)]))
-
-  (define (run-disj g s p)
-    ;;TODO streamline run-disj
-    (let*-values
-     ([(lhs p) (run-goal (disj-car g) s p)]
-      [(rhs p) (run-goal (disj-cdr g) s p)])
-     (values (mplus lhs rhs) p)))
   
   (define (mplus lhs rhs)
-    (assert (and (stream? lhs) (stream? rhs)))
+    (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
@@ -44,23 +42,20 @@
      [else (assert #f)]))
 
   (define (bind g s p)
-    (assert (and (goal? g) (stream? s) (package? p)))
+    (assert (and (goal? g) (stream? s) (package? p))) ; ->stream? package?
     (cond
      [(failure? s) (values s p)]
      [(state? s) (run-goal g s p)]
      [(incomplete? s) (make-incomplete g s)]
-     [(complete? s) (bind-complete g s p)]
+     [(complete? s)
+      (let*-values
+	  ([(h p) (run-goal g (complete-car s) p)]
+	   [(r p) (bind g (complete-cdr s) p)])
+	(values (mplus h r) p))]
      [else (assert #f)]))
-
-  (define (bind-complete g s p)
-    (assert (and (goal? g) (stream? s) (package? p)))
-    (let-values ([(h p) (run-goal g (complete-car s) p)])
-      (let-values ([(r p) (bind g (complete-cdr s) p)])
-	(values (mplus h r) p)))
-    )
   
   (define (stream-step s p)
-    (assert (and (stream? s) (package? p)))
+    (assert (and (stream? s) (package? p))) ; ->stream? package?
     (cond
      [(failure? s) (values s p)]
      [(state? s) (values failure p)]
