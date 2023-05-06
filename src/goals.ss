@@ -1,5 +1,5 @@
 (library (goals)
-  (export make-unification unification? unification-lhs unification-rhs make-conj make-disj disj-lhs disj-rhs goal? fresh? succeed fail succeed? fail? conj* conj? conj-car conj-cdr)
+  (export make-unification unification? unification-lhs unification-rhs make-conj make-disj disj-lhs disj-rhs goal? fresh? succeed fail succeed? fail? conj conj* conj? conj-car conj-cdr)
   (import (chezscheme))
 
   (define-structure (unification lhs rhs))

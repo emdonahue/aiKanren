@@ -11,6 +11,10 @@
   
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
+
+  (define-syntax stream-case
+    (syntax-rules (else)
+      ))
   
   (define (run-goal g s r)
     (assert (and (goal? g) (state? s) (runner? r)))

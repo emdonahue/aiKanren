@@ -24,11 +24,11 @@
       [(_ (q) g ...)
        (fresh-vars
 	empty-state start-state (q)
-	(make-runner (make-incomplete (conj* g ...) start-state) q 'table))]
+	(build-runner start-state q g ...))]
       [(_ (q0 q ...) g ...)
        (fresh-vars
 	empty-state start-state (q0 q ...)
-	(make-runner (make-incomplete (conj* g ...) start-state) (list q0 q ...) 'table))]))
+	(build-runner start-state (list q0 q ...) g ...))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -49,6 +49,6 @@
       [(_ start-state end-state (q0 q ...) body ...)
        (let-values ([(q0 intermediate-state) (instantiate-var start-state)])
 	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
-#;
+
     (define (build-runner state query . conjuncts)
-      (make-runner (make-incomplete (conj* conjuncts)))))
+      (make-runner (make-incomplete (conj conjuncts) state) query 'table)))
