@@ -1,12 +1,14 @@
 (library (ui)
-  (export == conde run fresh runner runner-next runner-step runner-null? runner-take)
+  (export == conde run run* fresh runner runner-next runner-step runner-null? runner-take)
   (import (chezscheme) (streams) (state) (runner) (running) (goals))
 
   (define (== x y)
     (make-unification x y))
 
-  (define (conde x y)
-    (make-disj x y))
+  (define-syntax conde
+    (syntax-rules ()
+      [(_ (g ...) ...)
+       (disj* (conj* g ...) ...)]))
   
  (define-syntax fresh
    (syntax-rules ()
@@ -21,6 +23,8 @@
 
   (define-syntax runner
     (syntax-rules ()
+      [(_ () g ...)
+       (top-level-runner empty-state '() g ...)]
       [(_ (q) g ...)
        (fresh-vars
 	empty-state start-state (q)

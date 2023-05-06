@@ -1,10 +1,10 @@
 (library (goals)
-  (export make-unification unification? unification-lhs unification-rhs make-conj make-disj disj-lhs disj-rhs goal? fresh? succeed fail succeed? fail? conj conj* conj? conj-car conj-cdr)
+  (export make-unification unification? unification-lhs unification-rhs disj disj* disj? disj-car disj-cdr goal? fresh? succeed fail succeed? fail? conj conj* conj? conj-car conj-cdr)
   (import (chezscheme))
 
   (define-structure (unification lhs rhs))
   (define-structure (conj conjuncts))
-  (define-structure (disj lhs rhs))
+  (define-structure (disj disjuncts))
 
   (define succeed 'succeed)
   (define fail 'fail)
@@ -28,4 +28,16 @@
 
   (define (conj-cdr c)
     (assert (conj? c))
-    (conj (cdr (conj-conjuncts c)))))
+    (conj (cdr (conj-conjuncts c))))
+
+  (define (disj disjuncts)
+    (if (null? disjuncts) succeed (make-disj disjuncts)))
+
+  (define (disj* . disjuncts)
+    (disj disjuncts))
+
+  (define (disj-car d)
+    (car (disj-disjuncts d)))
+
+  (define (disj-cdr d)
+    (disj (cdr (disj-disjuncts d)))))

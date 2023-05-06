@@ -1,6 +1,6 @@
 ;;TODO break up streams.ss
 (library (streams)
-  (export mplus make-unification make-disj run-goal make-incomplete stream-step complete? bind)
+  (export mplus make-unification run-goal make-incomplete stream-step complete? bind)
   (import (chezscheme) (state) (failure) (runner) (goals))  
 
   (define-structure (mplus lhs rhs))
@@ -12,9 +12,19 @@
   (define (stream? s)
     (or (mplus? s) (bind? s) (incomplete? s) (failure? s) (answer? s) (guarded? s) (complete? s)))
 
+  ;;TODO consider simplifying bind/mplus with stream-case
+  #;
   (define-syntax stream-case
     (syntax-rules (else)
-      ))
+      [(_ in-runner in-stream [else out-runner ...])
+       (begin out-runner ...)]
+      [(_ in-runner in-stream [type? out-runner ...])
+       (if (type? (in-stream)))]
+      [(_ in-runner in-stream [type? out-stream] ...)
+       (if (type? (runner-stream in-runner))
+
+	   )
+       3]))
   
   (define (run-goal g s r)
     (assert (and (goal? g) (state? s) (runner? r)))
@@ -24,10 +34,12 @@
      [(fresh? g) (g s r)]
      [(unification? g) (set-runner-stream r (unify s (unification-lhs g) (unification-rhs g)))]
      [(conj? g) (bind (conj-cdr g) (run-goal (conj-car g) s r))]
+     [(disj? g) (mplus (run-goal (disj-car g) s r))]
      [else (assert #f)]
      ))
   
   (define (mplus lhs rhs)
+    (assert #f)
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
