@@ -3,7 +3,7 @@
   (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraints))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
-  (define empty-state (make-state empty-substitution #f '() #f 0))
+  (define empty-state (make-state empty-substitution empty-constraint-store '() #f 0))
 
   (define (set-state-substitution s substitution)
     (if (not (failure? substitution))
@@ -28,7 +28,10 @@
   (define (reify s v)
     (cond
      [(pair? v) (cons (reify s (car v)) (reify s (cdr v)))]
-     [(var? v) (reify s (substitution:walk (state-substitution s) v))]
+     [(var? v)
+      (let ([v (substitution:walk (state-substitution s) v)])
+	(if (var? v) (get-constraint (state-constraints s) v v)
+	    (reify s v)))]
      [else v]))
 
    (define (unify s x y)

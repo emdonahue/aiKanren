@@ -1,5 +1,5 @@
 (library (constraints)
-  (export make-constraint empty-constraint-store disequality empty-disequality disequality-car disequality-cdr satisfied satisfied? unsatisfiable unsatisfiable? get-constraint add-constraint merge-disequality)
+  (export make-constraint empty-constraint-store disequality empty-disequality disequality-car disequality-cdr satisfied satisfied? unsatisfiable unsatisfiable? get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality)
   (import (chezscheme) (failure) (var))
 
   (define-structure (constraint-store constraints))
@@ -17,11 +17,15 @@
   (define (set-disequality c d)
     (assert (and (constraint? c) (disequality? d)))
     (let ([c (vector-copy c)])
-      (set-disequality c d) c))
+      (set-constraint-disequality! c d) c))
   
-  (define (get-constraint s v)
+  (define (get-constraint-binding s v)
     (assert (and (constraint-store? s) (var? v)))
-    (assoc (constraint-store-constraints s) v))
+    (assoc v (constraint-store-constraints s)))
+
+  (define (get-constraint s v default)
+    (let  ([b (get-constraint-binding s v)])
+      (if b (cdr b) default)))
 
   (define (add-constraint s v c)
     (assert (and (constraint-store? s) (var? v) (constraint? c)))
@@ -29,12 +33,13 @@
 
   (define (update-constraint s v c)
     (assert (and (constraint-store? s) (pair? v) (var? (car v)) (constraint? c)))
-    (make-constraint-store (cons (cons v c) (remq v (constraint-store-constraints s)))))
+    (make-constraint-store (cons (cons (car v) c) (remq v (constraint-store-constraints s)))))
 
   (define (merge-disequality s v d)
-    (assert (and (constraint-store? s) (var? d) (disequality? d)))
-    (let ([c (get-constraint s v)])
-      (if c (add-constraint s v (set-disequality empty-constraint d))
-	  (update-constraint s c (set-disequality c d)))))
+    (assert (and (constraint-store? s) (var? v) (disequality? d)))
+    (let ([c (get-constraint-binding s v)])
+      (if c (update-constraint s c (set-disequality (cdr c) d))
+	  (add-constraint s v (set-disequality empty-constraint d))
+	  )))
 
 )

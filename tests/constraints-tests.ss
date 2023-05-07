@@ -1,8 +1,11 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (state) (constraints) (failure))
+  (import (chezscheme) (ui) (test-runner) (state) (constraints) (failure) (var))
 
   (define (run-constraints-tests)
+    (define x0 (make-var 0))
+    (define x1 (make-var 1))
     (tassert "disunify always equal" (disunify empty-state 1 1) failure)
     (tassert "disunify always disequal" (disunify empty-state 1 2) empty-state)
+    (tassert "disunify 1 var" (constraint-disequality (reify (disunify empty-state x0 0) x0)) (disequality x0 0))
     ))

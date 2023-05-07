@@ -5,6 +5,9 @@
   (define-structure (substitution dict))
   (define empty-substitution (make-substitution sbral-empty))
 
+  (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
+  (define (unbound? v) (eq? unbound v))
+
   (define (walk s v)
     (if (var? v)
 	(let* ([dict (substitution-dict s)]
@@ -21,7 +24,7 @@
        [(and (var? x) (var? y))
 	(cond
 	 [(< (var-id x) (var-id y)) (extend s x y)]
-	 [(= (var-id x) (var-id y)) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [(var-equal? x y) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
