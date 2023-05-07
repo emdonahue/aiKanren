@@ -1,5 +1,5 @@
 (library (state)
-  (export make-state empty-state state? reify unify instantiate-var set-state-substitution walk guarded? answer?)
+  (export make-state empty-state state? reify unify instantiate-var set-state-substitution walk guarded? answer? disunify)
   (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
@@ -28,6 +28,9 @@
 
    (define (unify s x y)
      (set-state-substitution s (substitution:unify (state-substitution s) x y)))
+
+   (define (disunify s x y)
+     3)
 
    (define (walk s v)
      (substitution:walk (state-substitution s) v))

@@ -5,7 +5,7 @@
   (define (run-state-tests)
     (define x0 (make-var 0))
     (define x1 (make-var 1))
-    
+    (assert #f)
     (tassert "state walk ground" (walk empty-state 1) 1)
     (tassert "state walk free" (walk empty-state x0) x0)
     (tassert "unify ground-ground" (unify empty-state 1 1) empty-state)

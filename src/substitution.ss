@@ -13,24 +13,29 @@
 	v))
 
   (define (unify s x y)
-     (cond
-      [(failure? s) s]
-      [else (let ([x (walk s x)] [y (walk s y)])
-	      (cond
-	       [(eq? x y) s]
-	       [(and (var? x) (var? y))
-		(cond
-		 [(< (var-id x) (var-id y)) (extend s x y)]
-		 [(= (var-id x) (var-id y)) s] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-		 [else (extend s y x)])]
-	       [(var? x) (extend s x y)]
-	       [(var? y) (extend s y x)]
-	       [(and(pair? x) (pair? y))
-		(unify (unify s (car x) (car y)) (cdr x) (cdr y))]
-	       [else failure]))]))
+    (assert (substitution? s)) ; -> substitution? (disequalities)
+    (let ([x (walk s x)] [y (walk s y)])
+      (cond
+       [(eq? x y) (values s '())]
+       [(and (var? x) (var? y))
+	(cond
+	 [(< (var-id x) (var-id y)) (extend s x y)]
+	 [(= (var-id x) (var-id y)) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [else (extend s y x)])]
+       [(var? x) (extend s x y)]
+       [(var? y) (extend s y x)]
+       [(and (pair? x) (pair? y))
+	(let-values
+	    ([(s car-diseq) (unify s (car x) (car y))])
+	  (if (failure? s)
+	      (values failure '())
+	      (let-values ([(s cdr-diseq) (unify s (cdr x) (cdr y))])
+		(values s (append car-diseq cdr-diseq)))))]
+       [else (values failure '())])))
 
   (define (extend s x y)
-    (make-substitution
-     (sbral-set-ref
-      (substitution-dict s)
-      (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound))))
+    (values
+     (make-substitution
+      (sbral-set-ref
+       (substitution-dict s)
+       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)) (list (cons x y)))))
