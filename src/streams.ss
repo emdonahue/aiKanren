@@ -1,6 +1,6 @@
 (library (streams)
   (export mplus make-unification run-goal make-incomplete stream-step complete? bind)
-  (import (chezscheme) (state) (failure) (goals) (package)) 
+  (import (chezscheme) (state) (failure) (goals) (package) (values)) 
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
@@ -16,7 +16,7 @@
      [(succeed? g) (values s p)]
      [(fail? g) (values failure p)]
      [(fresh? g) (g s p)]
-     [(unification? g) (values (unify s (unification-lhs g) (unification-rhs g)) p)]
+     [(unification? g) (values (first-value (unify s (unification-lhs g) (unification-rhs g))) p)]
      [(conj? g)
       (let-values ([(s p) (run-goal (conj-car g) s p)])
 	(bind (conj-cdr g) s p))]
