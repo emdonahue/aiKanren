@@ -1,10 +1,11 @@
 #!/usr/bin/env -S scheme --libdirs src:tests:. --script
 
-(import (chezscheme) (sbral-tests) (substitution-tests) (state-tests) (runner-tests))
+(import (chezscheme) (sbral-tests) (substitution-tests) (state-tests) (runner-tests) (constraints-tests))
 
 (run-sbral-tests)
 (run-substitution-tests)
 (run-state-tests)
 (run-runner-tests)
+(run-constraints-tests)
 
 (display "Testing Complete\n")
