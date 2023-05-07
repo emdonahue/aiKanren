@@ -6,8 +6,10 @@
   (define-structure (constraint disequality type absento))
   
   (define empty-constraint-store (make-constraint-store '()))
-  (define-values (empty-disequality disequality-car disequality-cdr) (values '() car cdr))
-  (define (disequality lhs rhs)
-    (cons lhs rhs))
+  (define-values (empty-disequality disequality-car disequality-cdr disequality)
+    (values '() car cdr (case-lambda
+			  [(lhs rhs) (disequality lhs rhs empty-disequality)]
+			  [(lhs rhs rest) (cons (cons lhs rhs) rest)])))
+
   
   )

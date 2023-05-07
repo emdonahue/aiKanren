@@ -1,6 +1,6 @@
 (library (substitution)
   (export empty-substitution walk unify make-var var? var-id extend)
-  (import (chezscheme) (sbral) (var) (failure))
+  (import (chezscheme) (sbral) (var) (failure) (constraints))
 
   (define-structure (substitution dict))
   (define empty-substitution (make-substitution sbral-empty))
@@ -16,11 +16,11 @@
     (assert (substitution? s)) ; -> substitution? (disequalities)
     (let ([x (walk s x)] [y (walk s y)])
       (cond
-       [(eq? x y) (values s '())]
+       [(eq? x y) (values s empty-disequality)]
        [(and (var? x) (var? y))
 	(cond
 	 [(< (var-id x) (var-id y)) (extend s x y)]
-	 [(= (var-id x) (var-id y)) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [(= (var-id x) (var-id y)) (values s empty-disequality)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
@@ -31,11 +31,11 @@
 	      (values failure '())
 	      (let-values ([(s cdr-diseq) (unify s (cdr x) (cdr y))])
 		(values s (append car-diseq cdr-diseq)))))]
-       [else (values failure '())])))
+       [else (values failure empty-disequality)])))
 
   (define (extend s x y)
     (values
      (make-substitution
       (sbral-set-ref
        (substitution-dict s)
-       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)) (list (cons x y)))))
+       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)) (disequality x y))))
