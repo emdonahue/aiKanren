@@ -1,8 +1,8 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (state) (constraints))
+  (import (chezscheme) (ui) (test-runner) (state) (constraints) (failure))
 
   (define (run-constraints-tests)
-    (disunify 3 1 1)
-;    (tassert "disequality ground-ground" (disunify) 1)
+    (tassert "disunify ground-ground" (disunify empty-state 1 1) failure)
+    
     ))

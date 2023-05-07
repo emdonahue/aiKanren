@@ -1,6 +1,6 @@
 (library (substitution)
   (export empty-substitution walk unify make-var var? var-id extend)
-  (import (chezscheme) (sbral) (var) (failure) (constraints))
+  (import (chezscheme) (sbral) (var) (failure))
 
   (define-structure (substitution dict))
   (define empty-substitution (make-substitution sbral-empty))
@@ -12,15 +12,16 @@
 	  (if (unbound? walked) v (walk s walked)))
 	v))
 
+  ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
   (define (unify s x y)
-    (assert (substitution? s)) ; -> substitution? (disequalities)
+    (assert (substitution? s)) ; -> substitution? ((var? . val) ...)
     (let ([x (walk s x)] [y (walk s y)])
       (cond
-       [(eq? x y) (values s empty-disequality)]
+       [(eq? x y) (values s '())]
        [(and (var? x) (var? y))
 	(cond
 	 [(< (var-id x) (var-id y)) (extend s x y)]
-	 [(= (var-id x) (var-id y)) (values s empty-disequality)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [(= (var-id x) (var-id y)) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
@@ -31,11 +32,12 @@
 	      (values failure '())
 	      (let-values ([(s cdr-diseq) (unify s (cdr x) (cdr y))])
 		(values s (append car-diseq cdr-diseq)))))]
-       [else (values failure empty-disequality)])))
+       [else (values failure '())])))
 
   (define (extend s x y)
+    ;;TODO test whether checking constraints after every extension is faster than checking all constraints at the end
     (values
      (make-substitution
       (sbral-set-ref
        (substitution-dict s)
-       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)) (disequality x y))))
+       (- (sbral-length (substitution-dict s)) (var-id x) 1) y unbound)) (list (cons x y)))))
