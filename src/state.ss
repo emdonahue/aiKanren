@@ -47,38 +47,51 @@
 	  (run-constraints (run-constraint s c) (cdr cs)))))
 
   (define (run-constraint s c)
-    (assert (and (state? s) (constraint? c)))
+    ;;TODO make use of binding information to short circuit walks on first var in each constraint
+    (assert (and (state? s) (constraint? c))) ; -> state-or-failure?
     (cond
      [(satisfied? c) s]
      [(unsatisfiable? c) failure]
-     [else (run-disequality s (constraint-disequality c))]))
+     [else (run-disequalities s (constraint-disequality c))]))
 
-  (define (run-disequality s d)
-    (assert (and (state? s) (disequality? d)))
-    s)
+  (define (run-disequalities s ds) ; Disjunction of conjunctions of primitive disequalities.
+    (assert (and (state? s) (list? ds))) ; -> state-or-failure?
+    (if (or (failure? s) (null? ds)) s
+	(run-disequalities
+	 (run-disequality s (car ds)) (cdr ds))))
+
+  (define (run-disequality s d) ; Conjunction of primitive disequalities.
+    (assert (and (state? s) (disequality? d))) ; -> state-or-failure?
+    (if (or (failure? s) (disequality-null? d)) s
+	(run-disequality (disunify s (caar d) (cdar d)) (cdr d))))
+
+  #;
+  (define (run-disunification s d) 
+  (assert (and (state? s) (list? d)))	
+  (if ()))
    
-   (define (disunify s x y)
-     (assert (state? s)) ; -> state-or-failure?
-     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
-       (cond
-	[(failure? sub) s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
-	[(null? extensions) failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
-	[else
-	 (let* ([s (add-disequality s (caar extensions) extensions)]
-		[extended-var (cdar extensions)])
-	   (if (var? extended-var)
-	       (add-disequality s extended-var extensions) s))]
-	)))
+  (define (disunify s x y)
+    (assert (state? s))			; -> state-or-failure?
+    (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
+      (cond
+       [(failure? sub) s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
+       [(null? extensions) failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
+       [else
+	(let* ([s (add-disequality s (caar extensions) extensions)]
+	       [extended-var (cdar extensions)])
+	  (if (var? extended-var)
+	      (add-disequality s extended-var extensions) s))]
+       )))
      
 
-   (define (walk s v)
-     (substitution:walk (state-substitution s) v))
+  (define (walk s v)
+    (substitution:walk (state-substitution s) v))
    
-   (define (instantiate-var s)
-     (values (make-var (state-varid s)) (increment-varid s)))
+  (define (instantiate-var s)
+    (values (make-var (state-varid s)) (increment-varid s)))
 
-   ;; === CONSTRAINTS ===
+  ;; === CONSTRAINTS ===
    
-   (define (add-disequality s v d)
-     (assert (and (state? s) (var? v) (disequality? d)))
-     (set-state-constraints s (merge-disequality (state-constraints s) v d))))
+  (define (add-disequality s v d)
+    (assert (and (state? s) (var? v) (disequality? d)))
+    (set-state-constraints s (merge-disequality (state-constraints s) v d))))
