@@ -1,8 +1,8 @@
 (library (goals)
-  (export make-unification unification? unification-lhs unification-rhs disj make-disj disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? succeed fail succeed? fail? make-conj conj conj* conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
+  (export make-== ==? ==-lhs ==-rhs disj make-disj disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? succeed fail succeed? fail? make-conj conj conj* conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
   (import (chezscheme) (constraints))
 
-  (define-structure (unification lhs rhs))
+  (define-structure (== lhs rhs))
   (define-structure (conj conjuncts))
   (define-structure (disj disjuncts))
   (define-structure (stale fresh)) ; Negated fresh goal. Work with me here.
@@ -11,12 +11,12 @@
   (define-values (succeed fail) (values '(succeed) '(fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
-  (define == make-unification)
+  (define == make-==)
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (unification? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (stale? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (stale? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))
