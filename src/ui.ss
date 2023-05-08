@@ -1,6 +1,6 @@
 (library (ui)
   (export == conde run run* fresh runner runner-next runner-step runner-take failure?)
-  (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure))
+  (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure) (constraints))
 
   (define (== x y)
     (make-unification x y))
@@ -43,6 +43,8 @@
     (syntax-rules ()
       ((_ (q ...) g ...) (run -1 (q ...) g ...))))
 
+  (define =/= make-=/=)
+  
   ;; === UTILITIES ===
 
     (define-syntax fresh-vars

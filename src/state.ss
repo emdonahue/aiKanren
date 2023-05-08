@@ -1,5 +1,5 @@
 (library (state)
-  (export make-state empty-state state? reify unify instantiate-var set-state-substitution walk guarded? answer? disunify)
+  (export make-state empty-state state? reify unify instantiate-var set-state-substitution walk guarded? answer? disunify state-or-failure?)
   (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraints))
 
   (define-structure (state substitution constraints guards pseudocounts varid))
@@ -14,6 +14,8 @@
     (if (not (failure? c))
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
+
+  (define (state-or-failure? s) (or (state? s) (failure? s)))
   
   (define (answer? s)
     (and (state? s) (null? (state-guards s))))
@@ -38,6 +40,7 @@
      (set-state-substitution s (first-value (substitution:unify (state-substitution s) x y))))
    
    (define (disunify s x y)
+     (assert (state? s)) ; -> state-or-failure?
      (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
        (cond
 	[(failure? sub) s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
