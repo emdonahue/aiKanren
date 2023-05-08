@@ -8,6 +8,9 @@
     (tassert "disunify always equal" (run* (q) (=/= 1 1)) '())
     (tassert "disunify always disequal" (run* () (=/= 1 2)) '(()))
     (tassert "disunify free-ground" (constraint-disequality (run1 (x0) (=/= x0 0))) (disequality x0 0))
+    (tassert "disunify ground-free" (constraint-disequality (run1 (x0) (=/= 0 x0))) (disequality x0 0))
     (tassert "disunify free-free" (map constraint-disequality (run1 (x0 x1) (=/= x0 x1)))
 	     (list (disequality x0 x1) (disequality x0 x1)))
+    (tassert "disunify bound-ground" (run* (x0) (== x0 0) (=/= x0 0)) '())
+
     ))
