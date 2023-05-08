@@ -48,6 +48,13 @@
 
   (define (run-constraint s c)
     (assert (and (state? s) (constraint? c)))
+    (cond
+     [(satisfied? c) s]
+     [(unsatisfiable? c) failure]
+     [else (run-disequality s (constraint-disequality c))]))
+
+  (define (run-disequality s d)
+    (assert (and (state? s) (disequality? d)))
     s)
    
    (define (disunify s x y)
