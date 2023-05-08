@@ -1,5 +1,5 @@
 (library (ui)
-  (export == conde run run* fresh runner runner-next runner-step runner-take failure? =/=)
+  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/=)
   (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure) (constraints))
 
   (define (== x y)
@@ -42,6 +42,10 @@
   (define-syntax run*
     (syntax-rules ()
       ((_ (q ...) g ...) (run -1 (q ...) g ...))))
+  
+   (define-syntax run1
+    (syntax-rules ()
+      ((_ (q ...) g ...) (car (run 1 (q ...) g ...)))))
 
   (define =/= make-=/=)
   

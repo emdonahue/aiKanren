@@ -7,5 +7,7 @@
     (define x1 (make-var 1))
     (tassert "disunify always equal" (run* (q) (=/= 1 1)) '())
     (tassert "disunify always disequal" (run* () (=/= 1 2)) '(()))
-    (tassert "disunify 1 var" (constraint-disequality (reify (disunify empty-state x0 0) x0)) (disequality x0 0))
+    (tassert "disunify free-ground" (constraint-disequality (run1 (x0) (=/= x0 0))) (disequality x0 0))
+    (tassert "disunify free-free" (map constraint-disequality (run1 (x0 x1) (=/= x0 0) (=/= x1 1)))
+	     (list (disequality x0 0) (disequality x1 1)))
     ))
