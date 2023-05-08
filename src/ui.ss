@@ -14,9 +14,9 @@
       (lambda (start-state p)
 	(fresh-vars
 	 start-state end-state (q ...)
-	 (values (make-incomplete (fresh () g ...) end-state) package)))]))
+	 (values (make-incomplete (fresh () g ...) end-state) p)))]))
 
-  (define-syntax runner
+ (define-syntax runner
     (syntax-rules ()
       [(_ () g ...)
        (top-level-runner empty-state '() g ...)]
