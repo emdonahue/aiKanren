@@ -25,7 +25,7 @@
 	  ([(lhs p) (run-goal (disj-car g) s p)]
 	   [(rhs p) (run-goal (disj-cdr g) s p)])
 	(values (mplus lhs rhs) p))]
-     [(=/=? g) (values (disunify s =/=-lhs =/=-rhs) p)]
+     [(=/=? g) (values (disunify s (=/=-lhs g) (=/=-rhs g)) p)]
      [else (assert #f)]))
   
   (define (mplus lhs rhs)
