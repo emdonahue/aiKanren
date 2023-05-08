@@ -1,6 +1,6 @@
 (library (goals)
   (export make-unification unification? unification-lhs unification-rhs disj disj* disj? disj-car disj-cdr goal? fresh? succeed fail succeed? fail? conj conj* conj? conj-car conj-cdr)
-  (import (chezscheme))
+  (import (chezscheme) (constraints))
 
   (define-structure (unification lhs rhs))
   (define-structure (conj conjuncts))
@@ -14,7 +14,7 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (unification? g) (conj? g) (disj? g) (succeed? g) (fail? g)))
+    (or (fresh? g) (unification? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g)))
 
   (define (conj conjuncts)
     (if (null? conjuncts) succeed (make-conj conjuncts)))
