@@ -1,6 +1,6 @@
 ;a;TODO test more efficient constraint stores
 (library (constraints)
-  (export make-constraint empty-constraint-store disequality? empty-disequality disequality-car disequality-cdr satisfied satisfied? unsatisfiable unsatisfiable? get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality make-=/= =/=? =/=-lhs =/=-rhs)
+  (export make-constraint empty-constraint-store disequality? empty-disequality disequality-car disequality-cdr satisfied satisfied? unsatisfiable unsatisfiable? get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality make-=/= =/=? =/=-lhs =/=-rhs =/=)
   (import (chezscheme) (failure) (var))
 
   (define-structure (constraint-store constraints))
@@ -14,11 +14,13 @@
   (define-values (empty-disequality disequality? disequality-car disequality-cdr)
     (values '() pair? car cdr))
   (define-structure (=/= lhs rhs))
-  
+
   (define (set-disequality c d)
     (assert (and (constraint? c) (disequality? d)))
     (let ([c (vector-copy c)])
       (set-constraint-disequality! c d) c))
+
+  (define =/= make-=/=)
   
   (define (get-constraint-binding s v)
     (assert (and (constraint-store? s) (var? v)))

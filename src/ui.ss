@@ -2,9 +2,6 @@
   (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/=)
   (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure) (constraints))
 
-  (define (== x y)
-    (make-unification x y))
-
   (define-syntax conde
     (syntax-rules ()
       [(_ (g ...) ...)
@@ -12,14 +9,12 @@
   
  (define-syntax fresh
    (syntax-rules ()
-     [(_ () g ...)
-      (lambda (start-state p)
-	(fresh-suspend p start-state g ...))]
+     [(_ () g ...) (conj* g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
      [(_ (q ...) g ...)
       (lambda (start-state p)
 	(fresh-vars
 	 start-state end-state (q ...)
-	 (fresh-suspend p end-state g ...)))]))
+	 (values (make-incomplete (fresh () g ...) end-state) package)))]))
 
   (define-syntax runner
     (syntax-rules ()
@@ -46,8 +41,6 @@
    (define-syntax run1
     (syntax-rules ()
       ((_ (q ...) g ...) (car (run 1 (q ...) g ...)))))
-
-  (define =/= make-=/=)
   
   ;; === UTILITIES ===
 
@@ -61,7 +54,4 @@
 	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
 
     (define (top-level-runner state query . conjuncts)
-      (make-runner (make-incomplete (conj conjuncts) state) query empty-package))
-
-    (define (fresh-suspend package state . conjuncts)
-      (values (make-incomplete (conj conjuncts) state) package)))
+      (make-runner (make-incomplete (conj conjuncts) state) query empty-package)))
