@@ -64,11 +64,6 @@
     (assert (and (state-or-failure? s) (list? d))) ; -> state-or-failure?
     (if (or (failure? s) (disequality-null? d)) s
 	(run-disequality (disunify s (caar d) (cdar d)) (cdr d))))
-
-  #;
-  (define (run-disunification s d) 
-  (assert (and (state? s) (list? d)))	
-  (if ()))
    
   (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?

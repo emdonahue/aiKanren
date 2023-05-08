@@ -5,6 +5,7 @@
   (define (run-constraints-tests)
     (define x0 (make-var 0))
     (define x1 (make-var 1))
+    
     (tassert "disunify ground-self" (run* (q) (=/= 1 1)) '())
     (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
     (tassert "disunify free-self" (run* (x0) (=/= x0 x0)) '())
@@ -12,9 +13,12 @@
     (tassert "disunify ground-free" (constraint-disequality (run1 (x0) (=/= 0 x0))) (list (list (cons x0 0))))
     (tassert "disunify free-free" (map constraint-disequality (run1 (x0 x1) (=/= x0 x1)))
 	     (list (list (list (cons x0 x1))) (list (list (cons x0 x1)))))
-    (tassert "disunify pre-bound" (run* (x0) (== x0 0) (=/= x0 0)) '())
-    (tassert "disunify post-bound" (run* (x0) (=/= x0 0) (== x0 0)) '())
+    (tassert "disunify bound" (run* (x0) (== x0 0) (=/= x0 0)) '())
+    (tassert "disunify check" (run* (x0) (=/= x0 0) (== x0 0)) '())
     (tassert "disunify free-ground x2" (constraint-disequality (run1 (x0) (=/= x0 1) (=/= x0 0)))
 	     (list (list(cons x0 0)) (list (cons x0 1))))
-    
+    (tassert "disunify transfer to free then check" (run* (x0 x1) (=/= x0 1) (== x0 x1) (== x1 1)) '())
+    (tassert "disunify lists" (constraint-disequality (car (run1 (x0 x1) (=/= (cons x0 x1) (cons 0 1)))))
+	     (list (list (cons x0 0) (cons x1 1))))
+
     ))
