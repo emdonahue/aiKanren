@@ -46,8 +46,8 @@
 	[(failure? sub) s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
 	[(null? extensions) failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
 	[else
-	 (let* ([extended-var (caar extensions)]
-		[s (add-disequality s extended-var extensions)])
+	 (let* ([s (add-disequality s (caar extensions) extensions)]
+		[extended-var (cdar extensions)])
 	   (if (var? extended-var)
 	       (add-disequality s extended-var extensions) s))]
 	)))
