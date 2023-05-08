@@ -48,20 +48,20 @@
 
   (define (run-constraint s c)
     ;;TODO make use of binding information to short circuit walks on first var in each constraint
-    (assert (and (state? s) (constraint? c))) ; -> state-or-failure?
+    (assert (and (state-or-failure? s) (constraint? c))) ; -> state-or-failure?
     (cond
      [(satisfied? c) s]
      [(unsatisfiable? c) failure]
      [else (run-disequalities s (constraint-disequality c))]))
 
   (define (run-disequalities s ds) ; Disjunction of conjunctions of primitive disequalities.
-    (assert (and (state? s) (list? ds))) ; -> state-or-failure?
+    (assert (and (state-or-failure? s) (list? ds))) ; -> state-or-failure?
     (if (or (failure? s) (null? ds)) s
 	(run-disequalities
 	 (run-disequality s (car ds)) (cdr ds))))
 
   (define (run-disequality s d) ; Conjunction of primitive disequalities.
-    (assert (and (state? s) (disequality? d))) ; -> state-or-failure?
+    (assert (and (state-or-failure? s) (list? d))) ; -> state-or-failure?
     (if (or (failure? s) (disequality-null? d)) s
 	(run-disequality (disunify s (caar d) (cdar d)) (cdr d))))
 

@@ -12,7 +12,8 @@
     (tassert "disunify ground-free" (constraint-disequality (run1 (x0) (=/= 0 x0))) (list (list (cons x0 0))))
     (tassert "disunify free-free" (map constraint-disequality (run1 (x0 x1) (=/= x0 x1)))
 	     (list (list (list (cons x0 x1))) (list (list (cons x0 x1)))))
-    (tassert "disunify bound-ground" (run* (x0) (== x0 0) (=/= x0 0)) '())
+    (tassert "disunify pre-bound" (run* (x0) (== x0 0) (=/= x0 0)) '())
+    (tassert "disunify post-bound" (run* (x0) (=/= x0 0) (== x0 0)) '())
     (tassert "disunify free-ground x2" (constraint-disequality (run1 (x0) (=/= x0 1) (=/= x0 0)))
 	     (list (list(cons x0 0)) (list (cons x0 1))))
     
