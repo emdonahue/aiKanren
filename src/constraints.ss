@@ -11,7 +11,7 @@
   (define unsatisfiable '(unsatisfiable))
   (define (unsatisfiable? c) (eq? c unsatisfiable))
   (define empty-constraint-store (make-constraint-store '()))
-  (define-values (empty-disequality disequality? disequality-car disequality-cdr disequality)
+  (define-values (empty-disequality disequality? disequality-car disequality-cdr)
     (values '() pair? car cdr))
   (define-structure (=/= lhs rhs))
   
