@@ -62,4 +62,5 @@
    ;; === CONSTRAINTS ===
    
    (define (add-disequality s v d)
+     (assert (and (state? s) (var? v) (disequality? d)))
      (set-state-constraints s (merge-disequality (state-constraints s) v d))))

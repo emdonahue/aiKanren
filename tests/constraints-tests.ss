@@ -5,12 +5,15 @@
   (define (run-constraints-tests)
     (define x0 (make-var 0))
     (define x1 (make-var 1))
-    (tassert "disunify always equal" (run* (q) (=/= 1 1)) '())
-    (tassert "disunify always disequal" (run* () (=/= 1 2)) '(()))
+    (tassert "disunify ground-self" (run* (q) (=/= 1 1)) '())
+    (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
+    (tassert "disunify free-self" (run* (x0) (=/= x0 x0)) '())
     (tassert "disunify free-ground" (constraint-disequality (run1 (x0) (=/= x0 0))) (disequality x0 0))
     (tassert "disunify ground-free" (constraint-disequality (run1 (x0) (=/= 0 x0))) (disequality x0 0))
     (tassert "disunify free-free" (map constraint-disequality (run1 (x0 x1) (=/= x0 x1)))
 	     (list (disequality x0 x1) (disequality x0 x1)))
     (tassert "disunify bound-ground" (run* (x0) (== x0 0) (=/= x0 0)) '())
-
+    (tassert "disunify free-ground x2" (constraint-disequality (run1 (x0) (=/= x0 1) (=/= x0 0)))
+	     (list (list(cons x0 0)) (list (cons x0 1))))
+    
     ))
