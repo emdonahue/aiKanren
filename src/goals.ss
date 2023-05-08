@@ -1,6 +1,6 @@
 (library (goals)
-  (export make-== ==? ==-lhs ==-rhs disj make-disj disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? succeed fail succeed? fail? make-conj conj conj* conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
-  (import (chezscheme) (constraints))
+  (export make-== ==? ==-lhs ==-rhs disj make-disj disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
+  (import (chezscheme) (constraints) (datatypes))
 
   (define-structure (== lhs rhs))
   (define-structure (conj conjuncts))
@@ -8,9 +8,6 @@
   (define-structure (stale fresh)) ; Negated fresh goal. Work with me here.
 
   ;;TODO convert succeed, fail, and failure to lists with symbols
-  (define-values (succeed fail) (values '(succeed) '(fail)))
-  (define (succeed? g) (eq? g succeed))
-  (define (fail? g) (eq? g fail))
   (define == make-==)
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.

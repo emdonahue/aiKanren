@@ -1,5 +1,5 @@
 (library (ui)
-  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/=)
+  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/= absento)
   (import (chezscheme) (streams) (state) (runner) (running) (goals) (package) (failure) (constraints))
 
   (define-syntax conde

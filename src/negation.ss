@@ -1,6 +1,6 @@
 (library (negation)
   (export noto)
-  (import (chezscheme) (goals) (constraints))
+  (import (chezscheme) (goals) (constraints) (datatypes))
 
   (define (noto g)
     (assert (goal? g))

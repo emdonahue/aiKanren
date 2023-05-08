@@ -1,6 +1,6 @@
 (library (streams)
   (export mplus make-== run-goal make-incomplete stream-step complete? bind)
-  (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraints) (negation)) 
+  (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraints) (negation) (datatypes)) 
 
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
