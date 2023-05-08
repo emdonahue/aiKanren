@@ -30,8 +30,9 @@
      [else (assert #f)]))
 
   (define (unify s x y)
+    ;;TODO fold unify back into state
     (assert (state? s))
-    (first-value (state:unify s x y)))
+    (state:unify s x y))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?

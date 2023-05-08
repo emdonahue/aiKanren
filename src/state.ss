@@ -36,8 +36,19 @@
 	    (reify s v)))]
      [else v]))
 
-   (define (unify s x y)
-     (set-state-substitution s (first-value (substitution:unify (state-substitution s) x y))))
+  (define (unify s x y)
+    (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
+      (run-constraints (set-state-substitution s sub) extensions)))
+
+  (define (run-constraints s cs)
+    (assert (state-or-failure? s))
+    (if (or (failure? s) (null? cs)) s
+	(let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
+	  (run-constraints (run-constraint s c) (cdr cs)))))
+
+  (define (run-constraint s c)
+    (assert (and (state? s) (constraint? c)))
+    s)
    
    (define (disunify s x y)
      (assert (state? s)) ; -> state-or-failure?
