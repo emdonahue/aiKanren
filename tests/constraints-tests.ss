@@ -20,5 +20,5 @@
     (tassert "disunify transfer to free then check" (run* (x0 x1) (=/= x0 1) (== x0 x1) (== x1 1)) '())
     (tassert "disunify lists" (constraint-disequality (car (run1 (x0 x1) (=/= (cons x0 x1) (cons 0 1)))))
 	     (list (list (cons x0 0) (cons x1 1))))
-
+    
     ))
