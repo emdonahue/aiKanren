@@ -1,6 +1,6 @@
 (library (state)
   (export reify unify instantiate-var walk disunify)
-  (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraints) (datatypes))
+  (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraints) (negation) (datatypes))
   
   (define (reify s v)
     (cond
@@ -11,6 +11,9 @@
 	    (reify s v)))]
      [else v]))
 
+  (define (extensions->goal es)
+    (conj (map (lambda (e) (== (car e) (cdr e))) es)))
+  
   (define (unify s x y)
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
       (run-constraints (set-state-substitution s sub) extensions)))
@@ -43,6 +46,8 @@
   (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])
+      (printf "EXT: ~s~%" (extensions->goal extensions))
+      (printf "NEGATED: ~s~%" (noto (extensions->goal extensions)))
       (cond
        [(failure? sub) s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
        [(null? extensions) failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
