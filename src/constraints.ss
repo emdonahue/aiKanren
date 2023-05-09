@@ -1,6 +1,6 @@
 ;a;TODO test more efficient constraint stores
 (library (constraints)
-  (export get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality run-absento)
+  (export get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality run-absento merge-constraint)
   (import (chezscheme) (failure) (var) (datatypes))
   
   (define (get-constraint-binding s v)
@@ -19,6 +19,14 @@
     (assert (and (constraint-store? s) (pair? v) (var? (car v)) (constraint? c)))
     (make-constraint-store (cons (cons (car v) c) (remq v (constraint-store-constraints s)))))
 
+  (define (merge-constraint s v c)
+    (assert (and (constraint-store? s) (var? v) (goal? c)))
+    (let ([b (get-constraint-binding s v)])
+      (if b (update-constraint s b (set-constraint-goal (cdr b) (disj* c (constraint-goal (cdr b)))))
+	  (add-constraint s v (set-constraint-goal empty-constraint c))
+	  ))
+    )
+  
   (define (merge-disequality s v d)
     (assert (and (constraint-store? s) (var? v) (disequality? d)))
     (let ([c (get-constraint-binding s v)])

@@ -4,7 +4,7 @@
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints
 	  failure failure? guarded? answer? state-or-failure?
-	  make-constraint constraint? empty-constraint empty-constraint-store set-disequality constraint-store? constraint-store-constraints make-constraint-store constraint-disequality
+	  make-constraint constraint? empty-constraint empty-constraint-store set-disequality constraint-store? constraint-goal constraint-store-constraints make-constraint-store constraint-disequality set-constraint-goal
 	  satisfied satisfied? unsatisfiable unsatisfiable?
 	  make-absento absento?
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
@@ -29,14 +29,18 @@
 
     ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints))
-  (define-structure (constraint disequality type absento))
+  (define-structure (constraint disequality goal absento))
   (define-structure (absento atom term))
-  (define empty-constraint (make-constraint '() #f succeed))
+  (define empty-constraint (make-constraint '() succeed succeed))
   (define empty-constraint-store (make-constraint-store '()))
   (define (set-disequality c d)
     (assert (and (constraint? c) (disequality? d)))
     (let ([c (vector-copy c)])
       (set-constraint-disequality! c d) c))
+  (define (set-constraint-goal c g)
+    (assert (and (constraint? c) (goal? g)))
+    (let ([c (vector-copy c)])
+      (set-constraint-goal! c g) c))
  (define satisfied (make-constraint 'satisfied '_ '_))
   (define (satisfied? c) (eq? c satisfied)) ;TODO rename constraint so that constraint? can include non-structure elements such as satisfied/unsatisfiable
   (define unsatisfiable (make-constraint 'unsatisfiable '_ '_))
@@ -103,6 +107,7 @@
   (define (conj conjuncts)
     (assert (list? conjuncts))
     ;;TODO move failures to the front so they run first, but do not fail immediately in case we need to negate
+    ;;TODO append subconjuncts into a flat list
     (cond
      [(null? conjuncts) succeed]
      [(null? (cdr conjuncts)) (car conjuncts)]

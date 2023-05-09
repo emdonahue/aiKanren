@@ -104,7 +104,7 @@
     (let*-values ([(sub extensions) (state:unify s x y)]
 		  [(cg) (noto (extensions->goal extensions))]
 		  [(extensions) (if (not extensions) '() extensions)])
-      (printf "SUB: ~s EXT: ~s NEGATED: ~s~%" sub (extensions->goal extensions) cg)
+      ;(printf "SUB: ~s EXT: ~s NEGATED: ~s~%" sub (extensions->goal extensions) cg)
       (assert (or (not (null? extensions)) (and (failure? sub) (succeed? cg)) (and (not (failure? sub)) (fail? cg))))
 ;      (assert (or (null? extensions) (not (succeed? cg))))
       (cond
@@ -112,8 +112,7 @@
        ;[(failure? sub) (display "succeeded\n") s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
        ;[(null? extensions) (display "failed\n") failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
        [else
-	(display "moving constraint\n")
-	(printf "~s~%" extensions)
+	(printf "CONSTRAINT: ~s VARS: ~s STATE: ~s~%" cg (get-attributed-vars cg) (apply-constraints s cg))
 	(let* ([s (add-disequality s (caar extensions) extensions)]
 	       [extended-var (cdar extensions)])
 	  (if (var? extended-var)
@@ -122,6 +121,17 @@
     (define (add-disequality s v d)
     (assert (and (state? s) (var? v) (disequality? d)))
     (set-state-constraints s (merge-disequality (state-constraints s) v d)))
+
+    (define (get-attributed-vars c)
+      (assert (not (conj? c)))
+      (if (disj? c) (get-attributed-vars (disj-car c)) (filter var? (vector->list c))))
+
+    (define (apply-constraints s c)
+      (if (conj? c) (fold-left apply-constraints s (disj-disjuncts c)))
+      (fold-left
+       (lambda (s v)
+	 (set-state-constraints s
+	  (merge-constraint (state-constraints s) v c))) s (get-attributed-vars c)))
 
 
   )
