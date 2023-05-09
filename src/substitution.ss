@@ -1,9 +1,6 @@
 (library (substitution)
   (export empty-substitution walk unify make-var var? var-id extend)
-  (import (chezscheme) (sbral) (var) (failure))
-
-  (define-structure (substitution dict))
-  (define empty-substitution (make-substitution sbral-empty))
+  (import (chezscheme) (sbral) (var) (failure) (datatypes))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))

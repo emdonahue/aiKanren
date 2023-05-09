@@ -1,7 +1,7 @@
-; Abstract over the representation of a failure stream, which is shared in common among many parts of the system including streams, states, and substitutions
+;;TODO delete failure.ss
+					; Abstract over the representation of a failure stream, which is shared in common among many parts of the system including streams, states, and substitutions
 (library (failure)
-  (export failure failure?)
+  (export)
   (import (chezscheme))
 
-  (define failure '())
-  (define failure? null?))
+)

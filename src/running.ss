@@ -1,6 +1,6 @@
 (library (running)
   (export runner-next runner-step runner-take)
-  (import (chezscheme) (runner) (streams) (failure) (state))
+  (import (chezscheme) (runner) (streams) (failure) (state) (datatypes))
 
   (define (runner-null? r)
     (assert (runner? r))

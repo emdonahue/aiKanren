@@ -27,6 +27,7 @@
 	(values (mplus lhs rhs) p))]
      [(=/=? g) (values (disunify s (=/=-lhs g) (=/=-rhs g)) p)]
      [(stale? g) (run-goal (noto (g)) s p)]
+     [(absento? g) (values (run-absento s g) p)]
      [else (assert #f)]))
 
   (define (unify s x y)

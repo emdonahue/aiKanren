@@ -1,28 +1,7 @@
 ;a;TODO test more efficient constraint stores
 (library (constraints)
-  (export make-constraint constraint? empty-constraint-store disequality? empty-disequality disequality-car disequality-cdr disequality-null? satisfied satisfied? unsatisfiable unsatisfiable? get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality make-=/= =/=? =/=-lhs =/=-rhs =/= absento absento? absento-term)
+  (export get-constraint get-constraint-binding add-constraint merge-disequality constraint-disequality run-absento)
   (import (chezscheme) (failure) (var) (datatypes))
-
-  (define-structure (constraint-store constraints))
-  (define-structure (constraint disequality type absento))
-  (define-structure (absento term))
-  (define absento make-absento)
-  (define empty-constraint (make-constraint '() #f succeed))
-  (define satisfied (make-constraint 'satisfied '_ '_))
-  (define (satisfied? c) (eq? c satisfied)) ;TODO rename constraint so that constraint? can include non-structure elements such as satisfied/unsatisfiable
-  (define unsatisfiable (make-constraint 'unsatisfiable '_ '_))
-  (define (unsatisfiable? c) (eq? c unsatisfiable))
-  (define empty-constraint-store (make-constraint-store '()))
-  (define-values (empty-disequality disequality? disequality-car disequality-cdr disequality-null?)
-    (values '() list? car cdr null?))
-  (define-structure (=/= lhs rhs))
-
-  (define (set-disequality c d)
-    (assert (and (constraint? c) (disequality? d)))
-    (let ([c (vector-copy c)])
-      (set-constraint-disequality! c d) c))
-
-  (define =/= make-=/=)
   
   (define (get-constraint-binding s v)
     (assert (and (constraint-store? s) (var? v)))
@@ -47,4 +26,8 @@
 	  (add-constraint s v (set-disequality empty-constraint (cons d empty-disequality)))
 	  )))
 
+  (define (run-absento s a)
+    (assert (and (state? s) (absento? a))) ; -> state-or-fail?
+    (assert #f))
+  
 )

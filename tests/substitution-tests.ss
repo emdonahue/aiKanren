@@ -1,6 +1,6 @@
 (library (substitution-tests)
   (export run-substitution-tests)
-  (import (chezscheme) (substitution) (test-runner) (failure) (values) (constraints))
+  (import (chezscheme) (substitution) (test-runner) (failure) (values) (constraints) (datatypes))
 
   (define (run-substitution-tests)
     (define x0 (make-var 0))
