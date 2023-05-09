@@ -36,7 +36,7 @@
     (let-values ([(sub extensions) (state:unify s x y)])
       ;(printf "SUB ~s EXT ~s~%" sub extensions)
       (let ([stat (run-constraints (set-state-substitution s sub) extensions)])
-	;(printf "CONST: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) stat (run-constraints2 s (extensions->goal extensions)))
+	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
 	stat)))
   
   (define (mplus lhs rhs)
@@ -80,11 +80,24 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(==? g) (run-constraints2
-	       s (constraint-goal
-		  (get-constraint (state-constraints s)
-				  (==-lhs g) empty-constraint)))]
-     [else (void)])
+     [(==? g) (run-constraint-goal
+	       (constraint-goal
+		(get-constraint (state-constraints s)
+				(==-lhs g) empty-constraint))
+	       s)] 
+     ;[(conj? g) ]
+     [else (assert #f)])
+    )
+
+  (trace-define (run-constraint-goal g s)
+    (assert (and (state-or-failure? s) (goal? g)))
+    (cond
+     [(failure? s) s]
+     [(succeed? g) s]
+     [(fail? g) failure]
+     [(=/=? g) (disunify s (=/=-lhs g) (=/=-rhs g))]
+     [(conj? g) (run-constraint-goal (conj-cdr g) (run-constraint-goal (conj-car g) s))]
+     [else (assert #f)])
     )
   
   (define (run-constraints s cs)
@@ -131,10 +144,11 @@
        ;[(null? extensions) (display "failed\n") failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
        [else
 	;;(printf "CONSTRAINT: ~s VARS: ~s STATE: ~s~%" cg (get-attributed-vars cg) (apply-constraints s cg))
-	(let* ([s (add-disequality s (caar extensions) extensions)]
-	       [extended-var (cdar extensions)])
-	  (if (var? extended-var)
-	      (add-disequality s extended-var extensions) s))]
+	(apply-constraints
+	 (let* ([s (add-disequality s (caar extensions) extensions)]
+		[extended-var (cdar extensions)])
+	   (if (var? extended-var)
+	       (add-disequality s extended-var extensions) s)) cg)]
        )))
     (define (add-disequality s v d)
     (assert (and (state? s) (var? v) (disequality? d)))

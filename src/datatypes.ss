@@ -14,7 +14,7 @@
   (import (chezscheme) (sbral))
 
   ;; === VAR ===
-  (define-structure (var id))
+  (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
   (define var-equal? equal?)
   
   ;; === STREAMS ===
@@ -92,7 +92,7 @@
   (define =/= make-=/=)
 
   ;; === GOALS ===
-  (define-structure (== lhs rhs))
+  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
   (define-structure (conj conjuncts))
   (define-structure (disj disjuncts))
   (define-structure (stale fresh)) ; Negated fresh goal. Work with me here.

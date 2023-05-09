@@ -22,7 +22,7 @@
   (define (merge-constraint s v c)
     (assert (and (constraint-store? s) (var? v) (goal? c)))
     (let ([b (get-constraint-binding s v)])
-      (if b (update-constraint s b (set-constraint-goal (cdr b) (disj* c (constraint-goal (cdr b)))))
+      (if b (update-constraint s b (set-constraint-goal (cdr b) (conj* c (constraint-goal (cdr b)))))
 	  (add-constraint s v (set-constraint-goal empty-constraint c))
 	  ))
     )
