@@ -71,11 +71,22 @@
 
 
   ;; === DISEQUALITY ===
+
+  (trace-define (run-constraints2 s g)
+    (assert (and (state-or-failure? s) (goal? g)))
+    (cond
+     [(succeed? g) s]
+     [(fail? g) failure]
+     [else (void)])
+    )
+  
   (define (run-constraints s cs)
     (assert (state-or-failure? s))
-    (if (or (failure? s) (null? cs)) s
-	(let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
-	  (run-constraints (run-constraint s c) (cdr cs)))))
+    (let ([state (if (or (failure? s) (null? cs)) s
+		     (let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
+		       (run-constraints (run-constraint s c) (cdr cs))))])
+      (printf "OLDS: ~s~%NEWS: ~s~%~%" state (run-constraints2 state (extensions->goal cs)))
+      state))
 
   (define (run-constraint s c)
     ;;TODO make use of binding information to short circuit walks on first var in each constraint
@@ -112,7 +123,7 @@
        ;[(failure? sub) (display "succeeded\n") s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
        ;[(null? extensions) (display "failed\n") failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
        [else
-	(printf "CONSTRAINT: ~s VARS: ~s STATE: ~s~%" cg (get-attributed-vars cg) (apply-constraints s cg))
+	;;(printf "CONSTRAINT: ~s VARS: ~s STATE: ~s~%" cg (get-attributed-vars cg) (apply-constraints s cg))
 	(let* ([s (add-disequality s (caar extensions) extensions)]
 	       [extended-var (cdar extensions)])
 	  (if (var? extended-var)
