@@ -31,7 +31,7 @@
 	  (if (failure? s)
 	      (values failure #f)
 	      (let-values ([(s cdr-extensions) (unify s (cdr x) (cdr y))])
-		(values s (append car-extensions cdr-extensions)))))]
+		(values s (if (failure? s) #f (append car-extensions cdr-extensions))))))]
        [else (values failure #f)])))
 
   #;

@@ -34,7 +34,10 @@
     ;;TODO fold unify back into state
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])
-      (run-constraints (set-state-substitution s sub) extensions)))
+      ;(printf "SUB ~s EXT ~s~%" sub extensions)
+      (let ([stat (run-constraints (set-state-substitution s sub) extensions)])
+	;(printf "CONST: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) stat (run-constraints2 s (extensions->goal extensions)))
+	stat)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -72,20 +75,24 @@
 
   ;; === DISEQUALITY ===
 
-  (trace-define (run-constraints2 s g)
+  (define (run-constraints2 s g)
     (assert (and (state-or-failure? s) (goal? g)))
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
+     [(==? g) (run-constraints2
+	       s (constraint-goal
+		  (get-constraint (state-constraints s)
+				  (==-lhs g) empty-constraint)))]
      [else (void)])
     )
   
   (define (run-constraints s cs)
-    (assert (state-or-failure? s))
+    (assert (and (state-or-failure? s) (not (goal? cs))))
     (let ([state (if (or (failure? s) (null? cs)) s
 		     (let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
 		       (run-constraints (run-constraint s c) (cdr cs))))])
-      (printf "OLDS: ~s~%NEWS: ~s~%~%" state (run-constraints2 state (extensions->goal cs)))
+      
       state))
 
   (define (run-constraint s c)
