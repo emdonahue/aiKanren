@@ -33,7 +33,8 @@
   (define (unify s x y)
     ;;TODO fold unify back into state
     (assert (state? s))
-    (state:unify s x y))
+    (let-values ([(sub extensions) (state:unify s x y)])
+      (run-constraints (set-state-substitution s sub) extensions)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -66,4 +67,58 @@
      [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) s) p))]
      [(complete? s) (values (complete-cdr s) p)]
-     [else (assert #f)])))
+     [else (assert #f)]))
+
+
+  ;; === DISEQUALITY ===
+  (define (run-constraints s cs)
+    (assert (state-or-failure? s))
+    (if (or (failure? s) (null? cs)) s
+	(let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
+	  (run-constraints (run-constraint s c) (cdr cs)))))
+
+  (define (run-constraint s c)
+    ;;TODO make use of binding information to short circuit walks on first var in each constraint
+    (assert (and (state-or-failure? s) (constraint? c))) ; -> state-or-failure?
+    (cond
+     [(satisfied? c) s]
+     [(unsatisfiable? c) failure]
+     [else (run-disequalities s (constraint-disequality c))]))
+
+  (define (run-disequalities s ds) ; Disjunction of conjunctions of primitive disequalities.
+    (assert (and (state-or-failure? s) (list? ds))) ; -> state-or-failure?
+    (if (or (failure? s) (null? ds)) s
+	(run-disequalities
+	 (run-disequality s (car ds)) (cdr ds))))
+
+  (define (run-disequality s d) ; Conjunction of primitive disequalities.
+    (assert (and (state-or-failure? s) (list? d))) ; -> state-or-failure?
+    (if (or (failure? s) (disequality-null? d)) s
+	(run-disequality (disunify s (caar d) (cdar d)) (cdr d))))
+
+  (define (extensions->goal es)
+    (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))
+  
+  (define (disunify s x y)
+    (assert (state? s))			; -> state-or-failure?
+    (let*-values ([(sub extensions) (state:unify s x y)]
+		  [cg (noto (extensions->goal extensions))])
+      (printf "EXT: ~s~%" (extensions->goal extensions))
+      (printf "NEGATED: ~s~%" (noto (extensions->goal extensions)))
+      (cond
+       [(or (succeed? cg) (fail? cg)) (run-goal cg s empty-package)] ;TODO factor package out of goal runner. not needed here
+       [(failure? sub) (display "succeeded\n") s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
+       [(null? extensions) (display "failed\n") failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
+       [else
+	(display "moving constraint\n")
+	(let* ([s (add-disequality s (caar extensions) extensions)]
+	       [extended-var (cdar extensions)])
+	  (if (var? extended-var)
+	      (add-disequality s extended-var extensions) s))]
+       )))
+    (define (add-disequality s v d)
+    (assert (and (state? s) (var? v) (disequality? d)))
+    (set-state-constraints s (merge-disequality (state-constraints s) v d)))
+
+
+  )

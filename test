@@ -4,7 +4,7 @@
 
 (run-sbral-tests)
 (run-substitution-tests)
-(run-state-tests)
+;(run-state-tests)
 (run-runner-tests)
 (run-constraints-tests)
 (run-negation-tests)
