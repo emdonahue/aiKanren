@@ -32,12 +32,11 @@
 
   (define (unify s x y)
     ;;TODO fold unify back into state
+    ;;(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
+    ;;(printf "SUB ~s EXT ~s~%" sub extensions)
     (assert (state? s))
-    (let-values ([(sub extensions) (state:unify s x y)])
-      ;(printf "SUB ~s EXT ~s~%" sub extensions)
-      (let ([stat (run-constraints (set-state-substitution s sub) extensions)])
-	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
-	stat)))
+    (let-values ([(sub extensions) (state:unify s x y)])      
+      (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions))))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -116,19 +115,9 @@
     (cond
      [(or (succeed? g)) (fail? g) g]
      [(=/=? g) (noto (extensions->goal (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1)))]
-     [(conj? g) (simplify-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
-     [(disj? g) (simplify-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
+     [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
+     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
      ))
-
-  (define (simplify-conj conjuncts)
-    (conj (if (memq fail conjuncts)
-	 (list fail) (filter (lambda (g) (not (succeed? g))) conjuncts)))
-    )
-
-   (define (simplify-disj disjuncts)
-    (disj (if (memq succeed disjuncts)
-	 (list succeed) (filter (lambda (g) (not (fail? g))) disjuncts)))
-    )
   
   (define (run-constraints s cs)
     (assert (and (state-or-failure? s) (not (goal? cs))))

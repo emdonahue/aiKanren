@@ -10,7 +10,7 @@
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
 	  absento
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
   (import (chezscheme) (sbral))
 
   ;; === VAR ===
@@ -116,6 +116,10 @@
   (define (conj* . conjs)
     (conj conjs))
 
+  (define (normalized-conj conjuncts)
+    (conj (if (memq fail conjuncts)
+	 (list fail) (filter (lambda (g) (not (succeed? g))) conjuncts))))
+  
   (define (conj-car c)
     (assert (conj? c))
     (car (conj-conjuncts c)))
@@ -134,6 +138,10 @@
 
   (define (disj* . disjuncts)
     (disj disjuncts))
+
+  (define (normalized-disj disjuncts)
+    (disj (if (memq succeed disjuncts)
+	      (list succeed) (filter (lambda (g) (not (fail? g))) disjuncts))))
 
   (define (disj-car d)
     (car (disj-disjuncts d)))
