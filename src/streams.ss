@@ -30,13 +30,13 @@
      [(absento? g) (values (run-absento s g) p)]
      [else (assert #f)]))
 
-  (define (unify s x y)
+  (trace-define (unify s x y)
     ;;TODO fold unify back into state
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])
       ;(printf "SUB ~s EXT ~s~%" sub extensions)
       (let ([stat (run-constraints (set-state-substitution s sub) extensions)])
-	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
+	#;	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
 	stat)))
   
   (define (mplus lhs rhs)
@@ -77,6 +77,8 @@
 
   (define (run-constraints2 s g)
     (assert (and (state-or-failure? s) (goal? g)))
+    s
+    #;
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
@@ -95,8 +97,10 @@
      [(failure? s) s]
      [(succeed? g) s]
      [(fail? g) failure]
+     [(==? g) (unify s (==-lhs g) (==-rhs g))]
      [(=/=? g) (disunify s (=/=-lhs g) (=/=-rhs g))]
      [(conj? g) (run-constraint-goal (conj-cdr g) (run-constraint-goal (conj-car g) s))]
+     [(disj? g) (printf "DISJ: ~s~%" (run-constraint-goal (noto g) s)) (assert #f)]
      [else (assert #f)])
     )
   
@@ -105,7 +109,6 @@
     (let ([state (if (or (failure? s) (null? cs)) s
 		     (let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
 		       (run-constraints (run-constraint s c) (cdr cs))))])
-      
       state))
 
   (define (run-constraint s c)
@@ -130,7 +133,7 @@
   (define (extensions->goal es)
     (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))
   
-  (define (disunify s x y)
+  (trace-define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
     (let*-values ([(sub extensions) (state:unify s x y)]
 		  [(cg) (noto (extensions->goal extensions))]

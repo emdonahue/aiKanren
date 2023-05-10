@@ -40,7 +40,9 @@
   
    (define-syntax run1
     (syntax-rules ()
-      ((_ (q ...) g ...) (car (run 1 (q ...) g ...)))))
+      ((_ (q ...) g ...)
+       (let ([ans (run 1 (q ...) g ...)])
+	 (if (null? ans) (void) (car ans))))))
   
   ;; === UTILITIES ===
 
