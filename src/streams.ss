@@ -92,8 +92,9 @@
 
   (define (run-constraint-goal g s)
     (assert (and (state-or-failure? s) (goal? g)))
-    (printf "SIMPLIFIED: ~s~%" (simplify-constraint g s))
-    s
+					;(printf "SIMPLIFIED: ~s~%" (simplify-constraint g s))
+    (assert (goal? (simplify-constraint g s)))
+    (apply-constraints s (simplify-constraint g s))
     #;
     (cond
      [(failure? s) s];TODO does failure ever get run as a constraint?
@@ -114,7 +115,19 @@
     (assert (and (goal? g) (state? s)))
     (cond
      [(or (succeed? g)) (fail? g) g]
-     [(=/=? g) (noto (extensions->goal (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1)))])  
+     [(=/=? g) (noto (extensions->goal (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [(conj? g) (simplify-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
+     [(disj? g) (simplify-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
+     ))
+
+  (define (simplify-conj conjuncts)
+    (conj (if (memq fail conjuncts)
+	 (list fail) (filter (lambda (g) (not (succeed? g))) conjuncts)))
+    )
+
+   (define (simplify-disj disjuncts)
+    (disj (if (memq succeed disjuncts)
+	 (list succeed) (filter (lambda (g) (not (fail? g))) disjuncts)))
     )
   
   (define (run-constraints s cs)
@@ -151,6 +164,7 @@
     (let*-values ([(sub extensions) (state:unify s x y)]
 		  [(cg) (noto (extensions->goal extensions))]
 		  [(extensions) (if (not extensions) '() extensions)])
+      (assert (goal? cg))
       ;(printf "SUB: ~s EXT: ~s NEGATED: ~s~%" sub (extensions->goal extensions) cg)
       (assert (or (not (null? extensions)) (and (failure? sub) (succeed? cg)) (and (not (failure? sub)) (fail? cg))))
 ;      (assert (or (null? extensions) (not (succeed? cg))))
@@ -175,11 +189,16 @@
       (if (disj? c) (get-attributed-vars (disj-car c)) (filter var? (vector->list c))))
 
     (define (apply-constraints s c)
-      (if (conj? c) (fold-left apply-constraints s (disj-disjuncts c)))
-      (fold-left
-       (lambda (s v)
-	 (set-state-constraints s
-	  (merge-constraint (state-constraints s) v c))) s (get-attributed-vars c)))
+		  (assert (and (state? s) (goal? c)))
+      (cond
+       [(succeed? c) s]
+       [(fail? c) failure]
+       [(conj? c) (fold-left apply-constraints s (disj-disjuncts c))]
+       [else 
+	(fold-left
+	 (lambda (s v)
+	   (set-state-constraints
+	    s (merge-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
 
 
-  )
+    )
