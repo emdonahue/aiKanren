@@ -30,7 +30,7 @@
      [(absento? g) (values (run-absento s g) p)]
      [else (assert #f)]))
 
-  (trace-define (unify s x y)
+  (define (unify s x y)
     ;;TODO fold unify back into state
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])
