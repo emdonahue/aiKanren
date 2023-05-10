@@ -91,7 +91,7 @@
      [else (assert #f)])
     )
 
-  (trace-define (run-constraint-goal g s)
+  (define (run-constraint-goal g s)
     (assert (and (state-or-failure? s) (goal? g)))
     (cond
      [(failure? s) s]
@@ -133,7 +133,7 @@
   (define (extensions->goal es)
     (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))
   
-  (trace-define (disunify s x y)
+  (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
     (let*-values ([(sub extensions) (state:unify s x y)]
 		  [(cg) (noto (extensions->goal extensions))]
