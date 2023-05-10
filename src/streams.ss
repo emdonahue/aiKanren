@@ -36,7 +36,7 @@
     (let-values ([(sub extensions) (state:unify s x y)])
       ;(printf "SUB ~s EXT ~s~%" sub extensions)
       (let ([stat (run-constraints (set-state-substitution s sub) extensions)])
-	#;	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
+	(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
 	stat)))
   
   (define (mplus lhs rhs)
@@ -77,8 +77,7 @@
 
   (define (run-constraints2 s g)
     (assert (and (state-or-failure? s) (goal? g)))
-    s
-    #;
+
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
@@ -87,21 +86,35 @@
 		(get-constraint (state-constraints s)
 				(==-lhs g) empty-constraint))
 	       s)] 
-     ;[(conj? g) ]
+					;[(conj? g) ]
      [else (assert #f)])
     )
 
   (define (run-constraint-goal g s)
     (assert (and (state-or-failure? s) (goal? g)))
+    (printf "SIMPLIFIED: ~s~%" (simplify-constraint g s))
+    s
+    #;
     (cond
-     [(failure? s) s]
+     [(failure? s) s];TODO does failure ever get run as a constraint?
      [(succeed? g) s]
      [(fail? g) failure]
+     #;
      [(==? g) (unify s (==-lhs g) (==-rhs g))]
+     #;
      [(=/=? g) (disunify s (=/=-lhs g) (=/=-rhs g))]
+     #;
      [(conj? g) (run-constraint-goal (conj-cdr g) (run-constraint-goal (conj-car g) s))]
+     #;
      [(disj? g) (printf "DISJ: ~s~%" (run-constraint-goal (noto g) s)) (assert #f)]
      [else (assert #f)])
+    )
+
+  (define (simplify-constraint g s)
+    (assert (and (goal? g) (state? s)))
+    (cond
+     [(or (succeed? g)) (fail? g) g]
+     [(=/=? g) (noto (extensions->goal (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1)))])  
     )
   
   (define (run-constraints s cs)

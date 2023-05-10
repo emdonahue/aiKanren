@@ -19,7 +19,7 @@
     (tassert "disunify free-ground x2" (constraint-disequality (run1 (x0) (=/= x0 1) (=/= x0 0)))
 	     (list (list(cons x0 0)) (list (cons x0 1))))
     (tassert "disunify transfer to free then check" (run* (x0 x1) (=/= x0 1) (== x0 x1) (== x1 1)) '())
-    (display "LISTS")
+    (display "LISTS\n")
     (tassert "disunify lists" (constraint-disequality (car (run1 (x0 x1) (=/= (cons x0 x1) (cons 0 1))))) ;
 	     (list (list (cons x0 0) (cons x1 1))))    
     (tassert "disunify fire lists" (run1 (x0 x1) (=/= (cons x0 x1) (cons 0 1)) (== x0 0)) ;
