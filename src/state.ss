@@ -13,8 +13,11 @@
   
   (define (unify s x y)
     (assert (state? s))
+    (first-value (simplify-unification s x y)))
+
+  (define (simplify-unification s x y)
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
-      (check-constraints (set-state-substitution s sub) extensions)))
+      (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
 
   (define (walk s v)
     (substitution:walk (state-substitution s) v))
@@ -44,7 +47,7 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     ;[(==? g) (let-values ([(extended-s extensions )]))]
+     [(==? g) (values-ref (simplify-constraint g s) 1)]
      [(=/=? g) (apply-constraints s (first-value (simplify-constraint g s)))]
      [(conj? g) (fold-left
 		 (lambda (g)
@@ -59,7 +62,9 @@
     (cond
      [(succeed? g) (values g s)]
      [(fail? g) (values g failure)]
-     ;[(==? g) (let-values ([(extended-s extensions )]))]
+     [(==? g)
+      (let-values ([(s g) (simplify-unification s (==-lhs g) (==-rhs g))])
+	(values g s))]
      [(=/=? g) (values (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)) s)]
      [else (assert #f)])
     )
