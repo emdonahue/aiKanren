@@ -50,7 +50,7 @@
      [(==? g) (values-ref (simplify-constraint g s) 1)]
      [(=/=? g) (apply-constraints s (first-value (simplify-constraint g s)))]
      [(conj? g) (fold-left
-		 (lambda (g)
+		 (lambda (s g)
 		   (let-values ([(g s) (simplify-constraint g s)])
 		     (apply-constraints s g))) s (conj-conjuncts g))]
      [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (first-value (simplify-constraint g s))) (disj-disjuncts g))))]
