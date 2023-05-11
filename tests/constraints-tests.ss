@@ -30,4 +30,7 @@
 	     '())
     (tassert "disunify simultaneous list diseq, fail on second" (run* (x1 x2) (=/= x2 2) (== (cons x1 x2) (cons 1 2)))
 	     '())
+
+    (display (run* () (make-constraint (== x1 1))))
+    
     ))

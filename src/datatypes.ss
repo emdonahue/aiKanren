@@ -114,7 +114,7 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (noto? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (noto? g) (constraint? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))

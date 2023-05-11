@@ -20,6 +20,7 @@
 	(values (mplus lhs rhs) p))]
      [(=/=? g) (values (run-constraint (noto (== (=/=-lhs g) (=/=-rhs g))) s) p)]
      [(noto? g) (run-goal (noto (g)) s p)]
+     [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))
 
   (define (unify s x y)

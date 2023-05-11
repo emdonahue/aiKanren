@@ -44,9 +44,10 @@
      [(or (succeed? g)) (fail? g) g]
      [(=/=? g) (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1))]
      [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
-     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]))
+     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
+     [else (assert #f)]))
 
-    (define (get-attributed-vars c)
+  (define (get-attributed-vars c)
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
