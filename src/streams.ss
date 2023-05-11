@@ -27,7 +27,7 @@
     ;;(printf "SUB ~s EXT ~s~%" sub extensions)
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])      
-      (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions))))
+      (run-constraints2 (set-state-substitution s sub) extensions)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -105,7 +105,7 @@
     (assert (and (goal? g) (state? s)))
     (cond
      [(or (succeed? g)) (fail? g) g]
-     [(=/=? g) (noto (extensions->goal (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [(=/=? g) (noto (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1))]
      [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
      [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
      ))

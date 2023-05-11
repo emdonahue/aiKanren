@@ -15,12 +15,5 @@
     (assert (state? s))
     (substitution:unify (state-substitution s) x y))
 
-
-     
-
   (define (walk s v)
-    (substitution:walk (state-substitution s) v))
-
-  ;; === CONSTRAINTS ===
-   
-)
+    (substitution:walk (state-substitution s) v)))

@@ -70,7 +70,7 @@
   
   ;; === STATE ===
   (define-structure (state substitution constraints guards pseudocounts varid))
-  (define empty-state (make-state empty-substitution empty-constraint-store '() #f 0))
+  (define empty-state (make-state empty-substitution empty-constraint-store '() #f 1))
 
   (define (set-state-substitution s substitution)
     (if (not (failure? substitution))
