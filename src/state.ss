@@ -1,6 +1,6 @@
 (library (state)
   (export reify unify instantiate-var walk)
-  (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraints) (negation) (datatypes))
+  (import (chezscheme) (except (substitution) unify walk) (prefix (only (substitution) unify walk) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
     (cond

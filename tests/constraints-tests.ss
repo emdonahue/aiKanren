@@ -1,6 +1,6 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (state) (constraints) (failure) (var) (streams) (package) (datatypes))
+  (import (chezscheme) (ui) (test-runner) (datatypes))
 
   (define (run-constraints-tests)
     (define x0 (make-var 0))

@@ -1,6 +1,4 @@
 (library (package)
-  (export package? empty-package)
+  (export )
   (import (chezscheme))
-
-  (define-structure (package tables))
-  (define empty-package (make-package '())))
+)

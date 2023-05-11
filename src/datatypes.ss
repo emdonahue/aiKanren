@@ -1,6 +1,9 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export make-var var? var-id var-equal?
+  (export make-runner set-runner-stream runner? runner-stream runner-query runner-package
+	  package? empty-package
+	  make-==  make-incomplete complete? stream? complete complete? complete-car complete-cdr incomplete? incomplete-goal incomplete-state mplus? mplus-lhs mplus-rhs
+	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints
 	  failure failure? guarded? answer? state-or-failure?
@@ -13,6 +16,18 @@
 	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
   (import (chezscheme) (sbral))
 
+  ;; === RUNNER ===
+  (define-structure (runner stream query package))
+  
+  (define (set-runner-stream r s)
+    (assert (and (runner? r) (not (runner? s))))
+    (let ([r (vector-copy r)])
+      (set-runner-stream! r s) r))
+
+  ;; === PACKAGE ===  
+  (define-structure (package tables))
+  (define empty-package (make-package '()))
+  
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
   (define var-equal? equal?)
@@ -20,6 +35,13 @@
   ;; === STREAMS ===
   (define failure '())
   (define failure? null?)
+  (define-structure (mplus lhs rhs))
+  (define-structure (bind goal stream))
+  (define-structure (incomplete goal state))
+  (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+  
+  (define (stream? s)
+    (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
   
   ;; === GOALS ===
   

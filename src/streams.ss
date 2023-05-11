@@ -1,14 +1,6 @@
 (library (streams)
-  (export mplus make-== run-goal make-incomplete stream-step complete? bind)
-  (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraints) (negation) (datatypes)) 
-
-  (define-structure (mplus lhs rhs))
-  (define-structure (bind goal stream))
-  (define-structure (incomplete goal state))
-  (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
-  
-  (define (stream? s)
-    (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
+  (export run-goal stream-step bind mplus)
+  (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
 
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
@@ -27,7 +19,6 @@
 	(values (mplus lhs rhs) p))]
      [(=/=? g) (values (disunify s (=/=-lhs g) (=/=-rhs g)) p)]
      [(stale? g) (run-goal (noto (g)) s p)]
-     [(absento? g) (values (run-absento s g) p)]
      [else (assert #f)]))
 
   (define (unify s x y)
@@ -118,8 +109,6 @@
      [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
      [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
      ))
-  
-
 
   (define (extensions->goal es)
     (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))

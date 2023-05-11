@@ -1,6 +1,6 @@
 (library (negation-tests)
   (export run-negation-tests)
-  (import (chezscheme) (test-runner) (negation) (goals) (constraints) (ui) (datatypes))
+  (import (chezscheme) (test-runner) (negation) (ui) (datatypes))
 
   (define (run-negation-tests)
     (tassert "negate succeed" (noto succeed) fail)
