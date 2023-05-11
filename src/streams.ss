@@ -127,26 +127,8 @@
   (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
     ;(run-constraint-goal (noto (== x y)) s)
-    ;(printf "DISUNIFY: ~s =/= ~s~%~s~%~s~%" x y s (run-constraint-goal (noto (== x y)) s))
-    (let*-values ([(sub extensions) (state:unify s x y)]
-		  [(cg) (noto (extensions->goal extensions))]
-		  [(extensions) (if (not extensions) '() extensions)])
-      (assert (goal? cg))
-      ;(printf "SUB: ~s EXT: ~s NEGATED: ~s~%" sub (extensions->goal extensions) cg)
-      (assert (or (not (null? extensions)) (and (failure? sub) (succeed? cg)) (and (not (failure? sub)) (fail? cg))))
-;      (assert (or (null? extensions) (not (succeed? cg))))
-      (cond
-       [(or (succeed? cg) (fail? cg)) (first-value (run-goal cg s empty-package))] ;TODO factor package out of goal runner. not needed here
-       ;[(failure? sub) (display "succeeded\n") s] ; If unification fails, the terms can never be made equal, so no need for constraint: return state as is.
-       ;[(null? extensions) (display "failed\n") failure] ; If no bindings were added, the terms are already equal and so in violation of =/=. Fail immediately.
-       [else
-	;;(printf "CONSTRAINT: ~s VARS: ~s STATE: ~s~%" cg (get-attributed-vars cg) (apply-constraints s cg))
-	(apply-constraints
-	 (let* ([s (add-disequality s (caar extensions) extensions)]
-		[extended-var (cdar extensions)])
-	   (if (var? extended-var)
-	       (add-disequality s extended-var extensions) s)) cg)]
-       )))
+    (run-constraint-goal (noto (== x y)) s))
+  
     (define (add-disequality s v d)
       (assert (and (state? s) (var? v) (disequality? d)))
       s
