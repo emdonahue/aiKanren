@@ -31,17 +31,12 @@
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
      [(==? g) (run-constraint
-	       (get-constraint (state-constraints s)
-			       (==-lhs g)) s)] ; State has updated a single variable
+	       s (get-constraint (state-constraints s)
+				 (==-lhs g)))] ; State has updated a single variable
      [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
      [else (assert #f)]))
 
-  #;
-  (define (run-constraint g s)
-    (assert (and (state-or-failure? s) (goal? g)))
-    (apply-constraints s (simplify-constraint g s)))
-
-  (define (run-constraint g s)
+  (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
     (assert (and (goal? g) (state? s)))
     (cond
