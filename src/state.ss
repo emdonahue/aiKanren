@@ -1,5 +1,5 @@
 (library (state)
-  (export reify unify instantiate-var walk)
+  (export reify unify instantiate-var walk constrain)
   (import (chezscheme) (prefix (substitution) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -16,4 +16,9 @@
     (substitution:unify (state-substitution s) x y))
 
   (define (walk s v)
-    (substitution:walk (state-substitution s) v)))
+    (substitution:walk (state-substitution s) v))
+
+  (define (constrain s v c)
+    (assert (and (state? s) (var? v) (goal? c)))
+    
+    ))

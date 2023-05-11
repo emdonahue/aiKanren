@@ -25,7 +25,7 @@
     ;;TODO fold unify back into state
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])      
-      (run-constraints2 (set-state-substitution s sub) extensions)))
+      (check-constraints (set-state-substitution s sub) extensions)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -63,40 +63,22 @@
 
   ;; === DISEQUALITY ===
 
-  (define (run-constraints2 s g)
+  (define (check-constraints s g)
+    ;; Runs after unification to propagate new extensions through the constraint store
     (assert (and (state-or-failure? s) (goal? g)))
-
     (cond
-     [(succeed? g) s]
-     [(fail? g) failure]
+     [(or (failure? s) (fail? g)) failure] ; State has failed
+     [(succeed? g) s] ; State has succeeded without modification     
      [(==? g) (run-constraint-goal
 	       (get-constraint (state-constraints s)
-			       (==-lhs g))
-	       s)] 
-					;[(conj? g) ]
-     [else (assert #f)])
-    )
+			       (==-lhs g)) s)] ; State has updated a single variable
+     [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
+     [else (assert #f)]))
 
   (define (run-constraint-goal g s)
     (assert (and (state-or-failure? s) (goal? g)))
-					;(printf "SIMPLIFIED: ~s~%" (simplify-constraint g s))
     (assert (goal? (simplify-constraint g s)))
-    (apply-constraints s (simplify-constraint g s))
-    #;
-    (cond
-     [(failure? s) s];TODO does failure ever get run as a constraint?
-     [(succeed? g) s]
-     [(fail? g) failure]
-     #;
-     [(==? g) (unify s (==-lhs g) (==-rhs g))]
-     #;
-     [(=/=? g) (disunify s (=/=-lhs g) (=/=-rhs g))]
-     #;
-     [(conj? g) (run-constraint-goal (conj-cdr g) (run-constraint-goal (conj-car g) s))]
-     #;
-     [(disj? g) (printf "DISJ: ~s~%" (run-constraint-goal (noto g) s)) (assert #f)]
-     [else (assert #f)])
-    )
+    (apply-constraints s (simplify-constraint g s)))
 
   (define (simplify-constraint g s)
     (assert (and (goal? g) (state? s)))
@@ -107,12 +89,8 @@
      [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
      ))
 
-  (define (extensions->goal es)
-    (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))
-  
   (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
-    ;(run-constraint-goal (noto (== x y)) s)
     (run-constraint-goal (noto (== x y)) s))
 
     (define (get-attributed-vars c)
@@ -120,7 +98,7 @@
       (if (disj? c) (get-attributed-vars (disj-car c)) (filter var? (vector->list c))))
 
     (define (apply-constraints s c)
-		  (assert (and (state? s) (goal? c)))
+      (assert (and (state? s) (goal? c)))
       (cond
        [(succeed? c) s]
        [(fail? c) failure]
@@ -129,7 +107,4 @@
 	(fold-left
 	 (lambda (s v)
 	   (set-state-constraints
-	    s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
-
-
-    )
+	    s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))])))
