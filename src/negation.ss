@@ -11,8 +11,8 @@
      [(=/=? g) (== (=/=-lhs g) (=/=-rhs g))]
      [(disj? g) (make-conj (map noto (disj-disjuncts g)))]
      [(conj? g) (make-disj (map noto (conj-conjuncts g)))]
-     [(fresh? g) (make-stale g)]
-     [(stale? g) (stale-fresh g)]
+     [(fresh? g) (make-noto g)]
+     [(noto? g) (noto-goal g)]
      [else (assert #f)]
      )
     )

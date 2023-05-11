@@ -12,7 +12,7 @@
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
 	  absento
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj conj? conj-car conj-cdr conj-conjuncts == make-stale stale? stale-fresh)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNNER ===
@@ -107,14 +107,14 @@
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
   (define-structure (conj conjuncts))
   (define-structure (disj disjuncts))
-  (define-structure (stale fresh)) ; Negated fresh goal. Work with me here.
+  (define-structure (noto goal)) ; Negated goal
 
   (define == make-==)
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (stale? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (noto? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))

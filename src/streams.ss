@@ -18,9 +18,8 @@
 	  ([(lhs p) (run-goal (disj-car g) s p)]
 	   [(rhs p) (run-goal (disj-cdr g) s p)])
 	(values (mplus lhs rhs) p))]
-     ;(run-constraint (noto (== x y)) s)
      [(=/=? g) (values (run-constraint (noto (== (=/=-lhs g) (=/=-rhs g))) s) p)]
-     [(stale? g) (run-goal (noto (g)) s p)]
+     [(noto? g) (run-goal (noto (g)) s p)]
      [else (assert #f)]))
 
   (define (unify s x y)
