@@ -42,27 +42,24 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(==? g) (values-ref (simplify-constraint s g) 1)]
-     [(=/=? g) (apply-constraints s (first-value (simplify-constraint s g)))]
+     [(==? g) (first-value (simplify-constraint s g))]
+     [(=/=? g) (apply-constraints s (values-ref (simplify-constraint s g) 1))]
      [(conj? g) (fold-left
 		 (lambda (s g)
-		   (let-values ([(g s) (simplify-constraint s g)])
+		   (let-values ([(s g) (simplify-constraint s g)])
 		     (apply-constraints s g))) s (conj-conjuncts g))]
-     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (first-value (simplify-constraint s g))) (disj-disjuncts g))))]
+     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (values-ref (simplify-constraint s g) 1)) (disj-disjuncts g))))]
      [else (assert #f)]))
 
   (define (simplify-constraint s g)
     ;; Reduce the constraint to simplest form given the current substitution.
     (assert (and (goal? g) (state? s)))
     (cond
-     [(succeed? g) (values g s)]
-     [(fail? g) (values g failure)]
-     [(==? g)
-      (let-values ([(s g) (simplify-unification s (==-lhs g) (==-rhs g))])
-	(values g s))]
-     [(=/=? g) (values (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)) s)]
-     [else (assert #f)])
-    )
+     [(succeed? g) (values s g)]
+     [(fail? g) (values failure g)]
+     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
+     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [else (assert #f)]))
 
   (define (get-attributed-vars c)
     ;; TODO optimize which constraint we pick to minimize free vars
