@@ -42,16 +42,16 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(==? g) (values-ref (simplify-constraint g s) 1)]
-     [(=/=? g) (apply-constraints s (first-value (simplify-constraint g s)))]
+     [(==? g) (values-ref (simplify-constraint s g) 1)]
+     [(=/=? g) (apply-constraints s (first-value (simplify-constraint s g)))]
      [(conj? g) (fold-left
 		 (lambda (s g)
-		   (let-values ([(g s) (simplify-constraint g s)])
+		   (let-values ([(g s) (simplify-constraint s g)])
 		     (apply-constraints s g))) s (conj-conjuncts g))]
-     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (first-value (simplify-constraint g s))) (disj-disjuncts g))))]
+     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (first-value (simplify-constraint s g))) (disj-disjuncts g))))]
      [else (assert #f)]))
 
-  (define (simplify-constraint g s)
+  (define (simplify-constraint s g)
     ;; Reduce the constraint to simplest form given the current substitution.
     (assert (and (goal? g) (state? s)))
     (cond
