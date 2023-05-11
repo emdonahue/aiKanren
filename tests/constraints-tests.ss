@@ -31,6 +31,12 @@
     (tassert "disunify simultaneous list diseq, fail on second" (run* (x1 x2) (=/= x2 2) (== (cons x1 x2) (cons 1 2)))
 	     '())
 
-    (display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
+    (tassert "==-c ground-self" (run1 (x1) (make-constraint (== 1 1))) x1)
+    (tassert "==-c ground-different" (run1 (x1) (make-constraint (== 1 2))) (void))
+    (tassert "==-c free-ground" (run1 (x1) (make-constraint (== x1 1))) 1)
+    
+    ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
+    ;(display (runner-step (runner (q) (make-constraint (== q 1)))))
+    ;(display (runner-step (runner (q r) (make-constraint (conj* (== q 1) (== r 2))))))
     
     ))

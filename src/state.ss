@@ -79,7 +79,7 @@
   
   (define (apply-constraints s c)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (goal? c))) ; -> state?
+    (assert (and (state? s) (goal? c) (not (==? c)))) ; -> state?
     (cond
      [(succeed? c) s]
      [(fail? c) failure]
