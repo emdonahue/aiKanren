@@ -47,8 +47,13 @@
      [(conj? g) (fold-left
 		 (lambda (s g)
 		   (let-values ([(s g) (simplify-constraint s g)])
-		     (apply-constraints s g))) s (conj-conjuncts g))]
-     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (values-ref (simplify-constraint s g) 1)) (disj-disjuncts g))))]
+		     (if (==? g) s ; Simplify already extended the substitution, so no need to apply == again
+			 (apply-constraints s g))))
+		 s (conj-conjuncts g))]
+     [(disj? g) (apply-constraints
+		 s (normalized-disj
+		    (map (lambda (g)
+			   (values-ref (simplify-constraint s g) 1)) (disj-disjuncts g))))]
      [else (assert #f)]))
 
   (define (simplify-constraint s g)
@@ -75,7 +80,7 @@
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
-     [(==? c) s] ; Bare unifications are stored in the substitution
+     [(==? c) (unify s (==-lhs c) (==-rhs c))] ; Bare unifications are stored in the substitution
      [(conj? c) (fold-left apply-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
