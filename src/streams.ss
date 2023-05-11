@@ -128,12 +128,6 @@
     (assert (state? s))			; -> state-or-failure?
     ;(run-constraint-goal (noto (== x y)) s)
     (run-constraint-goal (noto (== x y)) s))
-  
-    (define (add-disequality s v d)
-      (assert (and (state? s) (var? v) (disequality? d)))
-      s
-      #;
-    (set-state-constraints s (merge-disequality (state-constraints s) v d)))
 
     (define (get-attributed-vars c)
       (assert (not (conj? c)))
