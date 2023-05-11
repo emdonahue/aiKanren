@@ -1,3 +1,4 @@
+;;TODO replace (assert #f) with useful error messages
 (library (streams)
   (export run-goal stream-step bind mplus)
   (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
@@ -17,7 +18,8 @@
 	  ([(lhs p) (run-goal (disj-car g) s p)]
 	   [(rhs p) (run-goal (disj-cdr g) s p)])
 	(values (mplus lhs rhs) p))]
-     [(=/=? g) (values (disunify s (=/=-lhs g) (=/=-rhs g)) p)]
+     ;(run-constraint (noto (== x y)) s)
+     [(=/=? g) (values (run-constraint (noto (== (=/=-lhs g) (=/=-rhs g))) s) p)]
      [(stale? g) (run-goal (noto (g)) s p)]
      [else (assert #f)]))
 
@@ -69,29 +71,24 @@
     (cond
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
-     [(==? g) (run-constraint-goal
+     [(==? g) (run-constraint
 	       (get-constraint (state-constraints s)
 			       (==-lhs g)) s)] ; State has updated a single variable
      [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
      [else (assert #f)]))
 
-  (define (run-constraint-goal g s)
+  (define (run-constraint g s)
     (assert (and (state-or-failure? s) (goal? g)))
-    (assert (goal? (simplify-constraint g s)))
     (apply-constraints s (simplify-constraint g s)))
 
   (define (simplify-constraint g s)
+    ;; Reduce the constraint to simplest form given the current substitution
     (assert (and (goal? g) (state? s)))
     (cond
      [(or (succeed? g)) (fail? g) g]
      [(=/=? g) (noto (values-ref (state:unify s (=/=-lhs g) (=/=-rhs g)) 1))]
      [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
-     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
-     ))
-
-  (define (disunify s x y)
-    (assert (state? s))			; -> state-or-failure?
-    (run-constraint-goal (noto (== x y)) s))
+     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]))
 
     (define (get-attributed-vars c)
       (assert (not (conj? c)))
