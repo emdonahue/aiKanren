@@ -50,7 +50,7 @@
   (define (fail? g) (eq? g fail))
 
     ;; === CONSTRAINT STORE ===
-  (define-structure (constraint-store constraints))
+  (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
   (define-structure (constraint goal))
   (define-structure (absento atom term))
   (define empty-constraint (make-constraint succeed))

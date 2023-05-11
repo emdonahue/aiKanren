@@ -132,7 +132,7 @@
 	(fold-left
 	 (lambda (s v)
 	   (set-state-constraints
-	    s (merge-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
+	    s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
 
 
     )
