@@ -8,11 +8,12 @@
   (define (walk s v)
     (if (var? v)
 	(let* ([dict (substitution-dict s)]
-	       [walked (sbral-ref dict (- (sbral-length dict) (var-id v)) unbound)])
+	       [walked (sbral-ref dict (- (sbral-length dict) (var-id v)) unbound)]) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
 	  (if (unbound? walked) v (walk s walked)))
 	v))
 
   (define (unify s x y)
+    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
     (assert (substitution? s)) ; -> substitution? goal?
     (let ([x (walk s x)] [y (walk s y)])
