@@ -33,19 +33,36 @@
      [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
      [else (assert #f)]))
 
+  #;
   (define (run-constraint g s)
     (assert (and (state-or-failure? s) (goal? g)))
     (apply-constraints s (simplify-constraint g s)))
 
-  (define (simplify-constraint g s)
-    ;; Reduce the constraint to simplest form given the current substitution
+  (define (run-constraint g s)
+    ;; Simplify the constraint and push it into the store.
     (assert (and (goal? g) (state? s)))
     (cond
-     [(or (succeed? g)) (fail? g) g]
-     [(=/=? g) (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1))]
-     [(conj? g) (normalized-conj (map (lambda (g) (simplify-constraint g s)) (conj-conjuncts g)))]
-     [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
+     [(succeed? g) s]
+     [(fail? g) failure]
+     ;[(==? g) (let-values ([(extended-s extensions )]))]
+     [(=/=? g) (apply-constraints s (first-value (simplify-constraint g s)))]
+     [(conj? g) (fold-left
+		 (lambda (g)
+		   (let-values ([(g s) (simplify-constraint g s)])
+		     (apply-constraints s g))) s (conj-conjuncts g))]
+     [(disj? g) (apply-constraints s (normalized-disj (map (lambda (g) (first-value (simplify-constraint g s))) (disj-disjuncts g))))]
      [else (assert #f)]))
+
+  (define (simplify-constraint g s)
+    ;; Reduce the constraint to simplest form given the current substitution.
+    (assert (and (goal? g) (state? s)))
+    (cond
+     [(succeed? g) (values g s)]
+     [(fail? g) (values g failure)]
+     ;[(==? g) (let-values ([(extended-s extensions )]))]
+     [(=/=? g) (values (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)) s)]
+     [else (assert #f)])
+    )
 
   (define (get-attributed-vars c)
     ;; TODO optimize which constraint we pick to minimize free vars
@@ -61,7 +78,7 @@
     (cond
      [(succeed? c) s]
      [(fail? c) failure]
-     [(conj? c) (fold-left apply-constraints s (disj-disjuncts c))] ; Conjoined constraints simply apply constraints independently.
+     [(conj? c) (fold-left apply-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
        (lambda (s v)
