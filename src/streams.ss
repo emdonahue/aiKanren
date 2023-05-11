@@ -23,8 +23,6 @@
 
   (define (unify s x y)
     ;;TODO fold unify back into state
-    ;;(printf "CONST: ~s~%ORIG: ~s~%OLDS: ~s~%NEWS: ~s~%~%" (extensions->goal extensions) (set-state-substitution s sub) stat (run-constraints2 (set-state-substitution s sub) (extensions->goal extensions)))
-    ;;(printf "SUB ~s EXT ~s~%" sub extensions)
     (assert (state? s))
     (let-values ([(sub extensions) (state:unify s x y)])      
       (run-constraints2 (set-state-substitution s sub) extensions)))
