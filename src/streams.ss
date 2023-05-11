@@ -119,37 +119,15 @@
      [(disj? g) (normalized-disj (map (lambda (g) (simplify-constraint g s)) (disj-disjuncts g)))]
      ))
   
-  (define (run-constraints s cs)
-    (assert (and (state-or-failure? s) (not (goal? cs))))
-    (let ([state (if (or (failure? s) (null? cs)) s
-		     (let ([c (get-constraint (state-constraints s) (caar cs) satisfied)])
-		       (run-constraints (run-constraint s c) (cdr cs))))])
-      state))
 
-  (define (run-constraint s c)
-    ;;TODO make use of binding information to short circuit walks on first var in each constraint
-    (assert (and (state-or-failure? s) (constraint? c))) ; -> state-or-failure?
-    (cond
-     [(satisfied? c) s]
-     [(unsatisfiable? c) failure]
-     [else (run-disequalities s (constraint-disequality c))]))
-
-  (define (run-disequalities s ds) ; Disjunction of conjunctions of primitive disequalities.
-    (assert (and (state-or-failure? s) (list? ds))) ; -> state-or-failure?
-    (if (or (failure? s) (null? ds)) s
-	(run-disequalities
-	 (run-disequality s (car ds)) (cdr ds))))
-
-  (define (run-disequality s d) ; Conjunction of primitive disequalities.
-    (assert (and (state-or-failure? s) (list? d))) ; -> state-or-failure?
-    (if (or (failure? s) (disequality-null? d)) s
-	(run-disequality (disunify s (caar d) (cdar d)) (cdr d))))
 
   (define (extensions->goal es)
     (if (not es) fail (conj (map (lambda (e) (== (car e) (cdr e))) es))))
   
   (define (disunify s x y)
     (assert (state? s))			; -> state-or-failure?
+    ;(run-constraint-goal (noto (== x y)) s)
+    ;(printf "DISUNIFY: ~s =/= ~s~%~s~%~s~%" x y s (run-constraint-goal (noto (== x y)) s))
     (let*-values ([(sub extensions) (state:unify s x y)]
 		  [(cg) (noto (extensions->goal extensions))]
 		  [(extensions) (if (not extensions) '() extensions)])
@@ -170,7 +148,9 @@
 	       (add-disequality s extended-var extensions) s)) cg)]
        )))
     (define (add-disequality s v d)
-    (assert (and (state? s) (var? v) (disequality? d)))
+      (assert (and (state? s) (var? v) (disequality? d)))
+      s
+      #;
     (set-state-constraints s (merge-disequality (state-constraints s) v d)))
 
     (define (get-attributed-vars c)

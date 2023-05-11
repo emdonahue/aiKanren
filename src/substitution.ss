@@ -1,6 +1,6 @@
 (library (substitution)
   (export empty-substitution walk unify make-var var? var-id extend)
-  (import (chezscheme) (sbral) (var) (failure) (datatypes))
+  (import (chezscheme) (sbral) (datatypes))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
@@ -14,6 +14,27 @@
 
   ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
   (define (unify s x y)
+    (assert (substitution? s)) ; -> substitution? ((var? . val) ...)
+    (let ([x (walk s x)] [y (walk s y)])
+      (cond
+       [(eq? x y) (values s '())]
+       [(and (var? x) (var? y))
+	(cond
+	 [(< (var-id x) (var-id y)) (extend s x y)]
+	 [(var-equal? x y) (values s '())] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [else (extend s y x)])]
+       [(var? x) (extend s x y)]
+       [(var? y) (extend s y x)]
+       [(and (pair? x) (pair? y))
+	(let-values
+	    ([(s car-extensions) (unify s (car x) (car y))])
+	  (if (failure? s)
+	      (values failure #f)
+	      (let-values ([(s cdr-extensions) (unify s (cdr x) (cdr y))])
+		(values s (if (failure? s) #f (append car-extensions cdr-extensions))))))]
+       [else (values failure #f)])))
+
+  (define (unify2 s x y)
     (assert (substitution? s)) ; -> substitution? ((var? . val) ...)
     (let ([x (walk s x)] [y (walk s y)])
       (cond
