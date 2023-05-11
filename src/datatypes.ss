@@ -7,8 +7,7 @@
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints
 	  failure failure? guarded? answer? state-or-failure?
-	  make-constraint constraint? empty-constraint empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
-	  satisfied satisfied? unsatisfiable unsatisfiable?
+	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-absento absento?
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -53,16 +52,11 @@
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
   (define-structure (constraint goal))
   (define-structure (absento atom term))
-  (define empty-constraint (make-constraint succeed))
   (define empty-constraint-store (make-constraint-store '()))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
- (define satisfied (make-constraint succeed))
-  (define (satisfied? c) (eq? c satisfied)) ;TODO rename constraint so that constraint? can include non-structure elements such as satisfied/unsatisfiable
-  (define unsatisfiable (make-constraint fail))
-  (define (unsatisfiable? c) (eq? c unsatisfiable))
 
     ;; === SUBSTITUTION ===
   (define-structure (substitution dict))

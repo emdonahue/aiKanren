@@ -72,9 +72,8 @@
      [(succeed? g) s]
      [(fail? g) failure]
      [(==? g) (run-constraint-goal
-	       (constraint-goal
-		(get-constraint (state-constraints s)
-				(==-lhs g)))
+	       (get-constraint (state-constraints s)
+			       (==-lhs g))
 	       s)] 
 					;[(conj? g) ]
      [else (assert #f)])
