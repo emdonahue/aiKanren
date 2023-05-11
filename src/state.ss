@@ -79,10 +79,11 @@
   
   (define (apply-constraints s c)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (goal? c) (not (==? c)))) ; -> state?
+    (assert (and (state-or-failure? s) (goal? c))) ; -> state?
     (cond
+     [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
-     [(fail? c) failure]
+     [(==? c) s] ; Bare unifications are stored in the substitution
      [(conj? c) (fold-left apply-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
