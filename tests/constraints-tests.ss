@@ -50,6 +50,14 @@
 	     (run1 (x1 x2) (== x1 1) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 3 2))
+
+    (tassert "booleano bound t" (run1 (x1) (== x1 #t) (disj* (== x1 #t) (== x1 #f))) #t)
+    (tassert "booleano bound f" (run1 (x1) (== x1 #f) (disj* (== x1 #t) (== x1 #f))) #f)
+    (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (disj* (== x1 #t) (== x1 #f))) (void))
+    (tassert "booleano fired t" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 #t)) #t)
+    (tassert "booleano fired f" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 #f)) #f)
+    (tassert "booleano fired undecidable fail" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 'undecidable)) (void))
+
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))

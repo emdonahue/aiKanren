@@ -38,7 +38,7 @@
 
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
-    (assert (and (goal? g) (state? s)))
+    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
