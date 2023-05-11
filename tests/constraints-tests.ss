@@ -31,6 +31,6 @@
     (tassert "disunify simultaneous list diseq, fail on second" (run* (x1 x2) (=/= x2 2) (== (cons x1 x2) (cons 1 2)))
 	     '())
 
-    (display (run* (q) (make-constraint (== q 1))))
+    (display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     
     ))
