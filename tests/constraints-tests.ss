@@ -44,6 +44,12 @@
     (tassert "==-c & ==-c no conflict" (run1 (x1) (make-constraint (conj* (== x1 1) (== x1 1)))) 1)
     (tassert "==-c x =/=-c conflict" (run1 (x1) (=/= x1 1) (make-constraint (== x1 1))) (void))
     (tassert "==-c x =/=-c no conflict" (run1 (x1) (=/= x1 2) (make-constraint (== x1 1))) 1)
+    (tassert "==-c | ==-c" (run1 (x1) (make-constraint (disj* (== x1 1) (== x1 2)))) (disj* (== x1 1) (== x1 2)))
+    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (make-constraint (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) x2))
+    (tassert "==-c | ==-c simplifies bound"
+	     (run1 (x1 x2) (== x1 1) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 1 x2))
+    (tassert "==-c | ==-c transfers bound"
+	     (run1 (x1 x2) (== x1 3) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 3 2))
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))

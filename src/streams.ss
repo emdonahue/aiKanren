@@ -1,7 +1,7 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
   (export run-goal stream-step bind mplus)
-  (import (chezscheme) (except (state) unify) (prefix (only (state) unify) state:) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
+  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
 
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
@@ -22,11 +22,6 @@
      [(noto? g) (run-goal (noto (g)) s p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))
-
-  (define (unify s x y)
-    ;;TODO fold unify back into state
-    (assert (state? s))
-    (state:unify s x y))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
