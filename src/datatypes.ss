@@ -148,11 +148,13 @@
     (normalized-conj conjuncts))
 
   (define (cartesian-product ls)
-    (apply append
-	   (map (lambda (x)
-		  (map (lambda (y)
-			 (list x y)) (cadr ls)))
-		(car ls))))
+    (fold-right
+     (lambda (a b) 
+       (apply append
+	      (map (lambda (x)
+		     (map (lambda (y)
+			    (list x y)) (cadr ls)))
+		   (car ls)))) '() ls))
   
   
   (define (conjunctive-normal-form g)
