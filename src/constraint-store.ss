@@ -1,6 +1,6 @@
 ;;TODO test more efficient constraint stores
 (library (constraint-store)
-  (export get-constraint add-constraint reify-constraint)
+  (export get-constraint add-constraint remove-constraint reify-constraint)
   (import (chezscheme) (datatypes))
 
   (define (get-constraint s v)
@@ -26,6 +26,9 @@
   (define (update-constraint s v c)
     (assert (and (constraint-store? s) (pair? v) (var? (car v)) (goal? c)))
     (make-constraint-store (cons (cons (car v) c) (remq v (constraint-store-constraints s)))))
+
+  (define (remove-constraint s v)
+    (make-constraint-store (remq v (constraint-store-constraints s))))
 
   (define (reify-constraint s v)
     (assert (constraint-store? s))

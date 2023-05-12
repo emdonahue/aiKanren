@@ -30,15 +30,16 @@
     (cond
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
-     [(==? g) (run-constraint
-	       s (get-constraint (state-constraints s)
-				 (==-lhs g)))] ; State has updated a single variable
+     [(==? g) (run-constraint ; TODO should we run a conjunction of all updated states at the same time, or would that just do the same thing?
+	       (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs g)))
+	       (get-constraint (state-constraints s)
+			       (==-lhs g)))] ; State has updated a single variable
      [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
      [else (assert #f)]))
 
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
-    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
+    (assert (and (state? s) (goal? g))) ; -> state-or-failure?
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
@@ -47,15 +48,17 @@
      [(conj? g) (fold-left
 		 (lambda (s g)
 		   (let-values ([(s g) (simplify-constraint s g)])
-		     (if (==? g) s ; Simplify already extended the substitution, so no need to apply == again
+		     (if (==? g) s ; Simplify already extended the substitution, so no need to apply == again. if failure, abort
 			 (apply-constraints s g))))
 		 s (conj-conjuncts g))]
-     [(disj? g) (apply-constraints
+     [(disj? g) (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
 		 s (normalized-disj
 		    (map (lambda (g)
 			   (values-ref (simplify-constraint s g) 1)) (disj-disjuncts g))))]
      [else (assert #f)]))
 
+  ;;conj: simplify then apply, but unification is already applied in substitution
+  
   (define (simplify-constraint s g)
     ;; Reduce the constraint to simplest form given the current substitution.
     (assert (and (goal? g) (state? s)))
@@ -63,7 +66,7 @@
      [(succeed? g) (values s g)]
      [(fail? g) (values failure g)]
      [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
-     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))] ; Should we check substitution or full state with other constraints?
      [else (assert #f)]))
 
   (define (get-attributed-vars c)
@@ -86,4 +89,10 @@
       (fold-left
        (lambda (s v)
 	 (set-state-constraints
-	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))])))
+	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
+
+  #;
+  (define (conjunctive-normal-form g)
+    (assert (goal? g))
+    (cond
+     [])))
