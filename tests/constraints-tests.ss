@@ -80,6 +80,7 @@
     (tassert "cnf distribute single"
 	     (conjunctive-normal-form
 	      (disj* (== 1 1) (conj* (== 2 2) (== 3 3)))) (conj* (disj*  (== 1 1) (== 2 2)) (disj*  (== 1 1) (== 3 3))))
+
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))

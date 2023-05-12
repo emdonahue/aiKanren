@@ -148,21 +148,22 @@
     (normalized-conj conjuncts))
 
   (define (cartesian-product ls)
-    (map (lambda (x)
-	   (map (lambda (y)
-		  (list x y)) (cadr ls)))
-	 (car ls))
-    )
+    (apply append
+	   (map (lambda (x)
+		  (map (lambda (y)
+			 (list x y)) (cadr ls)))
+		(car ls))))
   
   
   (define (conjunctive-normal-form g)
     (assert (goal? g))
     (cond
       [(conj? g) (normalized-conj (map conjunctive-normal-form (conj-conjuncts g)))]
-      [(disj? g) (normalized-disj
-		  (cartesian-product
-		   (map (lambda (g) (if (conj? g) (conj-conjuncts g) (list g)))
-			(disj-disjuncts g))))]
+      [(disj? g) (normalized-conj
+		  (map normalized-disj
+		       (cartesian-product
+			(map (lambda (g) (if (conj? g) (conj-conjuncts g) (list g)))
+			     (disj-disjuncts g)))))]
       [else g]
       )
     )
