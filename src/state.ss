@@ -46,12 +46,15 @@
      [(==? g) (first-value (simplify-constraint s g))]
      [(=/=? g) (apply-constraints s (values-ref (simplify-constraint s g) 1))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
-     [(disj? g) (run-disj s (disj-disjuncts g) fail)]
+     [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
      [else (assert #f)]))
 
-  (define (run-disj s gs c)
+  (define (run-disj s gs c s^)
+    ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
+    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? s^))) ; -> state-or-failure?
     (cond
      [(succeed? c) s]
+     [(null? gs) (if (==? c) s^ (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
      [else
       (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
        s (normalized-disj
@@ -64,16 +67,16 @@
      [(fail? c) failure]
      [(null? gs) (apply-constraints s c)]
      [else (let-values ([(s g) (run-conjunct s (car gs))])
-	     (run-conj s (cdr gs) (normalized-conj (list g c))))]))
+	     (run-conj s (cdr gs) (if (==? (car gs)) ; == already in substitution. No need to add to store.
+				      c (normalized-conj (list g c)))))]))
 
   (define (run-conjunct s g)
     (assert (and (state? s) (goal? g)))
     (cond
      [(succeed? g) (values s g)]
      [(fail? g) (values failure g)]
-     [(==? g) (let-values ([(s g) (simplify-unification ; == already in substitution, no need to put in store
-				   s (==-lhs g) (==-rhs g))]) (values s (if (fail? g) fail succeed)))]
-     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
+     [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
      [else (assert #f)]))  
   
   (define (simplify-constraint s g)
