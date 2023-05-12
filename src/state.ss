@@ -49,17 +49,15 @@
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
      [else (assert #f)]))
 
-  (define (run-disj s gs c s^)
+  (define (run-disj s gs c ==-s)
     ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
-    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? s^))) ; -> state-or-failure?
+    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
     (cond
      [(succeed? c) s]
-     [(null? gs) (if (==? c) s^ (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
-     [else
-      (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
-       s (normalized-disj
-	  (map (lambda (g)
-		 (values-ref (simplify-constraint s g) 1)) gs)))]))
+     [(null? gs) (if (==? c) ==-s (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
+     [else (let-values ([(s^ g) (run-conjunct s (car gs))])
+	     (run-disj s (cdr gs) (normalized-disj (list c g))
+		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
