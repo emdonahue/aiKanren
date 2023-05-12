@@ -45,15 +45,17 @@
      [(fail? g) failure]
      [(==? g) (first-value (run-simple-constraint s g))]
      [(=/=? g) (store-constraints s (values-ref (run-simple-constraint s g) 1))]
-     [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
-     [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
+     [(conj? g) (let-values ([(s c) (run-conj s (conj-conjuncts g) succeed)])
+		  (store-constraints s c))]
+     [(disj? g) (let-values ([(s c) (run-disj s (disj-disjuncts g) fail failure)])
+		  (store-constraints s c))]
      [else (assert #f)]))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
     (cond
-     [(fail? c) failure]
-     [(null? gs) (store-constraints s c)]
+     [(fail? c) (values failure fail)]
+     [(null? gs) (values s c)]
      [else (let-values ([(s g) (run-simple-constraint s (car gs))])
 	     (run-conj s (cdr gs) (if (==? (car gs)) ; == already in substitution. No need to add to store.
 				      c (normalized-conj (list g c)))))]))
@@ -62,8 +64,8 @@
     ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
     (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
     (cond
-     [(succeed? c) s]
-     [(null? gs) (if (==? c) ==-s (store-constraints s c))] ; If committing to a single ==, reuse the substitution.
+     [(succeed? c) (values s succeed)]
+     [(null? gs) (values (if (==? c) ==-s s) c)] ; If committing to a single ==, reuse the substitution.
      [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
 	     (run-disj s (cdr gs) (normalized-disj (list c g))
 		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
