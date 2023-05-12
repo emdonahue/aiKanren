@@ -51,6 +51,7 @@
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
 
+    (tassert "booleano free t" (run1 (x1) (booleano x1)) (constraint-goal (booleano x1)))
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
     (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (booleano x1)) (void))
@@ -84,7 +85,8 @@
 	     (conjunctive-normal-form
 	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
 
-
+    (tassert "presento ground succeed" (run* () (presento 1 1)) '(()))
+    (tassert "presento ground fail" (run* () (presento 2 1)) '())
     (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
     
     ))

@@ -3,10 +3,20 @@
   (import (chezscheme) (datatypes) (ui))
 
   (define (booleano v)
-    (constrain (disj* (== v #t) (== v #f))))
+    (constrain
+     (conde
+       [(== v #t)]
+       [(== v #f)])))
   
   (define (presento container query)
-    (constrain (== container query))
+    (constrain
+     (conde
+       [(== container query)]
+       [(fresh (a d)
+	  (== container (cons a d))
+	  (conde
+	    [(presento a query)]
+	    [(presento d query)]))]))
     )
   
 )
