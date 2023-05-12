@@ -73,7 +73,10 @@
     (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
 
     (tassert "cnf primitive" (conjunctive-normal-form (== 1 1)) (== 1 1))
-    (tassert "cnf primitive" (conjunctive-normal-form (conj* (== 1 1) (== 2 2))) (conj* (== 1 1) (== 2 2)))
+    (tassert "cnf simple conj" (conjunctive-normal-form (conj* (== 1 1) (== 2 2))) (conj* (== 1 1) (== 2 2)))
+    (tassert "cnf nested conj"
+	     (conjunctive-normal-form
+	      (conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))
