@@ -12,7 +12,7 @@
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
 	  absento
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNNER ===
@@ -146,6 +146,15 @@
 
   (define (normalized-conj* . conjuncts)
     (normalized-conj conjuncts))
+
+  (define (conjunctive-normal-form g)
+    (assert (goal? g))
+    (cond
+      [(conj? g) (normalized-conj (map conjunctive-normal-form (conj-conjuncts g)))]
+      [(disj? g) (assert #f)]
+      [else g]
+      )
+    )
   
   (define (conj-car c)
     (assert (conj? c))

@@ -43,8 +43,8 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(==? g) (first-value (simplify-constraint s g))]
-     [(=/=? g) (apply-constraints s (values-ref (simplify-constraint s g) 1))]
+     [(==? g) (first-value (run-simple-constraint s g))]
+     [(=/=? g) (store-constraints s (values-ref (run-simple-constraint s g) 1))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
      [else (assert #f)]))
@@ -53,7 +53,7 @@
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
     (cond
      [(fail? c) failure]
-     [(null? gs) (apply-constraints s c)]
+     [(null? gs) (store-constraints s c)]
      [else (let-values ([(s g) (run-simple-constraint s (car gs))])
 	     (run-conj s (cdr gs) (if (==? (car gs)) ; == already in substitution. No need to add to store.
 				      c (normalized-conj (list g c)))))]))
@@ -63,7 +63,7 @@
     (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
     (cond
      [(succeed? c) s]
-     [(null? gs) (if (==? c) ==-s (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
+     [(null? gs) (if (==? c) ==-s (store-constraints s c))] ; If committing to a single ==, reuse the substitution.
      [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
 	     (run-disj s (cdr gs) (normalized-disj (list c g))
 		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
@@ -76,16 +76,6 @@
      [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
      [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
      [else (assert #f)]))  
-  
-  (define (simplify-constraint s g)
-    ;; Reduce the constraint to simplest form given the current substitution.
-    (assert (and (goal? g) (state-or-failure? s)))
-    (cond
-     [(succeed? g) (values s g)]
-     [(fail? g) (values failure g)]
-     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
-     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))] ; Should we check substitution or full state with other constraints?
-     [else (assert #f)]))
 
   (define (get-attributed-vars c)
     ;; TODO optimize which constraint we pick to minimize free vars
@@ -95,22 +85,16 @@
 	(get-attributed-vars (disj-car c)) ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
 	(filter var? (vector->list c))))
   
-  (define (apply-constraints s c)
+  (define (store-constraints s c)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state-or-failure? s) (goal? c))) ; -> state?
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
      [(==? c) (unify s (==-lhs c) (==-rhs c))] ; Bare unifications are stored in the substitution
-     [(conj? c) (fold-left apply-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
+     [(conj? c) (fold-left store-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
        (lambda (s v)
 	 (set-state-constraints
-	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
-
-  #;
-  (define (conjunctive-normal-form g)
-    (assert (goal? g))
-    (cond
-     [])))
+	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))])))

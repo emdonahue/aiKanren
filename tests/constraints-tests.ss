@@ -71,6 +71,9 @@
     (tassert "disj single goals" (normalized-disj* (== 1 1)) (== 1 1))
     (tassert "disj keep normal goals" (normalized-disj* (== 1 1) fail (== 1 1)) (disj* (== 1 1) (== 1 1)))
     (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+
+    (tassert "cnf primitive" (conjunctive-normal-form (== 1 1)) (== 1 1))
+    (tassert "cnf primitive" (conjunctive-normal-form (conj* (== 1 1) (== 2 2))) (conj* (== 1 1) (== 2 2)))
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))
