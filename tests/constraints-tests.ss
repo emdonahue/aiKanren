@@ -1,6 +1,6 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (datatypes))
+  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints))
 
   (define (run-constraints-tests)
     (define x1 (make-var 1))
@@ -31,32 +31,32 @@
     (tassert "disunify simultaneous list diseq, fail on second" (run* (x1 x2) (=/= x2 2) (== (cons x1 x2) (cons 1 2)))
 	     '())
 
-    (tassert "==-c ground-self" (run1 (x1) (make-constraint (== 1 1))) x1)
-    (tassert "==-c ground-different" (run1 (x1) (make-constraint (== 1 2))) (void))
-    (tassert "==-c free-ground" (run1 (x1) (make-constraint (== x1 1))) 1)
-    (tassert "==-c bound-ground-same" (run1 (x1) (== x1 1) (make-constraint (== x1 1))) 1)
-    (tassert "==-c bound-ground-different" (run1 (x1) (== x1 2) (make-constraint (== x1 1))) (void))
-    (tassert "==-c ground-bound-same" (run1 (x1) (make-constraint (== x1 1)) (== x1 1)) 1)
-    (tassert "==-c ground-bound-different" (run1 (x1) (make-constraint (== x1 1)) (== x1 2)) (void))
-    (tassert "==-c x ==-c conflict" (run1 (x1) (make-constraint (== x1 1)) (make-constraint (== x1 2))) (void))
-    (tassert "==-c x ==-c no conflict" (run1 (x1) (make-constraint (== x1 1)) (make-constraint (== x1 1))) 1)
-    (tassert "==-c & ==-c conflict" (run1 (x1) (make-constraint (conj* (== x1 2) (== x1 1)))) (void))
-    (tassert "==-c & ==-c no conflict" (run1 (x1) (make-constraint (conj* (== x1 1) (== x1 1)))) 1)
-    (tassert "==-c x =/=-c conflict" (run1 (x1) (=/= x1 1) (make-constraint (== x1 1))) (void))
-    (tassert "==-c x =/=-c no conflict" (run1 (x1) (=/= x1 2) (make-constraint (== x1 1))) 1)
-    (tassert "==-c | ==-c" (run1 (x1) (make-constraint (disj* (== x1 1) (== x1 2)))) (disj* (== x1 1) (== x1 2)))
-    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (make-constraint (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) x2))
+    (tassert "==-c ground-self" (run1 (x1) (constrain (== 1 1))) x1)
+    (tassert "==-c ground-different" (run1 (x1) (constrain (== 1 2))) (void))
+    (tassert "==-c free-ground" (run1 (x1) (constrain (== x1 1))) 1)
+    (tassert "==-c bound-ground-same" (run1 (x1) (== x1 1) (constrain (== x1 1))) 1)
+    (tassert "==-c bound-ground-different" (run1 (x1) (== x1 2) (constrain (== x1 1))) (void))
+    (tassert "==-c ground-bound-same" (run1 (x1) (constrain (== x1 1)) (== x1 1)) 1)
+    (tassert "==-c ground-bound-different" (run1 (x1) (constrain (== x1 1)) (== x1 2)) (void))
+    (tassert "==-c x ==-c conflict" (run1 (x1) (constrain (== x1 1)) (constrain (== x1 2))) (void))
+    (tassert "==-c x ==-c no conflict" (run1 (x1) (constrain (== x1 1)) (constrain (== x1 1))) 1)
+    (tassert "==-c & ==-c conflict" (run1 (x1) (constrain (conj* (== x1 2) (== x1 1)))) (void))
+    (tassert "==-c & ==-c no conflict" (run1 (x1) (constrain (conj* (== x1 1) (== x1 1)))) 1)
+    (tassert "==-c x =/=-c conflict" (run1 (x1) (=/= x1 1) (constrain (== x1 1))) (void))
+    (tassert "==-c x =/=-c no conflict" (run1 (x1) (=/= x1 2) (constrain (== x1 1))) 1)
+    (tassert "==-c | ==-c" (run1 (x1) (constrain (disj* (== x1 1) (== x1 2)))) (disj* (== x1 1) (== x1 2)))
+    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constrain (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) x2))
     (tassert "==-c | ==-c simplifies bound"
-	     (run1 (x1 x2) (== x1 1) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 1 x2))
+	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
-	     (run1 (x1 x2) (== x1 3) (make-constraint (disj* (== x1 1) (== x2 2)))) (list 3 2))
+	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
 
-    (tassert "booleano bound t" (run1 (x1) (== x1 #t) (disj* (== x1 #t) (== x1 #f))) #t)
-    (tassert "booleano bound f" (run1 (x1) (== x1 #f) (disj* (== x1 #t) (== x1 #f))) #f)
-    (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (disj* (== x1 #t) (== x1 #f))) (void))
-    (tassert "booleano fired t" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 #t)) #t)
-    (tassert "booleano fired f" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 #f)) #f)
-    (tassert "booleano fired undecidable fail" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 'undecidable)) (void))
+    (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
+    (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
+    (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (booleano x1)) (void))
+    (tassert "booleano fired t" (run1 (x1) (booleano x1) (== x1 #t)) #t)
+    (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
+    (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
     (tassert "conj fail first" (normalized-conj* fail succeed) fail)
     (tassert "conj fail rest" (normalized-conj* succeed fail) fail)
@@ -83,10 +83,8 @@
     (tassert "cnf distribute pairs"
 	     (conjunctive-normal-form
 	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
-    
-    
-    ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
-    ;(display (runner-step (runner (q) (make-constraint (== q 1)))))
-    ;(display (runner-step (runner (q r) (make-constraint (conj* (== q 1) (== r 2))))))
+
+
+    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
     
     ))

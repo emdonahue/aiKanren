@@ -6,7 +6,7 @@
 (run-substitution-tests)
 ;(run-state-tests)
 (run-runner-tests)
-(run-constraints-tests)
 (run-negation-tests)
+(run-constraints-tests)
 
 (display "Testing Complete\n")

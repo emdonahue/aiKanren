@@ -1,5 +1,5 @@
 (library (ui)
-  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/= absento)
+  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/= absento constrain)
   (import (chezscheme) (running) (datatypes))
 
   (define-syntax conde
@@ -43,6 +43,8 @@
       ((_ (q ...) g ...)
        (let ([ans (run 1 (q ...) g ...)])
 	 (if (null? ans) (void) (car ans))))))
+
+   (define constrain make-constraint)
   
   ;; === UTILITIES ===
 
