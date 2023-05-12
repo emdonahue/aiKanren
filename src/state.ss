@@ -69,12 +69,13 @@
 		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
 
   (define (run-simple-constraint s g)
-    (assert (and (state? s) (goal? g)))
+    (assert (and (state? s) (goal? g))) ; -> state? goal?
     (cond
      [(succeed? g) (values s g)]
      [(fail? g) (values failure g)]
      [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
      [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
+     [(fresh? g) (printf "FRESH: ~s~%" (list-values (g s empty-package))) (assert #f)]
      [else (assert #f)]))  
 
   (define (get-attributed-vars c)

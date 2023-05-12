@@ -14,7 +14,7 @@
       (lambda (start-state p)
 	(fresh-vars
 	 start-state end-state (q ...)
-	 (values (make-incomplete (fresh () g ...) end-state) p)))]))
+	 (values (fresh () g ...) p)))]))
 
  (define-syntax runner
     (syntax-rules ()
@@ -44,7 +44,9 @@
        (let ([ans (run 1 (q ...) g ...)])
 	 (if (null? ans) (void) (car ans))))))
 
-   (define constrain make-constraint)
+   (define (constrain g)
+     (assert (goal? g))
+     (make-constraint g))
   
   ;; === UTILITIES ===
 
