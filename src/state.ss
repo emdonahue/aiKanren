@@ -57,7 +57,7 @@
      [(fail? c) (values failure fail)]
      [(null? gs) (values s c)]
      [else (let-values ([(s g) (run-simple-constraint s (car gs))])
-	     (run-conj s (cdr gs) (if (==? (car gs)) ; == already in substitution. No need to add to store.
+	     (run-conj s (cdr gs) (if (and (==? (car gs)) (not (fail? g))) ; == already in substitution. No need to add to store.
 				      c (normalized-conj (list g c)))))]))
 
     (define (run-disj s gs c ==-s)
@@ -70,7 +70,7 @@
 	     (run-disj s (cdr gs) (normalized-disj (list c g))
 		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
 
-  (trace-define (run-simple-constraint s g)
+  (define (run-simple-constraint s g)
     (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
     (cond
      [(or (failure? s) (fail? g)) (values failure g)]

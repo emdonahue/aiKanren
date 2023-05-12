@@ -85,8 +85,8 @@
 	     (conjunctive-normal-form
 	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
 
-    (tassert "presento ground succeed" (run* () (presento 1 1)) '(()))
-    (tassert "presento ground fail" (run* () (presento 2 1)) '())
+    (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
+    (tassert "presento ground fail" (run1 () (presento 2 1)) (void))
 ;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
     
     ))
