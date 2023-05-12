@@ -48,27 +48,27 @@
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
      [else (assert #f)]))
-
-  (define (run-disj s gs c ==-s)
-    ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
-    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
-    (cond
-     [(succeed? c) s]
-     [(null? gs) (if (==? c) ==-s (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
-     [else (let-values ([(s^ g) (run-conjunct s (car gs))])
-	     (run-disj s (cdr gs) (normalized-disj (list c g))
-		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
     (cond
      [(fail? c) failure]
      [(null? gs) (apply-constraints s c)]
-     [else (let-values ([(s g) (run-conjunct s (car gs))])
+     [else (let-values ([(s g) (run-simple-constraint s (car gs))])
 	     (run-conj s (cdr gs) (if (==? (car gs)) ; == already in substitution. No need to add to store.
 				      c (normalized-conj (list g c)))))]))
 
-  (define (run-conjunct s g)
+    (define (run-disj s gs c ==-s)
+    ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
+    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
+    (cond
+     [(succeed? c) s]
+     [(null? gs) (if (==? c) ==-s (apply-constraints s c))] ; If committing to a single ==, reuse the substitution.
+     [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
+	     (run-disj s (cdr gs) (normalized-disj (list c g))
+		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
+
+  (define (run-simple-constraint s g)
     (assert (and (state? s) (goal? g)))
     (cond
      [(succeed? g) (values s g)]
