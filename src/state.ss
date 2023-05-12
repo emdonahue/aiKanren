@@ -46,15 +46,19 @@
      [(==? g) (first-value (simplify-constraint s g))]
      [(=/=? g) (apply-constraints s (values-ref (simplify-constraint s g) 1))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
-     [(disj? g) (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
-		 s (normalized-disj
-		    (map (lambda (g)
-			   (values-ref (simplify-constraint s g) 1)) (disj-disjuncts g))))]
+     [(disj? g) (run-disj s (disj-disjuncts g) fail)]
      [else (assert #f)]))
 
-  ;;conj: simplify then apply, but unification is already applied in substitution
+  (define (run-disj s gs c)
+    (cond
+     [(succeed? c) s]
+     [else
+      (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
+       s (normalized-disj
+	  (map (lambda (g)
+		 (values-ref (simplify-constraint s g) 1)) gs)))]))
+  
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
-    ;; Since all conjuncts must pass, we can 
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
     (cond
      [(fail? c) failure]
@@ -70,17 +74,7 @@
      [(==? g) (let-values ([(s g) (simplify-unification ; == already in substitution, no need to put in store
 				   s (==-lhs g) (==-rhs g))]) (values s (if (fail? g) fail succeed)))]
      [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))]
-     )
-    )
-  
-  (define (run-conjunct-constraint s g)
-    (assert (and (state? s) (goal? g) (not (or (conj? g) (disj? g))))) ; -> state-or-failure?
-    (cond
-     [(succeed? g) (values s g)]
-     [(fail? g) (values failure g)]
-     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
-     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))] ; Should we check substitution or full state with other constraints?
-     [else (assert #f)]))
+     [else (assert #f)]))  
   
   (define (simplify-constraint s g)
     ;; Reduce the constraint to simplest form given the current substitution.

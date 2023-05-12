@@ -58,6 +58,12 @@
     (tassert "booleano fired f" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (disj* (== x1 #t) (== x1 #f)) (== x1 'undecidable)) (void))
 
+    (tassert "conj fail first" (normalized-conj* fail succeed) fail)
+    (tassert "conj fail rest" (normalized-conj* succeed fail) fail)
+    (tassert "conj compress succeed" (normalized-conj* succeed succeed) succeed)
+    (tassert "conj single goals" (normalized-conj* (== 1 1)) (== 1 1))
+    (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1) (== 1 1)))
+    (tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))

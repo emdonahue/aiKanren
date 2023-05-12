@@ -12,7 +12,7 @@
 	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
 	  absento
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNNER ===
@@ -128,9 +128,24 @@
   (define (conj* . conjs)
     (conj conjs))
 
-  (define (normalized-conj conjuncts)
-    (conj (if (memq fail conjuncts)
-	 (list fail) (filter (lambda (g) (not (succeed? g))) conjuncts))))
+  (define (normalized-conj c)
+    (let ([c (normalize-conj c)])
+      (if (fail? c) fail (conj c))))
+  
+  (define (normalize-conj cs)
+    (cond
+     [(null? cs) '()]
+     [(fail? (car cs)) fail]
+     [(succeed? (car cs)) (cdr cs)]
+     [else
+      (let ([rest (normalize-conj (cdr cs))])
+	(cond
+	 [(fail? rest) fail]
+	 [(conj? (car cs)) (append (conj-conjuncts (car cs)) rest)]
+	 [else (cons (car cs) rest)]))]))
+
+  (define (normalized-conj* . conjuncts)
+    (normalized-conj conjuncts))
   
   (define (conj-car c)
     (assert (conj? c))
@@ -154,6 +169,9 @@
   (define (normalized-disj disjuncts)
     (disj (if (memq succeed disjuncts)
 	      (list succeed) (filter (lambda (g) (not (fail? g))) disjuncts))))
+
+  (define (normalized-disj* . disjuncts)
+    (normalized-disj disjuncts))
 
   (define (disj-car d)
     (car (disj-disjuncts d)))
