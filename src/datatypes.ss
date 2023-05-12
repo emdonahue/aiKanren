@@ -166,12 +166,24 @@
   (define (disj* . disjuncts)
     (disj disjuncts))
 
-  (define (normalized-disj disjuncts)
-    (disj (if (memq succeed disjuncts)
-	      (list succeed) (filter (lambda (g) (not (fail? g))) disjuncts))))
+  (define (normalized-disj d)
+    (let ([d (normalize-disj d)])
+      (if (succeed? d) succeed (disj d))))
 
   (define (normalized-disj* . disjuncts)
     (normalized-disj disjuncts))
+
+  (define (normalize-disj ds)
+    (cond
+     [(null? ds) '()]
+     [(succeed? (car ds)) succeed]
+     [(fail? (car ds)) (cdr ds)]
+     [else
+      (let ([rest (normalize-disj (cdr ds))])
+	(cond
+	 [(succeed? rest) succeed]
+	 [(disj? (car ds)) (append (disj-disjuncts (car ds)) rest)]
+	 [else (cons (car ds) rest)]))]))
 
   (define (disj-car d)
     (car (disj-disjuncts d)))

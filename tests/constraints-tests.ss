@@ -64,6 +64,13 @@
     (tassert "conj single goals" (normalized-conj* (== 1 1)) (== 1 1))
     (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1) (== 1 1)))
     (tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+
+    (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
+    (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
+    (tassert "disj compress fail" (normalized-disj* fail fail) fail)
+    (tassert "disj single goals" (normalized-disj* (== 1 1)) (== 1 1))
+    (tassert "disj keep normal goals" (normalized-disj* (== 1 1) fail (== 1 1)) (disj* (== 1 1) (== 1 1)))
+    (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
     
     ;(display (runner-step (runner (q) (make-constraint (disj* (== q 1) (== q 2))))))
     ;(display (runner-step (runner (q) (make-constraint (== q 1)))))
