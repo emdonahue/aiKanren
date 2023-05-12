@@ -15,7 +15,7 @@
     (assert (state? s))
     (first-value (simplify-unification s x y)))
 
-  (define (simplify-unification s x y)
+  (define (simplify-unification s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
       (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
 
@@ -45,12 +45,7 @@
      [(fail? g) failure]
      [(==? g) (first-value (simplify-constraint s g))]
      [(=/=? g) (apply-constraints s (values-ref (simplify-constraint s g) 1))]
-     [(conj? g) (fold-left
-		 (lambda (s g)
-		   (let-values ([(s g) (simplify-constraint s g)])
-		     (if (==? g) s ; Simplify already extended the substitution, so no need to apply == again. if failure, abort
-			 (apply-constraints s g))))
-		 s (conj-conjuncts g))]
+     [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (apply-constraints ; simplify each constraint, disjoin, and apply. if success, abort. if == and is last one, reuse state. actually if we only have one we can commit to the whole constraint. unification will already be present from just checking
 		 s (normalized-disj
 		    (map (lambda (g)
@@ -58,10 +53,38 @@
      [else (assert #f)]))
 
   ;;conj: simplify then apply, but unification is already applied in substitution
+  (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
+    ;; Since all conjuncts must pass, we can 
+    (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
+    (cond
+     [(fail? c) failure]
+     [(null? gs) (apply-constraints s c)]
+     [else (let-values ([(s g) (run-conjunct s (car gs))])
+	     (run-conj s (cdr gs) (normalized-conj (list g c))))]))
+
+  (define (run-conjunct s g)
+    (assert (and (state? s) (goal? g)))
+    (cond
+     [(succeed? g) (values s g)]
+     [(fail? g) (values failure g)]
+     [(==? g) (let-values ([(s g) (simplify-unification ; == already in substitution, no need to put in store
+				   s (==-lhs g) (==-rhs g))]) (values s (if (fail? g) fail succeed)))]
+     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))]
+     )
+    )
+  
+  (define (run-conjunct-constraint s g)
+    (assert (and (state? s) (goal? g) (not (or (conj? g) (disj? g))))) ; -> state-or-failure?
+    (cond
+     [(succeed? g) (values s g)]
+     [(fail? g) (values failure g)]
+     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
+     [(=/=? g) (values s (noto (values-ref (substitution:unify (state-substitution s) (=/=-lhs g) (=/=-rhs g)) 1)))] ; Should we check substitution or full state with other constraints?
+     [else (assert #f)]))
   
   (define (simplify-constraint s g)
     ;; Reduce the constraint to simplest form given the current substitution.
-    (assert (and (goal? g) (state? s)))
+    (assert (and (goal? g) (state-or-failure? s)))
     (cond
      [(succeed? g) (values s g)]
      [(fail? g) (values failure g)]
