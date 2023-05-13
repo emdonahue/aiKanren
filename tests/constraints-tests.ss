@@ -87,6 +87,9 @@
 
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 2 1)) (void))
-;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
+;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
+
+
+
     
     ))

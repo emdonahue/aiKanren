@@ -52,23 +52,25 @@
      [else (assert #f)]))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
+    ;; TODO reuse substitution when storing conjoined == constraints
     (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
     (cond
      [(fail? c) (values failure fail)]
      [(null? gs) (values s c)]
      [else (let-values ([(s g) (run-simple-constraint s (car gs))])
-	     (run-conj s (cdr gs) (if (and (==? (car gs)) (not (fail? g))) ; == already in substitution. No need to add to store.
+	     (run-conj s (cdr gs) (if (and #f (==? (car gs)) (not (fail? g))) ; == already in substitution. No need to add to store.
 				      c (normalized-conj (list g c)))))]))
 
     (define (run-disj s gs c ==-s)
-    ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
+      ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
+      ;; TODO reuse substitution when disj constraint simplifies to ==
     (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
     (cond
      [(succeed? c) (values s succeed)]
      [(null? gs) (values (if (==? c) ==-s s) c)] ; If committing to a single ==, reuse the substitution.
      [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
 	     (run-disj s (cdr gs) (normalized-disj (list c g))
-		       (if (and (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
+		       (if (and #f (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
 
   (define (run-simple-constraint s g)
     (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
@@ -83,8 +85,9 @@
      [else (assert #f)]))  
 
   (define (get-attributed-vars c)
-    ;; TODO optimize which constraint we pick to minimize free vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
+    ;; TODO optimize which constraint we pick to minimize free vars
+    ;; TODO attributed vars should probably be deduplicated    
     (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (if (disj? c)
 	(get-attributed-vars (disj-car c)) ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
