@@ -59,6 +59,7 @@
     (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
     (cond
      [(succeed? c) (values s succeed)]
+     [(disj? c) (values s (normalized-disj* c (disj gs)))]
      [(null? gs) (values (if (==? c) ==-s s) c)] ; If committing to a single ==, reuse the substitution.
      [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
 	     (run-disj s (cdr gs) (normalized-disj (list c g))
