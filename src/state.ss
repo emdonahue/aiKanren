@@ -84,9 +84,10 @@
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; TODO attributed vars should probably be deduplicated    
     (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
-    (if (disj? c)
-	(get-attributed-vars (disj-car c)) ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
-	(filter var? (vector->list c))))
+    (cond
+     [(disj? c) (get-attributed-vars (disj-car c))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
+     [(noto? c) (get-attributed-vars (noto-goal c))]
+     [else (filter var? (vector->list c))]))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.

@@ -20,6 +20,8 @@
 	  ([(lhg lhs p) (run-goal (disj-car g) s p)]
 	   [(rhg rhs p) (run-goal (disj-cdr g) s p)])
 	(values (disj* lhg rhg) (mplus lhs rhs) p))]
+     [(noto? g) (let-values ([(g s^ p) (run-goal (noto-goal g) s p)])
+		  (values (make-noto g) (store-constraint s (make-noto g)) p))]
      [else (let-values ([(s p)
 			 (cond     
 			  
@@ -28,8 +30,7 @@
 			  
 			  
 			  [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
-			  [(noto? g) (assert #f) (values 1 2 3) #;(run-goal (noto (g s p)) s p)
-			   ]
+			  
 			  [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
 			  [else (assert #f) (values 1 2)])]) (values 'run-goal-goal s p))]))
 
