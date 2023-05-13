@@ -1,7 +1,13 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints))
+  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state))
 
+  (define (ones v)
+      (constrain
+       (fresh (a d)
+	 (== v (cons a d))
+	 (disj* (== a 1) (ones d)))))
+  
   (define (run-constraints-tests)
     (define x1 (make-var 1))
     (define x2 (make-var 2))
@@ -87,13 +93,20 @@
 
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 2 1)) (void))
-    (tassert "presento car succeed" (run1 () (presento (cons 1 2) 1)) '())
-    (tassert "presento cdr succeed" (run1 () (presento (cons 2 1) 1)) '())
-    (tassert "presento car succeed" (run1 () (presento (cons 2 2) 1)) (void))
-    (tassert "presento cdr succeed" (run1 () (presento (cons 2 2) 1)) (void))
+    (tassert "presento bound ground term succeed" (run1 (x1) (== x1 1) (presento x1 1)) 1)
+    
+    (tassert "presento ground car succeed" (run1 () (presento (cons 1 2) 1)) '())
+    (tassert "presento ground cdr succeed" (run1 () (presento (cons 2 1) 1)) '())
+    (tassert "presento ground car succeed" (run1 () (presento (cons 2 2) 1)) (void))
+    (tassert "presento ground cdr succeed" (run1 () (presento (cons 2 2) 1)) (void))
+    (tassert "presento ground car succeed" (run1 () (presento (cons 1 2) 1)) '())
 ;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
 
 
-;    (display (run-constraint ))
+					;    (display (run-constraint ))
+    (display "START\n\n\n")
+    (tassert "fresh-c increases varid" (state-varid (run-constraint empty-state (fresh (x1) (=/= x1 1)))) 1)
+    ;(tassert "ones list constraint" (run1 (x1) (ones (list 2 1))) '())
+    ;;(tassert "presento fire ground term fail" (run1 (x1) (presento x1 1) (== x1 2)) (void))
     
     ))
