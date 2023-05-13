@@ -90,6 +90,6 @@
 ;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
 
 
-
+;    (display (run-constraint ))
     
     ))

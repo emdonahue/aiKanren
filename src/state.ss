@@ -40,16 +40,8 @@
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
-    (cond
-     [(succeed? g) s]
-     [(fail? g) failure]
-     [(==? g) (first-value (run-simple-constraint s g))]
-     [(=/=? g) (store-constraints s (values-ref (run-simple-constraint s g) 1))]
-     [(conj? g) (let-values ([(s c) (run-conj s (conj-conjuncts g) succeed)])
-		  (store-constraints s c))]
-     [(disj? g) (let-values ([(s c) (run-disj s (disj-disjuncts g) fail failure)])
-		  (store-constraints s c))]
-     [else (assert #f)]))
+    (let-values ([(s g) (run-simple-constraint s g)])
+      (store-constraints s g)))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     ;; TODO reuse substitution when storing conjoined == constraints
