@@ -70,8 +70,8 @@
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(failure? s) (values fail failure p)]
-     [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
-		   (values 'bind-state s p))]
+     [(state? s) (let-values ([(g^ s p) (run-goal g s p)])
+		   (values (normalized-conj* g g^) s p))]
      [(incomplete? s) (values 'bind-incomplete (make-incomplete g s) p)]
      [(complete? s)
       (let*-values
@@ -112,10 +112,12 @@
 
   (define (run-stream-constraint g s0)
     (let-values ([(g s p) (run-goal g s0 empty-package)])
+      (printf "CONSTRAINT: ~s~%" g)
       (cond
        [(fail? g) failure]
        [(succeed? g) s0]
        [(==? g) s]
+       [(conj? g) (store-constraint s g)]
        [else (assert #f)])))
   
   (define (stream-step s p)

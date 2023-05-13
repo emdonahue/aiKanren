@@ -1,5 +1,5 @@
 (library (state)
-  (export reify unify instantiate-var walk run-constraint simplify-unification) ;;TODO double check state exports
+  (export reify unify instantiate-var walk run-constraint simplify-unification store-constraint) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -42,7 +42,7 @@
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
     (let-values ([(_ g) (run-simple-constraint s g)])
-      (store-constraints s g)))
+      (store-constraint s g)))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     ;; TODO reuse substitution when storing conjoined == constraints
@@ -88,14 +88,14 @@
 	(get-attributed-vars (disj-car c)) ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
 	(filter var? (vector->list c))))
   
-  (define (store-constraints s c)
+  (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state-or-failure? s) (goal? c))) ; -> state?
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
      [(==? c) (unify s (==-lhs c) (==-rhs c))] ; Bare unifications are stored in the substitution
-     [(conj? c) (fold-left store-constraints s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
+     [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
        (lambda (s v)
