@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-stream-constraint)
+  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
 
   (define (run-goal g s p)
@@ -80,6 +80,7 @@
 	(values 'bind-complete (mplus h r) p))]
      [else (assert #f)]))
 
+  #;
   (define (run-stream-constraint s g)
     (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
     (cond
@@ -108,6 +109,14 @@
      [(failure? s) s]
      
      [else (assert #f)] ))
+
+  (define (run-stream-constraint g s0)
+    (let-values ([(g s p) (run-goal g s0 empty-package)])
+      (cond
+       [(fail? g) failure]
+       [(succeed? g) s0]
+       [(==? g) s]
+       [else (assert #f)])))
   
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; ->stream? package?
