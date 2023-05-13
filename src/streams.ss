@@ -15,17 +15,18 @@
      [(conj? g)
       (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
 	(bind (conj-cdr g) s p))]
+     [(disj? g)
+      (let*-values
+	  ([(lhg lhs p) (run-goal (disj-car g) s p)]
+	   [(rhg rhs p) (run-goal (disj-cdr g) s p)])
+	(values (disj* lhg rhg) (mplus lhs rhs) p))]
      [else (let-values ([(s p)
 			 (cond     
 			  
 			  
 			  
 			  
-			  [(disj? g)
-			   (let*-values
-			       ([(xxx lhs p) (run-goal (disj-car g) s p)]
-				[(xxx rhs p) (run-goal (disj-cdr g) s p)])
-			     (values (mplus lhs rhs) p))]
+			  
 			  [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
 			  [(noto? g) (assert #f) (values 1 2 3) #;(run-goal (noto (g s p)) s p)
 			   ]
@@ -112,12 +113,12 @@
 
   (define (run-stream-constraint g s0)
     (let-values ([(g s p) (run-goal g s0 empty-package)])
-      (printf "CONSTRAINT: ~s~%" g)
+      (printf "CONSTRAINT: ~s~%STATE: ~s~%" g s)
       (cond
        [(fail? g) failure]
        [(succeed? g) s0]
-       [(==? g) s]
-       [(conj? g) (store-constraint s g)]
+       [(state? s) s]
+       [(disj? g) (store-constraint s0 g)] ; TODO increase the var-id counter
        [else (assert #f)])))
   
   (define (stream-step s p)
