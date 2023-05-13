@@ -40,7 +40,7 @@
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
-    (let-values ([(s g) (run-simple-constraint s g)])
+    (let-values ([(_ g) (run-simple-constraint s g)])
       (store-constraints s g)))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
