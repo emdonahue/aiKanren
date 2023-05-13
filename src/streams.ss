@@ -8,7 +8,8 @@
     (cond     
      [(succeed? g) (values s p)]
      [(fail? g) (values failure p)]
-     [(fresh? g) (values (make-incomplete (g) s) p)]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (values (make-incomplete g s) p))]
      [(==? g) (values (unify s (==-lhs g) (==-rhs g)) p)]
      [(conj? g)
       (let-values ([(s p) (run-goal (conj-car g) s p)])
@@ -21,6 +22,31 @@
      [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
      [(noto? g) (run-goal (noto (g)) s p)]
      [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
+     [else (assert #f)]))
+
+  #;(define (run-goal g s p)
+    (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
+    (cond     
+     [(succeed? g) (values succeed s p)]
+     [(fail? g) (values fail failure p)]
+     [(fresh? g)
+      (let-values ([(g s p) (g s p)])
+	(values g (make-incomplete g s) p))]
+     [(==? g)
+      (let-values ([(s g) (unify s (==-lhs g) (==-rhs g))])
+	(values g s p))]
+     [(conj? g)
+      (let-values ([(g0 s p) (run-goal (conj-car g) s p)]
+		   [(g s p) (bind (conj-cdr g) s p)])
+	(values (normalized-conj* g0 g) s p))]
+     [(disj? g)
+      (let*-values
+	  ([(lhg lhs p) (run-goal (disj-car g) s p)]
+	   [(rhg rhs p) (run-goal (disj-cdr g) s p)])
+	(values (normalized-disj* lhg rhg) (mplus lhs rhs) p))]
+     [(=/=? g) (values g (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
+     [(noto? g) (run-goal (noto (g s p)) s p)]
+     [(constraint? g) (values g (run-constraint s (constraint-goal g)) p)]
      [else (assert #f)]))
   
   (define (mplus lhs rhs)

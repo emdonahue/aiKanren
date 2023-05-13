@@ -14,7 +14,7 @@
       (lambda (start-state p)
 	(fresh-vars
 	 start-state end-state (q ...)
-	 (values (fresh () g ...) p)))]))
+	 (values (fresh () g ...) end-state p)))]))
 
  (define-syntax runner
     (syntax-rules ()
