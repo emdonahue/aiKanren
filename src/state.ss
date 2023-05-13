@@ -75,6 +75,7 @@
      [(fresh? g) (run-simple-constraint s (first-value (g s empty-package)))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
+     [(constraint? g) (run-simple-constraint s (constraint-goal g))]
      [else (assert #f)]))  
 
   (define (get-attributed-vars c)
