@@ -1,5 +1,5 @@
 (library (state)
-  (export reify unify instantiate-var walk run-constraint)
+  (export reify unify instantiate-var walk run-constraint simplify-unification) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -76,7 +76,7 @@
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
      [(constraint? g) (run-simple-constraint s (constraint-goal g))]
-     [else (assert #f)]))  
+     [else (assert #f)]))
 
   (define (get-attributed-vars c)
     ;; Extracts the free variables in the constraint to which it should be attributed.

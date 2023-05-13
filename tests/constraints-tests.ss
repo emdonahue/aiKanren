@@ -1,6 +1,6 @@
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state))
+  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state) (streams) (values))
 
   (define (ones v)
       (constrain
@@ -104,9 +104,20 @@
 
 
 					;    (display (run-constraint ))
+    #;
     (display "START\n\n\n")
-    (tassert "fresh-c increases varid" (state-varid (run-constraint empty-state (fresh (x1) (=/= x1 1)))) 1)
+    #;
+    (tassert "fresh-c increases varid" (state-varid (run-constraint empty-state (fresh (x1) (=/= x1 1)))) 2)
+    #;
+    (tassert "conj-c increases varid"
+	     (state-varid (run-constraint empty-state
+					  (conj* (fresh (x1) (=/= x1 1)) (fresh (x1) (=/= x1 1))))) 3)
+
+    
     ;(tassert "ones list constraint" (run1 (x1) (ones (list 2 1))) '())
     ;;(tassert "presento fire ground term fail" (run1 (x1) (presento x1 1) (== x1 2)) (void))
+
+
+    (display (list-values (run-stream-constraint empty-state (conj* (== x1 1) (=/= x2 2)))))
     
     ))

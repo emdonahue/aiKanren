@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus)
+  (export run-goal stream-step bind mplus run-stream-constraint)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
 
   (define (run-goal g s p)
@@ -43,6 +43,22 @@
 	  ([(h p) (run-goal g (complete-car s) p)]
 	   [(r p) (bind g (complete-cdr s) p)])
 	(values (mplus h r) p))]
+     [else (assert #f)]))
+
+  (define (run-stream-constraint s g)
+    (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
+    (cond
+     [(or (failure? s) (fail? g)) (values failure g)]
+     [(succeed? g) (values s g)]
+     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
+     [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
+     ;;[(fresh? g) (run-stream-constraint s (first-value (g s empty-package)))]
+     [(conj? g)
+      (let-values ([(s p) (run-goal (conj-car g) s empty-package)])
+	(bind (conj-cdr g) s p))]
+     ;;[(conj? g) (run-conj s (conj-conjuncts g) succeed)]
+     ;;[(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
+     [(constraint? g) (run-stream-constraint s (constraint-goal g))]
      [else (assert #f)]))
   
   (define (stream-step s p)
