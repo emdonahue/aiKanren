@@ -118,6 +118,7 @@
     ;;(tassert "presento fire ground term fail" (run1 (x1) (presento x1 1) (== x1 2)) (void))
 
 
-    (display (list-values (run-stream-constraint empty-state (conj* (== x1 1) (=/= x2 2)))))
+    ;;(display (list-values (run-stream-constraint empty-state (conj* (== x1 1) (=/= x2 2)))))
+    ;;(display (list-values (run-stream-constraint empty-state (disj* (== x1 1) (== x1 2)))))
     
     ))

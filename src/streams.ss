@@ -54,12 +54,25 @@
      [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
      ;;[(fresh? g) (run-stream-constraint s (first-value (g s empty-package)))]
      [(conj? g)
-      (let-values ([(s p) (run-goal (conj-car g) s empty-package)])
-	(bind (conj-cdr g) s p))]
+      (let-values ([(s g) (run-stream-constraint s (conj-car g))]
+		   [(b gs) (bind (conj-cdr g) s empty-package)])
+	(values  (normalized-conj* g )))]
      ;;[(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      ;;[(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
+     [(disj? g)
+      (let*-values
+	  ([(lhs lhg) (run-stream-constraint s (disj-car g))]
+	   [(rhs rhg) (run-stream-constraint s (disj-cdr g))])
+	(values (mplus lhs rhs) (normalized-disj* lhg rhg)))]
      [(constraint? g) (run-stream-constraint s (constraint-goal g))]
      [else (assert #f)]))
+
+  (define (stream-constraint-step s)
+    (assert (stream? s))
+    (cond
+     [(failure? s) s]
+     
+     [else (assert #f)] ))
   
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; ->stream? package?
