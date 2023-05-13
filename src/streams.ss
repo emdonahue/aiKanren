@@ -5,24 +5,26 @@
 
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
-    (cond     
-     [(succeed? g) (values s p)]
-     [(fail? g) (values failure p)]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (values (make-incomplete g s) p))]
-     [(==? g) (values (unify s (==-lhs g) (==-rhs g)) p)]
-     [(conj? g)
-      (let-values ([(s p) (run-goal (conj-car g) s p)])
-	(bind (conj-cdr g) s p))]
-     [(disj? g)
-      (let*-values
-	  ([(lhs p) (run-goal (disj-car g) s p)]
-	   [(rhs p) (run-goal (disj-cdr g) s p)])
-	(values (mplus lhs rhs) p))]
-     [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
-     [(noto? g) (assert #f) (run-goal (noto (g s p)) s p)]
-     [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
-     [else (assert #f)]))
+    (let-values ([(s p)
+		  (cond     
+		    [(succeed? g) (values s p)]
+		    [(fail? g) (values failure p)]
+		    [(fresh? g) (let-values ([(g s p) (g s p)])
+				  (values (make-incomplete g s) p))]
+		    [(==? g) (values (unify s (==-lhs g) (==-rhs g)) p)]
+		    [(conj? g)
+		     (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
+		       (bind (conj-cdr g) s p))]
+		    [(disj? g)
+		     (let*-values
+			 ([(xxx lhs p) (run-goal (disj-car g) s p)]
+			  [(xxx rhs p) (run-goal (disj-cdr g) s p)])
+		       (values (mplus lhs rhs) p))]
+		    [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
+		    [(noto? g) (assert #f) (values 1 2 3) #;(run-goal (noto (g s p)) s p)
+		     ]
+		    [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
+		    [else (assert #f) (values 1 2)])]) (values g s p)))
 
   #;(define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
@@ -62,12 +64,13 @@
     (assert (and (goal? g) (stream? s) (package? p))) ; ->stream? package?
     (cond
      [(failure? s) (values s p)]
-     [(state? s) (run-goal g s p)]
+     [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
+		   (values s p))]
      [(incomplete? s) (make-incomplete g s)]
      [(complete? s)
       (let*-values
-	  ([(h p) (run-goal g (complete-car s) p)]
-	   [(r p) (bind g (complete-cdr s) p)])
+	  ([(xxx h p) (run-goal g (complete-car s) p)]
+	   [(xxx r p) (bind g (complete-cdr s) p)])
 	(values (mplus h r) p))]
      [else (assert #f)]))
 
@@ -105,7 +108,9 @@
     (cond
      [(failure? s) (values s p)]
      [(state? s) (values failure p)]
-     [(incomplete? s) (run-goal (incomplete-goal s) (incomplete-state s) p)]
+     [(incomplete? s)
+      (let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-state s) p)])
+	(values s p))]
      [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) s) p))]
      [(complete? s) (values (complete-cdr s) p)]
