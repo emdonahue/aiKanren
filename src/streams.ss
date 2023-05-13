@@ -4,27 +4,33 @@
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes)) 
 
   (define (run-goal g s p)
-    (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
-    (let-values ([(s p)
-		  (cond     
-		    [(succeed? g) (values s p)]
-		    [(fail? g) (values failure p)]
-		    [(fresh? g) (let-values ([(g s p) (g s p)])
-				  (values (make-incomplete g s) p))]
-		    [(==? g) (values (unify s (==-lhs g) (==-rhs g)) p)]
-		    [(conj? g)
-		     (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
-		       (bind (conj-cdr g) s p))]
-		    [(disj? g)
-		     (let*-values
-			 ([(xxx lhs p) (run-goal (disj-car g) s p)]
-			  [(xxx rhs p) (run-goal (disj-cdr g) s p)])
-		       (values (mplus lhs rhs) p))]
-		    [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
-		    [(noto? g) (assert #f) (values 1 2 3) #;(run-goal (noto (g s p)) s p)
-		     ]
-		    [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
-		    [else (assert #f) (values 1 2)])]) (values g s p)))
+    (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
+    (cond
+     [(succeed? g) (values succeed s p)]
+     [(fail? g) (values fail failure p)]
+     [(==? g) (let-values ([(s g) (simplify-unification s (==-lhs g) (==-rhs g))])
+		(values g s p))]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (values g (make-incomplete g s) p))]
+     [(conj? g)
+      (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
+	(bind (conj-cdr g) s p))]
+     [else (let-values ([(s p)
+			 (cond     
+			  
+			  
+			  
+			  
+			  [(disj? g)
+			   (let*-values
+			       ([(xxx lhs p) (run-goal (disj-car g) s p)]
+				[(xxx rhs p) (run-goal (disj-cdr g) s p)])
+			     (values (mplus lhs rhs) p))]
+			  [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
+			  [(noto? g) (assert #f) (values 1 2 3) #;(run-goal (noto (g s p)) s p)
+			   ]
+			  [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
+			  [else (assert #f) (values 1 2)])]) (values 'run-goal-goal s p))]))
 
   #;(define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
@@ -61,18 +67,19 @@
      [else (assert #f)]))
 
   (define (bind g s p)
-    (assert (and (goal? g) (stream? s) (package? p))) ; ->stream? package?
-    (cond
-     [(failure? s) (values s p)]
-     [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
-		   (values s p))]
-     [(incomplete? s) (make-incomplete g s)]
-     [(complete? s)
-      (let*-values
-	  ([(xxx h p) (run-goal g (complete-car s) p)]
-	   [(xxx r p) (bind g (complete-cdr s) p)])
-	(values (mplus h r) p))]
-     [else (assert #f)]))
+    (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
+    (let-values ([(s p)
+		  (cond
+		    [(failure? s) (values s p)]
+		    [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
+				  (values s p))]
+		    [(incomplete? s) (make-incomplete g s)]
+		    [(complete? s)
+		     (let*-values
+			 ([(xxx h p) (run-goal g (complete-car s) p)]
+			  [(xxx r p) (bind g (complete-cdr s) p)])
+		       (values (mplus h r) p))]
+		    [else (assert #f)])]) (values 'bind-goal s p)))
 
   (define (run-stream-constraint s g)
     (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
@@ -84,7 +91,7 @@
      ;;[(fresh? g) (run-stream-constraint s (first-value (g s empty-package)))]
      [(conj? g)
       (let-values ([(s g) (run-stream-constraint s (conj-car g))]
-		   [(b gs) (bind (conj-cdr g) s empty-package)])
+		   [(xxx b gs) (bind (conj-cdr g) s empty-package)])
 	(values  (normalized-conj* g )))]
      ;;[(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      ;;[(disj? g) (run-disj s (disj-disjuncts g) fail failure)]

@@ -16,6 +16,7 @@
     (first-value (simplify-unification s x y)))
 
   (define (simplify-unification s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
+    (assert (state? s)) ; -> state-or-failure? goal?
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
       (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
 
