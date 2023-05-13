@@ -68,18 +68,17 @@
 
   (define (bind g s p)
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
-    (let-values ([(s p)
-		  (cond
-		    [(failure? s) (values s p)]
-		    [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
-				  (values s p))]
-		    [(incomplete? s) (make-incomplete g s)]
-		    [(complete? s)
-		     (let*-values
-			 ([(xxx h p) (run-goal g (complete-car s) p)]
-			  [(xxx r p) (bind g (complete-cdr s) p)])
-		       (values (mplus h r) p))]
-		    [else (assert #f)])]) (values 'bind-goal s p)))
+    (cond
+     [(failure? s) (values fail failure p)]
+     [(state? s) (let-values ([(xxx s p) (run-goal g s p)])
+		   (values 'bind-state s p))]
+     [(incomplete? s) (values 'bind-incomplete (make-incomplete g s) p)]
+     [(complete? s)
+      (let*-values
+	  ([(xxx h p) (run-goal g (complete-car s) p)]
+	   [(xxx r p) (bind g (complete-cdr s) p)])
+	(values 'bind-complete (mplus h r) p))]
+     [else (assert #f)]))
 
   (define (run-stream-constraint s g)
     (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
