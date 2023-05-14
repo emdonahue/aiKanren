@@ -25,7 +25,11 @@
       (let*-values ([(g s^ p) (run-goal (noto-goal g) s p)]
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p))]
-     [(constraint? g) (values 'constraint-goal (run-constraint s (constraint-goal g)) p)]
+     [(constraint? g)
+      (let-values ([(g s^ p) (run-goal (constraint-goal g) s p)])
+	(values g (store-constraint s g) p))
+      #;
+      (values 'constraint-goal (run-constraint s (constraint-goal g)) p)]
      [else (assert #f)]))
 
   #;(define (run-goal g s p)

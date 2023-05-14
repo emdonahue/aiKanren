@@ -99,10 +99,12 @@
     (tassert "presento bound ground term succeed" (run1 (x1) (== x1 1) (presento x1 1)) 1)
     
     (tassert "presento ground car succeed" (run1 () (presento (cons 1 2) 1)) '())
-    (tassert "presento ground cdr succeed" (run1 () (presento (cons 2 1) 1)) '())
+    (tassert "presento ground cdr succeed" (run1 () (presento (cons 2 1) 1)) '())    
+    (tassert "presento ground car succeed" (run1 () (presento (cons 1 2) 1)) '())
+
+    (display "START\n")
     (tassert "presento ground car fail" (run1 () (presento (cons 2 2) 1)) (void))
     (tassert "presento ground cdr fail" (run1 () (presento (cons 2 2) 1)) (void))
-    (tassert "presento ground car succeed" (run1 () (presento (cons 1 2) 1)) '())
 ;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
 
 
