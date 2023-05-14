@@ -131,13 +131,19 @@
     (cond
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
-     [(==? g) (run-constraint ; TODO should we run a conjunction of all updated states at the same time, or would that just do the same thing?
-	       (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs g)))
-	       (get-constraint (state-constraints s)
-			       (==-lhs g)))] ; State has updated a single variable
+     [(==? g) (fire-constraint s g)] ; State has updated a single variable
      [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
      [else (assert #f)]))
 
+  (define (fire-constraint s e)
+    (assert (and (state? s) (==? e)))
+    (let-values ([(g s^ p) (run-goal
+			    (get-constraint (state-constraints s)
+					    (==-lhs e))
+			    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))
+			    empty-package)])
+      (store-constraint s g)))
+  
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
