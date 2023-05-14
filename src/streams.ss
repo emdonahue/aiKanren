@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint simplify-unification)
+  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
   (define (run-goal g s p)
@@ -8,7 +8,7 @@
     (cond
      [(succeed? g) (values succeed s p)]
      [(fail? g) (values fail failure p)]
-     [(==? g) (let-values ([(s g) (simplify-unification s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(values g s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (values g (make-incomplete g s) p))]
@@ -117,7 +117,7 @@
 
   ;; === CONSTRAINTS ===
 
-  (define (simplify-unification s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
+  (define (unify-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (assert (state? s)) ; -> state-or-failure? goal?
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
       (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
@@ -169,8 +169,8 @@
     (cond
      [(or (failure? s) (fail? g)) (values failure g)]
      [(succeed? g) (values s g)]
-     [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
-     [(noto? g) (values s (noto (values-ref (simplify-unification s (==-lhs (noto-goal g)) (==-rhs (noto-goal g))) 1)))]
+     [(==? g) (unify-check s (==-lhs g) (==-rhs g))]
+     [(noto? g) (values s (noto (values-ref (unify-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g))) 1)))]
      [(fresh? g) (run-simple-constraint s (first-value (g s empty-package)))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
      [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
@@ -193,7 +193,7 @@
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
-     [(==? c) (first-value (simplify-unification s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
+     [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
      [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
