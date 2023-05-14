@@ -66,13 +66,15 @@
      [else (assert #f)]))
   
   (define (stream-step s p)
+    ;; TODO should stream-step return goals?
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(failure? s) (values fail s p)]
      [(state? s) (values succeed s p)]
      [(incomplete? s)
-      (let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-stream s) p)])
-	(values g s p))]
+      (let*-values ([(g^ s^ p) (stream-step (incomplete-stream s) p)]
+		    [(g s p) (bind (incomplete-goal s) s^ p)])
+	(values (normalized-conj* g g^) s p))]
      [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
 		   (values 'step-goal (mplus (mplus-rhs s) s) p))]
      [(complete? s) (values 'step-goal (complete-cdr s) p)]
