@@ -8,10 +8,7 @@
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
-	  make-absento absento?
-	  =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
-	  absento
 	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
@@ -51,7 +48,6 @@
     ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
   (define-structure (constraint goal))
-  (define-structure (absento atom term))
   (define empty-constraint-store (make-constraint-store '()))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
@@ -93,14 +89,6 @@
   
   (define (guarded? s)
     (and (state? s) (not (null? (state-guards s)))))
-    
-  ;; === ABSENTO ===
-  (define absento make-absento)
-
-  ;; === DISEQUALITY ===
-  (define-values (empty-disequality disequality? disequality-car disequality-cdr disequality-null?)
-    (values '() list? car cdr null?))
-  (define-structure (=/= lhs rhs))
 
   ;; === GOALS ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
@@ -113,7 +101,7 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (noto? g) (constraint? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))

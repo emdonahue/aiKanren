@@ -8,8 +8,6 @@
      [(succeed? g) fail]
      [(fail? g) succeed]
      [(==? g) (make-noto g)]
-     ;;[(==? g) (=/= (==-lhs g) (==-rhs g))]
-     [(=/=? g) (== (=/=-lhs g) (=/=-rhs g))]
      [(disj? g) (make-conj (map noto (disj-disjuncts g)))]
      [(conj? g) (make-disj (map noto (conj-conjuncts g)))]
      [(fresh? g) (make-noto g)]
