@@ -38,7 +38,7 @@
   (define (run-constraint g s p)
     (assert (and (goal? g) (stream? s) (package? p)))
     (if (incomplete? s)
-	(let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-state s) p)])
+	(let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-stream s) p)])
 	  (run-constraint g s p))
 	(values g s p)))
   
@@ -69,9 +69,9 @@
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(failure? s) (values fail s p)]
-     [(state? s) (values succeed failure p)]
+     [(state? s) (values succeed s p)]
      [(incomplete? s)
-      (let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-state s) p)])
+      (let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-stream s) p)])
 	(values g s p))]
      [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
 		   (values 'step-goal (mplus (mplus-rhs s) s) p))]
