@@ -7,7 +7,8 @@
     (cond
      [(succeed? g) fail]
      [(fail? g) succeed]
-     [(==? g) (=/= (==-lhs g) (==-rhs g))]
+     [(==? g) (make-noto g)]
+     ;;[(==? g) (=/= (==-lhs g) (==-rhs g))]
      [(=/=? g) (== (=/=-lhs g) (=/=-rhs g))]
      [(disj? g) (make-conj (map noto (disj-disjuncts g)))]
      [(conj? g) (make-disj (map noto (conj-conjuncts g)))]

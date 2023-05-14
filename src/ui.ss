@@ -1,6 +1,6 @@
 (library (ui)
   (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/= absento constrain)
-  (import (chezscheme) (running) (datatypes))
+  (import (chezscheme) (running) (datatypes) (negation))
 
   (define-syntax conde
     (syntax-rules ()
@@ -47,6 +47,9 @@
    (define (constrain g)
      (assert (goal? g))
      (make-constraint g))
+
+   (define (=/= lhs rhs)
+    (noto (== lhs rhs)))
   
   ;; === UTILITIES ===
 

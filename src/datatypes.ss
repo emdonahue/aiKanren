@@ -9,7 +9,7 @@
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-absento absento?
-	  =/= =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
+	  =/=? =/=-lhs =/=-rhs disequality? empty-disequality disequality-null?
 	  make-substitution empty-substitution substitution-dict substitution?
 	  absento
 	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
@@ -101,7 +101,6 @@
   (define-values (empty-disequality disequality? disequality-car disequality-cdr disequality-null?)
     (values '() list? car cdr null?))
   (define-structure (=/= lhs rhs))
-  (define =/= make-=/=)
 
   ;; === GOALS ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
