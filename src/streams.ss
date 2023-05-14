@@ -24,17 +24,8 @@
       (let*-values ([(g s^ p) (run-goal (noto-goal g) s p)]
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p))]
-     [else (let-values ([(s p)
-			 (cond     
-			  
-			  
-			  
-			  
-			  
-			  
-			  
-			  [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
-			  [else (assert #f) (values 1 2)])]) (values 'run-goal-goal s p))]))
+     [(constraint? g) (values 'constraint-goal (run-constraint s (constraint-goal g)) p)]
+     [else (assert #f)]))
 
   #;(define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
