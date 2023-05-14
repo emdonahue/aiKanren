@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check run-constraint)
+  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
   (define (run-goal g s p)
@@ -27,10 +27,7 @@
 	(values g (store-constraint s g) p))]
      [(constraint? g)
       (let-values ([(g s^ p) (do-constraint (constraint-goal g) s p)])
-	;(printf "STORE CONST: ~s~%FROM STATE: ~s~%" g s^)
-	(values g (store-constraint s g) p))
-      #;
-      (values 'constraint-goal (run-constraint s (constraint-goal g)) p)]
+	(values g (store-constraint s g) p))]
      [else (assert #f)]))
 
   (define (do-constraint g s p)
@@ -38,31 +35,6 @@
       (if (incomplete? s)
 	  (do-constraint g (incomplete-state s) p)
 	  (values g s p))))
-
-  #;(define (run-goal g s p)
-    (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
-    (cond     
-     [(succeed? g) (values succeed s p)]
-     [(fail? g) (values fail failure p)]
-     [(fresh? g)
-      (let-values ([(g s p) (g s p)])
-	(values g (make-incomplete g s) p))]
-     [(==? g)
-      (let-values ([(s g) (unify s (==-lhs g) (==-rhs g))])
-	(values g s p))]
-     [(conj? g)
-      (let-values ([(g0 s p) (run-goal (conj-car g) s p)]
-		   [(g s p) (bind (conj-cdr g) s p)])
-	(values (normalized-conj* g0 g) s p))]
-     [(disj? g)
-      (let*-values
-	  ([(lhg lhs p) (run-goal (disj-car g) s p)]
-	   [(rhg rhs p) (run-goal (disj-cdr g) s p)])
-	(values (normalized-disj* lhg rhg) (mplus lhs rhs) p))]
-     [(=/=? g) (values g (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
-     [(noto? g) (run-goal (noto (g s p)) s p)]
-     [(constraint? g) (values g (run-constraint s (constraint-goal g)) p)]
-     [else (assert #f)]))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -144,63 +116,6 @@
 			    empty-package)])
       (store-constraint s g)))
   
-  (define (run-constraint s g)
-    ;; Simplify the constraint and push it into the store.
-    (assert (and (state? s) (goal? g))) ; -> state-or-failure?
-    (let-values ([(_ g^) (run-simple-constraint s g)]
-		 [(g2 s2 p2) (run-goal g s empty-package)])
-      #;
-      (let-values ([(g2 s2 p2) (run-goal g s empty-package)])
-      (printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2))
-      ;(printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2)
-      (if (or #t (succeed? g) (fail? g) (==? g) (noto? g) (conj? g)) (store-constraint s g2)
-       (store-constraint s g^))))
-  
-  (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
-    ;; TODO reuse substitution when storing conjoined == constraints
-    (assert (and (state-or-failure? s) (list? gs) (goal? c))) ; -> state-or-fail?
-    (cond
-     [(fail? c) (values failure fail)]
-     [(null? gs) (values s c)]
-     [else (let-values ([(s g) (run-simple-constraint s (car gs))])
-	     (run-conj s (cdr gs) (if (and #f (==? (car gs)) (not (fail? g))) ; == already in substitution. No need to add to store.
-				      c (normalized-conj (list g c)))))]))
-
-    (define (run-disj s gs c ==-s)
-      ;; s^ preserves the last state resulting from == in case we end up with only a single == and want to commit to it without re-unifying
-      ;; TODO reuse substitution when disj constraint simplifies to ==
-    (assert (and (state? s) (list? gs) (goal? c) (state-or-failure? ==-s))) ; -> state-or-failure?
-    (cond
-     [(succeed? c) (values s succeed)]
-     [(disj? c) (values s (normalized-disj* c (disj gs)))]
-     [(null? gs) (values (if (==? c) ==-s s) c)] ; If committing to a single ==, reuse the substitution.
-     [else (let-values ([(s^ g) (run-simple-constraint s (car gs))])
-	     (run-disj s (cdr gs) (normalized-disj (list c g))
-		       (if (and #f (==? (car gs)) (not (fail? g))) s^ ==-s)))]))
-
-  (define (run-simple-constraint s g)
-    (assert (and (state-or-failure? s) (goal? g))) ; -> state? goal?
-    (cond
-     [(or (failure? s) (fail? g)) (values failure g)]
-     [(succeed? g) (values s g)]
-     [(==? g) (unify-check s (==-lhs g) (==-rhs g))]
-     [(noto? g) (values s (noto (values-ref (unify-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g))) 1)))]
-     [(fresh? g) (run-simple-constraint s (first-value (g s empty-package)))]
-     [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
-     [(disj? g) (run-disj s (disj-disjuncts g) fail failure)]
-     [(constraint? g) (run-simple-constraint s (constraint-goal g))]
-     [else (assert #f)]))
-
-  (define (get-attributed-vars c)
-    ;; Extracts the free variables in the constraint to which it should be attributed.
-    ;; TODO optimize which constraint we pick to minimize free vars
-    ;; TODO attributed vars should probably be deduplicated    
-    (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
-    (cond
-     [(disj? c) (get-attributed-vars (disj-car c))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
-     [(noto? c) (get-attributed-vars (noto-goal c))]
-     [else (filter var? (vector->list c))]))
-  
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state-or-failure? s) (goal? c))) ; -> state?
@@ -215,4 +130,12 @@
 	 (set-state-constraints
 	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
 
-  ) 
+  (define (get-attributed-vars c)
+    ;; Extracts the free variables in the constraint to which it should be attributed.
+    ;; TODO optimize which constraint we pick to minimize free vars
+    ;; TODO attributed vars should probably be deduplicated    
+    (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
+    (cond
+     [(disj? c) (get-attributed-vars (disj-car c))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
+     [(noto? c) (get-attributed-vars (noto-goal c))]
+     [else (filter var? (vector->list c))]))) 
