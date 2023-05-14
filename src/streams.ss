@@ -1,9 +1,9 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check)
+  (export run-goal stream-step bind mplus unify-check)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
-  (define (run-goal g s p)
+  (trace-define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(succeed? g) (values succeed s p)]
@@ -26,14 +26,15 @@
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p))]
      [(constraint? g)
-      (let-values ([(g s^ p) (do-constraint (constraint-goal g) s p)])
-	(values g (store-constraint s g) p))]
+      (let-values ([(g s^ p) (run-constraint (constraint-goal g) s p)])
+	(values g (store-constraint (copy-varid s^ s) g) p))]
      [else (assert #f)]))
 
-  (define (do-constraint g s p)
-		(let-values ([(g s p) (run-goal g s p)])
+  (trace-define (run-constraint g s p)
+    (assert (and (goal? g) (state? s) (package? p)))
+    (let-values ([(g s p) (run-goal g s p)])
       (if (incomplete? s)
-	  (do-constraint g (incomplete-state s) p)
+	  (run-constraint (incomplete-goal s) (incomplete-state s) p)
 	  (values g s p))))
   
   (define (mplus lhs rhs)
@@ -51,30 +52,13 @@
      [(failure? s) (values fail failure p)]
      [(state? s) (let-values ([(g^ s p) (run-goal g s p)])
 		   (values (normalized-conj* g g^) s p))]
-     [(incomplete? s) (values 'bind-incomplete (make-incomplete g s) p)]
+     [(incomplete? s) (values g (make-incomplete g s) p)]
      [(complete? s)
       (let*-values
 	  ([(xxx h p) (run-goal g (complete-car s) p)]
 	   [(xxx r p) (bind g (complete-cdr s) p)])
 	(values 'bind-complete (mplus h r) p))]
      [else (assert #f)]))
-
-  (define (stream-constraint-step s)
-    (assert (stream? s))
-    (cond
-     [(failure? s) s]
-     
-     [else (assert #f)] ))
-
-  (define (run-stream-constraint g s0)
-    (let-values ([(g s p) (run-goal g s0 empty-package)])
-      ;(printf "CONSTRAINT: ~s~%STATE: ~s~%" g s)
-      (cond
-       [(fail? g) failure]
-       [(succeed? g) s0]
-       [(state? s) s]
-       [(disj? g) (store-constraint s0 g)] ; TODO increase the var-id counter
-       [else (assert #f)])))
   
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; ->stream? package?

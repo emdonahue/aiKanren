@@ -129,5 +129,24 @@
 					;(display (check-constraints (run-stream-constraint (make-noto (== x2 2)) empty-state) (== x2 2)))
     ;;(display (list-values (run-goal (disj* (== x1 x2) (== x1 2)) (unify empty-state x1 1) empty-package)))
 
+    ;(display "START\n")
+    (tassert "fresh constraint increments varid"
+	     (state-varid (values-ref (run-goal (constrain (fresh (x1) (=/= x1 1))) empty-state empty-package) 1)) 2)
+    (tassert "fresh constraint increments varid multiple"
+	     (state-varid (values-ref (run-goal (constrain (fresh (x1 x2) (=/= x1 1))) empty-state empty-package) 1)) 3)
+
+    #;
+    (tassert "fresh constraint increments varid bind incomplete"
+	     (state-varid (values-ref (run-goal (constrain
+						 (fresh (x1) 
+						   (fresh (x2) (=/= x2 2))
+						   (=/= x1 1))) empty-state empty-package) 1)) 3)
+
+
+    (display (list-values (run-goal (constrain
+				     (fresh (x1) 
+				       (fresh (x2) (=/= x2 2))
+				       (=/= x1 1))) empty-state empty-package)))
+
     
     ))

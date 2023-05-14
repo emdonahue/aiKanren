@@ -5,7 +5,7 @@
 	  make-==  make-incomplete complete? stream? complete complete? complete-car complete-cdr incomplete? incomplete-goal incomplete-state mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
-	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints
+	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints copy-varid
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -76,6 +76,16 @@
     (assert (state? s))
     (let ([s (vector-copy s)])
       (set-state-varid! s (+ 1 (state-varid s))) s))
+
+  (define (copy-varid from to)
+    (assert (and (state? to) (stream? from)))
+    (if (failure? from) from
+	(let ([to (vector-copy to)])
+	  (set-state-varid!
+	   to
+	   (cond
+	    [(state? from) (state-varid from)]
+	    [else (state-varid to)])) to)))
 
   (define (state-or-failure? s) (or (state? s) (failure? s)))
 
@@ -199,5 +209,4 @@
     (car (disj-disjuncts d)))
 
   (define (disj-cdr d)
-    (disj (cdr (disj-disjuncts d))))
-)
+    (disj (cdr (disj-disjuncts d)))))
