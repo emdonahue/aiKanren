@@ -31,7 +31,7 @@
 			  
 			  
 			  
-			  [(=/=? g) (values (run-constraint s (noto (== (=/=-lhs g) (=/=-rhs g)))) p)]
+			  
 			  
 			  [(constraint? g) (values (run-constraint s (constraint-goal g)) p)]
 			  [else (assert #f) (values 1 2)])]) (values 'run-goal-goal s p))]))

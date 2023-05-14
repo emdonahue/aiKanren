@@ -72,7 +72,6 @@
      [(or (failure? s) (fail? g)) (values failure g)]
      [(succeed? g) (values s g)]
      [(==? g) (simplify-unification s (==-lhs g) (==-rhs g))]
-     [(=/=? g) (values s (noto (values-ref (simplify-unification s (=/=-lhs g) (=/=-rhs g)) 1)))]
      [(noto? g) (values s (noto (values-ref (simplify-unification s (==-lhs (noto-goal g)) (==-rhs (noto-goal g))) 1)))]
      [(fresh? g) (run-simple-constraint s (first-value (g s empty-package)))]
      [(conj? g) (run-conj s (conj-conjuncts g) succeed)]
