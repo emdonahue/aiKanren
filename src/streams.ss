@@ -12,8 +12,9 @@
 		(values g s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (values g (make-incomplete g s) p))]
-     [(conj? g) (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
-		  (bind (conj-cdr g) s p))]
+     [(conj? g) (let*-values ([(g0 s p) (run-goal (conj-car g) s p)]
+			     [(g s p) (bind (conj-cdr g) s p)])
+		  (values (normalized-conj* g0 g) s p))]
      [(disj? g) (let*-values
 		    ([(lhg lhs p) (run-goal (disj-car g) s p)]
 		     [(rhg rhs p) (run-goal (disj-cdr g) s p)])
