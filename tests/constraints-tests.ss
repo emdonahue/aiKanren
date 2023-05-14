@@ -142,7 +142,7 @@
 						   (fresh (x2) (=/= x2 2))
 						   (=/= x1 1))) empty-state empty-package) 1)) 3)
 
-#;
+
     (display (list-values (run-goal (constrain
 				     (fresh (x1) 
 				       (fresh (x2) (=/= x2 2))
