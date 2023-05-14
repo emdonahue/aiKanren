@@ -135,7 +135,7 @@
       (let-values ([(g2 s2 p2) (run-goal g s empty-package)])
       (printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2))
       ;(printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2)
-      (if (or (succeed? g) (fail? g) (==? g) (noto? g) (conj? g)) (store-constraint s g2)
+      (if (or #t (succeed? g) (fail? g) (==? g) (noto? g) (conj? g)) (store-constraint s g2)
        (store-constraint s g^))))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
