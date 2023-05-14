@@ -7,6 +7,9 @@
        (fresh (a d)
 	 (== v (cons a d))
 	 (disj* (== a 1) (ones d)))))
+
+  (define (unify s x y)
+    (first-value (unify-check s x y)))
   
   (define (run-constraints-tests)
     (define x1 (make-var 1))
@@ -122,7 +125,7 @@
     ;;(display (list-values (run-stream-constraint empty-state (disj* (== x1 1) (== x1 2)))))
 
 					;(display (check-constraints (run-stream-constraint (make-noto (== x2 2)) empty-state) (== x2 2)))
-    
-    
+    ;;(display (list-values (run-goal (disj* (== x1 x2) (== x1 2)) (unify empty-state x1 1) empty-package)))
+
     
     ))

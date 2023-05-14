@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check)
+  (export run-goal stream-step bind mplus run-stream-constraint run-stream-constraint unify-check run-constraint)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
   (define (run-goal g s p)
@@ -17,7 +17,7 @@
      [(disj? g) (let*-values
 		    ([(lhg lhs p) (run-goal (disj-car g) s p)]
 		     [(rhg rhs p) (run-goal (disj-cdr g) s p)])
-		  (values (disj* lhg rhg) (mplus lhs rhs) p))]
+		  (values (normalized-disj* lhg rhg) (mplus lhs rhs) p))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
 					       (run-goal (noto g) s p))]
      [(and (noto? g) (not (fresh? (noto-goal g))))
@@ -133,7 +133,8 @@
 		 [(g2 s2 p2) (run-goal g s empty-package)])
       #;
       (let-values ([(g2 s2 p2) (run-goal g s empty-package)])
-       (printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2))
+      (printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2))
+      ;(printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2)
       (if (or (succeed? g) (fail? g) (==? g) (noto? g) (conj? g)) (store-constraint s g2)
        (store-constraint s g^))))
   
