@@ -12,16 +12,18 @@
 		(values g s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (values g (make-incomplete g s) p))]
-     [(conj? g)
-      (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
-	(bind (conj-cdr g) s p))]
-     [(disj? g)
-      (let*-values
-	  ([(lhg lhs p) (run-goal (disj-car g) s p)]
-	   [(rhg rhs p) (run-goal (disj-cdr g) s p)])
-	(values (disj* lhg rhg) (mplus lhs rhs) p))]
-     [(noto? g) (let-values ([(g s^ p) (run-goal (noto-goal g) s p)])
-		  (values (make-noto g) (store-constraint s (make-noto g)) p))]
+     [(conj? g) (let-values ([(xxx s p) (run-goal (conj-car g) s p)])
+		  (bind (conj-cdr g) s p))]
+     [(disj? g) (let*-values
+		    ([(lhg lhs p) (run-goal (disj-car g) s p)]
+		     [(rhg rhs p) (run-goal (disj-cdr g) s p)])
+		  (values (disj* lhg rhg) (mplus lhs rhs) p))]
+     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
+					       (run-goal (noto g) s p))]
+     [(and (noto? g) (not (fresh? (noto-goal g))))
+      (let*-values ([(g s^ p) (run-goal (noto-goal g) s p)]
+		    [(g) (noto g)])
+	(values g (store-constraint s g) p))]
      [else (let-values ([(s p)
 			 (cond     
 			  

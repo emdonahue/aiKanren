@@ -121,6 +121,6 @@
     ;;(display (list-values (run-stream-constraint empty-state (conj* (== x1 1) (=/= x2 2)))))
     ;;(display (list-values (run-stream-constraint empty-state (disj* (== x1 1) (== x1 2)))))
 
-    (display (run-stream-constraint (make-noto (== x2 2)) empty-state))
+    ;(display (check-constraints (run-stream-constraint (make-noto (== x2 2)) empty-state) (== x2 2)))
     
     ))

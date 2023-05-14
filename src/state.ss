@@ -1,5 +1,5 @@
 (library (state)
-  (export reify unify instantiate-var walk run-constraint simplify-unification store-constraint) ;;TODO double check state exports
+  (export reify unify instantiate-var walk run-constraint simplify-unification store-constraint check-constraints) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
