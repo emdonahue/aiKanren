@@ -11,5 +11,8 @@
     (tassert "run disj 3 empty states" (run* () (conde [(== 1 1)] [(== 2 2)] [(== 3 3)])) '(() () ()))
     (tassert "run disj 3 unifications" (run* (q) (conde [(== q 1)] [(== q 2)] [(== q 3)])) '(1 2 3)) 
     (tassert "fresh" (run* (q) (fresh (x1) (== q x1) (== x1 1))) '(1))
-   ; (tassert "bind incomplete" (run* (x1) (fresh (x2) (== x1 x2)) (== x1 1)) '(1))
+
+    (tassert "mplus fail lhs" (run1 (x1) (conde [fail] [(== x1 1)])) 1)
+    
+    (tassert "bind incomplete" (run* (x1) (fresh (x2) (== x1 x2)) (== x1 1)) '(1))
     ))
