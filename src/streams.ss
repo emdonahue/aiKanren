@@ -3,7 +3,7 @@
   (export run-goal stream-step bind mplus unify-check)
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
-  (trace-define (run-goal g s p)
+  (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(succeed? g) (values succeed s p)]
@@ -26,16 +26,21 @@
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p))]
      [(constraint? g)
+      (let*-values ([(g s^ p) (run-goal (constraint-goal g) s p)]
+		   [(g s^ p) (run-constraint g s^ p)])
+	(values g (store-constraint (copy-varid s^ s) g) p))]
+     #;
+     [(constraint? g)
       (let-values ([(g s^ p) (run-constraint (constraint-goal g) s p)])
 	(values g (store-constraint (copy-varid s^ s) g) p))]
      [else (assert #f)]))
 
-  (trace-define (run-constraint g s p)
-    (assert (and (goal? g) (state? s) (package? p)))
-    (let-values ([(g s p) (run-goal g s p)])
-      (if (incomplete? s)
-	  (run-constraint (incomplete-goal s) (incomplete-state s) p)
-	  (values g s p))))
+  (define (run-constraint g s p)
+    (assert (and (goal? g) (stream? s) (package? p)))
+    (if (incomplete? s)
+	(let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-state s) p)])
+	  (run-constraint g s p))
+	(values g s p)))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -61,16 +66,16 @@
      [else (assert #f)]))
   
   (define (stream-step s p)
-    (assert (and (stream? s) (package? p))) ; ->stream? package?
+    (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(failure? s) (values s p)]
-     [(state? s) (values failure p)]
+     [(failure? s) (values fail s p)]
+     [(state? s) (values succeed failure p)]
      [(incomplete? s)
       (let-values ([(g s p) (run-goal (incomplete-goal s) (incomplete-state s) p)])
-	(values s p))]
+	(values g s p))]
      [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
-		   (values (mplus (mplus-rhs s) s) p))]
-     [(complete? s) (values (complete-cdr s) p)]
+		   (values 'step-goal (mplus (mplus-rhs s) s) p))]
+     [(complete? s) (values 'step-goal (complete-cdr s) p)]
      [else (assert #f)]))
 
 
