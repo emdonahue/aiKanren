@@ -1,7 +1,10 @@
 (library (state-tests)
   (export run-state-tests)
-  (import (chezscheme) (state) (var) (test-runner) (failure) (datatypes))
+  (import (chezscheme) (state) (var) (test-runner) (failure) (datatypes) (values))
 
+  (define (unify s x y)
+    (first-value (simplify-unification s x y)))
+  
   (define (run-state-tests)
     (define x0 (make-var 0))
     (define x2 (make-var 2))

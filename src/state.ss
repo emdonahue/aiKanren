@@ -1,5 +1,5 @@
 (library (state)
-  (export reify unify instantiate-var walk run-constraint simplify-unification store-constraint check-constraints) ;;TODO double check state exports
+  (export reify instantiate-var walk run-constraint simplify-unification store-constraint check-constraints) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (var) (failure) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -10,10 +10,6 @@
 	     [v (reify-constraint (state-constraints s) v)])
 	(if (var? v) v (reify s v)))]
      [else v]))
-  
-  (define (unify s x y)
-    (assert (state? s))
-    (first-value (simplify-unification s x y)))
 
   (define (simplify-unification s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (assert (state? s)) ; -> state-or-failure? goal?
@@ -42,6 +38,7 @@
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
     (let-values ([(_ g) (run-simple-constraint s g)])
+      (printf "")
       (store-constraint s g)))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
@@ -95,7 +92,7 @@
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
-     [(==? c) (unify s (==-lhs c) (==-rhs c))] ; Bare unifications are stored in the substitution
+     [(==? c) (first-value (simplify-unification s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
      [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
