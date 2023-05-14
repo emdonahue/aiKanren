@@ -138,9 +138,13 @@
   (define (run-constraint s g)
     ;; Simplify the constraint and push it into the store.
     (assert (and (state? s) (goal? g))) ; -> state-or-failure?
-    (let-values ([(_ g) (run-simple-constraint s g)])
-      (printf "")
-      (store-constraint s g)))
+    (let-values ([(_ g^) (run-simple-constraint s g)]
+		 [(g2 s2 p2) (run-goal g s empty-package)])
+      #;
+      (let-values ([(g2 s2 p2) (run-goal g s empty-package)])
+       (printf "ORG: ~s~%OLD: ~s~%NEW: ~s~%~%" g g^ g2))
+      (if (or (succeed? g) (fail? g)) (store-constraint s g2)
+       (store-constraint s g^))))
   
   (define (run-conj s gs c) ; g is input conjunct, c is simplified "output" conjunct
     ;; TODO reuse substitution when storing conjoined == constraints
