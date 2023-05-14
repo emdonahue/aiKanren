@@ -26,11 +26,18 @@
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p))]
      [(constraint? g)
-      (let-values ([(g s^ p) (run-goal (constraint-goal g) s p)])
+      (let-values ([(g s^ p) (do-constraint (constraint-goal g) s p)])
+	;(printf "STORE CONST: ~s~%FROM STATE: ~s~%" g s^)
 	(values g (store-constraint s g) p))
       #;
       (values 'constraint-goal (run-constraint s (constraint-goal g)) p)]
      [else (assert #f)]))
+
+  (define (do-constraint g s p)
+		(let-values ([(g s p) (run-goal g s p)])
+      (if (incomplete? s)
+	  (do-constraint g (incomplete-state s) p)
+	  (values g s p))))
 
   #;(define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; ->stream? package?
@@ -89,7 +96,7 @@
 
   (define (run-stream-constraint g s0)
     (let-values ([(g s p) (run-goal g s0 empty-package)])
-      (printf "CONSTRAINT: ~s~%STATE: ~s~%" g s)
+      ;(printf "CONSTRAINT: ~s~%STATE: ~s~%" g s)
       (cond
        [(fail? g) failure]
        [(succeed? g) s0]
