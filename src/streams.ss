@@ -56,11 +56,10 @@
      [(state? s) (let-values ([(g^ s p vid) (run-goal g s p)])
 		   (values (normalized-conj* g g^) s p vid))]
      [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p 0)]
-     [(complete? s)
-      (let*-values
-	  ([(xxx h p lhv) (run-goal g (complete-car s) p)]
-	   [(xxx r p rhv) (bind g (complete-cdr s) p)])
-	(values 'bind-complete (mplus h r) p (max lhv rhv)))]
+     [(complete? s) (let*-values
+			([(xxx h p lhv) (run-goal g (complete-car s) p)]
+			 [(xxx r p rhv) (bind g (complete-cdr s) p)])
+		      (values 'bind-complete (mplus h r) p (max lhv rhv)))]
      [else (assert #f)]))
   
   (define (stream-step s p)

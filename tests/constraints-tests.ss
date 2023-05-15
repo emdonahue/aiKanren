@@ -152,7 +152,17 @@
     (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
       (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
       (tassert "constraint conj == vid" (state-varid s) 3))
-    (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x2 2)])))])
+    (let ([s (run1-states (x1) (constrain (== x1 1) fail))])
+      (tassert "constraint bind fail" s failure))
+    (let ([s (run1-states (x1) (constrain (fresh (x2) (fresh (x3) (== x1 1)))))])
+      (tassert "constraint bind incomplete store" (reify s x1) 1)
+      (tassert "constraint bind incomplete vid" (state-varid s) 4))
+    
+
+    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      
+      (tassert "constraint disj succeed store" (reify s x1) x1)
+      (tassert "constraint disj succeed vid" (state-varid s) 2))
+    (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x2 2)])))])      
       (tassert "constraint disj == store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
       (tassert "constraint disj == vid" (state-varid s) 3))
     (let ([s (run1-states (x1 x2) (constrain (conde [(fresh (x3) (== x1 1))] [(fresh (x3 x4) (== x2 2))])))])
