@@ -59,9 +59,9 @@
        (let ([ans (run-states 1 (q ...) g ...)])
 	 (if (null? ans) failure (car ans))))))
 
-   (define (constrain g)
-     (assert (goal? g))
-     (make-constraint g))
+   (define-syntax constrain
+     (syntax-rules ()
+       [(_ g ...) (make-constraint (conj* g ...))]))
 
    (define (=/= lhs rhs)
     (noto (== lhs rhs)))

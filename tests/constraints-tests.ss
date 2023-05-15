@@ -144,8 +144,14 @@
 
 
     (let ([s (run1-states (x1) (constrain (== x1 1)))])
-      (tassert "constraint == store" (walk s x1) 1)
+      (tassert "constraint == store" (reify s x1) 1)
       (tassert "constraint == vid" (state-varid s) 2))
+    (let ([s (run1-states (x1) (constrain (fresh (x2) (== x1 1))))])
+      (tassert "constraint frash == store" (reify s x1) 1)
+      (tassert "constraint fresh == vid" (state-varid s) 3))
+    (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
+      (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
+      (tassert "constraint conj == vid" (state-varid s) 3))
     
     
     ))
