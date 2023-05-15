@@ -48,9 +48,10 @@
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
      [(answer? lhs) (complete lhs rhs)]
-     [(answer? rhs) (complete rhs lhs)]
      [(complete? lhs) (complete (complete-car lhs) (mplus rhs (complete-cdr lhs)))]
-     [else (assert #f)]))
+     [(answer? rhs) (complete rhs lhs)]
+     [(complete? rhs) (complete (complete-car rhs) (mplus lhs (complete-cdr rhs)))]
+     [else (make-mplus lhs rhs)]))
 
   (define (bind g s p)
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
@@ -76,8 +77,8 @@
       (let*-values ([(g^ s^ p) (stream-step (incomplete-stream s) p)]
 		    [(g s p) (bind (incomplete-goal s) s^ p)])
 	(values (normalized-conj* g g^) s p))]
-     [(mplus? s) (let-values ([(s p) (stream-step (mplus-lhs s) p)])
-		   (values 'step-goal (mplus (mplus-rhs s) s) p))]
+     [(mplus? s) (let-values ([(g lhs p) (stream-step (mplus-lhs s) p)])
+		   (values 'step-goal (mplus (mplus-rhs s) lhs) p))]
      [(complete? s) (values 'step-goal (complete-cdr s) p)]
      [else (assert #f)]))
 

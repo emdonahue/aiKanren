@@ -2,7 +2,7 @@
 (library (datatypes)
   (export make-runner set-runner-stream runner? runner-stream runner-query runner-package
 	  package? empty-package
-	  make-==  make-incomplete complete? stream? complete complete? complete-car complete-cdr incomplete? incomplete-goal incomplete-stream mplus? mplus-lhs mplus-rhs
+	  make-==  make-incomplete complete? stream? complete complete? complete-car complete-cdr incomplete? incomplete-goal incomplete-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints copy-varid
