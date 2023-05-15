@@ -1,5 +1,5 @@
 (library (ui)
-  (export == conde run run* run1 fresh runner runner-next runner-step runner-take failure? =/= constrain fail succeed)
+  (export == conde run run* run1 run-states run*-states run1-states fresh runner runner-next runner-step runner-take failure? =/= constrain fail succeed)
   (import (chezscheme) (running) (datatypes) (negation))
 
   (define-syntax conde
@@ -32,7 +32,7 @@
   (define-syntax run
     (syntax-rules ()
       ((_ n (q ...) g ...)
-       (runner-take n (runner (q ...) g ...)))))
+       (map car (runner-take n (runner (q ...) g ...))))))
 
   (define-syntax run*
     (syntax-rules ()
@@ -43,6 +43,21 @@
       ((_ (q ...) g ...)
        (let ([ans (run 1 (q ...) g ...)])
 	 (if (null? ans) (void) (car ans))))))
+
+   (define-syntax run-states
+    (syntax-rules ()
+      ((_ n (q ...) g ...)
+       (map cdr (runner-take n (runner (q ...) g ...))))))
+
+   (define-syntax run*-states
+    (syntax-rules ()
+      ((_ (q ...) g ...) (run-states -1 (q ...) g ...))))
+
+   (define-syntax run1-states
+    (syntax-rules ()
+      ((_ (q ...) g ...)
+       (let ([ans (run-states 1 (q ...) g ...)])
+	 (if (null? ans) failure (car ans))))))
 
    (define (constrain g)
      (assert (goal? g))

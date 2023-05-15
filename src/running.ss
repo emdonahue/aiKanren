@@ -35,4 +35,4 @@
     (assert (runner? r))
     (if (zero? n) '()
 	(let-values ([(reified state r) (runner-next r)])
-	  (if (failure? state) '() (cons reified (runner-take (- n 1) r)))))))
+	  (if (failure? state) '() (cons (cons reified state) (runner-take (- n 1) r)))))))

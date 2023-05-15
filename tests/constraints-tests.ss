@@ -142,11 +142,10 @@
 						   (fresh (x2) (=/= x2 2))
 						   (=/= x1 1))) empty-state empty-package) 1)) 3)
 
-#;
-    (display (list-values (run-goal (constrain
-				     (fresh (x1) 
-				       (fresh (x2) (=/= x2 2))
-				       (=/= x1 1))) empty-state empty-package)))
 
+    (let ([s (run1-states (x1) (constrain (== x1 1)))])
+      (tassert "constraint == store" (walk s x1) 1)
+      (tassert "constraint == vid" (state-varid s) 2))
+    
     
     ))
