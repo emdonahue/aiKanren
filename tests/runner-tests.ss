@@ -25,6 +25,7 @@
     (tassert "mplus fail rhs" (run* (x1) (conde [(== x1 1)] [fail])) '(1))
     (tassert "mplus answer lhs" (run* (x1) (conde [(== x1 1)] [(== x1 2)])) '(1 2))
     (tassert "mplus answer rhs" (run* (x1) (conde [(fresh (x2) (== x1 2))] [(== x1 1)])) '(1 2))
+    (tassert "mplus complete lhs" (run* (x1) (conde [(conde [(== x1 1)] [(== x1 3)])] [(== x1 2)])) '(1 2 3))
 
     (tassert "bind incomplete" (run* (x1) (fresh (x2) (fresh (x3) (== x3 x2) (== x3 42)) (== x2 x1))) '(42))
     
