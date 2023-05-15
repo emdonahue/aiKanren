@@ -152,6 +152,9 @@
     (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
       (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
       (tassert "constraint conj == vid" (state-varid s) 3))
+    (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x2 2)])))])
+      (tassert "constraint disj == store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
+      (tassert "constraint disj == vid" (state-varid s) 3))
     
     
     ))
