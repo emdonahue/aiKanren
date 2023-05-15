@@ -29,10 +29,6 @@
       (let*-values ([(g s^ p) (run-goal (constraint-goal g) s p)]
 		   [(g s^ p) (run-constraint g s^ p)])
 	(values g (store-constraint (copy-varid s^ s) g) p))]
-     #;
-     [(constraint? g)
-      (let-values ([(g s^ p) (run-constraint (constraint-goal g) s p)])
-	(values g (store-constraint (copy-varid s^ s) g) p))]
      [else (assert #f)]))
 
   (define (run-constraint g s p)
