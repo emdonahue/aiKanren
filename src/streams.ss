@@ -59,7 +59,7 @@
      [(failure? s) (values fail failure p)]
      [(state? s) (let-values ([(g^ s p) (run-goal g s p)])
 		   (values (normalized-conj* g g^) s p))]
-     [(incomplete? s) (values g (make-incomplete g s) p)]
+     [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p)]
      [(complete? s)
       (let*-values
 	  ([(xxx h p) (run-goal g (complete-car s) p)]
