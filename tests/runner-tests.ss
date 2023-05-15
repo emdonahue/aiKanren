@@ -33,9 +33,9 @@
 
     (tassert "bind failure" (run* (x1) fail (fresh (x2) (== 1 x1))) '())
     (tassert "bind answer" (run* (x1 x2) (== x1 1) (== x2 2)) '((1 2)))    
-    (tassert "bind incomplete" (run* (x1) (fresh (x2) (fresh (x3) (== x3 x2) (== x3 1)) (== x2 x1))) '(1))
-    (tassert "bind complete" (run* (x1 x2) (conde [(== x1 1)] [(== x1 2)]) (== x2 3)) '((1 3) (2 3)))
-    (tassert "bind mplus" (run* (x1 x2) (conde [(fresh (x3) (== x1 1))] [(fresh (x3) (== x1 2))]) (== x2 3)) '((1 3) (2 3)))    
+    (tassert "bind incomplete" (run* (x1) (fresh (x2) (== x2 x1) (fresh (x3) (== x3 x2) (== x3 1)))) '(1))
+    (tassert "bind complete" (run* (x1 x2) (== x2 3) (conde [(== x1 1)] [(== x1 2)])) '((1 3) (2 3)))
+    (tassert "bind mplus" (run* (x1 x2) (== x2 3) (conde [(fresh (x3) (== x1 1))] [(fresh (x3) (== x1 2))])) '((1 3) (2 3)))    
     
     
     ))

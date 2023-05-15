@@ -12,9 +12,9 @@
 		(values g s p (if (failure? s) 0 (state-varid s))))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (values g (make-incomplete g s) p (state-varid s)))]
-     [(conj? g) (let*-values ([(g0 s p vid) (run-goal (conj-car g) s p)]
-			     [(g s p vid) (bind (conj-cdr g) s p)])
-		  (values (normalized-conj* g0 g) s p vid))]
+     [(conj? g) (let*-values ([(g0 s p lhv) (run-goal (conj-car g) s p)]
+			     [(g s p rhv) (bind (conj-cdr g) s p)])
+		  (values (normalized-conj* g0 g) s p (max lhv rhv)))]
      [(disj? g) (let*-values
 		    ([(lhg lhs p lhv) (run-goal (disj-car g) s p)]
 		     [(rhg rhs p rhv) (run-goal (disj-cdr g) s p)])
@@ -57,9 +57,9 @@
 		   (values (normalized-conj* g g^) s p vid))]
      [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p 0)]
      [(complete? s) (let*-values
-			([(xxx h p lhv) (run-goal g (complete-car s) p)]
-			 [(xxx r p rhv) (bind g (complete-cdr s) p)])
-		      (values 'bind-complete (mplus h r) p (max lhv rhv)))]
+			([(lhg h p lhv) (run-goal g (complete-car s) p)]
+			 [(rhg r p rhv) (bind g (complete-cdr s) p)])
+		      (values (normalized-disj* lhg rhg) (mplus h r) p (max lhv rhv)))]
      [else (assert #f)]))
   
   (define (stream-step s p)
