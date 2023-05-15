@@ -6,37 +6,37 @@
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(succeed? g) (values succeed s p)]
-     [(fail? g) (values fail failure p)]
+     [(succeed? g) (values succeed s p (state-varid s))]
+     [(fail? g) (values fail failure p 0)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
-		(values g s p))]
+		(values g s p (if (failure? s) 0 (state-varid s))))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (values g (make-incomplete g s) p))]
-     [(conj? g) (let*-values ([(g0 s p) (run-goal (conj-car g) s p)]
-			     [(g s p) (bind (conj-cdr g) s p)])
-		  (values (normalized-conj* g0 g) s p))]
+		   (values g (make-incomplete g s) p (state-varid s)))]
+     [(conj? g) (let*-values ([(g0 s p vid) (run-goal (conj-car g) s p)]
+			     [(g s p vid) (bind (conj-cdr g) s p)])
+		  (values (normalized-conj* g0 g) s p vid))]
      [(disj? g) (let*-values
-		    ([(lhg lhs p) (run-goal (disj-car g) s p)]
-		     [(rhg rhs p) (run-goal (disj-cdr g) s p)])
-		  (values (normalized-disj* lhg rhg) (mplus lhs rhs) p))]
+		    ([(lhg lhs p lhv) (run-goal (disj-car g) s p)]
+		     [(rhg rhs p rhv) (run-goal (disj-cdr g) s p)])
+		  (values (normalized-disj* lhg rhg) (mplus lhs rhs) p (max lhv rhv)))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
 					       (run-goal (noto g) s p))]
      [(and (noto? g) (not (fresh? (noto-goal g))))
-      (let*-values ([(g s^ p) (run-goal (noto-goal g) s p)]
+      (let*-values ([(g s^ p vid) (run-goal (noto-goal g) s p)]
 		    [(g) (noto g)])
-	(values g (store-constraint s g) p))]
+	(values g (store-constraint s g) p vid))]
      [(constraint? g)
-      (let*-values ([(g s^ p) (run-goal (constraint-goal g) s p)]
-		   [(g s^ p) (run-constraint g s^ p)])
-	(values g (store-constraint (copy-varid s^ s) g) p))]
+      (let*-values ([(g s^ p vid) (run-goal (constraint-goal g) s p)]
+		   [(g s^ p vid) (run-constraint g s^ p vid)])
+	(values g (store-constraint (copy-max-varid s vid) g) p vid))]
      [else (assert #f)]))
 
-  (define (run-constraint g s p)
+  (define (run-constraint g s p v-start)
     (assert (and (goal? g) (stream? s) (package? p)))
     (if (incomplete? s)
-	(let-values ([(g s p) (stream-step s p)])
-	  (run-constraint g s p))
-	(values g s p)))
+	(let-values ([(g s p vid) (stream-step s p)])
+	  (run-constraint g s p (max v-start vid)))
+	(values g s p (max v-start v-start))))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -52,30 +52,30 @@
   (define (bind g s p)
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(failure? s) (values fail failure p)]
-     [(state? s) (let-values ([(g^ s p) (run-goal g s p)])
-		   (values (normalized-conj* g g^) s p))]
-     [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p)]
+     [(failure? s) (values fail failure p 0)]
+     [(state? s) (let-values ([(g^ s p vid) (run-goal g s p)])
+		   (values (normalized-conj* g g^) s p vid))]
+     [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p 0)]
      [(complete? s)
       (let*-values
-	  ([(xxx h p) (run-goal g (complete-car s) p)]
-	   [(xxx r p) (bind g (complete-cdr s) p)])
-	(values 'bind-complete (mplus h r) p))]
+	  ([(xxx h p lhv) (run-goal g (complete-car s) p)]
+	   [(xxx r p rhv) (bind g (complete-cdr s) p)])
+	(values 'bind-complete (mplus h r) p (max lhv rhv)))]
      [else (assert #f)]))
   
   (define (stream-step s p)
     ;; TODO should stream-step return goals?
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(failure? s) (values fail s p)]
-     [(state? s) (values succeed s p)]
+     [(failure? s) (values fail s p 0)]
+     [(state? s) (values succeed s p (state-varid s))]
      [(incomplete? s)
-      (let*-values ([(g^ s^ p) (stream-step (incomplete-stream s) p)]
-		    [(g s p) (bind (incomplete-goal s) s^ p)])
-	(values (normalized-conj* g g^) s p))]
-     [(mplus? s) (let-values ([(g lhs p) (stream-step (mplus-lhs s) p)])
-		   (values 'step-goal (mplus (mplus-rhs s) lhs) p))]
-     [(complete? s) (values 'step-goal (complete-cdr s) p)]
+      (let*-values ([(g^ s^ p lhv) (stream-step (incomplete-stream s) p)]
+		    [(g s p rhv) (bind (incomplete-goal s) s^ p)])
+	(values (normalized-conj* g g^) s p (max lhv rhv)))]
+     [(mplus? s) (let-values ([(g lhs p vid) (stream-step (mplus-lhs s) p)])
+		   (values 'step-goal (mplus (mplus-rhs s) lhs) p vid))]
+     [(complete? s) (values 'step-goal (complete-cdr s) p (state-varid (complete-car s)))]
      [else (assert #f)]))
 
 
@@ -93,17 +93,17 @@
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
      [(==? g) (fire-constraint s g)] ; State has updated a single variable
-     [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))]
+     [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))] ; Updated multiple variables
      [else (assert #f)]))
 
   (define (fire-constraint s e)
     (assert (and (state? s) (==? e)))
-    (let-values ([(g s^ p) (run-goal
+    (let-values ([(g s^ p vid) (run-goal
 			    (get-constraint (state-constraints s)
 					    (==-lhs e))
 			    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))
 			    empty-package)])
-      (store-constraint s g)))
+      (store-constraint (copy-max-varid s vid) g)))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
