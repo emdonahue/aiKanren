@@ -48,6 +48,7 @@
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
      [(answer? lhs) (complete lhs rhs)]
+     [(answer? rhs) (complete rhs lhs)]
      [(complete? lhs) (complete (complete-car lhs) (mplus rhs (complete-cdr lhs)))]
      [else (assert #f)]))
 
