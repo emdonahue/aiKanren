@@ -166,8 +166,13 @@
       (tassert "constraint disj == store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
       (tassert "constraint disj == vid" (state-varid s) 3))
     (let ([s (run1-states (x1 x2) (constrain (conde [(fresh (x3) (== x1 1))] [(fresh (x3 x4) (== x2 2))])))])
-      (tassert "constraint disj == store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
-      (tassert "constraint disj == vid" (state-varid s) 5))
-    
+      (tassert "constraint disj fresh store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
+      (tassert "constraint disj fresh vid" (state-varid s) 5))
+    (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x1 2)]) (fresh (x3) (== x2 2))))])
+      (tassert "constraint disj bind incomplete store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
+      (tassert "constraint disj bind incomplete vid" (state-varid s) 5))
+
+
+    ;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
     
     ))
