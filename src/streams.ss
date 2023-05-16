@@ -67,8 +67,7 @@
       (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
 	(values (noto g) s v))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
-     [else (assert #f) (values 'no-simplify 'no-simplify)])
-    )
+     [else (assert #f)]))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -97,15 +96,15 @@
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(failure? s) (values fail s p 0)]
-     [(state? s) (values succeed s p (state-varid s))]
+     [(failure? s) (values s p)]
+     [(state? s) (values s p)]
      [(incomplete? s)
-      (let*-values ([(g^ s^ p lhv) (stream-step (incomplete-stream s) p)]
-		    [(g s p rhv) (bind (incomplete-goal s) s^ p)])
-	(values (normalized-conj* g g^) s p (max lhv rhv)))]
-     [(mplus? s) (let-values ([(g lhs p vid) (stream-step (mplus-lhs s) p)])
-		   (values 'step-goal (mplus (mplus-rhs s) lhs) p vid))]
-     [(complete? s) (values 'step-goal (complete-cdr s) p (state-varid (complete-car s)))]
+      (let*-values ([(s^ p) (stream-step (incomplete-stream s) p)]
+		    [(_ s p _2) (bind (incomplete-goal s) s^ p)])
+	(values s p))]
+     [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
+		   (values (mplus (mplus-rhs s) lhs) p))]
+     [(complete? s) (values (complete-cdr s) p)]
      [else (assert #f)]))
 
 

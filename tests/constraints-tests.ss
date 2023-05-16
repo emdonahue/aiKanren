@@ -172,7 +172,6 @@
 		   (== x2 2))
 	     (list (disj* (== x1 1) (== x1 2)) 2))
     (tassert "constraint disj lazy" (run1 (x1) (constrain (conde [(== x1 1)] [stale]))) (disj* (== x1 1) stale))
-    (display "START\n\n")
     (let ([s (run1-states (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))])      
       (tassert "constraint conj disj store" (reify s x1) x1)
       (tassert "constraint conj disj vid" (state-varid s) 2))
