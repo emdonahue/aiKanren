@@ -1,7 +1,7 @@
 ;TODO Abstract out some of the math checks for navigating sbral
 (library (sbral)
   ;; Skew Binary Random Access List
-  (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty?)
+  (export sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty? sbral->alist)
   (import (chezscheme))
 
   (define-structure (sbral tree length rest))
@@ -71,4 +71,8 @@
   (define (sbral-tree-set-value t elt)
     (if (sbral-tree? t)
 	(make-sbral-tree elt (sbral-tree-size t) (sbral-tree-left t) (sbral-tree-right t))
-	elt)))
+	elt))
+
+  (define (sbral->alist s)
+    ;; Inefficient. Mostly for debugging.
+    (map (lambda (i) (cons i (sbral-ref s i (void)))) (iota (sbral-length s)))))
