@@ -28,10 +28,12 @@
      [(constraint? g)
       (let*-values ([(orig) (constraint-goal g)]
 		    [(gx sx vx) (simplify-constraint (constraint-goal g) s)]
+		    #;
 		    [(g s^ p vid) (run-goal (constraint-goal g) s p)]
+		    #;
 		    [(g s^ p vid) (run-constraint g s^ p vid)])
 	;;(printf "ORIG: ~s~%OLD: ~s~%NEW: ~s~%~%" orig g gx)
-	(values g (store-constraint (copy-max-varid s vid) g) p vid))]
+	(values gx (store-constraint (copy-max-varid s vx) gx) p vx))]
      [else (assert #f)]))
 
   (define (run-constraint g s p v-start)
@@ -45,12 +47,13 @@
     (assert (and (goal? g) (state-or-failure? s)))
     (cond
      [(failure? s) (values fail failure 0)]
-     [(succeed? g) (values succeed s (state-varid s))]
+     [(succeed? g) (values succeed s 0)]
      [(fail? g) (values fail failure 0)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(values g s (if (failure? s) 0 (state-varid s))))]
-     [(fresh? g) (let-values ([(g s p) (g s empty-package)])
-		   (simplify-constraint g s))]
+     [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
+			       [(g s^ v) (simplify-constraint g s^)])
+		   (if (succeed? g) (values g s 0) (values g s^ v)))] ; If fresh purely succeeds, we don't need to save space for the new variables it created.
      [(conj? g) (let-values ([(g0 s v) (simplify-constraint (conj-car g) s)])
 		  (if (fail? g0) (values fail failure 0)
 		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])
