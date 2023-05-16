@@ -28,7 +28,8 @@
     (make-constraint-store (cons (cons (car v) c) (remq v (constraint-store-constraints s)))))
 
   (define (remove-constraint s v)
-    (make-constraint-store (remq v (constraint-store-constraints s))))
+    (assert (and (constraint-store? s) (var? v)))
+    (make-constraint-store (remq (assoc v (constraint-store-constraints s)) (constraint-store-constraints s))))
 
   (define (reify-constraint s v)
     (assert (constraint-store? s))

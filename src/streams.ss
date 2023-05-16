@@ -113,6 +113,14 @@
 
   (define (fire-constraint s e)
     (assert (and (state? s) (==? e)))
+
+    (printf "FIRING CONSTRAINT (~s): ~s~%SUB: ~s~%STORE: ~s~%REDUCED: ~s~%DEPLETED: ~s~%STATE: ~s~%~%" (==-lhs e) (get-constraint (state-constraints s) (==-lhs e))
+	    
+	    (print-substitution s)
+	    (map car (constraint-store-constraints (state-constraints s)))
+	    (values-ref (simplify-constraint (get-constraint (state-constraints s) (==-lhs e)) (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))) 0)
+	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
+	    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
     (run-constraint
      (get-constraint (state-constraints s) (==-lhs e))
      (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))))
@@ -134,10 +142,12 @@
   (define (get-attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
     ;; TODO optimize which constraint we pick to minimize free vars
-    ;; TODO attributed vars should probably be deduplicated    
+    ;; TODO attributed vars should probably be deduplicated
+    ;; TODO attributed vars should handle (constraint)'s
     (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
      [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
      [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
      [(noto? g) (get-attributed-vars (noto-goal g))]
-     [else (filter var? (vector->list g))]))) 
+     [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
+     [else (assert #f)]))) 

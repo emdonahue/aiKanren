@@ -48,9 +48,15 @@
     (tassert "disunify transfer on free-free down varid" (run1 (x1 x2) (=/= x2 1) (== x2 x1))
 	     (list (=/= x2 1) (=/= x2 1)))
     (tassert "disunify fire low varid" (run1 (x1 x2) (=/= x1 x2) (== x2 x1))
-	(void))
-    
-
+	     (void))
+    (tassert "disunify conj" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2))
+	     (list (conj* (=/= x2 1) (=/= x2 2)) (conj* (=/= x2 1) (=/= x2 2))))
+    (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2))
+	     (void))
+    (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2))
+	     (void))
+    (tassert "disunify constraint cleared after fired"
+	     (constraint-store-constraints (state-constraints (run1-states (x1) (=/= x1 1) (== x1 2)))) '())
 
     (tassert "==-c ground-self" (run1 (x1) (constrain (== 1 1))) x1)
     (tassert "==-c ground-different" (run1 (x1) (constrain (== 1 2))) (void))
@@ -106,24 +112,45 @@
 	     (conjunctive-normal-form
 	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
 
-    (display "START\n\n")
-    (let ([c (run1 (x1) (presento (cons x1 2) 1) )])
+    
+    (let* ([c (presento x1 1)]
+	   [s (run1 (x1) c)])
+      ;; #(disj (#(== #(var 1) 1) #<procedure at constraints.ss:509>))
+      (tassert "presento unbound term succeed" (run1 (x1) c (== x1 1)) 1)
+      (tassert "presento unbound term fail" (run1 (x1) c (== x1 2)) (void))
+      (tassert "presento unbound term"
+	       s
+	       (disj* (== x1 1) ; car is not 1
+		      (cadr ; car is not recursive pair
+		       (disj-disjuncts s)))))
+    
+    (let* ([c (presento (cons x1 2) 1)]
+	   [s (run1 (x1) c )])
       ;; #(disj (#(== #(var 2) 1) #<procedure at constraints.ss:509> #(constraint #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>)))))
+      (tassert "presento unbound car succeed" (run1 (x1) c (== x1 1)) 1)
+      (tassert "presento unbound car fail" (run1 (x1) c (== x1 2)) (void))
       (tassert "presento unbound car"
-	       c (disj* (== x2 1) ; car is not 1
-			(cadr (disj-disjuncts c)) ; car is not recursive pair
+	       s (disj* (== x2 1) ; car is not 1
+			(cadr (disj-disjuncts s)) ; car is not recursive pair
 			(make-constraint ; cdr
 			 (disj* (== x3 1) ; cdr is not 1
 				(cadr (disj-disjuncts ; cdr is not recursive pair
-				       (constraint-goal (list-ref (disj-disjuncts c) 2)))))))))
+				       (constraint-goal (list-ref (disj-disjuncts s) 2)))))))))
 
-    (let ([c (run1 (x1) (presento (cons 2 x1) 1) )])
+    (let* ([c (presento (cons 2 x1) 1)]
+	   [s (run1 (x1)  c)])
       ;; #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>))
+      (tassert "presento unbound cdr succeed" (run1 (x1) c (== x1 1)) 1)
+      (tassert "presento unbound cdr fail" (run1 (x1) c (== x1 2)) (void))
       (tassert "presento unbound cdr"
-	       c (disj* (== x3 1) ; cdr is not 1
+	       s (disj* (== x3 1) ; cdr is not 1
 			(cadr ; car is not recursive pair
-			 (disj-disjuncts c))))) 
+			 (disj-disjuncts s)))))
 
+    (display "START\n\n")
+    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1) 6) 1) (== x1 1)) 1)
+    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (cons (cons (list 2 3 x1) 7) 2) 6) 1) (== x1 1)) 1)
     #;
     (tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 3 (cons 4 (cons 5 (cons 6 x1))))) 1) (== x1 1)) 1)
     (exit)

@@ -1,5 +1,5 @@
 (library (substitution)
-  (export empty-substitution walk unify make-var var? var-id extend)
+  (export empty-substitution walk unify make-var var? var-id extend print-substitution)
   (import (chezscheme) (sbral) (datatypes))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
@@ -40,4 +40,8 @@
      (make-substitution
       (sbral-set-ref
        (substitution-dict s)
-       (- (sbral-length (substitution-dict s)) (var-id x)) y unbound)) (== x y))))
+       (- (sbral-length (substitution-dict s)) (var-id x)) y unbound)) (== x y)))
+
+  (define (print-substitution s)
+    (let ([sbral (substitution-dict s)])
+      (map (lambda (p) (cons (make-var (- (sbral-length sbral) (car p))) (cdr p))) (sbral->alist sbral)))))
