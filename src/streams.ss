@@ -24,37 +24,6 @@
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))
-
-  (define (run-constraint g s)
-    (assert (and (goal? g) (state? s)))
-    (let-values ([(g s^ v) (simplify-constraint g s)])
-      (store-constraint (copy-max-varid s v) g)))
-
-  (define (simplify-constraint g s)
-    (assert (and (goal? g) (state-or-failure? s)))
-    (cond
-     [(failure? s) (values fail failure 0)]
-     [(succeed? g) (values succeed s 0)]
-     [(fail? g) (values fail failure 0)]
-     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
-		(values g s (if (failure? s) 0 (state-varid s))))]
-     [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
-			       [(g s^ v) (simplify-constraint g s^)])
-		   (if (succeed? g) (values g s 0) (values g s^ v)))] ; If fresh purely succeeds, we don't need to save space for the new variables it created.
-     [(conj? g) (let-values ([(g0 s v) (simplify-constraint (conj-car g) s)])
-		  (if (fail? g0) (values fail failure 0)
-		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])
-			(values (normalized-conj* g0 g) s v))))]
-     [(disj? g) (let-values ([(g0 s0 v) (simplify-constraint (disj-car g) s)])
-		  (cond
-		   [(succeed? g0) (values succeed s (state-varid s))]
-		   [(fail? g0) (simplify-constraint (disj-cdr g) s)]
-		   [else (values (normalized-disj* g0 (disj-cdr g)) s v)]))]
-     [(and (noto? g) (not (fresh? (noto-goal g))))
-      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
-	(values (noto g) s v))]
-     [(constraint? g) (simplify-constraint (constraint-goal g) s)]
-     [else (assert #f)]))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -94,13 +63,43 @@
      [(answers? s) (values (answers-cdr s) p)]
      [else (assert #f)]))
 
-
-  ;; === CONSTRAINTS ===
-
   (define (unify-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (assert (state? s)) ; -> state-or-failure? goal?
     (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
       (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
+
+  ;; === CONSTRAINTS ===
+
+    (define (run-constraint g s)
+      (assert (and (goal? g) (state? s))) ; -> state-or-failure?
+    (let-values ([(g s^ v) (simplify-constraint g s)])
+      (if (failure? s^) failure (store-constraint (set-state-varid s v) g))))
+
+  (define (simplify-constraint g s)
+    (assert (and (goal? g) (state-or-failure? s)))
+    (cond
+     [(failure? s) (values fail failure 0)]
+     [(succeed? g) (values succeed s (state-varid s))]
+     [(fail? g) (values fail failure 0)]
+     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
+		(values g s (if (failure? s) 0 (state-varid s))))]
+     [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
+			       [(g s^ v) (simplify-constraint g s^)])
+		   (if (succeed? g) (values g s (state-varid s)) (values g s^ v)))] ; If fresh purely succeeds, we don't need to save space for the new variables it created.
+     [(conj? g) (let-values ([(g^ s v) (simplify-constraint (conj-car g) s)])
+		  (if (fail? g^) (values fail failure 0)
+		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])
+			(values (normalized-conj* g^ g) s v))))]
+     [(disj? g) (let-values ([(g^ s^ v) (simplify-constraint (disj-car g) s)])
+		  (cond
+		   [(succeed? g^) (values succeed s (state-varid s))]
+		   [(fail? g^) (simplify-constraint (disj-cdr g) s)]
+		   [else (values (normalized-disj* g^ (disj-cdr g)) s v)]))]
+     [(and (noto? g) (not (fresh? (noto-goal g))))
+      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
+	(values (noto g) s (state-varid s)))]
+     [(constraint? g) (simplify-constraint (constraint-goal g) s)]
+     [else (assert #f)]))
   
   (define (check-constraints s g)
     ;; Runs after unification to propagate new extensions through the constraint store. g is the goal representing the updates made to the substitution by the unifier.

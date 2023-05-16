@@ -5,7 +5,7 @@
 	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
-	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints copy-max-varid
+	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -54,7 +54,7 @@
       (set-constraint-goal! c g) c))
 
     ;; === SUBSTITUTION ===
-  (define-structure (substitution dict))
+  (define-structure (substitution dict)) ; TODO replace substitution datatype with just a raw sbral
   (define empty-substitution (make-substitution sbral-empty))
   
   ;; === STATE ===
@@ -76,11 +76,10 @@
     (let ([s (vector-copy s)])
       (set-state-varid! s (+ 1 (state-varid s))) s))
 
-  (define (copy-max-varid s vid)
-    (assert (and (state? s) (number? vid)))
-    (if (<= vid (state-varid s) ) s
-	(let ([s (vector-copy s)])
-	  (set-state-varid! s vid) s)))
+  (define (set-state-varid s v)
+    (assert (and (state? s) (number? v)))
+    (let ([s (vector-copy s)])
+      (set-state-varid! s v) s))
 
   (define (state-or-failure? s) (or (state? s) (failure? s)))
 
