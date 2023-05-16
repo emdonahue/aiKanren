@@ -21,30 +21,14 @@
 		  (values (mplus lhs rhs) p))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
 					       (run-goal (noto g) s p))]
-     [(and (noto? g) (not (fresh? (noto-goal g))))
-      (run-goal (make-constraint g) s p)
-      #;
-      (let*-values ([(s^ p) (run-goal (noto-goal g) s p)]
-		    [(g) (noto g)])
-	(values (store-constraint s g) p))]
-     [(constraint? g)
-      (let*-values ([(orig) (constraint-goal g)]
-		    [(gx sx vx) (simplify-constraint (constraint-goal g) s)]
-		    #;
-		    [(g s^ p vid) (run-goal (constraint-goal g) s p)]
-		    #;
-		    [(g s^ p vid) (run-constraint g s^ p vid)])
-	;;(printf "ORIG: ~s~%OLD: ~s~%NEW: ~s~%~%" orig g gx)
-	(values (store-constraint (copy-max-varid s vx) gx) p))]
+     [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
+     [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))
 
-  (define (run-constraint g s p v-start)
-    (assert (and (goal? g) (stream? s) (package? p)))
-    (assert #f)
-    (if (or (bind? s) (mplus? s))
-	(let-values ([(g s p vid) (stream-step s p)])
-	  (run-constraint g s p (max v-start vid)))
-	(values g s p (max v-start v-start))))
+  (define (run-constraint g s)
+    (assert (and (goal? g) (state? s)))
+    (let-values ([(g s^ v) (simplify-constraint g s)])
+      (store-constraint (copy-max-varid s v) g)))
 
   (define (simplify-constraint g s)
     (assert (and (goal? g) (state-or-failure? s)))
