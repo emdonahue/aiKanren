@@ -114,11 +114,9 @@
 
   (define (fire-constraint s e)
     (assert (and (state? s) (==? e)))
-    (let-values ([(g s^ v) (simplify-constraint
-			  (get-constraint (state-constraints s)
-					  (==-lhs e))
-			  (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))])
-      (store-constraint (copy-max-varid s v) g)))
+    (run-constraint
+     (get-constraint (state-constraints s) (==-lhs e))
+     (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
