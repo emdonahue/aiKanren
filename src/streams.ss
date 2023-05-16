@@ -26,17 +26,46 @@
 		    [(g) (noto g)])
 	(values g (store-constraint s g) p vid))]
      [(constraint? g)
-      (let*-values ([(g s^ p vid) (run-goal (constraint-goal g) s p)]
-		   [(g s^ p vid) (run-constraint g s^ p vid)])
+      (let*-values ([(orig) (constraint-goal g)]
+		    [(gx sx vx) (simplify-constraint (constraint-goal g) s)]
+		    [(g s^ p vid) (run-goal (constraint-goal g) s p)]
+		    [(g s^ p vid) (run-constraint g s^ p vid)])
+	;;(printf "ORIG: ~s~%OLD: ~s~%NEW: ~s~%~%" orig g gx)
 	(values g (store-constraint (copy-max-varid s vid) g) p vid))]
      [else (assert #f)]))
 
   (define (run-constraint g s p v-start)
     (assert (and (goal? g) (stream? s) (package? p)))
-    (if (incomplete? s)
+    (if (or (incomplete? s) (mplus? s))
 	(let-values ([(g s p vid) (stream-step s p)])
 	  (run-constraint g s p (max v-start vid)))
 	(values g s p (max v-start v-start))))
+
+  (define (simplify-constraint g s)
+    (assert (and (goal? g) (state-or-failure? s)))
+    (cond
+     [(failure? s) (values fail failure 0)]
+     [(succeed? g) (values succeed s (state-varid s))]
+     [(fail? g) (values fail failure 0)]
+     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
+		(values g s (if (failure? s) 0 (state-varid s))))]
+     [(fresh? g) (let-values ([(g s p) (g s empty-package)])
+		   (simplify-constraint g s))]
+     [(conj? g) (let-values ([(g0 s v) (simplify-constraint (conj-car g) s)])
+		  (if (fail? g0) (values fail failure 0)
+		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])
+			(values (normalized-conj* g0 g) s v))))]
+     [(disj? g) (let-values ([(g0 s0 v) (simplify-constraint (disj-car g) s)])
+		  (cond
+		   [(succeed? g0) (values succeed s (state-varid s))]
+		   [(fail? g0) (simplify-constraint (disj-cdr g) s)]
+		   [else (values (normalized-disj* g0 (disj-cdr g)) s v)]))]
+     [(and (noto? g) (not (fresh? (noto-goal g))))
+      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
+	(values (noto g) s v))]
+     [(constraint? g) (simplify-constraint (constraint-goal g) s)]
+     [else (assert #f) (values 'no-simplify 'no-simplify)])
+    )
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -63,7 +92,6 @@
      [else (assert #f)]))
   
   (define (stream-step s p)
-    ;; TODO should stream-step return goals?
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(failure? s) (values fail s p 0)]

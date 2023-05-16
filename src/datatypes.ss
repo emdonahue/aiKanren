@@ -33,7 +33,7 @@
   (define failure? null?)
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
-  (define-structure (incomplete goal stream))
+  (define-structure (incomplete goal stream)) ; TODO rename incomplete to bind
   (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
   
   (define (stream? s)

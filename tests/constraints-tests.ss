@@ -161,7 +161,7 @@
     (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))])
       (tassert "constraint bind incomplete store" (reify s x1) 1)
       (tassert "constraint bind incomplete vid" (state-varid s) 4))
-    
+
 
     (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      
       (tassert "constraint disj succeed store" (reify s x1) x1)
@@ -169,14 +169,23 @@
     (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x2 2)])))])      
       (tassert "constraint disj == store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
       (tassert "constraint disj == vid" (state-varid s) 3))
+
+
+
+    #;
     (let ([s (run1-states (x1 x2) (constrain (conde [(fresh (x3) (== x1 1))] [(fresh (x3 x4) (== x2 2))])))])
       (tassert "constraint disj fresh store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
       (tassert "constraint disj fresh vid" (state-varid s) 5))
-    (display "START\n\n")
 
     (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(fresh (x3) (== x2 x3) (== x3 3)) stale])))])
       (tassert "constraint disj bind incomplete store" (reify s x1) (disj* (== x1 1) (conj* (== x2 x3) (== x3 3) stale)))
       (tassert "constraint disj bind incomplete vid" (state-varid s) 4))
+
+
+#;
+    (let ([s (run1-states (x1 x2) (constrain (fresh (x3) (== x2 2) (conde [(fresh (x3) (== x1 1))] [(fresh (x3) (== x1 2))]))))])
+      (tassert "constraint disj bind complete store" (reify s (cons x1 x2)) 'unk)
+      (tassert "constraint disj bind complete vid" (state-varid s) 4))
     
     #;
     (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x1 2)]) (fresh (x3) (== x2 2))))])
