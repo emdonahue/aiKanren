@@ -6,25 +6,25 @@
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(succeed? g) (values succeed s p (state-varid s))]
-     [(fail? g) (values fail failure p 0)]
+     [(succeed? g) (values s p)]
+     [(fail? g) (values failure p)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
-		(values g s p (if (failure? s) 0 (state-varid s))))]
+		(values s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (values g (make-incomplete g s) p (state-varid s)))]
-     [(conj? g) (let*-values ([(g0 s p lhv) (run-goal (conj-car g) s p)]
-			     [(g s p rhv) (bind (conj-cdr g) s p)])
-		  (values (normalized-conj* g0 g) s p (max lhv rhv)))]
+		   (values (make-incomplete g s) p))]
+     [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
+			     [(s p) (bind (conj-cdr g) s p)])
+		  (values s p))]
      [(disj? g) (let*-values
-		    ([(lhg lhs p lhv) (run-goal (disj-car g) s p)]
-		     [(rhg rhs p rhv) (run-goal (disj-cdr g) s p)])
-		  (values (normalized-disj* lhg rhg) (mplus lhs rhs) p (max lhv rhv)))]
+		    ([(lhs p) (run-goal (disj-car g) s p)]
+		     [(rhs p) (run-goal (disj-cdr g) s p)])
+		  (values (mplus lhs rhs) p))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
 					       (run-goal (noto g) s p))]
      [(and (noto? g) (not (fresh? (noto-goal g))))
-      (let*-values ([(g s^ p vid) (run-goal (noto-goal g) s p)]
+      (let*-values ([(s^ p) (run-goal (noto-goal g) s p)]
 		    [(g) (noto g)])
-	(values g (store-constraint s g) p vid))]
+	(values (store-constraint s g) p))]
      [(constraint? g)
       (let*-values ([(orig) (constraint-goal g)]
 		    [(gx sx vx) (simplify-constraint (constraint-goal g) s)]
@@ -33,7 +33,7 @@
 		    #;
 		    [(g s^ p vid) (run-constraint g s^ p vid)])
 	;;(printf "ORIG: ~s~%OLD: ~s~%NEW: ~s~%~%" orig g gx)
-	(values gx (store-constraint (copy-max-varid s vx) gx) p vx))]
+	(values (store-constraint (copy-max-varid s vx) gx) p))]
      [else (assert #f)]))
 
   (define (run-constraint g s p v-start)
@@ -83,14 +83,14 @@
   (define (bind g s p)
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(failure? s) (values fail failure p 0)]
-     [(state? s) (let-values ([(g^ s p vid) (run-goal g s p)])
-		   (values (normalized-conj* g g^) s p vid))]
-     [(or (incomplete? s) (mplus? s)) (values g (make-incomplete g s) p 0)]
+     [(failure? s) (values failure p)]
+     [(state? s) (let-values ([(s p) (run-goal g s p)])
+		   (values s p))]
+     [(or (incomplete? s) (mplus? s)) (values (make-incomplete g s) p)]
      [(complete? s) (let*-values
-			([(lhg h p lhv) (run-goal g (complete-car s) p)]
-			 [(rhg r p rhv) (bind g (complete-cdr s) p)])
-		      (values (normalized-disj* lhg rhg) (mplus h r) p (max lhv rhv)))]
+			([(h p lhv) (run-goal g (complete-car s) p)]
+			 [(r p rhv) (bind g (complete-cdr s) p)])
+		      (values (mplus h r) p))]
      [else (assert #f)]))
   
   (define (stream-step s p)
@@ -100,7 +100,7 @@
      [(state? s) (values s p)]
      [(incomplete? s)
       (let*-values ([(s^ p) (stream-step (incomplete-stream s) p)]
-		    [(_ s p _2) (bind (incomplete-goal s) s^ p)])
+		    [(s p) (bind (incomplete-goal s) s^ p)])
 	(values s p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
@@ -127,12 +127,11 @@
 
   (define (fire-constraint s e)
     (assert (and (state? s) (==? e)))
-    (let-values ([(g s^ p vid) (run-goal
-			    (get-constraint (state-constraints s)
-					    (==-lhs e))
-			    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))
-			    empty-package)])
-      (store-constraint (copy-max-varid s vid) g)))
+    (let-values ([(g s^ v) (simplify-constraint
+			  (get-constraint (state-constraints s)
+					  (==-lhs e))
+			  (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))])
+      (store-constraint (copy-max-varid s v) g)))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.

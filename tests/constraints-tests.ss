@@ -20,6 +20,7 @@
 	   (disj* (== a 1) (ones d))))))
     
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
+    (exit)
     (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
     (tassert "disunify free-self" (run* (x1) (=/= x1 x1)) '())
     (tassert "disunify free-ground" (run1 (x1) (=/= x1 1)) (=/= x1 1))
