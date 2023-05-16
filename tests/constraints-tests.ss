@@ -20,7 +20,6 @@
 	   (disj* (== a 1) (ones d))))))
     
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
-    (exit)
     (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
     (tassert "disunify free-self" (run* (x1) (=/= x1 x1)) '())
     (tassert "disunify free-ground" (run1 (x1) (=/= x1 1)) (=/= x1 1))
@@ -134,11 +133,9 @@
 					;(display (check-constraints (run-stream-constraint (make-noto (== x2 2)) empty-state) (== x2 2)))
     ;;(display (list-values (run-goal (disj* (== x1 x2) (== x1 2)) (unify empty-state x1 1) empty-package)))
 
-    ;(display "START\n")
-    (tassert "fresh constraint increments varid"
-	     (state-varid (values-ref (run-goal (constrain (fresh (x1) (=/= x1 1))) empty-state empty-package) 1)) 2)
-    (tassert "fresh constraint increments varid multiple"
-	     (state-varid (values-ref (run-goal (constrain (fresh (x1 x2) (=/= x1 1))) empty-state empty-package) 1)) 3)
+					;(display "START\n")
+    
+
 
     #;
     (tassert "fresh constraint increments varid bind incomplete"

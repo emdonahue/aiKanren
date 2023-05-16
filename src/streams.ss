@@ -22,6 +22,8 @@
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
 					       (run-goal (noto g) s p))]
      [(and (noto? g) (not (fresh? (noto-goal g))))
+      (run-goal (make-constraint g) s p)
+      #;
       (let*-values ([(s^ p) (run-goal (noto-goal g) s p)]
 		    [(g) (noto g)])
 	(values (store-constraint s g) p))]
