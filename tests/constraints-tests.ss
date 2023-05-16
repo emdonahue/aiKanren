@@ -157,8 +157,8 @@
     (let ([s (run1-states (x1) (constrain fail (== x1 1)))])
       (tassert "constraint bind fail" s failure))
     (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))])
-      (tassert "constraint bind incomplete store" (reify s x1) 1)
-      (tassert "constraint bind incomplete vid" (state-varid s) 2))
+      (tassert "constraint bind store" (reify s x1) 1)
+      (tassert "constraint bind vid" (state-varid s) 2))
 
 
     (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      

@@ -2,7 +2,7 @@
 (library (datatypes)
   (export make-runner set-runner-stream runner? runner-stream runner-query runner-package
 	  package? empty-package
-	  make-==  make-incomplete complete? stream? complete complete? complete-car complete-cdr incomplete? incomplete-goal incomplete-stream make-mplus mplus? mplus-lhs mplus-rhs
+	  make-==  make-bind complete? stream? complete complete? complete-car complete-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints copy-max-varid
@@ -33,11 +33,10 @@
   (define failure? null?)
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
-  (define-structure (incomplete goal stream)) ; TODO rename incomplete to bind
-  (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a incomplete stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+  (define-values (complete complete? complete-car complete-cdr) (values cons pair? car cdr)) ; A complete stream is one with at least one answer and either more answers or a bind stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
   
   (define (stream? s)
-    (or (failure? s) (mplus? s) (bind? s) (incomplete? s) (answer? s) (guarded? s) (complete? s)))
+    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (guarded? s) (complete? s)))
   
   ;; === GOALS ===
   

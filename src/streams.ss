@@ -11,7 +11,7 @@
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(values s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (values (make-incomplete g s) p))]
+		   (values (make-bind g s) p))]
      [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
 			     [(s p) (bind (conj-cdr g) s p)])
 		  (values s p))]
@@ -40,7 +40,8 @@
 
   (define (run-constraint g s p v-start)
     (assert (and (goal? g) (stream? s) (package? p)))
-    (if (or (incomplete? s) (mplus? s))
+    (assert #f)
+    (if (or (bind? s) (mplus? s))
 	(let-values ([(g s p vid) (stream-step s p)])
 	  (run-constraint g s p (max v-start vid)))
 	(values g s p (max v-start v-start))))
@@ -88,7 +89,7 @@
      [(failure? s) (values failure p)]
      [(state? s) (let-values ([(s p) (run-goal g s p)])
 		   (values s p))]
-     [(or (incomplete? s) (mplus? s)) (values (make-incomplete g s) p)]
+     [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
      [(complete? s) (let*-values
 			([(h p lhv) (run-goal g (complete-car s) p)]
 			 [(r p rhv) (bind g (complete-cdr s) p)])
@@ -100,9 +101,9 @@
     (cond
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
-     [(incomplete? s)
-      (let*-values ([(s^ p) (stream-step (incomplete-stream s) p)]
-		    [(s p) (bind (incomplete-goal s) s^ p)])
+     [(bind? s)
+      (let*-values ([(s^ p) (stream-step (bind-stream s) p)]
+		    [(s p) (bind (bind-goal s) s^ p)])
 	(values s p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
