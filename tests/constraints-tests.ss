@@ -119,6 +119,10 @@
     (tassert "presento fire ground cdr succeed" (run1 (x1) (presento x1 1) (== x1 '(2 . 1))) '(2 . 1))
     (tassert "presento fire ground cdr fail" (run1 (x1) (presento x1 3) (== x1 '(2 . 1))) (void))
 
+    (tassert "presento fuzz fail" (run1 (x1) (presento (list 2 (list 2 (cons 2 (cons 2 (cons 2 x1))))) 1) (== x1 2)) (void))
+;;    (tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 2 (cons 2 (cons 2 (cons 2 x1))))) 1) ) 1)
+    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 2 (cons (list 2 2) (list 2 (cons x1 2) 2)) 2) 2) 1) (== x1 1)) 1)
+
     
 ;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
 
