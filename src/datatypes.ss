@@ -77,9 +77,10 @@
       (set-state-varid! s (+ 1 (state-varid s))) s))
 
   (define (set-state-varid s v)
-    (assert (and (state? s) (number? v)))
-    (let ([s (vector-copy s)])
-      (set-state-varid! s v) s))
+    (assert (and (state? s) (number? v) (<= (state-varid s) v)))
+    (if (= (state-varid s) v) s
+	(let ([s (vector-copy s)])
+	  (set-state-varid! s v) s)))
 
   (define (state-or-failure? s) (or (state? s) (failure? s)))
 

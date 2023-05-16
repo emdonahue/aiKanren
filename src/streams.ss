@@ -131,12 +131,13 @@
 	 (set-state-constraints
 	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
 
-  (define (get-attributed-vars c)
+  (define (get-attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; TODO attributed vars should probably be deduplicated    
-    (assert (not (conj? c))) ; Since conj constraints are run seperately, we only receive disj and primitives here.
+    (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
-     [(disj? c) (get-attributed-vars (disj-car c))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
-     [(noto? c) (get-attributed-vars (noto-goal c))]
-     [else (filter var? (vector->list c))]))) 
+     [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
+     [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
+     [(noto? g) (get-attributed-vars (noto-goal g))]
+     [else (filter var? (vector->list g))]))) 
