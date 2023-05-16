@@ -20,7 +20,7 @@
     (assert (runner? r))
     (cond
      [(answer? (runner-stream r)) (runner-stream r)]
-     [(complete? (runner-stream r)) (car (runner-stream r))]
+     [(answers? (runner-stream r)) (car (runner-stream r))]
      [else failure]))
   
   (define (runner-next r)

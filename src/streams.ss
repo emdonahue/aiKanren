@@ -61,10 +61,10 @@
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
-     [(answer? lhs) (complete lhs rhs)]
-     [(complete? lhs) (complete (complete-car lhs) (mplus rhs (complete-cdr lhs)))]
-     [(answer? rhs) (complete rhs lhs)]
-     [(complete? rhs) (complete (complete-car rhs) (mplus lhs (complete-cdr rhs)))]
+     [(answer? lhs) (answers lhs rhs)]
+     [(answers? lhs) (answers (answers-car lhs) (mplus rhs (answers-cdr lhs)))]
+     [(answer? rhs) (answers rhs lhs)]
+     [(answers? rhs) (answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
   (define (bind g s p)
@@ -74,9 +74,9 @@
      [(state? s) (let-values ([(s p) (run-goal g s p)])
 		   (values s p))]
      [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
-     [(complete? s) (let*-values
-			([(h p lhv) (run-goal g (complete-car s) p)]
-			 [(r p rhv) (bind g (complete-cdr s) p)])
+     [(answers? s) (let*-values
+			([(h p lhv) (run-goal g (answers-car s) p)]
+			 [(r p rhv) (bind g (answers-cdr s) p)])
 		      (values (mplus h r) p))]
      [else (assert #f)]))
   
@@ -91,7 +91,7 @@
 	(values s p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
-     [(complete? s) (values (complete-cdr s) p)]
+     [(answers? s) (values (answers-cdr s) p)]
      [else (assert #f)]))
 
 
