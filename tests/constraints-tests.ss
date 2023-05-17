@@ -149,6 +149,7 @@
 			(cadr ; car is not recursive pair
 			 (disj-disjuncts s)))))
 
+    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
     ;;    (display "START\n\n")
 
     
