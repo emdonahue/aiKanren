@@ -133,7 +133,9 @@
       (let ([rest (normalize-conj (cdr cs))])
 	(cond
 	 [(fail? rest) fail]
-	 [(conj? (car cs)) (append (conj-conjuncts (car cs)) rest)]
+	 [(conj? (car cs)) (fold-right (lambda (c cs)
+					 (if (member c cs) cs (cons c cs)))
+				       rest (conj-conjuncts (car cs)))]
 	 [else (if (member (car cs) rest) rest
 		   (cons (car cs) rest))]))]))
 

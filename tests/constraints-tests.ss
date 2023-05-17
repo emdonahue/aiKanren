@@ -93,6 +93,7 @@
     (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
     (tassert "conj remove duplicates" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1)))
     (tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+    (tassert "conj remove duplicate conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 2 2) (== 3 3))) (conj* (== 1 1) (== 2 2) (== 3 3)))
 
     (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
     (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
