@@ -1,3 +1,4 @@
+;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
 (library (constraints-tests)
   (export run-constraints-tests)
   (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state) (streams) (values) (sbral))
@@ -18,6 +19,72 @@
 	 (fresh (a d)
 	   (== v (cons a d))
 	   (disj* (== a 1) (ones d))))))
+
+    ;; === CON/DISJUNCTION ===
+    
+    (tassert "conj fail first" (normalized-conj* fail succeed) fail)
+    (tassert "conj fail rest" (normalized-conj* succeed fail) fail)
+    (tassert "conj compress succeed" (normalized-conj* succeed succeed) succeed)
+    (tassert "conj single goals" (normalized-conj* (== 1 1)) (== 1 1))
+    (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
+    (tassert "conj remove duplicates" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1)))
+    (tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+    (tassert "conj remove duplicate conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 2 2) (== 3 3))) (conj* (== 1 1) (== 2 2) (== 3 3)))
+
+    (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
+    (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
+    (tassert "disj compress fail" (normalized-disj* fail fail) fail)
+    (tassert "disj single goals" (normalized-disj* (== 1 1)) (== 1 1))
+    (tassert "disj keep normal goals" (normalized-disj* (== 1 1) fail (== 1 1)) (disj* (== 1 1) (== 1 1)))
+    (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+
+    (tassert "cnf primitive" (conjunctive-normal-form (== 1 1)) (== 1 1))
+    (tassert "cnf simple conj" (conjunctive-normal-form (conj* (== 1 1) (== 2 2))) (conj* (== 1 1) (== 2 2)))
+    (tassert "cnf nested conj"
+	     (conjunctive-normal-form
+	      (conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+    (tassert "cnf distribute single"
+	     (conjunctive-normal-form
+	      (disj* (== 1 1) (conj* (== 2 2) (== 3 3)))) (conj* (disj*  (== 1 1) (== 2 2)) (disj*  (== 1 1) (== 3 3))))
+    (tassert "cnf distribute pairs"
+	     (conjunctive-normal-form
+	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
+
+    ;; === STORE ===
+
+    (let ([s (run1-states (x1) (constrain (== x1 1)))])
+      (tassert "constraint == store" (reify s x1) 1)
+      (tassert "constraint == vid" (state-varid s) 2))
+    (let ([s (run1-states (x1) (constrain (fresh (x2) (== x1 1))))])
+      (tassert "constraint frash == store" (reify s x1) 1)
+      (tassert "constraint fresh == vid" (state-varid s) 3))
+    (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
+      (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
+      (tassert "constraint conj == vid" (state-varid s) 3))
+    (let ([s (run1-states (x1) (constrain fail (== x1 1)))])
+      (tassert "constraint bind fail" s failure))
+    (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))])
+      (tassert "constraint bind store" (reify s x1) 1)
+      (tassert "constraint bind vid" (state-varid s) 2))
+    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      
+      (tassert "constraint disj succeed store" (reify s x1) x1)
+      (tassert "constraint disj succeed vid" (state-varid s) 2))
+    (tassert "constraint disj =="
+	     (run1 (x1 x2) (constrain (conde [(== x2 1)] [(== x2 2)]))
+		   (constrain (conde [(== x1 1)] [(== x1 2)]))
+		   (== x2 2))
+	     (list (disj* (== x1 1) (== x1 2)) 2))
+    (tassert "constraint disj lazy" (run1 (x1) (constrain (conde [(== x1 1)] [stale]))) (disj* (== x1 1) stale))
+    (let ([s (run1-states (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))])      
+      (tassert "constraint conj disj store" (reify s x1) x1)
+      (tassert "constraint conj disj vid" (state-varid s) 2))
+
+    (tassert "constraint disj conj"
+	     (run1 (x1 x2) (constrain (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
+	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
+		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
+    
+    ;; === DISEQUALITY ===
 
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
     (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
@@ -58,6 +125,8 @@
     (tassert "disunify constraint cleared after fired"
 	     (constraint-store-constraints (state-constraints (run1-states (x1) (=/= x1 1) (== x1 2)))) '())
 
+    ;; === EQUALITY ===
+    
     (tassert "==-c ground-self" (run1 (x1) (constrain (== 1 1))) x1)
     (tassert "==-c ground-different" (run1 (x1) (constrain (== 1 2))) (void))
     (tassert "==-c free-ground" (run1 (x1) (constrain (== x1 1))) 1)
@@ -78,6 +147,8 @@
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
 
+    ;; === BOOLEANO ===
+    
     (tassert "booleano free t" (run1 (x1) (booleano x1)) (constraint-goal (booleano x1)))
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
@@ -86,34 +157,7 @@
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
-    (tassert "conj fail first" (normalized-conj* fail succeed) fail)
-    (tassert "conj fail rest" (normalized-conj* succeed fail) fail)
-    (tassert "conj compress succeed" (normalized-conj* succeed succeed) succeed)
-    (tassert "conj single goals" (normalized-conj* (== 1 1)) (== 1 1))
-    (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
-    (tassert "conj remove duplicates" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1)))
-    (tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
-    (tassert "conj remove duplicate conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 2 2) (== 3 3))) (conj* (== 1 1) (== 2 2) (== 3 3)))
-
-    (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
-    (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
-    (tassert "disj compress fail" (normalized-disj* fail fail) fail)
-    (tassert "disj single goals" (normalized-disj* (== 1 1)) (== 1 1))
-    (tassert "disj keep normal goals" (normalized-disj* (== 1 1) fail (== 1 1)) (disj* (== 1 1) (== 1 1)))
-    (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
-
-    (tassert "cnf primitive" (conjunctive-normal-form (== 1 1)) (== 1 1))
-    (tassert "cnf simple conj" (conjunctive-normal-form (conj* (== 1 1) (== 2 2))) (conj* (== 1 1) (== 2 2)))
-    (tassert "cnf nested conj"
-	     (conjunctive-normal-form
-	      (conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
-    (tassert "cnf distribute single"
-	     (conjunctive-normal-form
-	      (disj* (== 1 1) (conj* (== 2 2) (== 3 3)))) (conj* (disj*  (== 1 1) (== 2 2)) (disj*  (== 1 1) (== 3 3))))
-    (tassert "cnf distribute pairs"
-	     (conjunctive-normal-form
-	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
-
+    ;; === PRESENTO ===
     
     (let* ([c (presento x1 1)]
 	   [s (run1 (x1) c)])
@@ -148,27 +192,6 @@
 	       s (disj* (== x3 1) ; cdr is not 1
 			(cadr ; car is not recursive pair
 			 (disj-disjuncts s)))))
-
-    ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. Now it is mounted on the testing wall. Like a trophy.
-    (tassert "presento fuzz succeed ground" (run1 (x1) (presento (cons (list 2 3 4 5 1) 6) 1)) x1)
-    (tassert "presento fuzz succeed bound" (run1 (x1) (== x1 1) (presento (cons (list 2 3 4 5 x1) 6) 1)) 1)
-    (tassert "presento fuzz succeed fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
-    (tassert "presento fuzz fail ground" (run1 (x1) (presento (cons (list 2 3 4 5 7) 6) 1)) (void))
-    (tassert "presento fuzz fail bound" (run1 (x1) (== x1 7) (presento (cons (list 2 3 4 5 x1) 6) 1)) (void))
-    (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
-    ;;    (display "START\n\n")
-
-    
-    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
-    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1) 6) 1) (== x1 1)) 1)
-    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (cons (cons (list 2 3 x1) 7) 2) 6) 1) (== x1 1)) 1)
-    #;
-    (tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 3 (cons 4 (cons 5 (cons 6 x1))))) 1) (== x1 1)) 1)
-    #;
-    (let ([s (run1-states (x1) (presento (cons x1 2) 1) )])
-      (let ([sub (substitution-dict (state-substitution s))])
-	(printf "~s~%~s~%" (map (lambda (p) (cons (make-var (- (sbral-length sub) (car p))) (cdr p))) (sbral->alist sub)) s)))
-
     
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 2 1)) (void))
@@ -192,108 +215,16 @@
     (tassert "presento fire ground cdr fail" (run1 (x1) (presento x1 3) (== x1 '(2 . 1))) (void))
 
     (tassert "presento fuzz fail" (run1 (x1) (presento (list 2 (list 2 (cons 2 (cons 2 (cons 2 x1))))) 1) (== x1 2)) (void))
-    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 3 (cons 4 (cons 5 (cons 6 x1))))) 1) ) 1)
-
-
-    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 2 (cons (list 2 2) (list 2 (cons x1 2) 2)) 2) 2) 1) (== x1 1)) 1)
-
     
-;;    (tassert "presento bound fail" (run1 (x1) (== x1 1) (presento x1 1)) 1)
+    ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. Now it is mounted on the testing wall. Like a trophy.
+    (tassert "presento fuzz succeed ground" (run1 (x1) (presento (cons (list 2 3 4 5 1) 6) 1)) x1)
+    (tassert "presento fuzz succeed bound" (run1 (x1) (== x1 1) (presento (cons (list 2 3 4 5 x1) 6) 1)) 1)
+    (tassert "presento fuzz succeed fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+    (tassert "presento fuzz fail ground" (run1 (x1) (presento (cons (list 2 3 4 5 7) 6) 1)) (void))
+    (tassert "presento fuzz fail bound" (run1 (x1) (== x1 7) (presento (cons (list 2 3 4 5 x1) 6) 1)) (void))
+    (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
 
-
-					;    (display (run-constraint ))
-    #;
-    (display "START\n\n\n")
-    #;
-    (tassert "fresh-c increases varid" (state-varid (run-constraint empty-state (fresh (x1) (=/= x1 1)))) 2)
-    #;
-    (tassert "conj-c increases varid"
-	     (state-varid (run-constraint empty-state
-					  (conj* (fresh (x1) (=/= x1 1)) (fresh (x1) (=/= x1 1))))) 3)
-
-    
-    ;(tassert "ones list constraint" (run1 (x1) (ones (list 2 1))) '())
-    ;;(tassert "presento fire ground term fail" (run1 (x1) (presento x1 1) (== x1 2)) (void))
-
-
-    ;;(display (list-values (run-stream-constraint empty-state (conj* (== x1 1) (=/= x2 2)))))
-    ;;(display (list-values (run-stream-constraint empty-state (disj* (== x1 1) (== x1 2)))))
-
-					;(display (check-constraints (run-stream-constraint (make-noto (== x2 2)) empty-state) (== x2 2)))
-    ;;(display (list-values (run-goal (disj* (== x1 x2) (== x1 2)) (unify empty-state x1 1) empty-package)))
-
-					;(display "START\n")
-    
-
-
-    #;
-    (tassert "fresh constraint increments varid bind incomplete"
-	     (state-varid (values-ref (run-goal (constrain
-						 (fresh (x1) 
-						   (fresh (x2) (=/= x2 2))
-						   (=/= x1 1))) empty-state empty-package) 1)) 3)
-
-
-    (let ([s (run1-states (x1) (constrain (== x1 1)))])
-      (tassert "constraint == store" (reify s x1) 1)
-      (tassert "constraint == vid" (state-varid s) 2))
-    (let ([s (run1-states (x1) (constrain (fresh (x2) (== x1 1))))])
-      (tassert "constraint frash == store" (reify s x1) 1)
-      (tassert "constraint fresh == vid" (state-varid s) 3))
-    (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
-      (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
-      (tassert "constraint conj == vid" (state-varid s) 3))
-    (let ([s (run1-states (x1) (constrain fail (== x1 1)))])
-      (tassert "constraint bind fail" s failure))
-    (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))])
-      (tassert "constraint bind store" (reify s x1) 1)
-      (tassert "constraint bind vid" (state-varid s) 2))
-    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      
-      (tassert "constraint disj succeed store" (reify s x1) x1)
-      (tassert "constraint disj succeed vid" (state-varid s) 2))
-    (tassert "constraint disj =="
-	     (run1 (x1 x2) (constrain (conde [(== x2 1)] [(== x2 2)]))
-		   (constrain (conde [(== x1 1)] [(== x1 2)]))
-		   (== x2 2))
-	     (list (disj* (== x1 1) (== x1 2)) 2))
-    (tassert "constraint disj lazy" (run1 (x1) (constrain (conde [(== x1 1)] [stale]))) (disj* (== x1 1) stale))
-    (let ([s (run1-states (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))])      
-      (tassert "constraint conj disj store" (reify s x1) x1)
-      (tassert "constraint conj disj vid" (state-varid s) 2))
-
-    (tassert "constraint disj conj"
-	     (run1 (x1 x2) (constrain (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
-	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
-		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
-    
-
-    #;
-    (let ([s (run1-states (x1 x2) (constrain (conde [(fresh (x3) (== x1 1))] [(fresh (x3 x4) (== x2 2))])))])
-      (tassert "constraint disj fresh store" (reify s (cons x1 x2)) (cons (disj* (== x1 1) (== x2 2))  x2))
-      (tassert "constraint disj fresh vid" (state-varid s) 5))
-
-
-
-
-#;
-    (let ([s (run1-states (x1 x2) (constrain (fresh (x3) (== x2 2) (conde [(fresh (x3) (== x1 1))] [(fresh (x3) (== x1 2))]))))])
-      (tassert "constraint disj bind complete store" (reify s (cons x1 x2)) 'unk)
-      (tassert "constraint disj bind complete vid" (state-varid s) 4))
-    
-    #;
-    (let ([s (run1-states (x1 x2) (constrain (conde [(== x1 1)] [(== x1 2)]) (fresh (x3) (== x2 2))))])
-      (tassert "constraint disj bind complete store" (reify s (cons x1 x2)) 'unk)
-      (tassert "constraint disj bind complete vid" (state-varid s) 4))
-
-
-    ;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
-
-
-;;    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
-
-
-    
-    
+    ;;code for inspecting presento constraints
 #;
     (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))]
 	  [s (unify empty-state x1 1)])
