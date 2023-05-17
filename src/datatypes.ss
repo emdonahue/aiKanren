@@ -134,7 +134,8 @@
 	(cond
 	 [(fail? rest) fail]
 	 [(conj? (car cs)) (append (conj-conjuncts (car cs)) rest)]
-	 [else (cons (car cs) rest)]))]))
+	 [else (if (member (car cs) rest) rest
+		   (cons (car cs) rest))]))]))
 
   (define (normalized-conj* . conjuncts)
     (normalized-conj conjuncts))
