@@ -149,7 +149,13 @@
 			(cadr ; car is not recursive pair
 			 (disj-disjuncts s)))))
 
-    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+    ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. Now it is mounted on the testing wall. Like a trophy.
+    (tassert "presento fuzz succeed ground" (run1 (x1) (presento (cons (list 2 3 4 5 1) 6) 1)) x1)
+    (tassert "presento fuzz succeed bound" (run1 (x1) (== x1 1) (presento (cons (list 2 3 4 5 x1) 6) 1)) 1)
+    (tassert "presento fuzz succeed fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+    (tassert "presento fuzz fail ground" (run1 (x1) (presento (cons (list 2 3 4 5 7) 6) 1)) (void))
+    (tassert "presento fuzz fail bound" (run1 (x1) (== x1 7) (presento (cons (list 2 3 4 5 x1) 6) 1)) (void))
+    (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
     ;;    (display "START\n\n")
 
     
