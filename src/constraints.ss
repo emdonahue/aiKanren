@@ -19,4 +19,15 @@
 	    [(presento d present)]))])))
 
   (define (absento term absent)
+    (constrain
+     (fresh ()
+       (=/= term absent)
+       (fresh (a d)
+	 (conde
+	   [(=/= term (cons a d))]
+	   [(== term (cons a d))
+	    (absento a absent)
+	    (absento d absent)])))))
+
+  (define (absento2 term absent)
     (noto (presento term absent))))

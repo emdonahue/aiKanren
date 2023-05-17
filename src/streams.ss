@@ -10,7 +10,7 @@
      [(fail? g) (values failure p)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(values s p))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
+     [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
      [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
 			     [(s p) (bind (conj-cdr g) s p)])
@@ -99,6 +99,7 @@
       (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
 	(values (noto g) s (state-varid s)))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s empty-package)]) ; TODO find all empty packages and consider threading real package
+					       (printf "GOAL: ~s~%NOTO: ~s~%~%" g (noto g))
 					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [else (assert #f)]))
