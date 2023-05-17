@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check)
+  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
   (define (run-goal g s p)
@@ -103,6 +103,7 @@
   
   (define (check-constraints s g)
     ;; Runs after unification to propagate new extensions through the constraint store. g is the goal representing the updates made to the substitution by the unifier.
+    ;; TODO remove all firing constraints before checking any of them in case they redundantly check each other
     (assert (and (state-or-failure? s) (goal? g)))
     (cond
      [(or (failure? s) (fail? g)) failure] ; State has failed
@@ -112,8 +113,9 @@
      [else (assert #f)]))
 
   (define (fire-constraint s e)
-    (assert (and (state? s) (==? e)))
+    (assert (and (state? s) (==? e))) ; -> state-or-failure?
 
+    #;
     (printf "FIRING CONSTRAINT (~s): ~s~%SUB: ~s~%STORE: ~s~%REDUCED: ~s~%DEPLETED: ~s~%STATE: ~s~%~%" (==-lhs e) (get-constraint (state-constraints s) (==-lhs e))
 	    
 	    (print-substitution s)
@@ -136,8 +138,8 @@
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
        (lambda (s v)
-	 (set-state-constraints
-	  s (add-constraint (state-constraints s) v c))) s (get-attributed-vars c))]))
+	 (assert (eq? (walk s v) v)) ; TODO delete this assertion
+	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
 
   (define (get-attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.

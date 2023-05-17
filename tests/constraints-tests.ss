@@ -148,7 +148,13 @@
 			 (disj-disjuncts s)))))
 
     (display "START\n\n")
-    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+    (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))]
+	  [s (unify empty-state x1 1)])
+      (pretty-print c)
+      (pretty-print s)
+      (pretty-print (list-values (simplify-constraint c s)))
+      (pretty-print (check-constraints s)))
+    ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (cons (cons (list 2 3 x1) 7) 2) 6) 1) (== x1 1)) 1)
     #;

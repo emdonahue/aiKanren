@@ -1,5 +1,5 @@
 (library (state)
-  (export reify instantiate-var walk print-substitution) ;;TODO double check state exports
+  (export reify instantiate-var walk state-add-constraint print-substitution) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -11,7 +11,9 @@
 	(if (var? v) v (reify s v)))]
      [else v]))
 
-  
+  (define (state-add-constraint s v c)
+    (assert (and (state? s) (var? v) (goal? c)))
+    (set-state-constraints s (add-constraint (state-constraints s) v c)))
 
   (define (walk s v)
     (substitution:walk (state-substitution s) v))
