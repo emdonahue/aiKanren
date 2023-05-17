@@ -157,6 +157,30 @@
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
+    ;; === ABSENTO ===
+    (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
+    (tassert "absento ground succeed" (run1 () (absento 2 1)) '())
+    (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento x1 1)) (void))
+    (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento x1 2)) 1)
+    (tassert "absento fire ground term fail" (run1 (x1) (absento x1 1) (== x1 1)) (void))
+    (tassert "absento fire ground term succeed" (run1 (x1) (absento x1 2) (== x1 1)) 1)
+    
+    (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void))
+    (tassert "absento ground car succeed" (run1 () (absento (cons 2 2) 1)) '())
+    (tassert "absento bound ground car fail" (run1 (x1) (== x1 '(1)) (absento x1 1)) (void))
+    (tassert "absento bound ground car succeed" (run1 (x1) (== x1 '(1)) (absento x1 2)) '(1))
+    (tassert "absento fire ground car fail" (run1 (x1) (absento x1 1) (== x1 '(1))) (void))
+    (tassert "absento fire ground car succeed" (run1 (x1) (absento x1 2) (== x1 '(1))) '(1))
+
+    (tassert "absento ground cdr fail" (run1 () (absento (cons 2 1) 1)) (void))    
+    (tassert "absento ground cdr succeed" (run1 () (absento (cons 2 2) 1)) '())
+    (tassert "absento bound ground cdr fail" (run1 (x1) (== x1 '(2 . 1)) (absento x1 1)) (void))
+    (tassert "absento bound ground cdr succeed" (run1 (x1) (== x1 '(2 . 2)) (absento x1 1)) '(2 . 2))
+    (tassert "absento fire ground cdr fail" (run1 (x1) (absento x1 1) (== x1 '(2 . 1))) (void))
+    (tassert "absento fire ground cdr succeed" (run1 (x1) (absento x1 3) (== x1 '(2 . 1))) '(2 . 1))
+
+    (exit)
+    
     ;; === PRESENTO ===
     
     (let* ([c (presento x1 1)]
@@ -242,5 +266,7 @@
       (pretty-print
        (check-constraints
 	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
+
+    
     
     ))

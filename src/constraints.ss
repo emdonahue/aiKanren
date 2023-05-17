@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento)
+  (export booleano presento absento)
   (import (chezscheme) (datatypes) (ui))
 
   (define (booleano v)
@@ -8,26 +8,15 @@
        [(== v #t)]
        [(== v #f)])))
 
-  #;
-  (define (presento container query)
+  (define (presento term present)
     (constrain
      (conde
-       [(== container query)]
+       [(== term present)]
        [(fresh (a d)
-	  (== container (cons a d))
+	  (== term (cons a d))
 	  (conde
-	    [(presento a query)]
-	    [(presento d query)]))]))
-  )
+	    [(presento a present)]
+	    [(presento d present)]))])))
 
-  (define (presento container query)
-    (constrain
-     (conde
-       [(== container query)]
-       [(fresh (a d)
-	  (== container (cons a d))
-	  (conde
-	    [(presento a query)]
-	    [(presento d query)]))])))
-  
-)
+  (define (absento term absent)
+    (noto (presento term absent))))

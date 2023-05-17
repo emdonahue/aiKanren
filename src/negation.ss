@@ -12,6 +12,7 @@
      [(conj? g) (make-disj (map noto (conj-conjuncts g)))]
      [(fresh? g) (make-noto g)]
      [(noto? g) (noto-goal g)]
+     [(constraint? g) (make-constraint (noto (constraint-goal g)))]
      [else (assert #f)]
      )
     )

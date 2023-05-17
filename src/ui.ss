@@ -1,5 +1,5 @@
 (library (ui)
-  (export == conde run run* run1 run-states run*-states run1-states fresh runner runner-next runner-step runner-take failure? =/= constrain fail succeed)
+  (export == conde run run* run1 run-states run*-states run1-states fresh runner runner-next runner-step runner-take failure? =/= constrain fail succeed noto)
   (import (chezscheme) (running) (datatypes) (negation))
 
   (define-syntax conde

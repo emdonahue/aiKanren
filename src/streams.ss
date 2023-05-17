@@ -19,8 +19,10 @@
 		    ([(lhs p) (run-goal (disj-car g) s p)]
 		     [(rhs p) (run-goal (disj-cdr g) s p)])
 		  (values (mplus lhs rhs) p))]
-     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) (g s p)])
-					       (run-goal (noto g) s p))]
+     [(and (noto? g) (fresh? (noto-goal g)))
+      (assert #f) ; TODO test negation of fresh
+      (let-values ([(g s p) (g s p)])
+	(run-goal (noto g) s p))]
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))
@@ -98,6 +100,8 @@
      [(and (noto? g) (not (fresh? (noto-goal g))))
       (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
 	(values (noto g) s (state-varid s)))]
+     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s v) (simplify-constraint (noto-goal g) s)]) ; TODO find all empty packages and consider threading real package
+					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [else (assert #f)]))
   
