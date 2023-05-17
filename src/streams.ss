@@ -108,12 +108,12 @@
     (cond
      [(or (failure? s) (fail? g)) failure] ; State has failed
      [(succeed? g) s] ; State has succeeded without modification     
-     [(==? g) (fire-constraint s g)] ; State has updated a single variable
-     [(conj? g) (check-constraints (check-constraints s (conj-car g)) (conj-cdr g))] ; Updated multiple variables
+     [(==? g) (fire-constraint s (list (==-lhs g)))] ; State has updated a single variable
+     [(conj? g) (fire-constraint s (map ==-lhs (conj-conjuncts g)))] ; Updated multiple variables
      [else (assert #f)]))
 
-  (define (fire-constraint s e)
-    (assert (and (state? s) (==? e))) ; -> state-or-failure?
+  (define (fire-constraint s vs)
+    (assert (and (state? s) (list? vs) (fold-left eq? #t (map var? vs)))) ; -> state-or-failure?
 
     #;
     (printf "FIRING CONSTRAINT (~s): ~s~%SUB: ~s~%STORE: ~s~%REDUCED: ~s~%DEPLETED: ~s~%STATE: ~s~%~%" (==-lhs e) (get-constraint (state-constraints s) (==-lhs e))
@@ -124,8 +124,8 @@
 	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
 	    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
     (run-constraint
-     (get-constraint (state-constraints s) (==-lhs e))
-     (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))))
+     (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs))
+     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs))))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.

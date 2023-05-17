@@ -18,7 +18,7 @@
 	 (fresh (a d)
 	   (== v (cons a d))
 	   (disj* (== a 1) (ones d))))))
-    
+
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
     (tassert "disunify ground-different" (run* () (=/= 1 2)) '(()))
     (tassert "disunify free-self" (run* (x1) (=/= x1 x1)) '())
@@ -32,7 +32,7 @@
 	     (conj* (=/= x1 1) (=/= x1 2)))
     (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
     (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2))))
-	     (disj* (=/= x1 1) (=/= x2 2)))    
+	     (disj* (=/= x1 1) (=/= x2 2)))
     (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1))
 	     (list 1 (=/= x2 2)))
     (tassert "disunify fire lists and fail" (run* (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1) (== x2 2))
@@ -148,17 +148,8 @@
 			 (disj-disjuncts s)))))
 
     ;;    (display "START\n\n")
-    #;
-    (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))]
-	  [s (unify empty-state x1 1)])
-      ;;(pretty-print c)
-      ;;(pretty-print s)
-      (pretty-print (list-values (simplify-constraint c s)))
-      (pretty-print (car  (disj-disjuncts c)))
-      #;
-      (pretty-print
-       (check-constraints
-	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
+
+    
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (cons (cons (list 2 3 x1) 7) 2) 6) 1) (== x1 1)) 1)
@@ -289,5 +280,27 @@
     ;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
 
 
+;;    (tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
+
+
+    
+    
+#;
+    (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))]
+	  [s (unify empty-state x1 1)])
+      ;;(pretty-print c)
+      ;;(pretty-print s)
+;      (pretty-print c)
+ ;     (pretty-print (list-values (simplify-constraint c s)))
+      #;
+      (pretty-print (car  (disj-disjuncts c)))
+
+      #;
+      (pretty-print
+       (check-constraints (state-add-constraint s x1 c) (== x1 1) ))
+
+      (pretty-print
+       (check-constraints
+	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
     
     ))
