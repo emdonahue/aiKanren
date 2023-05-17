@@ -3,6 +3,8 @@
   (import (chezscheme) (test-runner) (negation) (ui) (datatypes))
 
   (define (run-negation-tests)
+    (define x1 (make-var 1))
+    
     (tassert "negate succeed" (noto succeed) fail)
     (tassert "negate fail" (noto fail) succeed)
     (tassert "negate unification" (noto (== 1 2)) (make-noto (== 1 2)))
@@ -11,4 +13,8 @@
     (tassert "negate conjunction" (noto (fresh () (== 1 2) fail succeed)) (conde [(noto (== 1 2))] [succeed] [fail]))
     (tassert "negate fresh" (noto? (noto (fresh (q) succeed))) #t)
     (tassert "negate noto" (fresh? (noto (noto (fresh (q) succeed)))) #t)
+
+    (tassert "negate nested fresh" (run1 (x1) (noto (fresh (x2) (fresh (x3) (conde [(== x1 1)] [(== x1 2)]))))) (conj* (noto (== x1 2)) (noto (== x1 1))))
+    
+    (exit)
     ))
