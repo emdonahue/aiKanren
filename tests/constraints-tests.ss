@@ -158,7 +158,14 @@
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
     ;; === ABSENTO ===
+    (display "START\n")
+    (let ([s (run1-states (x1) (absento x1 1))])
+      (pretty-print s))
+    (exit)
+    
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
+
+
     (tassert "absento ground succeed" (run1 () (absento 2 1)) '())
     (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento x1 1)) (void))
     (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento x1 2)) 1)

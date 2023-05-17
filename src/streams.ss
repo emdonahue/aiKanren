@@ -98,7 +98,7 @@
      [(and (noto? g) (not (fresh? (noto-goal g))))
       (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
 	(values (noto g) s (state-varid s)))]
-     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s v) (simplify-constraint (noto-goal g) s)]) ; TODO find all empty packages and consider threading real package
+     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s empty-package)]) ; TODO find all empty packages and consider threading real package
 					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [else (assert #f)]))
