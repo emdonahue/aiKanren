@@ -20,7 +20,7 @@
 		     [(rhs p) (run-goal (disj-cdr g) s p)])
 		  (values (mplus lhs rhs) p))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])
-					       (values (make-bind (noto g) s) p))]
+					       (values (make-bind (noto g) s) p))] 
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [else (assert #f)]))

@@ -15,6 +15,6 @@
     (tassert "negate noto" (fresh? (noto (noto (fresh (q) succeed)))) #t)
 
     (tassert "negate nested fresh" (run1 (x1) (noto (fresh (x2) (fresh (x3) (conde [(== x1 1)] [(== x1 2)]))))) (conj* (noto (== x1 2)) (noto (== x1 1))))
+    (tassert "negate stream" (run* (x1) (noto (fresh (x2) (fresh (x3) (== x1 1)) (fresh (x3) (== x1 2))))) (list (noto (== x1 1)) (noto (== x1 2))))
     
-    (exit)
     ))
