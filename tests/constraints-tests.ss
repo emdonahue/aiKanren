@@ -147,23 +147,28 @@
 			(cadr ; car is not recursive pair
 			 (disj-disjuncts s)))))
 
-    (display "START\n\n")
+    ;;    (display "START\n\n")
+    #;
     (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))]
 	  [s (unify empty-state x1 1)])
-      (pretty-print c)
-      (pretty-print s)
+      ;;(pretty-print c)
+      ;;(pretty-print s)
       (pretty-print (list-values (simplify-constraint c s)))
-      (pretty-print (check-constraints s)))
+      (pretty-print (car  (disj-disjuncts c)))
+      #;
+      (pretty-print
+       (check-constraints
+	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (list 2 3 4 5 x1) 6) 1) (== x1 1)) 1)
     ;;(tassert "presento fuzz succeed" (run1 (x1) (presento (cons (cons (cons (list 2 3 x1) 7) 2) 6) 1) (== x1 1)) 1)
     #;
     (tassert "presento fuzz succeed" (run1 (x1) (presento (list 2 (list 3 (cons 4 (cons 5 (cons 6 x1))))) 1) (== x1 1)) 1)
-    (exit)
+    #;
     (let ([s (run1-states (x1) (presento (cons x1 2) 1) )])
       (let ([sub (substitution-dict (state-substitution s))])
 	(printf "~s~%~s~%" (map (lambda (p) (cons (make-var (- (sbral-length sub) (car p))) (cdr p))) (sbral->alist sub)) s)))
-    (exit)
+
     
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 2 1)) (void))
