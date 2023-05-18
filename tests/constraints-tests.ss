@@ -233,8 +233,7 @@
     ;;(tassert "pluso ground 1" (run1 () (pluso 42)) '())
     
     
-    (display "TESTS COMPLETE\n")
-    (exit)
+
     ;; === ABSENTO ===
 
     
@@ -248,6 +247,7 @@
     (display "START\n\n")
     (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void))
 
+    (display "TESTS COMPLETE")
     (exit)
 ;    (simplify-constraint (pretty-print (absento (cons 1 2) 1)) empty-state)
 					;   (exit)

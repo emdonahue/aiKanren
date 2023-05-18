@@ -104,7 +104,9 @@
        (=/= term absent)
        (fresh (a d)
 	 (conde
-	   [(=/= term (cons a d))] ; we should be able to detect that no changes were made to the substitution except to extend it with dummy variables. for a cons, this should fail. it succeeds if term is atomic, bc then it def doesnt equal a cons. since we are =/= a constant, surely no new info should be able to come in, so we should be able to commit now. does not exist some vars st this equality holds. more of a (not (fresh (a d) (== term (cons a d)))). single state semantics turn it into effectively a constraint just like ==. a negated fresh constraint could simplify by running fresh as usual, and flattening the goal to success or failure. any amount of satisfiability fails, and fail is the only thing that returns a blank succeed since theres no info in a fail
+	   [(noto (typeo term pair?))
+	    #;
+	    (=/= term (cons a d))] ; we should be able to detect that no changes were made to the substitution except to extend it with dummy variables. for a cons, this should fail. it succeeds if term is atomic, bc then it def doesnt equal a cons. since we are =/= a constant, surely no new info should be able to come in, so we should be able to commit now. does not exist some vars st this equality holds. more of a (not (fresh (a d) (== term (cons a d)))). single state semantics turn it into effectively a constraint just like ==. a negated fresh constraint could simplify by running fresh as usual, and flattening the goal to success or failure. any amount of satisfiability fails, and fail is the only thing that returns a blank succeed since theres no info in a fail
 	   [(== term (cons a d))
 	    (absento a absent)
 	    (absento d absent)])))))
