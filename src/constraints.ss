@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento listo finite-domain ==> symbolo)
+  (export booleano presento absento listo finite-domain ==> symbolo pluso)
   (import (chezscheme) (datatypes) (ui) (state))
 
   (define (booleano v)
@@ -31,9 +31,14 @@
      v (lambda (s)
 	 (let ([v (walk s v)])
 	   (cond
-	    [(symbol? v) succeed]
 	    [(var? v) (symbolo v)]
+	    [(symbol? v) succeed]	    
 	    [else fail])))))
+
+
+  (define (pluso var sum . summands)
+    3
+    )
 
   #;
   (define (constrain-ground v lam)

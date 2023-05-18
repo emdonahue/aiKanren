@@ -7,7 +7,7 @@
     (cond
      [(succeed? g) fail]
      [(fail? g) succeed]
-     [(==? g) (make-noto g)]
+     [(or (==? g) (pconstraint? g)) (make-noto g)]
      [(disj? g) (make-conj (map noto (disj-disjuncts g)))]
      [(conj? g) (make-disj (map noto (conj-conjuncts g)))]
      [(fresh? g) (make-noto g)]
