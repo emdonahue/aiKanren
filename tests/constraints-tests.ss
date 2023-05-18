@@ -247,8 +247,8 @@
     (display "START\n\n")
     (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void))
 
-    (display "TESTS COMPLETE")
-    (exit)
+
+
 ;    (simplify-constraint (pretty-print (absento (cons 1 2) 1)) empty-state)
 					;   (exit)
     #;
@@ -268,7 +268,7 @@
     (tassert "absento fire cdr fail" (run1 (x1) (absento x1 1) (== x1 '(2 . 1))) (void))
     (tassert "absento fire cdr succeed" (run1 (x1) (absento x1 3) (== x1 '(2 . 1))) '(2 . 1))
 
-    (exit)
+
     
     ;; === PRESENTO ===
     
