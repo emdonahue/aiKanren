@@ -23,6 +23,7 @@
 					       (values (make-bind (noto g) s) p))] 
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
+     [(pconstraint? g) (values (run-constraint g s) p)]
      [else (assert #f)]))
   
   (define (mplus lhs rhs)
@@ -102,6 +103,7 @@
 					       (printf "GOAL: ~s~%NOTO: ~s~%~%" g (noto g))
 					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
+     [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
      [else (assert #f)]))
   
   (define (check-constraints s g)
@@ -155,4 +157,5 @@
      [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
      [(noto? g) (get-attributed-vars (noto-goal g))]
      [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
+     [(pconstraint? g) (pconstraint-vars g)]
      [else (assert #f)]))) 

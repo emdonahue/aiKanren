@@ -212,6 +212,12 @@
 
     (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '())
     (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void))
+
+    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
+    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void))
+
+    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
+    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void))
     
     
     (display "TESTS COMPLETE\n")
