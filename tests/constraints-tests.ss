@@ -262,6 +262,7 @@
 
 
     (display (run1 (x1) (=/= x1 #t) (booleano x1)))
+    (display (run1 (x1) (booleano x1) (=/= x1 #t)))
     
 
 
