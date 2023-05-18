@@ -37,8 +37,12 @@
 
 
   (define (pluso var sum . summands)
-    3
-    )
+    (pconstraint
+     var (lambda (s)
+	   (cond
+	    [(null? summands) (== var sum)]
+	    [else (assert #f)]
+	    ))))
 
   #;
   (define (constrain-ground v lam)

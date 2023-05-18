@@ -227,6 +227,10 @@
 
     (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void))
     (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
+
+    ;; === PLUSO ===
+
+    (tassert "pluso no summands" (run1 (x1) (pluso x1 42)) 42)
     
     
     (display "TESTS COMPLETE\n")
