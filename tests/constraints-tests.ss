@@ -161,7 +161,8 @@
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
     ;; === LISTO ===
-    (tassert "listo" 1 1)
+    (tassert "listo ground number" (run1 () (listo 1)) (void))
+    (tassert "listo ground 1-list" (run1 () (listo (list 1))) '())
     
 
     (display "TESTING COMPLETE\n")

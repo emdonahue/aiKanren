@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento)
+  (export booleano presento absento listo)
   (import (chezscheme) (datatypes) (ui))
 
   (define (booleano v)
@@ -7,6 +7,14 @@
      (conde
        [(== v #t)]
        [(== v #f)])))
+
+  (define (listo l)
+    (constrain
+     (fresh (a d)
+       (== l (cons a d))
+       (conde
+	 [(== d '())]
+	 [listo d]))))
 
   (define (presento term present)
     (constrain
