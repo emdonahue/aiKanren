@@ -74,7 +74,7 @@
 
   (define (run-constraint g s)
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
-    (let-values ([(g s^ v) (simplify-constraint g (set-state-constraints s (make-constraint-store '())))])
+    (let-values ([(g s^ v) (simplify-constraint g (clear-state-constraints s))])
       (if (failure? s^) failure (store-constraint (set-state-varid s v) g))))
 
   (define (simplify-constraint g s)

@@ -5,7 +5,7 @@
 	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
-	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure
+	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure clear-state-constraints
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -70,9 +70,13 @@
 	  (set-state-substitution! s substitution) s) substitution))
 
   (define (set-state-constraints s c)
+    (assert (and (state? s) (constraint-store? c)))
     (if (not (failure? c))
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
+
+  (define (clear-state-constraints s)
+    (set-state-constraints s empty-constraint-store))
 
   (define (increment-varid s)
     (assert (state? s))
