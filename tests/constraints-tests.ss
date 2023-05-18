@@ -260,11 +260,11 @@
 
     
 
-    (display "START\n\n")
+
     (display (run1 (x1) (=/= x1 #t) (booleano x1)))
     
-    (display "TEST COMPLETE")
-    (exit)
+
+
     
     ;; === PRESENTO ===
     
