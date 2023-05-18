@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento listo finite-domain ==> symbolo pluso)
+  (export booleano presento absento listo finite-domain ==> typeo symbolo)
   (import (chezscheme) (datatypes) (ui) (state))
 
   (define (booleano v)
@@ -23,26 +23,41 @@
   (define (==> antecedent consequent)
     (assert (and (goal? antecedent) (goal? consequent)))
     (constrain (conde [consequent] [(noto antecedent)])))
-  
 
-
-  (define (symbolo v)
+  (define (typeo v t?)
+    (assert (procedure? t?))
     (pconstraint
      v (lambda (s)
 	 (let ([v (walk s v)])
 	   (cond
-	    [(var? v) (symbolo v)]
-	    [(symbol? v) succeed]	    
+	    [(var? v) (typeo v t?)]
+	    [(t? v) succeed]	    
 	    [else fail])))))
 
 
-  (define (pluso var sum . summands)
-    (pconstraint
-     var (lambda (s)
-	   (cond
-	    [(null? summands) (== var sum)]
-	    [else (assert #f)]
-	    ))))
+  (define (symbolo v)
+    (typeo v symbol?))
+
+
+  #;
+  (define (pluso sum . summands)
+    (if (null? summands) succeed
+	(let ([vars (filter var? (cons sum summands))])
+	  (pconstraint
+	   (list-head vars 2)
+	   (lambda (s)
+	     )))))
+
+  #;
+  (define (pluso-sum vars sum summands))
+  ;; wakled sum is number
+  ;;    one+ walked summand is var
+  ;;    no walked summands are 
+  
+  ;;if sum is a number, subtract all other numbers from it and pick two random vars from the other side (+ is assoc)
+  ;; if sum is a var, choose one var from the other side and bunch the numbers up on the front of the var list
+  ;; run don the list including sum. walk each var/num. if num add to running count. when we get 2 vars, stop
+  ;; walk sum. if var, add to var list. if num, negate and add to cumulative count. when returned, if sum was num, subtract 
 
   #;
   (define (constrain-ground v lam)

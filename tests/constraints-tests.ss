@@ -230,7 +230,7 @@
 
     ;; === PLUSO ===
 
-    (tassert "pluso no summands" (run1 (x1) (pluso x1 42)) 42)
+    ;;(tassert "pluso ground 1" (run1 () (pluso 42)) '())
     
     
     (display "TESTS COMPLETE\n")
