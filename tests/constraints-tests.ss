@@ -148,7 +148,10 @@
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
 
     ;; === BOOLEANO ===
-    
+
+    (tassert "booleano ground t" (run1 () (booleano #t)) '())
+    (tassert "booleano ground f" (run1 () (booleano #f)) '())
+    (tassert "booleano ground undecidable" (run1 () (booleano 'undecidable)) (void))
     (tassert "booleano free t" (run1 (x1) (booleano x1)) (constraint-goal (booleano x1)))
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
@@ -157,6 +160,12 @@
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
+    ;; === LISTO ===
+    (tassert "listo" 1 1)
+    
+
+    (display "TESTING COMPLETE\n")
+    (exit)
     ;; === ABSENTO ===
 
     
@@ -166,7 +175,8 @@
     (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento x1 2)) 1)
     (tassert "absento fire ground term fail" (run1 (x1) (absento x1 1) (== x1 1)) (void))
     (tassert "absento fire ground term succeed" (run1 (x1) (absento x1 2) (== x1 1)) 1)
-    
+
+    (display "START\n\n")
     (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void))
 
     (exit)
