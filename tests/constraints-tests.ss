@@ -176,6 +176,14 @@
     (tassert "listo bound improper 1-list" (run1 (x1) (== x1 '(1 . 2)) (listo x1)) (void))
     (tassert "listo bound improper 2-list" (run1 (x1) (== x1 '(1 2 . 3)) (listo x1)) (void))
     (tassert "listo bound improper 3-list" (run1 (x1) (== x1 '(1 2 3 . 4)) (listo x1)) (void))
+
+    (tassert "listo fired number" (run1 (x1) (listo x1) (== x1 1)) (void))
+    (tassert "listo fired 1-list" (run1 (x1) (listo x1) (== x1 '(1))) '(1))
+    (tassert "listo fired 2-list" (run1 (x1) (listo x1) (== x1 '(1 2))) '(1 2))
+    (tassert "listo fired 3-list" (run1 (x1) (listo x1) (== x1 '(1 2 3))) '(1 2 3))
+    (tassert "listo fired improper 1-list" (run1 (x1) (listo x1) (== x1 '(1 . 2))) (void))
+    (tassert "listo fired improper 2-list" (run1 (x1) (listo x1) (== x1 '(1 2 . 3))) (void))
+    (tassert "listo fired improper 3-list" (run1 (x1) (listo x1) (== x1 '(1 2 3 . 4))) (void))
     
 
     (display "TESTING COMPLETE\n")
