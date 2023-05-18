@@ -187,9 +187,23 @@
 
     (tassert "listo multihop 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 (list 3)))) '(1 2 3))
     (tassert "listo multihop improper 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 '(3 . 4)))) (void))
-    
 
-    (display "TESTING COMPLETE\n")
+    ;; === FINITE DOMAIN ===
+
+    (tassert "finite domain ground succeed 1" (run1 () (finite-domain 1 '(1 2 3))) '())
+    (tassert "finite domain ground succeed 2" (run1 () (finite-domain 2 '(1 2 3))) '())
+    (tassert "finite domain ground succeed 3" (run1 () (finite-domain 3 '(1 2 3))) '())
+    (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
+
+    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj* (== x1 1) (== x1 2) (== x1 3)))
+    
+    (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
+    (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))
+
+    (tassert "finite domain fired succeed" (run1 (x1) (finite-domain x1 '(1 2 3)) (== x1 2)) 2)
+    (tassert "finite domain fired fail" (run1 (x1) (finite-domain x1 '(1 2 3)) (== x1 4)) (void))
+
+
     (exit)
     ;; === ABSENTO ===
 

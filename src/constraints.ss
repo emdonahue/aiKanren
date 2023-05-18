@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento listo)
+  (export booleano presento absento listo finite-domain)
   (import (chezscheme) (datatypes) (ui))
 
   (define (booleano v)
@@ -15,6 +15,10 @@
        [(fresh (a d)
 	  (== l (cons a d))
 	  (listo d))])))
+
+  (define (finite-domain v ds)
+    (assert (list? ds))
+    (constrain (disj (map (lambda (d) (== v d)) ds))))
 
   (define (presento term present)
     (constrain
