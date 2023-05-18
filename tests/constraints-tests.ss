@@ -203,7 +203,13 @@
     (tassert "finite domain fired succeed" (run1 (x1) (finite-domain x1 '(1 2 3)) (== x1 2)) 2)
     (tassert "finite domain fired fail" (run1 (x1) (finite-domain x1 '(1 2 3)) (== x1 4)) (void))
 
+    ;; === IMPLIES ===
 
+    (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list x1 2))
+    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (=/= x1 1) 3))
+    
+
+    (display "TESTS COMPLETE\n")
     (exit)
     ;; === ABSENTO ===
 

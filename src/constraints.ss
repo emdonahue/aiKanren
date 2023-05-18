@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento listo finite-domain)
+  (export booleano presento absento listo finite-domain ==>)
   (import (chezscheme) (datatypes) (ui))
 
   (define (booleano v)
@@ -19,6 +19,28 @@
   (define (finite-domain v ds)
     (assert (list? ds))
     (constrain (disj (map (lambda (d) (== v d)) ds))))
+
+  (define (==> antecedent consequent)
+    (assert (and (goal? antecedent) (goal? consequent)))
+    (constrain (conde [consequent] [(noto antecedent)])))
+  
+  #;
+  (define (symbolo v)
+    (adhoc v )
+    (lambda (s)
+      (let ([v (walk s)])
+	(cond
+	 [(symbol? v) succeed]
+	 [(var? v) (symbolo v)]
+	 [else fail]))))
+  #;
+  (define (symbolo v)
+    (lambda (s)
+      (let ([v (walk s)])
+	(cond
+	 [(symbol? v) succeed]
+	 [(var? v) (symbolo v)]
+	 [else fail]))))
 
   (define (presento term present)
     (constrain
