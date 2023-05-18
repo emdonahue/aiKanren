@@ -10,11 +10,11 @@
 
   (define (listo l)
     (constrain
-     (fresh (a d)
-       (== l (cons a d))
-       (conde
-	 [(== d '())]
-	 [listo d]))))
+     (conde
+       [(== l '())]
+       [(fresh (a d)
+	  (== l (cons a d))
+	  (listo d))])))
 
   (define (presento term present)
     (constrain

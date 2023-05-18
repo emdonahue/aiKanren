@@ -162,7 +162,12 @@
 
     ;; === LISTO ===
     (tassert "listo ground number" (run1 () (listo 1)) (void))
-    (tassert "listo ground 1-list" (run1 () (listo (list 1))) '())
+    (tassert "listo ground 1-list" (run1 () (listo '(1))) '())
+    (tassert "listo ground 2-list" (run1 () (listo '(1 2))) '())
+    (tassert "listo ground 3-list" (run1 () (listo '(1 2 3))) '())
+    (tassert "listo ground improper 1-list" (run1 () (listo '(1 . 2))) (void))
+    (tassert "listo ground improper 2-list" (run1 () (listo '(1 2 . 3))) (void))
+    (tassert "listo ground improper 3-list" (run1 () (listo '(1 2 3 . 4))) (void))
     
 
     (display "TESTING COMPLETE\n")
