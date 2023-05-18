@@ -5,7 +5,7 @@
 	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
-	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid
+	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -47,6 +47,9 @@
     ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
   (define-structure (constraint goal))
+  (define-structure (pconstraint vars procedure))
+  (define (pconstraint vars procedure)
+    (make-pconstraint (if (list? vars) vars (list vars)) procedure))
   (define empty-constraint-store (make-constraint-store '()))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
@@ -106,7 +109,7 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))

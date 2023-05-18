@@ -208,7 +208,12 @@
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list x1 2))
     (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (=/= x1 1) 3))
     
+    ;; === SYMBOLO === 
 
+    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '())
+    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void))
+    
+    
     (display "TESTS COMPLETE\n")
     (exit)
     ;; === ABSENTO ===
