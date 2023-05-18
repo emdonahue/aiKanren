@@ -66,8 +66,9 @@
 
   (define (unify-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (assert (state? s)) ; -> state-or-failure? goal?
-    (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
-      (values (check-constraints (set-state-substitution s sub) extensions) extensions)))
+    (let*-values ([(sub extensions) (substitution:unify (state-substitution s) x y)]
+		 [(s) (check-constraints (set-state-substitution s sub) extensions)])      
+      (if (failure? s) (values failure fail) (values s extensions))))
 
   ;; === CONSTRAINTS ===
 
@@ -83,6 +84,9 @@
      [(succeed? g) (values succeed s (state-varid s))]
      [(fail? g) (values fail failure 0)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
+		(if (fail? g) (values fail failure 0)
+		    (values g s (state-varid s)))
+		#;
 		(values g s (if (failure? s) 0 (state-varid s))))]
      [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
 			       [(g s^ v) (simplify-constraint g s^)])
@@ -97,8 +101,10 @@
 		   [(fail? g^) (simplify-constraint (disj-cdr g) s)]
 		   [else (values (normalized-disj* g^ (disj-cdr g)) s v)]))]
      [(and (noto? g) (not (fresh? (noto-goal g))))
-      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)])
-	(values (noto g) s (state-varid s)))]
+      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)]
+		    [(g) (noto g)])
+	(if (fail? g) (values fail failure 0)
+	    (values g s (state-varid s))))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s empty-package)]) ; TODO find all empty packages and consider threading real package
 					       (printf "GOAL: ~s~%NOTO: ~s~%~%" g (noto g))
 					       (simplify-constraint (noto g) s))]

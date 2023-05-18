@@ -32,7 +32,7 @@
 	  (if (failure? s)
 	      (values failure fail)
 	      (let-values ([(s cdr-extensions) (unify s (cdr x) (cdr y))])
-		(values s (conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
+		(values s (normalized-conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
        [else (values failure fail)])))
 
   (define (extend s x y)

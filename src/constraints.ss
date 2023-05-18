@@ -89,6 +89,7 @@
 	 [else fail]))))
 
   (define (presento term present)
+    ;; TODO try making constraint freshes that don't bind any external variables just commit. eg for ground terms. maybe their partner in == is ground or also from a constraint fresh?
     (constrain
      (conde
        [(== term present)]

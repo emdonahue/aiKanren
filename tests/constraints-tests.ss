@@ -161,6 +161,7 @@
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
     ;; === LISTO ===
+    
     (tassert "listo ground number" (run1 () (listo 1)) (void))
     (tassert "listo ground 1-list" (run1 () (listo '(1))) '())
     (tassert "listo ground 2-list" (run1 () (listo '(1 2))) '())
@@ -236,7 +237,6 @@
 
     ;; === ABSENTO ===
 
-    
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
     (tassert "absento ground succeed" (run1 () (absento 2 1)) '())
     (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento x1 1)) (void))
@@ -244,17 +244,7 @@
     (tassert "absento fire ground term fail" (run1 (x1) (absento x1 1) (== x1 1)) (void))
     (tassert "absento fire ground term succeed" (run1 (x1) (absento x1 2) (== x1 1)) 1)
 
-    (display "START\n\n")
     (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void))
-
-
-
-;    (simplify-constraint (pretty-print (absento (cons 1 2) 1)) empty-state)
-					;   (exit)
-    #;
-    (let ([s (run1-states (x1) (absento (cons x1 2) 1))])
-      (pretty-print s))
-
     (tassert "absento ground car succeed" (run1 () (absento (cons 2 2) 1)) '())
     (tassert "absento bound car fail" (run1 (x1) (== x1 '(1)) (absento x1 1)) (void))
     (tassert "absento bound car succeed" (run1 (x1) (== x1 '(1)) (absento x1 2)) '(1))
@@ -268,7 +258,13 @@
     (tassert "absento fire cdr fail" (run1 (x1) (absento x1 1) (== x1 '(2 . 1))) (void))
     (tassert "absento fire cdr succeed" (run1 (x1) (absento x1 3) (== x1 '(2 . 1))) '(2 . 1))
 
+    
 
+    (display "START\n\n")
+    (display (run1 (x1) (=/= x1 #t) (booleano x1)))
+    
+    (display "TEST COMPLETE")
+    (exit)
     
     ;; === PRESENTO ===
     
