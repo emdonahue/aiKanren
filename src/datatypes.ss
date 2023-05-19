@@ -75,7 +75,7 @@
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
 
-  (define (clear-state-constraints s)
+  (define (clear-state-constraints s) ; TODO instead of clearing constraint store, use non constraint checking unify, then delete clear constraint store fn
     (set-state-constraints s empty-constraint-store))
 
   (define (increment-varid s)

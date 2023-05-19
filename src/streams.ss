@@ -70,11 +70,16 @@
 		 [(s) (check-constraints (set-state-substitution s sub) extensions)])      
       (if (failure? s) (values failure fail) (values s extensions))))
 
+  (define (unify-no-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
+    (assert (state? s)) ; -> state-or-failure? goal?
+    (let*-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
+      (if (failure? s) (values failure fail) (values s extensions))))
+
   ;; === CONSTRAINTS ===
 
   (define (run-constraint g s)
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
-    (let-values ([(g s^ v) (simplify-constraint g (clear-state-constraints s))])
+    (let-values ([(g s^ v) (simplify-constraint g (clear-state-constraints s))]) 
       (if (failure? s^) failure (store-constraint (set-state-varid s v) g))))
 
   (define (simplify-constraint g s)
@@ -85,15 +90,13 @@
      [(fail? g) (values fail failure 0)]
      [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g) (values fail failure 0)
-		    (values g s (state-varid s)))
-		#;
-		(values g s (if (failure? s) 0 (state-varid s))))]
+		    (values g s (state-varid s))))]
      [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
 			       [(g s^ v) (simplify-constraint g s^)])
 		   (if (succeed? g) (values g s (state-varid s)) (values g s^ v)))] ; If fresh purely succeeds, we don't need to save space for the new variables it created.
      [(conj? g) (let-values ([(g^ s v) (simplify-constraint (conj-car g) s)])
 		  (if (fail? g^) (values fail failure 0)
-		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])
+		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])			
 			(values (normalized-conj* g^ g) s v))))]
      [(disj? g) (let-values ([(g^ s^ v) (simplify-constraint (disj-car g) s)])
 		  (cond
@@ -111,6 +114,17 @@
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
      [else (assert #f)]))
+
+  (define (run-dfs cs s g)
+    (if (null? cs) (values succeed s (state-varid s))
+	(let ([c (car cs)]
+	      [cs (cdr cs)])
+	  (cond
+	   [(==? c) (let-values ([(s g^) (unify-check s (==-lhs c) (==-rhs c))])
+		(if (fail? g^) (values fail failure 0)
+		    (values g^ s (state-varid s))))]))))
+
+  ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
   
   (define (check-constraints s g)
     ;; Runs after unification to propagate new extensions through the constraint store. g is the goal representing the updates made to the substitution by the unifier.

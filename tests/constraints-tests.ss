@@ -83,7 +83,11 @@
 	     (run1 (x1 x2) (constrain (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
 	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
 		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
-    
+
+    ;;(display "START\n\n")
+    ;;(display (run1-states (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2) ) (conj* (== x1 2) (== x2 2)))) (=/= x2 2)))
+
+
     ;; === DISEQUALITY ===
 
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
@@ -261,8 +265,11 @@
     
 
 
-    (display (run1 (x1) (=/= x1 #t) (booleano x1)))
-    (display (run1 (x1) (booleano x1) (=/= x1 #t)))
+    ;(display (run1 (x1) (=/= x1 #t) (booleano x1)))
+					;(display (run1 (x1) (booleano x1) (=/= x1 #t)))
+    ;;(display "START\n\n")
+    ;;(display (run1-states (x1) (constrain (=/= x1 1) (disj* (== x1 1) (== x1 2)) )))
+
     
 
 
@@ -351,8 +358,4 @@
 
       (pretty-print
        (check-constraints
-	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
-
-    
-    
-    ))
+	(check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))))
