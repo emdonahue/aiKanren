@@ -13,7 +13,7 @@
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
      [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
-			     [(s p) (bind (conj-cdr g) s p)])
+			      [(s p) (bind (conj-cdr g) s p)])
 		  (values s p))]
      [(disj? g) (let*-values
 		    ([(lhs p) (run-goal (disj-car g) s p)]
@@ -24,7 +24,7 @@
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [(pconstraint? g) (values (run-constraint g s) p)]
-     [else (assert #f)]))
+     [else (assertion-violation 'run-goal "Unrecognized goal type" g)]))
   
   (define (mplus lhs rhs)
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
@@ -62,7 +62,7 @@
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
      [(answers? s) (values (answers-cdr s) p)]
-     [else (assert #f)]))
+     [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
 
   (define (unify-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
     (assert (state? s)) ; -> state-or-failure? goal?
@@ -110,11 +110,12 @@
 	(if (fail? g) (values fail failure 0)
 	    (values g s (state-varid s))))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s empty-package)]) ; TODO find all empty packages and consider threading real package
+					       (assert #f)
 					       (printf "GOAL: ~s~%NOTO: ~s~%~%" g (noto g))
 					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
-     [else (assert #f)]))
+     [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
 
   (define (run-dfs cs s g)
     (if (null? cs) (values succeed s (state-varid s))
@@ -136,7 +137,7 @@
      [(succeed? g) s] ; State has succeeded without modification     
      [(==? g) (fire-constraint s (list (==-lhs g)))] ; State has updated a single variable
      [(conj? g) (fire-constraint s (map ==-lhs (conj-conjuncts g)))] ; Updated multiple variables
-     [else (assert #f)]))
+     [else (assertion-violation 'check-constraints "Unrecognized constraint type" g)]))
 
   (define (fire-constraint s vs)
     (assert (and (state? s) (list? vs) (fold-left eq? #t (map var? vs)))) ; -> state-or-failure?
@@ -179,4 +180,4 @@
      [(noto? g) (get-attributed-vars (noto-goal g))]
      [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
      [(pconstraint? g) (pconstraint-vars g)]
-     [else (assert #f)]))) 
+     [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))) 
