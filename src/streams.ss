@@ -70,10 +70,11 @@
 		 [(s) (check-constraints (set-state-substitution s sub) extensions)])      
       (if (failure? s) (values failure fail) (values s extensions))))
 
-  (define (unify-no-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
+  (define (unify-no-check s x y)
+    ;; to walk a term we need to keep at least the unifications in the state. maybe apply only unifications and ignore other constraints?
     (assert (state? s)) ; -> state-or-failure? goal?
     (let*-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
-      (if (failure? s) (values failure fail) (values s extensions))))
+      (if (failure? s) (values failure fail) (values (set-state-substitution s sub) extensions))))
 
   ;; === CONSTRAINTS ===
 
@@ -88,7 +89,7 @@
      [(failure? s) (values fail failure 0)]
      [(succeed? g) (values succeed s (state-varid s))]
      [(fail? g) (values fail failure 0)]
-     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s g) (unify-no-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g) (values fail failure 0)
 		    (values g s (state-varid s))))]
      [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
@@ -163,7 +164,7 @@
      [else ; All other constraints get assigned to their attributed variables.
       (fold-left
        (lambda (s v)
-	 (assert (eq? (walk s v) v)) ; TODO delete this assertion
+	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
 	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
 
   (define (get-attributed-vars g)
