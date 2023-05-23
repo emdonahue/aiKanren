@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints) ; TODO trim exports
+  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
 
   (define (run-goal g s p)
@@ -117,14 +117,11 @@
      [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
      [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
 
-  (define (run-dfs cs s g)
-    (if (null? cs) (values succeed s (state-varid s))
-	(let ([c (car cs)]
-	      [cs (cdr cs)])
-	  (cond
-	   [(==? c) (let-values ([(s g^) (unify-check s (==-lhs c) (==-rhs c))])
+  (define (run-dfs g s bs)
+    (cond
+     [(==? g) (let-values ([(s g^) (unify-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure 0)
-		    (values g^ s (state-varid s))))]))))
+		    (values g^ s (state-varid s))))]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
   

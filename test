@@ -1,9 +1,10 @@
 #!/usr/bin/env -S scheme --libdirs src:tests:. --script
 
-(import (chezscheme) (sbral-tests) (substitution-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests))
+(import (chezscheme) (sbral-tests) (substitution-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests))
 
 (run-sbral-tests)
 (run-substitution-tests)
+(run-mini-substitution-tests)
 ;(run-state-tests)
 (run-runner-tests)
 (run-negation-tests)
