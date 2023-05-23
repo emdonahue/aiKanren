@@ -207,6 +207,7 @@
      [(noto? g) (get-attributed-vars (noto-goal g))]
      [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
      [(pconstraint? g) (pconstraint-vars g)]
+     [(guardo? g) (list (guardo-var g))]
      [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))
 
 

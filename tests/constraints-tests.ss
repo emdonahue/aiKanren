@@ -348,6 +348,9 @@
 
 
     (tassert "guard fails" (run1 (x1) (== x1 1) (guardo x1 stale)) (void))
+    (tassert "guard succeeds" (run1 (x1) (== x1 '(1 . 2)) (guardo x1 (lambda (a b) succeed))) '(1 . 2))
+    (tassert "guard ==" (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (guardo x1 (lambda (a b) (conj* (== a 2) (== b 3))))) '((2 . 3) 2 3))
+    (tassert "guard suspends" (run1 (x1 x2 x3) (guardo x1 (lambda (a b) (conj* (== a 2) (== b 3)))) (== x1 (cons x2 x3))) '((2 . 3) 2 3))
 
     
     ;;code for inspecting presento constraints
