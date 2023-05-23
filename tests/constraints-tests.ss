@@ -342,7 +342,8 @@
     (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
 
 
-    (display (list-values (run-dfs (== x1 1) empty-state '() succeed)))
+    (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state '() succeed) 1) x1) 1)
+    (tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
 
 
     

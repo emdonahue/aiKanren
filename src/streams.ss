@@ -128,6 +128,7 @@
 			     (remove-constraints s (map ==-lhs g^))
 			     sub
 			     succeed)))]
+     [(conj? g) (run-dfs (conj-car g) s sub (normalized-conj* (conj-cdr g) conjs))]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
