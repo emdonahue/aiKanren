@@ -1,5 +1,5 @@
 (library (state)
-  (export reify instantiate-var walk state-add-constraint print-substitution) ;;TODO double check state exports
+  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints) ;;TODO double check state exports
   (import (chezscheme) (prefix (substitution) substitution:) (values) (constraint-store) (negation) (datatypes))
   
   (define (reify s v)
@@ -18,5 +18,11 @@
   (define (walk s v)
     (substitution:walk (state-substitution s) v))
 
+  (define (get-constraints s vs)
+    (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
+
+  (define (remove-constraints s vs)
+    (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
+  
   (define (print-substitution s)
     (substitution:print-substitution (state-substitution s))))

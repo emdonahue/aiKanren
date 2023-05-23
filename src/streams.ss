@@ -117,9 +117,10 @@
      [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
      [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
 
-  (define (run-dfs g s bs)
+  (define (run-dfs g s sub conjs)
+    (assert (and (goal? g) (state? s) (pair? sub) (goal? conjs)))
     (cond
-     [(==? g) (let-values ([(s g^) (unify-check s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure 0)
 		    (values g^ s (state-varid s))))]))
 
@@ -147,9 +148,7 @@
 	    (values-ref (simplify-constraint (get-constraint (state-constraints s) (==-lhs e)) (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))) 0)
 	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
 	    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
-    (run-constraint
-     (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs))
-     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs))))
+    (run-constraint (get-constraints s vs) (remove-constraints s vs)))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.

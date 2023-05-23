@@ -343,7 +343,7 @@
 
 
 
-;    (display (run-dfs (== x1 1) empty-state))
+;    (display (run-dfs (== x1 1) empty-state '() succeed))
 
 
     
