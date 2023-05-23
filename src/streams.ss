@@ -118,11 +118,17 @@
      [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
 
   (define (run-dfs g s sub conjs)
-    (assert (and (goal? g) (state? s) (pair? sub) (goal? conjs)))
+    (assert (and (goal? g) (state? s) (list? sub) (goal? conjs)))
     (cond
-     [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
-		(if (fail? g^) (values fail failure 0)
-		    (values g^ s (state-varid s))))]))
+     [(succeed? g) (values g s)]
+     [(==? g) (let*-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))]
+			    [(g^) (if (==? g^) (list g^) g^)])
+		(if (fail? g^) (values fail failure)
+		    (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
+			     (remove-constraints s (map ==-lhs g^))
+			     sub
+			     succeed)))]
+     [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
   

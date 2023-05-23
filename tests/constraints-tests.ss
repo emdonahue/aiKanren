@@ -342,8 +342,7 @@
     (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
 
 
-
-;    (display (run-dfs (== x1 1) empty-state '() succeed))
+    (display (list-values (run-dfs (== x1 1) empty-state '() succeed)))
 
 
     
