@@ -1,5 +1,5 @@
 (library (mini-substitution)
-  (export mini-walk mini-unify)
+  (export mini-walk mini-unify mini-constraint-check)
   (import (chezscheme) (datatypes))
 
 
@@ -28,6 +28,9 @@
 	      (let-values ([(s cdr-extensions) (mini-unify s (cdr x) (cdr y))])
 		(values s (normalized-conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
        [else (values failure fail)])))
+
+  (define (mini-constraint-check s g)
+    (values s g))
 
   (define (extend s x y)
     (cons (cons x y) s)))

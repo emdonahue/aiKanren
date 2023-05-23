@@ -6,6 +6,7 @@
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure clear-state-constraints
+	  guardo? make-guardo guardo-var guardo-procedure guardo
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  make-substitution empty-substitution substitution-dict substitution?
@@ -55,6 +56,9 @@
     (assert (and (constraint? c) (goal? g)))
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
+
+  (define-structure (guardo var procedure))
+  (define guardo make-guardo)
 
     ;; === SUBSTITUTION ===
   (define-structure (substitution dict)) ; TODO replace substitution datatype with just a raw sbral
@@ -113,7 +117,7 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g)))
+    (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g)))
 
   (define (conj conjuncts)
     (assert (list? conjuncts))

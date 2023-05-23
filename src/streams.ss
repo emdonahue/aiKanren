@@ -1,7 +1,7 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
   (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs) ; TODO trim exports
-  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:)) 
+  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
   (define (run-goal g s p)
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
@@ -24,6 +24,7 @@
      [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
      [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
      [(pconstraint? g) (values (run-constraint g s) p)]
+     [(guardo? g) (values (run-constraint g s) p)]
      [else (assertion-violation 'run-goal "Unrecognized goal type" g)]))
   
   (define (mplus lhs rhs)
@@ -115,15 +116,38 @@
 					       (simplify-constraint (noto g) s))]
      [(constraint? g) (simplify-constraint (constraint-goal g) s)]
      [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
+     [(guardo? g) (let ([v (walk s (guardo-var g))])
+		   (cond
+		    [(var? v) (values (guardo v (guardo-procedure g)) s (state-varid s))]
+		    [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s)]
+		    [else (values fail failure 0)]))]
      [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
 
+
+  (define (==->vars g)
+    (cond
+     [(==? g) (list (==-lhs g))]
+     [(conj? g) (map ==-lhs (conj-conjuncts g))]
+     [else '()]))
+  
   (define (run-dfs g s sub conjs)
     (assert (and (goal? g) (state? s) (list? sub) (goal? conjs)))
     (cond
      [(succeed? g) (values g s)]
      [(==? g) (let*-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))]
-			    [(g^) (if (==? g^) (list g^) g^)])
+			    [(s g^) (mini-constraint-check sub g^)])
 		(if (fail? g^) (values fail failure)
+		    (run-dfs (normalized-conj* conjs (get-constraints s (==->vars g^)))
+			     (remove-constraints s (==->vars g^))
+			     sub
+			     succeed)))]
+     [(and (noto? g) (==? (noto-goal g)))
+      (let*-values ([(s g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]
+			    [(g^) (if (==? g^) (list g^) g^)])
+		(if (fail? g^) (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
+					(remove-constraints s (map ==-lhs g^))
+					sub
+					succeed)
 		    (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
 			     (remove-constraints s (map ==-lhs g^))
 			     sub
@@ -183,4 +207,7 @@
      [(noto? g) (get-attributed-vars (noto-goal g))]
      [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
      [(pconstraint? g) (pconstraint-vars g)]
-     [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))) 
+     [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))
+
+
+  ) 
