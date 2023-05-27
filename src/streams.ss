@@ -134,22 +134,19 @@
   (define (run-dfs g s conjs)
     (assert (and (goal? g) (state? s) (goal? conjs)))
     (cond
-     [(succeed? g) (values g s)]
-     [(==? g) (let*-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
+     [(succeed? g) (if (succeed? conjs) (values g s) (run-dfs conjs s succeed))]
+     [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure)
 		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
 			     (remove-constraints s (==->vars g^))
 			     succeed)))]
      [(and (noto? g) (==? (noto-goal g)))
-      (let*-values ([(s g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]
-			    [(g^) (if (==? g^) (list g^) g^)])
-		(if (fail? g^) (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
-					(remove-constraints s (map ==-lhs g^))
-					succeed)
-		    (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
-			     (remove-constraints s (map ==-lhs g^))
-			     succeed)))]
-     [(conj? g) (run-dfs (conj-car g) s (conj* (conj-cdr g) conjs))]
+      (let-values ([(s^ g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+	(cond
+	 [(succeed? g^) (values fail failure)]
+	 [(fail? g^) (run-dfs conjs s succeed)]
+	 [else (run-dfs conjs (store-constraint s (noto g^)) succeed)]))]
+     [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs))]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
   
   #;
