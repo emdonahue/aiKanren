@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs) ; TODO trim exports
+  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs unify-no-check) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
   (define (run-goal g s p)
@@ -146,7 +146,13 @@
 	 [(succeed? g^) (values fail failure)]
 	 [(fail? g^) (run-dfs conjs s succeed)]
 	 [else (run-dfs conjs (store-constraint s (noto g^)) succeed)]))]
+     [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs)])
+		  (cond
+		   [(succeed? g^) (run-dfs conjs s succeed)]
+		   [(fail? g^) (run-dfs (disj-cdr g) s conjs)]
+		   [else (values (normalized-disj* g^ (disj-cdr g)) s)]))]
      [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs))]
+     [(constraint? g) (run-dfs (constraint-goal g) s conjs)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
   
   #;

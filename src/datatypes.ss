@@ -32,7 +32,7 @@
   ;; === STREAMS ===
   (define failure '())
   (define failure? null?)
-  (define-structure (mplus lhs rhs))
+  (define-structure (mplus lhs rhs)) ;TODO test mplus with just pairs
   (define-structure (bind goal stream))
   (define-values (answers answers? answers-car answers-cdr) (values cons pair? car cdr)) ; A answers stream is one with at least one answer and either more answers or a bind stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
   
