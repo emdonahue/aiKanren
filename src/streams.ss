@@ -81,7 +81,7 @@
 
   (define (run-constraint g s)
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
-    (let-values ([(g s^ v) (simplify-constraint g (clear-state-constraints s))]) 
+    (let-values ([(g s^ v) (simplify-constraint g s)]) ;(clear-state-constraints s)
       (if (failure? s^) failure (store-constraint (set-state-varid s v) g))))
 
   (define (simplify-constraint g s)
@@ -90,7 +90,7 @@
      [(failure? s) (values fail failure 0)]
      [(succeed? g) (values succeed s (state-varid s))]
      [(fail? g) (values fail failure 0)]
-     [(==? g) (let-values ([(s g) (unify-no-check s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g) (values fail failure 0)
 		    (values g s (state-varid s))))]
      [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
@@ -129,7 +129,30 @@
      [(==? g) (list (==-lhs g))]
      [(conj? g) (map ==-lhs (conj-conjuncts g))]
      [else '()]))
+
+
+  (define (run-dfs g s conjs)
+    (assert (and (goal? g) (state? s) (goal? conjs)))
+    (cond
+     [(succeed? g) (values g s)]
+     [(==? g) (let*-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
+		(if (fail? g^) (values fail failure)
+		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
+			     (remove-constraints s (==->vars g^))
+			     succeed)))]
+     [(and (noto? g) (==? (noto-goal g)))
+      (let*-values ([(s g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]
+			    [(g^) (if (==? g^) (list g^) g^)])
+		(if (fail? g^) (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
+					(remove-constraints s (map ==-lhs g^))
+					succeed)
+		    (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
+			     (remove-constraints s (map ==-lhs g^))
+			     succeed)))]
+     [(conj? g) (run-dfs (conj-car g) s (conj* (conj-cdr g) conjs))]
+     [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
   
+  #;
   (define (run-dfs g s sub conjs)
     (assert (and (goal? g) (state? s) (list? sub) (goal? conjs)))
     (cond
@@ -200,6 +223,7 @@
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; TODO attributed vars should probably be deduplicated
     ;; TODO attributed vars should handle (constraint)'s
+    ;; TODO == can return only the lower vid var since that will always be lhs
     (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
      [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint

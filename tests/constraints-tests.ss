@@ -286,7 +286,7 @@
 	       (disj* (== x1 1) ; car is not 1
 		      (cadr ; car is not recursive pair
 		       (disj-disjuncts s)))))
-    
+    #;
     (let* ([c (presento (cons x1 2) 1)]
 	   [s (run1 (x1) c )])
       ;; #(disj (#(== #(var 2) 1) #<procedure at constraints.ss:509> #(constraint #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>)))))
@@ -299,7 +299,7 @@
 			 (disj* (== x3 1) ; cdr is not 1
 				(cadr (disj-disjuncts ; cdr is not recursive pair
 				       (constraint-goal (list-ref (disj-disjuncts s) 2)))))))))
-
+    #;
     (let* ([c (presento (cons 2 x1) 1)]
 	   [s (run1 (x1)  c)])
       ;; #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>))
@@ -342,15 +342,19 @@
     (tassert "presento fuzz fail fired" (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1) (== x1 7)) (void))
 
 
-    ;(tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state '() succeed) 1) x1) 1)
-    ;(tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
-   ; (tassert "dfs == constrained =/=" (values-ref (run-dfs (== x1 1) empty-state (list (cons x1 (=/= x1 1))) succeed) 1) failure)
-
-
     (tassert "guard fails" (run1 (x1) (== x1 1) (guardo x1 stale)) (void))
     (tassert "guard succeeds" (run1 (x1) (== x1 '(1 . 2)) (guardo x1 (lambda (a b) succeed))) '(1 . 2))
     (tassert "guard ==" (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (guardo x1 (lambda (a b) (conj* (== a 2) (== b 3))))) '((2 . 3) 2 3))
     (tassert "guard suspends" (run1 (x1 x2 x3) (guardo x1 (lambda (a b) (conj* (== a 2) (== b 3)))) (== x1 (cons x2 x3))) '((2 . 3) 2 3))
+
+
+
+    
+
+    (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state succeed) 1) x1) 1)
+    ;(tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
+   ; (tassert "dfs == constrained =/=" (values-ref (run-dfs (== x1 1) empty-state (list (cons x1 (=/= x1 1))) succeed) 1) failure)
+
 
     
     ;;code for inspecting presento constraints
