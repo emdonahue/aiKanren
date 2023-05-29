@@ -356,8 +356,13 @@
 
     (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state succeed) 1) x1) 1)
     (tassert "dfs =/=" (reify (values-ref (run-dfs (=/= x1 1) empty-state succeed) 1) x1) (=/= x1 1))
-    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (constrain (disj* (== x1 1) (== x1 2))) (extend-state empty-state x1 1) succeed) 1))) '())
+    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (extend-state empty-state x1 1) succeed) 1))) '())
     (tassert "dfs =/= ==|==" (reify (values-ref (run-dfs (conj* (=/= x1 1) (disj* (== x1 1) (== x1 2))) empty-state succeed) 1) x1) 2)
+    (tassert "dfs ==|== =/=" (reify (values-ref (run-dfs (conj* (disj* (== x1 1) (== x1 2)) (=/= x1 1)) empty-state succeed) 1) x1) 2)
+    (tassert "dfs =/= & ==|==" (reify (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (run-dfs (=/= x1 1) empty-state succeed) 1) succeed) 1) x1) 2)
+
+    (display "START\n\n")
+    (tassert "dfs ==|== & =/=" (reify (values-ref (run-dfs (=/= x1 1) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed) 1) x1) 2)
     
     ;(tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
    ; (tassert "dfs == constrained =/=" (values-ref (run-dfs (== x1 1) empty-state (list (cons x1 (=/= x1 1))) succeed) 1) failure)

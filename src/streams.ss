@@ -1,6 +1,7 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs unify-no-check) ; TODO trim exports
+  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs unify-no-check
+	  store-constraint) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
   (define (run-goal g s p)
@@ -125,12 +126,24 @@
 
 
   (define (==->vars g)
+    ;;TODO can be subsumed by attr vars if normalize by vid to pick one
     (cond
      [(==? g) (list (==-lhs g))]
      [(conj? g) (map ==-lhs (conj-conjuncts g))]
      [else '()]))
 
+  (define (=/=->var g)
+    (assert (or (==? g) (conj? g)))
+    (if (==? g) (list (==-lhs g))
+	(=/=->var (conj-car g))))
 
+  (define (may-unify g v)
+    (cond
+     [(==? g) (or (equal? (==-lhs g) v) (equal? (==-rhs g) v))]
+     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
+     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
+     [else #f]))
+  
   (define (run-dfs g s conjs)
     (assert (and (goal? g) (state? s) (goal? conjs)))
     (cond
@@ -145,7 +158,12 @@
 	(cond
 	 [(succeed? g^) (values fail failure)]
 	 [(fail? g^) (run-dfs conjs s succeed)]
-	 [else (run-dfs conjs (store-constraint s (noto g^)) succeed)]))]
+	 [else
+	  (display (get-constraints s (=/=->var g^)))
+	  (display (may-unify (get-constraints s (=/=->var g^)) (car (=/=->var g^))))
+	  ;;(display s)
+	  
+	  (run-dfs conjs (store-constraint s (noto g^)) succeed)]))]
      [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs)])
 		  (cond
 		   [(succeed? g^) (run-dfs conjs s succeed)]
