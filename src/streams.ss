@@ -257,7 +257,7 @@
      [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
      [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
      [(noto? g) (get-attributed-vars (noto-goal g))]
-     [(==? g) (filter var? (list (==-lhs g) (==-rhs g)))]
+     [(==? g) (assert (var? (==-lhs g))) (list (==-lhs g))]
      [(pconstraint? g) (pconstraint-vars g)]
      [(guardo? g) (list (guardo-var g))]
      [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))

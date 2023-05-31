@@ -99,7 +99,7 @@
     (tassert "disunify free-ground" (run1 (x1) (=/= x1 1)) (=/= x1 1))
     (tassert "disunify ground-free" (run1 (x1) (=/= 1 x1)) (=/= x1 1))
     (tassert "disunify free-free" (run1 (x1 x2) (=/= x1 x2))
-	     (list (=/= x1 x2) (=/= x1 x2)))
+	     (list (=/= x1 x2) x2))
     (tassert "disunify bound" (run* (x1) (== x1 1) (=/= x1 1)) '())
     (tassert "disunify check" (run* (x1) (=/= x1 1) (== x1 1)) '())
     (tassert "disunify free-ground x2" (run1 (x1) (=/= x1 2) (=/= x1 1))
