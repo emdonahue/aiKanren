@@ -154,16 +154,23 @@
 			     (remove-constraints s (==->vars g^))
 			     succeed)))]
      [(and (noto? g) (==? (noto-goal g)))
-      (let-values ([(s^ g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+      (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
 	(cond
-	 [(succeed? g^) (values fail failure)]
-	 [(fail? g^) (run-dfs conjs s succeed)]
+	 [(succeed? g) (values fail failure)]
+	 [(fail? g) (run-dfs conjs s succeed)]
+	 [(==? g)
+	  (if (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g)))
+	      (run-dfs (conj* conjs (get-constraints s (==->vars g)))
+		       (store-constraint (remove-constraints s (==->vars g)) (noto g))
+		       succeed)
+	      (run-dfs conjs (store-constraint s (noto g)) succeed))]
 	 [else
-	  (display (get-constraints s (=/=->var g^)))
-	  (display (may-unify (get-constraints s (=/=->var g^)) (car (=/=->var g^))))
+	  (assert #f)
+	  (display (get-constraints s (=/=->var g)))
+	  (display (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g))))
 	  ;;(display s)
 	  
-	  (run-dfs conjs (store-constraint s (noto g^)) succeed)]))]
+	  (run-dfs conjs (store-constraint s (noto g)) succeed)]))]
      [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs)])
 		  (cond
 		   [(succeed? g^) (run-dfs conjs s succeed)]
