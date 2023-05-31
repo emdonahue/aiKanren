@@ -147,6 +147,10 @@
 	 [(conj? (car cs)) (fold-right (lambda (c cs)
 					 (if (member c cs) cs (cons c cs)))
 				       rest (conj-conjuncts (car cs)))]
+	 [(disj? (car cs))
+	  (if (member (car cs) rest) rest
+	      (let-values ([(ds prims) (partition disj? rest)])
+			     (append prims (list (car cs)) ds)))]
 	 [else (if (member (car cs) rest) rest
 		   (cons (car cs) rest))]))]))
 
