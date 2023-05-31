@@ -147,6 +147,7 @@
   (define (run-dfs g s conjs)
     (assert (and (goal? g) (state? s) (goal? conjs)))
     (cond
+     [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values g s) (run-dfs conjs s succeed))]
      [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure)
@@ -165,12 +166,11 @@
 		       succeed)
 	      (run-dfs conjs (store-constraint s (noto g)) succeed))]
 	 [else
-	  (assert #f)
-	  (display (get-constraints s (=/=->var g)))
-	  (display (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g))))
-	  ;;(display s)
-	  
-	  (run-dfs conjs (store-constraint s (noto g)) succeed)]))]
+	  (assert (conj? g))
+	  (run-dfs conjs
+		   (store-constraint
+		    (store-constraint s (noto g))
+		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g)))) succeed)]))]
      [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs)])
 		  (cond
 		   [(succeed? g^) (run-dfs conjs s succeed)]
