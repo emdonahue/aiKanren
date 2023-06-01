@@ -149,10 +149,16 @@
       (store-const2 s g))
     )
 
+  (define (invert-disj ds)
+    (let ([rest (disj-cdr ds)])
+      (if (disj? rest)
+	  (normalized-disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
+	  (normalized-disj* rest (disj-car ds)))))
+  
   (define (store-const2 s g)
     (cond
      [(conj? g) (store-const2 (store-const2 s (conj-car g)) (conj-cdr g))]
-     [(disj? g) (store-constraint s g)]
+     [(disj? g) (store-constraint2 s g)]
      [else s]))
   
   (define (run-dfs g s conjs out mode)
@@ -293,6 +299,31 @@
 	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
 	    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
     (run-constraint (get-constraints s vs) (remove-constraints s vs)))
+
+    (define (store-constraint2 s c)
+    ;; Store simplified constraints into the constraint store.
+    (assert (and (state-or-failure? s) (goal? c))) ; -> state?
+    (cond
+     [(or (failure? s) (fail? c)) failure]
+     [(succeed? c) s]
+     [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
+     [(conj? c) (fold-left store-constraint2 s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
+     [(disj? c) (let* ([vars1 (get-attributed-vars c)]
+		       [vars2 (filter (lambda (v) (memq v vars1)) (get-attributed-vars (disj-cdr c)))]
+		       [c2 (invert-disj c)]
+		       )
+		  (fold-left
+		   (lambda (s v)
+		     (state-add-constraint s v c2))
+		   (fold-left
+		    (lambda (s v)
+		      (state-add-constraint s v c)) s vars1) vars2)
+		  )]
+     [else ; All other constraints get assigned to their attributed variables.
+      (fold-left
+       (lambda (s v)
+	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
+	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
   
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
