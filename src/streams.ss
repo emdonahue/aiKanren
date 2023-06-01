@@ -22,10 +22,10 @@
 		  (values (mplus lhs rhs) p))]
      [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])
 					       (values (make-bind (noto g) s) p))] 
-     [(and (noto? g) (not (fresh? (noto-goal g)))) (values (run-constraint g s) p)]
-     [(constraint? g) (values (run-constraint (constraint-goal g) s) p)]
-     [(pconstraint? g) (values (run-constraint g s) p)]
-     [(guardo? g) (values (run-constraint g s) p)]
+     [(and (noto? g) (not (fresh? (noto-goal g)))) (values (fire-dfs g s) p)]
+     [(constraint? g) (values (fire-dfs (constraint-goal g) s) p)]
+     [(pconstraint? g) (values (fire-dfs g s) p)]
+     [(guardo? g) (values (fire-dfs g s) p)]
      [else (assertion-violation 'run-goal "Unrecognized goal type" g)]))
   
   (define (mplus lhs rhs)
@@ -150,6 +150,7 @@
     )
 
   (define (invert-disj ds)
+    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
     (let ([rest (disj-cdr ds)])
       (if (disj? rest)
 	  (normalized-disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
@@ -170,7 +171,7 @@
 		(if (fail? g^) (values fail failure)
 		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
 			     (remove-constraints s (==->vars g^))
-			     succeed (normalized-conj* g^ out) 1)))]
+			     succeed (normalized-conj* out g^) 1)))]
      [(and (noto? g) (==? (noto-goal g)))
       (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
 	(cond
@@ -194,7 +195,7 @@
 		   [(succeed? g^) (values out s)]
 		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out mode)]
 		   [else
-		    (if (zero? mode)
+		    (if (zero? mode) ;TODO can we special case some disj to only save on one disjunct?
 			(values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)
 			(let-values ([(g2 s2) (run-dfs (disj-cdr g) s conjs out 0)])
 			  (cond
@@ -205,7 +206,8 @@
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out 1)]
      [(guardo? g) (let ([v (walk s (guardo-var g))])
 		   (cond
-		    [(var? v) (values (guardo v (guardo-procedure g)) s)]
+		    [(var? v) (let ([g (guardo v (guardo-procedure g))])
+				(values g (store-constraint s g)))]
 		    [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
 		    [else (values fail failure)]))]
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
