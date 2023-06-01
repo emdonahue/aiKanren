@@ -368,6 +368,7 @@
 
 
     (tassert "dfs conj" (reify (fire-dfs (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
+    (tassert "dfs conj" (reify (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state) x1) (disj* (== x1 1) (== x1 2)))
     ;;(pretty-print (fire-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2)))))
 
     ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))

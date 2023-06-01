@@ -164,7 +164,7 @@
 		(if (fail? g^) (values fail failure)
 		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
 			     (remove-constraints s (==->vars g^))
-			     succeed (conj* g^ out))))]
+			     succeed (normalized-conj* g^ out))))]
      [(and (noto? g) (==? (noto-goal g)))
       (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
 	(cond
@@ -174,14 +174,14 @@
 	  (if (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g)))
 	      (run-dfs (conj* conjs (get-constraints s (==->vars g)))
 		       (store-constraint (remove-constraints s (==->vars g)) (noto g))
-		       succeed (conj* (noto g) out))
+		       succeed (normalized-conj* (noto g) out))
 	      (run-dfs conjs (store-constraint s (noto g)) succeed (conj* (noto g) out)))]
 	 [else
 	  (assert (conj? g))
 	  (run-dfs conjs
 		   (store-constraint
 		    (store-constraint s (noto g))
-		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g)))) succeed (conj* out (noto g)))]))]
+		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g)))) succeed (normalized-conj* out (noto g)))]))]
      ;; first disj we hit at top level sees flag that nothing above it. adds self (could also just return to top level)
      ;; disj inside top level disj still has pure state, can simplify, but cannot add. must return
      ;; disj after top level disj cannot simplify unless no conflict
@@ -189,7 +189,7 @@
 		  (cond
 		   [(succeed? g^) (run-dfs conjs s succeed out)]
 		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out)]
-		   [else (values (normalized-disj* g^ (conj* (disj-cdr g) conjs)) s)]))]
+		   [else (values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)]))]
      [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out)]
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
