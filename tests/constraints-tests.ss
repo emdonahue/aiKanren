@@ -220,8 +220,14 @@
     ;; === IMPLIES ===
 
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj* (=/= x1 1) (== x2 2)) 2))
-
     (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (== x2 2))) 3))
+#;
+    (#(conj
+       (#(disj (#(conj (#(noto #(== #(var 1) 1))
+			#(== #(var 2) 2)))
+		#(== #(var 2) 2)))
+	#(disj (#(noto #(== #(var 1) 1))
+		#(== #(var 2) 2))))) 2)
     
     ;; === SYMBOLO ===
     #;

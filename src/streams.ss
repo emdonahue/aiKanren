@@ -9,8 +9,7 @@
     (cond
      [(succeed? g) (values s p)]
      [(fail? g) (values failure p)]
-     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
-		(values s p))]
+     [(==? g) (values (fire-dfs g s) p)]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
      [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
@@ -159,7 +158,7 @@
   (define (store-const2 s g)
     (cond
      [(conj? g) (store-const2 (store-const2 s (conj-car g)) (conj-cdr g))]
-     [(disj? g) (store-constraint2 s g)]
+     [(disj? g) (store-constraint s g)]
      [else s]))
   
   (define (run-dfs g s conjs out mode)
@@ -192,7 +191,7 @@
 		   (normalized-conj* out (noto g)) 1)]))]
      [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out 1)])
 		  (cond
-		   [(succeed? g^) (values out s)]
+		   [(eq? g^ out) (values out s)]
 		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out mode)]
 		   [else
 		    (if (zero? mode) ;TODO can we special case some disj to only save on one disjunct?
@@ -321,14 +320,14 @@
     ;;(run-constraint (get-constraints s vs) (remove-constraints s vs))
     )
 
-    (define (store-constraint2 s c)
+    (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state-or-failure? s) (goal? c))) ; -> state?
     (cond
      [(or (failure? s) (fail? c)) failure]
      [(succeed? c) s]
      [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
-     [(conj? c) (fold-left store-constraint2 s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
+     [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [(disj? c) (let* ([vars1 (get-attributed-vars c)]
 		       [vars2 (filter (lambda (v) (not (memq v vars1))) (get-attributed-vars (disj-cdr c)))]
 		       [c2 (invert-disj c)]
@@ -345,27 +344,12 @@
        (lambda (s v)
 	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
 	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
-  
-  (define (store-constraint s c)
-    ;; Store simplified constraints into the constraint store.
-    (assert (and (state-or-failure? s) (goal? c))) ; -> state?
-    (cond
-     [(or (failure? s) (fail? c)) failure]
-     [(succeed? c) s]
-     [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
-     [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
-     [else ; All other constraints get assigned to their attributed variables.
-      (fold-left
-       (lambda (s v)
-	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
-	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
 
   (define (get-attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; TODO attributed vars should probably be deduplicated
     ;; TODO attributed vars should handle (constraint)'s
-    ;; TODO == can return only the lower vid var since that will always be lhs
     (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
      [(succeed? g) '()]
