@@ -203,6 +203,12 @@
 			   [else (values (normalized-disj* g^ g2) s)])))]))]
      [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out 1)]
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out 1)]
+     [(guardo? g) (let ([v (walk s (guardo-var g))])
+		   (cond
+		    [(var? v) (values (guardo v (guardo-procedure g)) s)]
+		    [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
+		    [else (values fail failure)]))]
+     [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   #;
@@ -308,8 +314,10 @@
 	    (map car (constraint-store-constraints (state-constraints s)))
 	    (values-ref (simplify-constraint (get-constraint (state-constraints s) (==-lhs e)) (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))) 0)
 	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
-	    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
-    (run-constraint (get-constraints s vs) (remove-constraints s vs)))
+    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
+    ;;(fire-dfs (get-constraints s vs) (remove-constraints s vs))
+    (run-constraint (get-constraints s vs) (remove-constraints s vs))
+    )
 
     (define (store-constraint2 s c)
     ;; Store simplified constraints into the constraint store.

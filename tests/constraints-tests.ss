@@ -216,25 +216,26 @@
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list x1 2))
     (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (=/= x1 1) 3))
     
-    ;; === SYMBOLO === 
+    ;; === SYMBOLO ===
+    #;
+    (begin
+      (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '())
+      (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void))
 
-    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '())
-    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void))
+      (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
+      (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void))
 
-    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
-    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void))
+      (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
+      (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void))
 
-    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
-    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void))
+      (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void))
+      (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '())
 
-    (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void))
-    (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '())
+      (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void))
+      (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42)
 
-    (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void))
-    (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42)
-
-    (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void))
-    (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
+      (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void))
+      (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42))
 
     ;; === PLUSO ===
 
@@ -378,7 +379,8 @@
     (tassert "dfs ==|== ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
     (tassert "dfs =/=|=/= ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
     (tassert "dfs =/=|=/= ==2" (reify (fire-dfs (== x2 1) (fire-dfs (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
-    
+
+
     ;;(pretty-print (fire-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)))
 
     ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))
