@@ -373,11 +373,11 @@
     (tassert "dfs == succeed|==" (reify (fire-dfs (disj* (== x1 1) (== x2 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) (cons 1 x2))
     (tassert "dfs == ==|fail" (reify (fire-dfs (disj* (== x2 2) (== x1 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
     (tassert "dfs == ==|succeed" (reify (fire-dfs (disj* (== x2 2) (== x1 1)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) (cons 1 2))
-    (tassert "dfs == ==|==" (reify (fire-dfs (disj* (== x1 x3) (== x2 x3) (== x1 x3)) (fire-dfs (conj* (== x3 1)) empty-state)) (cons x1 x2)) (cons (disj* (== x1 1) (== x2 1) (== x1 x3)) x2))
+    (tassert "dfs == ==|==" (reify (fire-dfs (disj* (== x1 x3) (== x2 x3) (== x1 x3)) (fire-dfs (conj* (== x3 1)) empty-state)) (cons x1 x2)) (cons (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3))))
 
     (tassert "dfs ==|== ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
     (tassert "dfs =/=|=/= ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
-    (tassert "dfs =/=|=/= ==2" (reify (fire-dfs (== x2 1) (fire-dfs (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (=/= x1 1) 1))
+    (tassert "dfs =/=|=/= ==2" (reify (fire-dfs (== x2 1) (fire-dfs (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
     
     ;;(pretty-print (fire-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)))
 

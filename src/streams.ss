@@ -309,7 +309,7 @@
      [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
      [(conj? c) (fold-left store-constraint2 s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [(disj? c) (let* ([vars1 (get-attributed-vars c)]
-		       [vars2 (filter (lambda (v) (memq v vars1)) (get-attributed-vars (disj-cdr c)))]
+		       [vars2 (filter (lambda (v) (not (memq v vars1))) (get-attributed-vars (disj-cdr c)))]
 		       [c2 (invert-disj c)]
 		       )
 		  (fold-left
