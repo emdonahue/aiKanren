@@ -193,7 +193,7 @@
 			(let-values ([(g2 s2) (run-dfs (disj-cdr g) s conjs out (- mode 1))])
 			  (cond
 			   [(fail? g2) (values (normalized-conj* g^ out) s^)]
-			   [(succeed? g2) (values out s)]
+			   [(succeed? g2) (values out s^)]
 			   [else (values (normalized-disj* g^ g2) s)])))]))]
      [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out mode)]
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out mode)]
