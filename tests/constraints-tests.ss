@@ -221,7 +221,7 @@
 
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj* (=/= x1 1) (== x2 2)) 2))
 
-    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (=/= x1 1) 3))
+    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (== x2 2))) 3))
     
     ;; === SYMBOLO ===
     #;
