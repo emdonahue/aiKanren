@@ -315,8 +315,8 @@
 	    (values-ref (simplify-constraint (get-constraint (state-constraints s) (==-lhs e)) (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))) 0)
 	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
     (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
-    ;;(fire-dfs (get-constraints s vs) (remove-constraints s vs))
-    (run-constraint (get-constraints s vs) (remove-constraints s vs))
+    (fire-dfs (get-constraints s vs) (remove-constraints s vs))
+    ;;(run-constraint (get-constraints s vs) (remove-constraints s vs))
     )
 
     (define (store-constraint2 s c)
