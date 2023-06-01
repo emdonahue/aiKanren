@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs unify-no-check
+  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs fire-dfs unify-no-check
 	  store-constraint) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
@@ -143,6 +143,17 @@
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
      [else #f]))
+
+  (define (fire-dfs g s)
+    (let-values ([(g s) (run-dfs g s succeed succeed)])
+      (store-const2 s g))
+    )
+
+  (define (store-const2 s g)
+    (cond
+     [(conj? g) (store-const2 (store-const2 s (conj-car g)) (conj-cdr g))]
+     [(disj? g) (store-constraint s g)]
+     [else s]))
   
   (define (run-dfs g s conjs out)
     (assert (and (goal? g) (state? s) (goal? conjs)))
@@ -300,6 +311,7 @@
     ;; TODO == can return only the lower vid var since that will always be lhs
     (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
+     [(succeed? g) '()]
      [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
      [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
      [(noto? g) (get-attributed-vars (noto-goal g))]

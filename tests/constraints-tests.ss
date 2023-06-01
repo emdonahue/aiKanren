@@ -367,8 +367,8 @@
     ;;(tassert "dfs ==|== & =/=|=/= & ==" (reify (values-ref (run-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed succeed) 1) x1) 2)
 
 
-    
-    (pretty-print (list-values (run-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed succeed) ))
+    (tassert "dfs conj" (reify (fire-dfs (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
+    ;;(pretty-print (fire-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2)))))
 
     ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))
     
