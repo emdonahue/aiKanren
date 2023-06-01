@@ -369,6 +369,9 @@
 
     (tassert "dfs &" (reify (fire-dfs (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
     (tassert "dfs |" (reify (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state) x1) (disj* (== x1 1) (== x1 2)))
+    (tassert "dfs ==|== ==" (reify (fire-dfs (disj* (== x1 2) (== x2 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
+    (tassert "dfs ==|== ==" (reify (fire-dfs (disj* (== x1 1) (== x2 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) (cons 1 x2))
+
     (tassert "dfs ==|== ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
     (tassert "dfs =/=|=/= ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
     (tassert "dfs =/=|=/= ==2" (reify (fire-dfs (== x2 1) (fire-dfs (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (=/= x1 1) 1))
