@@ -205,6 +205,16 @@
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out mode)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
+  (define (run-disj g s conjs out mode)
+    (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out mode)])
+      (cond
+       [(succeed? g^) (values g^ s)]
+       [(fail? g^)
+	(if (disj? (disj-cdr g))
+	    (run-disj (disj-cdr g) s conjs out mode)
+	    (run-dfs (g s conjs out mode)))]
+       [else (values (normalized-disj* g^ (disj-cdr g)) s)])))
+
 
   #;;trying thread trhu return goal
   (define (run-dfs g s conjs)
