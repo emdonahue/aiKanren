@@ -145,7 +145,7 @@
      [else #f]))
 
   (define (fire-dfs g s)
-    (let-values ([(g s) (run-dfs g s succeed succeed)])
+    (let-values ([(g s) (run-dfs g s succeed succeed 1)])
       (store-const2 s g))
     )
 
@@ -155,43 +155,44 @@
      [(disj? g) (store-constraint s g)]
      [else s]))
   
-  (define (run-dfs g s conjs out)
-    (assert (and (goal? g) (state? s) (goal? conjs)))
+  (define (run-dfs g s conjs out mode)
+    (assert (and (goal? g) (state? s) (goal? conjs) (number? mode)))
     (cond
      [(fail? g) (values fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values out s) (run-dfs conjs s succeed out))]
+     [(succeed? g) (if (succeed? conjs) (values out s) (run-dfs conjs s succeed out mode))]
      [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure)
 		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
 			     (remove-constraints s (==->vars g^))
-			     succeed (normalized-conj* g^ out))))]
+			     succeed (normalized-conj* g^ out) mode)))]
      [(and (noto? g) (==? (noto-goal g)))
       (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
 	(cond
 	 [(succeed? g) (values fail failure)]
-	 [(fail? g) (run-dfs conjs s succeed out)]
+	 [(fail? g) (run-dfs conjs s succeed out mode)]
 	 [(==? g)
 	  (if (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g)))
 	      (run-dfs (conj* conjs (get-constraints s (==->vars g)))
 		       (store-constraint (remove-constraints s (==->vars g)) (noto g))
-		       succeed (normalized-conj* (noto g) out))
-	      (run-dfs conjs (store-constraint s (noto g)) succeed (conj* (noto g) out)))]
+		       succeed (normalized-conj* (noto g) out) mode)
+	      (run-dfs conjs (store-constraint s (noto g)) succeed (normalized-conj* (noto g) out)  mode))]
 	 [else
-	  (assert (conj? g))
 	  (run-dfs conjs
 		   (store-constraint
 		    (store-constraint s (noto g))
-		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g)))) succeed (normalized-conj* out (noto g)))]))]
+		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g))))
+		   succeed
+		   (normalized-conj* out (noto g)) mode)]))]
      ;; first disj we hit at top level sees flag that nothing above it. adds self (could also just return to top level)
      ;; disj inside top level disj still has pure state, can simplify, but cannot add. must return
      ;; disj after top level disj cannot simplify unless no conflict
-     [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out)])
+     [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out mode)])
 		  (cond
-		   [(succeed? g^) (run-dfs conjs s succeed out)]
-		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out)]
+		   [(succeed? g^) (run-dfs conjs s succeed out mode)]
+		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out mode)]
 		   [else (values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)]))]
-     [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out)]
-     [(constraint? g) (run-dfs (constraint-goal g) s conjs out)]
+     [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out mode)]
+     [(constraint? g) (run-dfs (constraint-goal g) s conjs out mode)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
 
