@@ -5,12 +5,12 @@
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
   (define (run-goal g s p)
-    ;; Converts a goal into a stream
+    ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
-     [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)])
+     [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 		  (bind (conj-cdr g) s p))]
      [(disj? g) (let*-values
 		    ([(lhs p) (run-goal (disj-car g) s p)]
@@ -52,7 +52,7 @@
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
      [(bind? s)
-      (let*-values ([(s^ p) (stream-step (bind-stream s) p)])
+      (let-values ([(s^ p) (stream-step (bind-stream s) p)])
 	(bind (bind-goal s) s^ p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
@@ -60,9 +60,8 @@
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
 
   (define (unify-no-check s x y)
-    ;; to walk a term we need to keep at least the unifications in the state. maybe apply only unifications and ignore other constraints?
     (assert (state? s)) ; -> state-or-failure? goal?
-    (let*-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
+    (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
       (if (failure? s) (values failure fail) (values (set-state-substitution s sub) extensions))))
 
   ;; === CONSTRAINTS ===
@@ -153,86 +152,6 @@
 		    [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
 		    [else (values fail failure)]))]
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
-     [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
-
-  #;
-  (define (run-disj g s conjs out mode)
-    (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out mode)])
-      (cond
-       [(succeed? g^) (values g^ s)]
-       [(fail? g^)
-	(if (disj? (disj-cdr g))
-	    (run-disj (disj-cdr g) s conjs out mode)
-	    (run-dfs (g s conjs out mode)))]
-       [else (values (normalized-disj* g^ (disj-cdr g)) s)])))
-
-
-  #;;trying thread trhu return goal
-  (define (run-dfs g s conjs)
-    (assert (and (goal? g) (state? s) (goal? conjs)))
-    (cond
-     [(fail? g) (values fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values succeed s) (run-dfs conjs s succeed))]
-     [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
-		(if (fail? g^) (values fail failure)
-		    (let-values ([(g s) (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
-					    (remove-constraints s (==->vars g^))
-					    succeed)])
-		      (values (normalized-conj* g^ g) s))))]
-     [(and (noto? g) (==? (noto-goal g)))
-      (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
-	(cond
-	 [(succeed? g) (values fail failure)]
-	 [(fail? g) (run-dfs conjs s succeed)]
-	 [(==? g)
-	  (if (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g)))
-	      (run-dfs (conj* conjs (get-constraints s (==->vars g)))
-		       (store-constraint (remove-constraints s (==->vars g)) (noto g))
-		       succeed)
-	      (let-values ([(g^ s) (run-dfs conjs (store-constraint s (noto g)) succeed)])
-		(values (normalized-conj* g g^) s)))]
-	 [else
-	  (assert (conj? g))
-	  (run-dfs conjs
-		   (store-constraint
-		    (store-constraint s (noto g))
-		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g)))) succeed)]))]
-     ;; first disj we hit at top level sees flag that nothing above it. adds self (could also just return to top level)
-     ;; disj inside top level disj still has pure state, can simplify, but cannot add. must return
-     ;; disj after top level disj cannot simplify unless no conflict
-     [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs)])
-		  (cond
-		   [(succeed? g^) (run-dfs conjs s succeed)]
-		   [(fail? g^) (run-dfs (disj-cdr g) s conjs)]
-		   [else (values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)]))]
-     [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs))]
-     [(constraint? g) (run-dfs (constraint-goal g) s conjs)]
-     [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
-  
-  #;
-  (define (run-dfs g s sub conjs)
-    (assert (and (goal? g) (state? s) (list? sub) (goal? conjs)))
-    (cond
-     [(succeed? g) (values g s)]
-     [(==? g) (let*-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))]
-			    [(s g^) (mini-constraint-check sub g^)])
-		(if (fail? g^) (values fail failure)
-		    (run-dfs (normalized-conj* conjs (get-constraints s (==->vars g^)))
-			     (remove-constraints s (==->vars g^))
-			     sub
-			     succeed)))]
-     [(and (noto? g) (==? (noto-goal g)))
-      (let*-values ([(s g^) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]
-			    [(g^) (if (==? g^) (list g^) g^)])
-		(if (fail? g^) (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
-					(remove-constraints s (map ==-lhs g^))
-					sub
-					succeed)
-		    (run-dfs (normalized-conj* conjs (get-constraints s (map ==-lhs g^)))
-			     (remove-constraints s (map ==-lhs g^))
-			     sub
-			     succeed)))]
-     [(conj? g) (run-dfs (conj-car g) s sub (normalized-conj* (conj-cdr g) conjs))]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute

@@ -12,28 +12,6 @@
 	  (if (unbound? walked) v (walk s walked)))
 	v))
 
-  (define (unify s x y)
-    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
-    ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
-    (assert (substitution? s)) ; -> substitution? goal?
-    (let ([x (walk s x)] [y (walk s y)])
-      (cond
-       [(eq? x y) (values s succeed)]
-       [(and (var? x) (var? y))
-	(cond
-	 [(< (var-id x) (var-id y)) (extend s x y)]
-	 [(var-equal? x y) (assert #f) (values s succeed)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	 [else (extend s y x)])]
-       [(var? x) (extend s x y)]
-       [(var? y) (extend s y x)]
-       [(and (pair? x) (pair? y))
-	(let-values
-	    ([(s car-extensions) (unify s (car x) (car y))])
-	  (if (failure? s)
-	      (values failure fail)
-	      (let-values ([(s cdr-extensions) (unify s (cdr x) (cdr y))])
-		(values s (normalized-conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
-       [else (values failure fail)])))
 
   (define (extend s x y)
     (values
