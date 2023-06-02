@@ -1,8 +1,8 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-dfs fire-dfs unify-no-check
+  (export run-goal stream-step bind mplus run-dfs fire-dfs
 	  store-constraint) ; TODO trim exports
-  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
+  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (mini-substitution)) 
 
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
@@ -59,11 +59,6 @@
      [(answers? s) (values (answers-cdr s) p)]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
 
-  (define (unify-no-check s x y)
-    (assert (state? s)) ; -> state-or-failure? goal?
-    (let-values ([(sub extensions) (substitution:unify (state-substitution s) x y)])      
-      (if (failure? s) (values failure fail) (values (set-state-substitution s sub) extensions))))
-
   ;; === CONSTRAINTS ===
 
   (define (==->vars g)
@@ -108,13 +103,13 @@
     (cond
      [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (run-dfs conjs s succeed out 1))]
-     [(==? g) (let-values ([(s g^) (unify-no-check s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s g^) (unify s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure)
 		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
 			     (remove-constraints s (==->vars g^))
 			     succeed (normalized-conj* out g^) 1)))]
      [(and (noto? g) (==? (noto-goal g)))
-      (let-values ([(s^ g) (unify-no-check s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+      (let-values ([(s^ g) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
 	(cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (run-dfs conjs s succeed out 1)]

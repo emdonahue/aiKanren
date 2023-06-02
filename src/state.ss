@@ -1,32 +1,27 @@
 (library (state)
-  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints) ;;TODO double check state exports
-  (import (chezscheme) (prefix (substitution) substitution:) (values) (constraint-store) (negation) (datatypes))
+  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify) ;;TODO double check state exports
+  (import (chezscheme) (constraint-store) (sbral) (datatypes))
+
+  (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
+  (define (unbound? v) (eq? unbound v))
   
   (define (reify s v)
     (cond
      [(pair? v) (cons (reify s (car v)) (reify s (cdr v)))]
      [(var? v)
-      (let* ([v (substitution:walk (state-substitution s) v)]
+      (let* ([v (walk s v)]
 	     [v (reify-constraint (state-constraints s) v)])
 	(if (var? v) v (reify s v)))]
      [else v]))
 
-  (define (state-add-constraint s v c)
-    (assert (and (state? s) (var? v) (goal? c)))
-    (set-state-constraints s (add-constraint (state-constraints s) v c)))
-
   (define (walk s v)
-    (substitution:walk (state-substitution s) v))
+    (if (var? v)
+	(let ([walked (sbral-ref (state-substitution s) (- (sbral-length (state-substitution s)) (var-id v)) unbound)]) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+	  (if (unbound? walked) v (walk s walked)))
+	v))
 
-  (define (get-constraints s vs)
-    (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
-
-  (define (remove-constraints s vs)
-    (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
+  ;; === UNIFICATION ===
   
-  (define (print-substitution s)
-    (substitution:print-substitution (state-substitution s)))
-
   (define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
@@ -48,4 +43,28 @@
 	      (values failure fail)
 	      (let-values ([(s cdr-extensions) (unify s (cdr x) (cdr y))])
 		(values s (normalized-conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
-       [else (values failure fail)]))))
+       [else (values failure fail)])))
+  
+  (define (extend s x y)
+    (values
+     (set-state-substitution s
+      (sbral-set-ref
+       (state-substitution s)
+       (- (sbral-length (state-substitution s)) (var-id x)) y unbound)) (== x y)))
+
+  ;; === CONSTRAINTS ===
+
+  (define (state-add-constraint s v c)
+    (assert (and (state? s) (var? v) (goal? c)))
+    (set-state-constraints s (add-constraint (state-constraints s) v c)))
+
+  (define (get-constraints s vs)
+    (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
+
+  (define (remove-constraints s vs)
+    (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
+  
+   ;; === DEBUGGING ===
+
+  (define (print-substitution s)
+    (map (lambda (p) (cons (make-var (- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))

@@ -3,7 +3,13 @@
   (export tassert)
   (import (chezscheme))
   
-  (define (tassert title received expected)
-    (when (not (equal? expected received))
-      (printf "Failed: ~s~%    Expected: ~s~%    Received: ~s~%"
-              title expected received))))
+  (define-syntax tassert
+    (syntax-rules ()
+      [(_ title expected received)
+       (with-exception-handler
+	(lambda (e) (printf "Exception in ~s~%" title)
+		(raise e))
+	(lambda ()
+	 (when (not (equal? expected received))
+	   (printf "Failed: ~s~%    Expected: ~s~%    Received: ~s~%"
+		   title expected received))))])))

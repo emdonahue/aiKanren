@@ -9,19 +9,12 @@
     (define x3 (make-var 3))
     (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
 
-    (define unify
-      (lambda (s x y)
-	(first-value (unify-no-check s x y))))
-
     (define ones
       (lambda (v)
 	(constrain
 	 (fresh (a d)
 	   (== v (cons a d))
 	   (disj* (== a 1) (ones d))))))
-
-    (define (extend-state s x y)
-      (first-value (unify-no-check s x y)))
 
     ;; === CON/DISJUNCTION ===
     
@@ -372,7 +365,7 @@
     
     (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state succeed succeed 1) 1) x1) 1)
     (tassert "dfs =/=" (reify (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) x1) (=/= x1 1))
-    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (extend-state empty-state x1 1) succeed succeed 1) 1))) '())
+    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (first-value (unify empty-state x1 1)) succeed succeed 1) 1))) '())
     (tassert "dfs =/= ==|==" (reify (values-ref (run-dfs (conj* (=/= x1 1) (disj* (== x1 1) (== x1 2))) empty-state succeed succeed 1) 1) x1) 2)
     (tassert "dfs ==|== =/=" (reify (values-ref (run-dfs (conj* (disj* (== x1 1) (== x1 2)) (=/= x1 1)) empty-state succeed succeed 1) 1) x1) 2)
     (tassert "dfs =/= & ==|==" (reify (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) succeed succeed 1) 1) x1) 2)

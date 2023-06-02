@@ -1,9 +1,6 @@
 (library (state-tests)
   (export run-state-tests)
-  (import (chezscheme) (state) (test-runner) (datatypes) (values) (streams))
-
-  (define (unify s x y)
-    (first-value (unify-no-check s x y)))
+  (import (chezscheme) (test-runner) (state) (datatypes))
   
   (define (run-state-tests)
     (define x0 (make-var 0))
@@ -12,7 +9,9 @@
     (tassert "state walk free" (walk empty-state x0) x0)
     (tassert "state reify ground" (reify empty-state 2) 2)
     (tassert "state reify free" (reify empty-state x0) x0)
-    (tassert "state reify bound" (reify (unify empty-state x0 0) x0) 0)
+        (display "FLAG\n\n")
+	(tassert "state reify bound" (reify (unify empty-state x0 0) x0) 0)
+	(exit)
     (tassert "state reify pair" (reify (unify empty-state x0 0) (cons 2 (cons x0 x2))) (cons 2 (cons 0 x2)))
     (tassert "state unify ground-ground" (unify empty-state 2 2) empty-state)
     (tassert "state unify free-ground" (walk (unify empty-state x0 2) x0) 2)

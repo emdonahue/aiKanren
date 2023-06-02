@@ -9,7 +9,7 @@
 	  guardo? make-guardo guardo-var guardo-procedure guardo
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
-	  make-substitution empty-substitution substitution-dict substitution?
+	  empty-substitution
 	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
@@ -61,8 +61,7 @@
   (define guardo make-guardo)
 
     ;; === SUBSTITUTION ===
-  (define-structure (substitution dict)) ; TODO replace substitution datatype with just a raw sbral
-  (define empty-substitution (make-substitution sbral-empty))
+  (define empty-substitution sbral-empty)
   
   ;; === STATE ===
   (define-structure (state substitution constraints guards pseudocounts varid))
