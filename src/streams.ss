@@ -2,7 +2,7 @@
 (library (streams)
   (export run-goal stream-step bind mplus run-dfs run-constraint
 	  store-constraint) ; TODO trim exports
-  (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (mini-substitution)) 
+  (import (chezscheme) (state) (failure) (goals) (package) (values) (store) (negation) (datatypes) (mini-substitution)) 
 
   ;; === STREAMS ===
   
