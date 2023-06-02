@@ -3,7 +3,7 @@
   (import (chezscheme) (state) (test-runner) (datatypes) (values) (streams))
 
   (define (unify s x y)
-    (first-value (unify-check s x y)))
+    (first-value (unify-no-check s x y)))
   
   (define (run-state-tests)
     (define x0 (make-var 0))

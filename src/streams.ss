@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus unify-check simplify-constraint check-constraints run-dfs fire-dfs unify-no-check
+  (export run-goal stream-step bind mplus run-dfs fire-dfs unify-no-check
 	  store-constraint) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
@@ -52,19 +52,12 @@
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
      [(bind? s)
-      (let*-values ([(s^ p) (stream-step (bind-stream s) p)]
-		    [(s p) (bind (bind-goal s) s^ p)])
-	(values s p))]
+      (let*-values ([(s^ p) (stream-step (bind-stream s) p)])
+	(bind (bind-goal s) s^ p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
      [(answers? s) (values (answers-cdr s) p)]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
-
-  (define (unify-check s x y) ;TODO remove simplify unification bc extensions will be wrong, but remember to unpack states
-    (assert (state? s)) ; -> state-or-failure? goal?
-    (let*-values ([(sub extensions) (substitution:unify (state-substitution s) x y)]
-		 [(s) (check-constraints (set-state-substitution s sub) extensions)])      
-      (if (failure? s) (values failure fail) (values s extensions))))
 
   (define (unify-no-check s x y)
     ;; to walk a term we need to keep at least the unifications in the state. maybe apply only unifications and ignore other constraints?
@@ -73,51 +66,6 @@
       (if (failure? s) (values failure fail) (values (set-state-substitution s sub) extensions))))
 
   ;; === CONSTRAINTS ===
-
-  (define (run-constraint g s)
-    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
-    (let-values ([(g s^ v) (simplify-constraint g s)]) ;(clear-state-constraints s)
-      (if (failure? s^) failure (store-constraint (set-state-varid s v) g))))
-
-  (define (simplify-constraint g s)
-    (assert (and (goal? g) (state-or-failure? s)))
-    (cond
-     [(failure? s) (values fail failure 0)]
-     [(succeed? g) (values succeed s (state-varid s))]
-     [(fail? g) (values fail failure 0)]
-     [(==? g) (let-values ([(s g) (unify-check s (==-lhs g) (==-rhs g))])
-		(if (fail? g) (values fail failure 0)
-		    (values g s (state-varid s))))]
-     [(fresh? g) (let*-values ([(g s^ p) (g s empty-package)]
-			       [(g s^ v) (simplify-constraint g s^)])
-		   (if (succeed? g) (values g s (state-varid s)) (values g s^ v)))] ; If fresh purely succeeds, we don't need to save space for the new variables it created.
-     [(conj? g) (let-values ([(g^ s v) (simplify-constraint (conj-car g) s)])
-		  (if (fail? g^) (values fail failure 0)
-		      (let-values ([(g s v) (simplify-constraint (conj-cdr g) s)])			
-			(values (normalized-conj* g^ g) s v))))]
-     [(disj? g) (let-values ([(g^ s^ v) (simplify-constraint (disj-car g) s)])
-		  (cond
-		   [(succeed? g^) (values succeed s (state-varid s))]
-		   [(fail? g^) (simplify-constraint (disj-cdr g) s)]
-		   [else (values (normalized-disj* g^ (disj-cdr g)) s v)]))]
-     [(and (noto? g) (not (fresh? (noto-goal g))))
-      (let*-values ([(g s^ v) (simplify-constraint (noto-goal g) s)]
-		    [(g) (noto g)])
-	(if (fail? g) (values fail failure 0)
-	    (values g s (state-varid s))))]
-     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s empty-package)]) ; TODO find all empty packages and consider threading real package
-					       (assert #f)
-					       (printf "GOAL: ~s~%NOTO: ~s~%~%" g (noto g))
-					       (simplify-constraint (noto g) s))]
-     [(constraint? g) (simplify-constraint (constraint-goal g) s)]
-     [(pconstraint? g) (values ((pconstraint-procedure g) s) s (state-varid s))]
-     [(guardo? g) (let ([v (walk s (guardo-var g))])
-		   (cond
-		    [(var? v) (values (guardo v (guardo-procedure g)) s (state-varid s))]
-		    [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s)]
-		    [else (values fail failure 0)]))]
-     [else (assertion-violation 'run-constraint "Unrecognized constraint type" g)]))
-
 
   (define (==->vars g)
     ;;TODO can be subsumed by attr vars if normalize by vid to pick one
@@ -288,41 +236,11 @@
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
-  
-  (define (check-constraints s g)
-    ;; Runs after unification to propagate new extensions through the constraint store. g is the goal representing the updates made to the substitution by the unifier.
-    ;; TODO remove all firing constraints before checking any of them in case they redundantly check each other
-    (assert (and (state-or-failure? s) (goal? g)))
-    (cond
-     [(or (failure? s) (fail? g)) failure] ; State has failed
-     [(succeed? g) s] ; State has succeeded without modification     
-     [(==? g) (fire-constraint s (list (==-lhs g)))] ; State has updated a single variable
-     [(conj? g) (fire-constraint s (map ==-lhs (conj-conjuncts g)))] ; Updated multiple variables
-     [else (assertion-violation 'check-constraints "Unrecognized constraint type" g)]))
-
-  (define (fire-constraint s vs)
-    (assert (and (state? s) (list? vs) (fold-left eq? #t (map var? vs)))) ; -> state-or-failure?
-
-    #;
-    (printf "FIRING CONSTRAINT (~s): ~s~%SUB: ~s~%STORE: ~s~%REDUCED: ~s~%DEPLETED: ~s~%STATE: ~s~%~%" (==-lhs e) (get-constraint (state-constraints s) (==-lhs e))
-	    
-	    (print-substitution s)
-	    (map car (constraint-store-constraints (state-constraints s)))
-	    (values-ref (simplify-constraint (get-constraint (state-constraints s) (==-lhs e)) (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e)))) 0)
-	    (map car (constraint-store-constraints (remove-constraint (state-constraints s) (==-lhs e))))
-    (set-state-constraints s (remove-constraint (state-constraints s) (==-lhs e))))
-    (fire-dfs (get-constraints s vs) (remove-constraints s vs))
-    ;;(run-constraint (get-constraints s vs) (remove-constraints s vs))
-    )
 
     (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state-or-failure? s) (goal? c))) ; -> state?
+    (assert (and (state-or-failure? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
     (cond
-     [(or (failure? s) (fail? c)) failure]
-     [(succeed? c) s]
-     [(==? c) (first-value (unify-check s (==-lhs c) (==-rhs c)))] ; Bare unifications are stored in the substitution
-     [(conj? c) (fold-left store-constraint s (conj-conjuncts c))] ; Conjoined constraints simply apply constraints independently.
      [(disj? c) (let* ([vars1 (get-attributed-vars c)]
 		       [vars2 (filter (lambda (v) (not (memq v vars1))) (get-attributed-vars (disj-cdr c)))]
 		       [c2 (invert-disj c)]

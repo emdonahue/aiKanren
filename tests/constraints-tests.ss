@@ -11,7 +11,7 @@
 
     (define unify
       (lambda (s x y)
-	(first-value (unify-check s x y))))
+	(first-value (unify-no-check s x y))))
 
     (define ones
       (lambda (v)
