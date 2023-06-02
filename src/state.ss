@@ -1,6 +1,6 @@
 (library (state)
   (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify) ;;TODO double check state exports
-  (import (chezscheme) (constraint-store) (sbral) (datatypes))
+  (import (chezscheme) (store) (sbral) (datatypes))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
