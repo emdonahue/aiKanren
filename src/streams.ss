@@ -66,8 +66,7 @@
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint. 
     (let-values ([(g s) (run-dfs g s succeed succeed 1)])
-      (store-const2 s g))
-    )
+      (store-const2 s g)))
   
   (define (may-unify g v)
     (cond
@@ -75,15 +74,6 @@
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
      [else #f]))
-
-
-
-  (define (invert-disj ds)
-    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
-    (let ([rest (disj-cdr ds)])
-      (if (disj? rest)
-	  (normalized-disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
-	  (normalized-disj* rest (disj-car ds)))))
   
   (define (store-const2 s g)
     (cond
@@ -149,13 +139,18 @@
     (assert (and (state? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
     (cond
      [(disj? c) (let* ([vars1 (attributed-vars c)]
-		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr c)))]
-		       [c2 (invert-disj c)])
-		  (state-add-constraint (state-add-constraint s c2 vars2) c vars1)
-		  )]
+		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr c)))]) ;TODO be more specific about how many disjuncts we need attr vars from
+		  (state-add-constraint (state-add-constraint s (invert-disj c) vars2) c vars1))]
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s c (attributed-vars c))]))
 
+  (define (invert-disj ds)
+    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
+    (let ([rest (disj-cdr ds)])
+      (if (disj? rest)
+	  (normalized-disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
+	  (normalized-disj* rest (disj-car ds)))))
+  
   (define (attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (fold-right (lambda (v vs) (if (memq v vs) vs (cons v vs))) '() (non-unique-attributed-vars g)))

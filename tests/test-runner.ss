@@ -5,7 +5,7 @@
   
   (define-syntax tassert
     (syntax-rules ()
-      [(_ title expected received)
+      [(_ title received expected)
        (with-exception-handler
 	(lambda (e) (printf "Exception in ~s~%" title)
 		(raise e))

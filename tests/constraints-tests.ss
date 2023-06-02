@@ -46,12 +46,12 @@
 	     (conjunctive-normal-form
 	      (disj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4)))) (conj* (disj*  (== 1 1) (== 3 3)) (disj*  (== 1 1) (== 4 4)) (disj*  (== 2 2) (== 3 3)) (disj*  (== 2 2) (== 4 4))))
 
-    ;; === STORE ===
+    ;; === VARID ===
 
     (let ([s (run1-states (x1) (constrain (== x1 1)))])
       (tassert "constraint == store" (reify s x1) 1)
       (tassert "constraint == vid" (state-varid s) 2))
-#;
+    #;
     (let ([s (run1-states (x1) (constrain (fresh (x2) (== x1 1))))]) ;
     (tassert "constraint frash == store" (reify s x1) 1) ;
     (tassert "constraint fresh == vid" (state-varid s) 3))
@@ -60,7 +60,7 @@
       (tassert "constraint conj == vid" (state-varid s) 3))
     (let ([s (run1-states (x1) (constrain fail (== x1 1)))])
       (tassert "constraint bind fail" s failure))
-#;
+    #;
     (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
     (tassert "constraint bind store" (reify s x1) 1) ;
     (tassert "constraint bind vid" (state-varid s) 2))
@@ -73,7 +73,7 @@
 		   (== x2 2))
 	     (list (disj* (== x1 1) (== x1 2)) 2))
     (tassert "constraint disj lazy" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)] [stale]))) (disj* (== x1 1) (== x1 2) stale))
-#;
+    #;
     (let ([s (run1-states (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))]) ;
     (tassert "constraint conj disj store" (reify s x1) x1) ;
     (tassert "constraint conj disj vid" (state-varid s) 2))
@@ -82,13 +82,25 @@
 	     (run1 (x1 x2) (constrain (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
 	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
 		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
-
-
     
+    ;; === BASIC CONSTRAINTS ===
 
-    ;;(display "START\n\n")
-    ;;(display (run1-states (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2) ) (conj* (== x1 2) (== x2 2)))) (=/= x2 2)))
+    (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
+    (tassert "constraint =/=" (run1 (x1) (constrain (=/= x1 1))) (=/= x1 1))
+    (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)])) (constrain (== x1 1))) 1)
+    (tassert "constraint =/= ==|==" (run1 (x1) (constrain (=/= x1 1)) (constrain (conde [(== x1 1)] [(== x1 2)]))) 2)
+    (tassert "constraint ==|== =/=" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)])) (constrain (=/= x1 1))) 2)
+    (tassert "constraint &" (run1 (x1 x2) (== x1 1) (=/= x2 2)) (list 1 (=/= x2 2)))
+    (tassert "constraint |" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2))))) (disj* (== x1 1) (== x1 2)))
+    (tassert "constraint == fail|==" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x1 2)) ((== x2 2))))) '(1 2))
+    (tassert "constraint == succeed|==" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x1 1)) ((== x2 2))))) (list 1 x2))
+    (tassert "constraint == ==|fail" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 2))))) '(1 2))
+    (tassert "constraint == ==|succeed" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 1))))) '(1 2))
+    (tassert "constraint == ==|==|==" (run1 (x1 x2 x3) (constrain (== x3 1)) (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3))))) (list (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3)) 1))
 
+    (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
+    (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
+    (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x2 1))) (constrain (== x2 1))) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
 
     ;; === DISEQUALITY ===
 
@@ -192,8 +204,8 @@
     (tassert "listo fired improper 2-list" (run1 (x1) (listo x1) (== x1 '(1 2 . 3))) (void))
     (tassert "listo fired improper 3-list" (run1 (x1) (listo x1) (== x1 '(1 2 3 . 4))) (void))
 
-#;    (tassert "listo multihop 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 (list 3)))) '(1 2 3))
-#;    (tassert "listo multihop improper 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 '(3 . 4)))) (void))
+    #;    (tassert "listo multihop 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 (list 3)))) '(1 2 3))
+    #;    (tassert "listo multihop improper 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 '(3 . 4)))) (void))
 
     ;; === FINITE DOMAIN ===
 
@@ -214,32 +226,32 @@
 
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj* (=/= x1 1) (== x2 2)) 2))
     (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (== x2 2))) 3))
-#;
+    #;
     (#(conj
-       (#(disj (#(conj (#(noto #(== #(var 1) 1))
-			#(== #(var 2) 2)))
-		#(== #(var 2) 2)))
-	#(disj (#(noto #(== #(var 1) 1))
-		#(== #(var 2) 2))))) 2)
+    (#(disj (#(conj (#(noto #(== #(var 1) 1))
+    #(== #(var 2) 2)))
+    #(== #(var 2) 2)))
+    #(disj (#(noto #(== #(var 1) 1))
+    #(== #(var 2) 2))))) 2)
     
     ;; === SYMBOLO ===
     #;
     (begin				; ; ;
     (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '()) ; ; ;
     (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void)) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol) ; ; ;
     (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void)) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol) ; ; ;
     (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void)) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void)) ; ; ;
     (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '()) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void)) ; ; ;
     (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void)) ; ; ;
     (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42))
 
@@ -258,14 +270,14 @@
     (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento x1 2)) 1) ; ; ;
     (tassert "absento fire ground term fail" (run1 (x1) (absento x1 1) (== x1 1)) (void)) ; ; ;
     (tassert "absento fire ground term succeed" (run1 (x1) (absento x1 2) (== x1 1)) 1) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "absento ground car fail" (run1 () (absento (cons 1 2) 1)) (void)) ; ; ;
     (tassert "absento ground car succeed" (run1 () (absento (cons 2 2) 1)) '()) ; ; ;
     (tassert "absento bound car fail" (run1 (x1) (== x1 '(1)) (absento x1 1)) (void)) ; ; ;
     (tassert "absento bound car succeed" (run1 (x1) (== x1 '(1)) (absento x1 2)) '(1)) ; ; ;
     (tassert "absento fire car fail" (run1 (x1) (absento x1 1) (== x1 '(1))) (void)) ; ; ;
     (tassert "absento fire car succeed" (run1 (x1) (absento x1 2) (== x1 '(1))) '(1)) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (tassert "absento ground cdr fail" (run1 () (absento (cons 2 1) 1)) (void))	; ; ;
     (tassert "absento ground cdr succeed" (run1 () (absento (cons 2 2) 1)) '()) ; ; ;
     (tassert "absento bound cdr fail" (run1 (x1) (== x1 '(2 . 1)) (absento x1 1)) (void)) ; ; ;
@@ -363,29 +375,7 @@
     
 
     
-    (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state succeed succeed 1) 1) x1) 1)
-    (tassert "dfs =/=" (reify (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) x1) (=/= x1 1))
-    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (unify empty-state x1 1) 1) succeed succeed 1) 1))) '())
-    (tassert "dfs =/= ==|==" (reify (values-ref (run-dfs (conj* (=/= x1 1) (disj* (== x1 1) (== x1 2))) empty-state succeed succeed 1) 1) x1) 2)
-    (tassert "dfs ==|== =/=" (reify (values-ref (run-dfs (conj* (disj* (== x1 1) (== x1 2)) (=/= x1 1)) empty-state succeed succeed 1) 1) x1) 2)
-    (tassert "dfs =/= & ==|==" (reify (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) succeed succeed 1) 1) x1) 2)
-    (tassert "dfs ==|== & =/=" (reify (values-ref (run-dfs (=/= x1 1) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed succeed 1) 1) x1) 2)
 
-    
-    ;;(tassert "dfs ==|== & =/=|=/= & ==" (reify (values-ref (run-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed succeed) 1) x1) 2)
-
-
-    (tassert "dfs &" (reify (run-constraint (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
-    (tassert "dfs |" (reify (run-constraint (disj* (== x1 1) (== x1 2)) empty-state) x1) (disj* (== x1 1) (== x1 2)))
-    (tassert "dfs == fail|==" (reify (run-constraint (disj* (== x1 2) (== x2 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
-    (tassert "dfs == succeed|==" (reify (run-constraint (disj* (== x1 1) (== x2 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) (cons 1 x2))
-    (tassert "dfs == ==|fail" (reify (run-constraint (disj* (== x2 2) (== x1 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
-    (tassert "dfs == ==|succeed" (reify (run-constraint (disj* (== x2 2) (== x1 1)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) (cons 1 2))
-    (tassert "dfs == ==|==" (reify (run-constraint (disj* (== x1 x3) (== x2 x3) (== x1 x3)) (run-constraint (conj* (== x3 1)) empty-state)) (cons x1 x2)) (cons (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3))))
-
-    (tassert "dfs ==|== ==" (reify (run-constraint (== x1 1) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
-    (tassert "dfs =/=|=/= ==" (reify (run-constraint (== x1 1) (run-constraint (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
-    (tassert "dfs =/=|=/= ==2" (reify (run-constraint (== x2 1) (run-constraint (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
 
 
     ;;(pretty-print (run-constraint (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)))
@@ -403,15 +393,15 @@
     [s (unify empty-state x1 1)])	; ; ;
     ;;(pretty-print c)		;	; ;
     ;;(pretty-print s)		;	; ;
-;      (pretty-print c)			; ; ; ; ; ;
- ;     (pretty-print (list-values (simplify-constraint c s))) ; ; ; ; ; ;
+;      (pretty-print c)			; ; ; ; ; ; ;
+ ;     (pretty-print (list-values (simplify-constraint c s))) ; ; ; ; ; ; ;
     #;					; ; ;
     (pretty-print (car  (disj-disjuncts c))) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     #;					; ; ;
     (pretty-print			; ; ;
     (check-constraints (state-add-constraint s x1 c) (== x1 1) )) ; ; ;
-					; ; ; ; ; ;
+					; ; ; ; ; ; ;
     (pretty-print			; ; ;
     (check-constraints			; ; ;
     (check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))))
