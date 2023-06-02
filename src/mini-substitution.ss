@@ -1,3 +1,4 @@
+;TODO remove mini-substitution
 (library (mini-substitution)
   (export mini-walk mini-unify mini-constraint-check)
   (import (chezscheme) (datatypes))
