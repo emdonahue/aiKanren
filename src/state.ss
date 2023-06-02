@@ -60,9 +60,10 @@
 
   ;; === CONSTRAINTS ===
 
-  (define (state-add-constraint s v c)
-    (assert (and (state? s) (var? v) (goal? c)))
-    (set-state-constraints s (add-constraint (state-constraints s) v c)))
+  (define (state-add-constraint s c vs)
+    (assert (and (state? s) (goal? c) (list? vs)))
+    (fold-left (lambda (s v)
+		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
   (define (get-constraints s vs)
     (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))

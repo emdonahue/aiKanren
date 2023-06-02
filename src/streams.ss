@@ -146,24 +146,15 @@
 
   (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state-or-failure? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
+    (assert (and (state? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
     (cond
      [(disj? c) (let* ([vars1 (attributed-vars c)]
-		       [vars2 (filter (lambda (v) (not (memq v vars1))) (attributed-vars (disj-cdr c)))]
-		       [c2 (invert-disj c)]
-		       )
-		  (fold-left
-		   (lambda (s v)
-		     (state-add-constraint s v c2))
-		   (fold-left
-		    (lambda (s v)
-		      (state-add-constraint s v c)) s vars1) vars2)
+		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr c)))]
+		       [c2 (invert-disj c)])
+		  (state-add-constraint (state-add-constraint s c2 vars2) c vars1)
 		  )]
      [else ; All other constraints get assigned to their attributed variables.
-      (fold-left
-       (lambda (s v)
-	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
-	 (state-add-constraint s v c)) s (attributed-vars c))]))
+      (state-add-constraint s c (attributed-vars c))]))
 
   (define (attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
@@ -171,11 +162,10 @@
   
   (define (non-unique-attributed-vars g)    
     ;; TODO optimize which constraint we pick to minimize free vars
-    ;; TODO attributed vars should probably be deduplicated
-    (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
+    (assert (goal? g))
     (cond
      [(succeed? g) '()]
-     [(disj? g) (attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
+     [(disj? g) (attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
      [(conj? g) (apply append (map attributed-vars (conj-conjuncts g)))]
      [(noto? g) (attributed-vars (noto-goal g))]
      [(==? g) (assert (var? (==-lhs g))) (list (==-lhs g))]
