@@ -4,6 +4,8 @@
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
+
+  ;; === VARIABLES ===
   
   (define (reify s v)
     (cond
@@ -16,7 +18,10 @@
 
   (define (walk s v)
     (if (var? v)
-	(let ([walked (sbral-ref (state-substitution s) (- (sbral-length (state-substitution s)) (var-id v)) unbound)]) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+	(let ([walked (sbral-ref
+		       (state-substitution s)
+		       (- (sbral-length (state-substitution s)) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+		       unbound)]) 
 	  (if (unbound? walked) v (walk s walked)))
 	v))
 
@@ -24,7 +29,6 @@
   
   (define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
-    ;;TODO thread disequalities monadically and bubble constant disequalities to the top to deprioritize double var constraints
     (assert (state? s)) ; -> substitution? goal?
     (let ([x (walk s x)] [y (walk s y)])
       (cond
@@ -46,6 +50,7 @@
        [else (values fail failure)])))
   
   (define (extend s x y)
+    ;; Insert a new binding between x and y into the substitution.
     (values
      (== x y)
      (set-state-substitution s
