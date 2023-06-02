@@ -18,26 +18,7 @@
 		     (conj* (get-constraints s (attributed-vars g)) conjs)
 		     (remove-constraints s (attributed-vars g))
 		     succeed (normalized-conj* out g) 1)))]
-     [(and (noto? g) (==? (noto-goal g)))
-      (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
-	(cond
-	 [(succeed? g) (values fail failure)]
-	 [(fail? g) (simplify-constraint conjs s succeed out 1)]
-	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
-			[not-g (noto g)]
-			[out (normalized-conj* not-g out)])
-		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
-		       (simplify-constraint (conj* c conjs)
-					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
-					    succeed out 1)
-		       (simplify-constraint conjs (store-constraint s not-g) succeed out  1)))]
-	 [else ; Conjunction of ==
-	  (simplify-constraint conjs
-		   (store-constraint
-		    (store-constraint s (noto g))
-		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g))))
-		   succeed
-		   (normalized-conj* out (noto g)) 1)]))]
+     [(and (noto? g) (==? (noto-goal g))) (simplify-=/= g s conjs out mode)]
      [(disj? g) (let-values ([(g^ s^) (simplify-constraint (disj-car g) s conjs out 1)])
 		  (cond
 		   [(eq? g^ out) (values out s)]
@@ -61,6 +42,28 @@
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
 
+  (define (simplify-=/= g s conjs out mode)
+    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+	(cond
+	 [(succeed? g) (values fail failure)]
+	 [(fail? g) (simplify-constraint conjs s succeed out 1)]
+	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
+			[not-g (noto g)]
+			[out (normalized-conj* not-g out)])
+		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
+		       (simplify-constraint (conj* c conjs)
+					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+					    succeed out 1)
+		       (simplify-constraint conjs (store-constraint s not-g) succeed out  1)))]
+	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
+	  (let ([not-g (noto g)])
+	    (simplify-constraint conjs
+				 (store-constraint
+				  (store-constraint s not-g)
+				  (normalized-disj* (disj-cdr not-g) (disj-car not-g)))
+				 succeed
+				 (normalized-conj* out not-g) 1))])))
+  
   (define (may-unify g v)
     (cond
      [(==? g) (or (equal? (==-lhs g) v) (equal? (==-rhs g) v))]
