@@ -1,9 +1,11 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (streams)
-  (export run-goal stream-step bind mplus run-dfs fire-dfs
+  (export run-goal stream-step bind mplus run-dfs run-constraint
 	  store-constraint) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (mini-substitution)) 
 
+  ;; === STREAMS ===
+  
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
@@ -18,8 +20,8 @@
 		  (values (mplus lhs rhs) p))]
      [(and (noto? g)
 	   (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])
-					       (values (make-bind (noto g) s) p))] 
-     [else (values (fire-dfs g s) p)]))
+				     (values (make-bind (noto g) s) p))] 
+     [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
@@ -41,9 +43,9 @@
      [(state? s) (run-goal g s p)]
      [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
      [(answers? s) (let*-values
-			([(lhs p) (run-goal g (answers-car s) p)]
-			 [(rhs p) (bind g (answers-cdr s) p)])
-		      (values (mplus lhs rhs) p))]
+		       ([(lhs p) (run-goal g (answers-car s) p)]
+			[(rhs p) (bind g (answers-cdr s) p)])
+		     (values (mplus lhs rhs) p))]
      [else (assertion-violation 'bind "Unrecognized stream type" s)]))
   
   (define (stream-step s p)
@@ -61,18 +63,12 @@
 
   ;; === CONSTRAINTS ===
 
-  (define (==->vars g)
-    ;;TODO can be subsumed by attr vars if normalize by vid to pick one
-    (cond
-     [(==? g) (list (==-lhs g))]
-     [(conj? g) (map ==-lhs (conj-conjuncts g))]
-     [else '()]))
-
-  (define (=/=->var g)
-    (assert (or (==? g) (conj? g)))
-    (if (==? g) (list (==-lhs g))
-	(=/=->var (conj-car g))))
-
+  (define (run-constraint g s)
+    ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint. 
+    (let-values ([(g s) (run-dfs g s succeed succeed 1)])
+      (store-const2 s g))
+    )
+  
   (define (may-unify g v)
     (cond
      [(==? g) (or (equal? (==-lhs g) v) (equal? (==-rhs g) v))]
@@ -80,10 +76,7 @@
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
      [else #f]))
 
-  (define (fire-dfs g s)
-    (let-values ([(g s) (run-dfs g s succeed succeed 1)])
-      (store-const2 s g))
-    )
+
 
   (define (invert-disj ds)
     ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
@@ -105,8 +98,8 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (run-dfs conjs s succeed out 1))]
      [(==? g) (let-values ([(g^ s) (unify s (==-lhs g) (==-rhs g))])
 		(if (fail? g^) (values fail failure)
-		    (run-dfs (conj* conjs (get-constraints s (==->vars g^)))
-			     (remove-constraints s (==->vars g^))
+		    (run-dfs (conj* conjs (get-constraints s (attributed-vars g^)))
+			     (remove-constraints s (attributed-vars g^))
 			     succeed (normalized-conj* out g^) 1)))]
      [(and (noto? g) (==? (noto-goal g)))
       (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
@@ -114,9 +107,9 @@
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (run-dfs conjs s succeed out 1)]
 	 [(==? g)
-	  (if (may-unify (get-constraints s (=/=->var g)) (car (=/=->var g)))
-	      (run-dfs (conj* conjs (get-constraints s (==->vars g)))
-		       (store-constraint (remove-constraints s (==->vars g)) (noto g))
+	  (if (may-unify (get-constraints s (attributed-vars g)) (car (attributed-vars g)))
+	      (run-dfs (conj* conjs (get-constraints s (attributed-vars g)))
+		       (store-constraint (remove-constraints s (attributed-vars g)) (noto g))
 		       succeed (normalized-conj* (noto g) out) 1)
 	      (run-dfs conjs (store-constraint s (noto g)) succeed (normalized-conj* (noto g) out)  1))]
 	 [else
@@ -141,22 +134,22 @@
      [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out 1)]
      [(constraint? g) (run-dfs (constraint-goal g) s conjs out 1)]
      [(guardo? g) (let ([v (walk s (guardo-var g))])
-		   (cond
-		    [(var? v) (let ([g (guardo v (guardo-procedure g))])
-				(values g (store-constraint s g)))]
-		    [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
-		    [else (values fail failure)]))]
+		    (cond
+		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
+				 (values g (store-constraint s g)))]
+		     [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
+		     [else (values fail failure)]))]
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
   ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
 
-    (define (store-constraint s c)
+  (define (store-constraint s c)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state-or-failure? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
     (cond
-     [(disj? c) (let* ([vars1 (get-attributed-vars c)]
-		       [vars2 (filter (lambda (v) (not (memq v vars1))) (get-attributed-vars (disj-cdr c)))]
+     [(disj? c) (let* ([vars1 (attributed-vars c)]
+		       [vars2 (filter (lambda (v) (not (memq v vars1))) (attributed-vars (disj-cdr c)))]
 		       [c2 (invert-disj c)]
 		       )
 		  (fold-left
@@ -170,23 +163,23 @@
       (fold-left
        (lambda (s v)
 	 ;;(assert (eq? (walk s v) v)) ; TODO delete this assertion
-	 (state-add-constraint s v c)) s (get-attributed-vars c))]))
+	 (state-add-constraint s v c)) s (attributed-vars c))]))
 
-  (define (get-attributed-vars g)
+  (define (attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
+    (fold-right (lambda (v vs) (if (memq v vs) vs (cons v vs))) '() (non-unique-attributed-vars g)))
+  
+  (define (non-unique-attributed-vars g)    
     ;; TODO optimize which constraint we pick to minimize free vars
     ;; TODO attributed vars should probably be deduplicated
-    ;; TODO attributed vars should handle (constraint)'s
     (assert (goal? g)) ; Since conj constraints are run seperately, we only receive disj and primitives here.
     (cond
      [(succeed? g) '()]
-     [(disj? g) (get-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
-     [(conj? g) (apply append (map get-attributed-vars (conj-conjuncts g)))]
-     [(noto? g) (get-attributed-vars (noto-goal g))]
+     [(disj? g) (attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint
+     [(conj? g) (apply append (map attributed-vars (conj-conjuncts g)))]
+     [(noto? g) (attributed-vars (noto-goal g))]
      [(==? g) (assert (var? (==-lhs g))) (list (==-lhs g))]
      [(pconstraint? g) (pconstraint-vars g)]
      [(guardo? g) (list (guardo-var g))]
-     [else (assertion-violation 'get-attributed-vars "Unrecognized constraint type" g)]))
-
-
-  ) 
+     [(constraint? g) (attributed-vars (constraint-goal g))]
+     [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)]))) 

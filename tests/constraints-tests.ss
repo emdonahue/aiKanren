@@ -375,20 +375,20 @@
     ;;(tassert "dfs ==|== & =/=|=/= & ==" (reify (values-ref (run-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (store-constraint empty-state (disj* (== x1 1) (== x1 2))) succeed succeed) 1) x1) 2)
 
 
-    (tassert "dfs &" (reify (fire-dfs (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
-    (tassert "dfs |" (reify (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state) x1) (disj* (== x1 1) (== x1 2)))
-    (tassert "dfs == fail|==" (reify (fire-dfs (disj* (== x1 2) (== x2 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
-    (tassert "dfs == succeed|==" (reify (fire-dfs (disj* (== x1 1) (== x2 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) (cons 1 x2))
-    (tassert "dfs == ==|fail" (reify (fire-dfs (disj* (== x2 2) (== x1 2)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
-    (tassert "dfs == ==|succeed" (reify (fire-dfs (disj* (== x2 2) (== x1 1)) (fire-dfs (== x1 1) empty-state)) (cons x1 x2)) (cons 1 2))
-    (tassert "dfs == ==|==" (reify (fire-dfs (disj* (== x1 x3) (== x2 x3) (== x1 x3)) (fire-dfs (conj* (== x3 1)) empty-state)) (cons x1 x2)) (cons (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3))))
+    (tassert "dfs &" (reify (run-constraint (conj* (== x1 1) (=/= x2 2)) empty-state) (cons x1 x2)) (cons 1 (=/= x2 2)))
+    (tassert "dfs |" (reify (run-constraint (disj* (== x1 1) (== x1 2)) empty-state) x1) (disj* (== x1 1) (== x1 2)))
+    (tassert "dfs == fail|==" (reify (run-constraint (disj* (== x1 2) (== x2 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
+    (tassert "dfs == succeed|==" (reify (run-constraint (disj* (== x1 1) (== x2 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) (cons 1 x2))
+    (tassert "dfs == ==|fail" (reify (run-constraint (disj* (== x2 2) (== x1 2)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) '(1 . 2))
+    (tassert "dfs == ==|succeed" (reify (run-constraint (disj* (== x2 2) (== x1 1)) (run-constraint (== x1 1) empty-state)) (cons x1 x2)) (cons 1 2))
+    (tassert "dfs == ==|==" (reify (run-constraint (disj* (== x1 x3) (== x2 x3) (== x1 x3)) (run-constraint (conj* (== x3 1)) empty-state)) (cons x1 x2)) (cons (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3))))
 
-    (tassert "dfs ==|== ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
-    (tassert "dfs =/=|=/= ==" (reify (fire-dfs (== x1 1) (fire-dfs (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
-    (tassert "dfs =/=|=/= ==2" (reify (fire-dfs (== x2 1) (fire-dfs (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
+    (tassert "dfs ==|== ==" (reify (run-constraint (== x1 1) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)) x1) 1)
+    (tassert "dfs =/=|=/= ==" (reify (run-constraint (== x1 1) (run-constraint (disj* (=/= x1 1) (=/= x1 2)) empty-state)) x1) 1)
+    (tassert "dfs =/=|=/= ==2" (reify (run-constraint (== x2 1) (run-constraint (disj* (=/= x1 1) (=/= x2 1)) empty-state)) (cons x1 x2)) (cons (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
 
 
-    ;;(pretty-print (fire-dfs (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (fire-dfs (disj* (== x1 1) (== x1 2)) empty-state)))
+    ;;(pretty-print (run-constraint (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)))
 
     ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))
     
