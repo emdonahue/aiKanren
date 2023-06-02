@@ -1,4 +1,4 @@
-;;TODO test more efficient constraint stores
+;;TODO test more efficient constraint stores. perhaps all constraint lookups receive pointers to a single store so that we can cheeply copy pointers to different attributed variables but only remove and apply the constraint once instead of copying the constraint and applying it many times 
 (library (store) ; Constraint store
   (export get-constraint add-constraint remove-constraint reify-constraint)
   (import (chezscheme) (datatypes))

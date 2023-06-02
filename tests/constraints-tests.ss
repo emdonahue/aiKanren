@@ -100,6 +100,27 @@
     (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x2 1))) (constrain (== x2 1))) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
+    ;;(tassert "constraint nested |" (run1 (x1 x2 x3) (constrain (disj* (conj* (== x1 1) (disj* (== x2 1) (== x3 1))) (== x1 2))) (== x3 3)) '(1 1 3))
+
+    (tassert "constraint =/= attributed" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1)))) (constrain (=/= (cons x1 x2) '(1 2)))) '(1 1))
+    
+    #;
+    (#(conj (#(disj (#(conj (#(== #(var 2) 1) #(== #(var 3) 3) #(== #(var 1) 1))) #(conj (#(== #(var 3) 3) #(== #(var 1) 2)))))
+	     #(disj (#(conj (#(== #(var 1) 1) #(== #(var 2) 1))) #(conj (#(== #(var 1) 1) #(== #(var 3) 1))) #(== #(var 1) 2)))))
+     #(conj (#(disj (#(conj (#(== #(var 2) 1) #(== #(var 3) 3) #(== #(var 1) 1))) #(conj (#(== #(var 3) 3) #(== #(var 1) 2)))))
+	     #(disj (#(conj (#(== #(var 1) 1) #(== #(var 2) 1))) #(conj (#(== #(var 1) 1) #(== #(var 3) 1))) #(== #(var 1) 2))))) 3)
+    
+#;
+    (#(disj (#(conj (#(== #(var 1) 1) #(== #(var 2) 1)))
+	     #(conj (#(== #(var 1) 1) #(== #(var 3) 1)))
+	     #(== #(var 1) 2)))
+     #(disj (#(conj (#(== #(var 1) 1) #(== #(var 2) 1)))
+	     #(conj (#(== #(var 1) 1) #(== #(var 3) 1)))
+	     #(== #(var 1) 2)))
+     #(disj (#(conj (#(== #(var 1) 1) #(== #(var 3) 1)))
+	     #(conj (#(== #(var 1) 1) #(== #(var 2) 1)))
+	     #(== #(var 1) 2))))
+
 
     ;; === DISEQUALITY ===
 
