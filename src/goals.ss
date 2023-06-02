@@ -1,6 +1,6 @@
 ;;TODO replace (assert #f) with useful error messages
 (library (goals)
-  (export run-goal stream-step bind mplus) ; TODO trim exports
+  (export run-goal stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (values) (store) (negation) (datatypes) (solver)) 
 
   (define (run-goal g s p)

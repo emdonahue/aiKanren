@@ -3,10 +3,64 @@
   (import (chezscheme) (state) (negation) (datatypes))
 
   (define (run-constraint g s)
-    ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint. 
-    (let-values ([(g s) (run-dfs g s succeed succeed 1)])
-      (store-const2 s g)))
+    ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
+    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
+    (call-with-values (lambda () (simplify-constraint g s succeed succeed 1)) store-disjunctions ))
   
+  (define (simplify-constraint g s conjs out mode)
+    (assert (and (goal? g) (state? s) (goal? conjs) (number? mode))) ; -> goal? state-or-failure?
+    (cond
+     [(fail? g) (values fail failure)]
+     [(succeed? g) (if (succeed? conjs) (values out s) (simplify-constraint conjs s succeed out 1))]
+     [(==? g) (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
+		(if (fail? g) (values fail failure)
+		    (simplify-constraint ; Run constraints attributed to all unified vars
+		     (conj* (get-constraints s (attributed-vars g)) conjs)
+		     (remove-constraints s (attributed-vars g))
+		     succeed (normalized-conj* out g) 1)))]
+     [(and (noto? g) (==? (noto-goal g)))
+      (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+	(cond
+	 [(succeed? g) (values fail failure)]
+	 [(fail? g) (simplify-constraint conjs s succeed out 1)]
+	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
+			[not-g (noto g)]
+			[out (normalized-conj* not-g out)])
+		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
+		       (simplify-constraint (conj* c conjs)
+					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+					    succeed out 1)
+		       (simplify-constraint conjs (store-constraint s not-g) succeed out  1)))]
+	 [else ; Conjunction of ==
+	  (simplify-constraint conjs
+		   (store-constraint
+		    (store-constraint s (noto g))
+		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g))))
+		   succeed
+		   (normalized-conj* out (noto g)) 1)]))]
+     [(disj? g) (let-values ([(g^ s^) (simplify-constraint (disj-car g) s conjs out 1)])
+		  (cond
+		   [(eq? g^ out) (values out s)]
+		   [(fail? g^) (simplify-constraint (disj-cdr g) s conjs out mode)]
+		   [else
+		    (if (zero? mode) ;TODO can we special case some disj to only save on one disjunct?
+			(values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)
+			(let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out 0)])
+			  (cond
+			   [(fail? g2) (values (normalized-conj* g^ out) s^)]
+			   [(succeed? g2) (values out s^)]
+			   [else (values (normalized-disj* g^ g2) s)])))]))]
+     [(conj? g) (simplify-constraint (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out 1)]
+     [(constraint? g) (simplify-constraint (constraint-goal g) s conjs out 1)]
+     [(guardo? g) (let ([v (walk s (guardo-var g))])
+		    (cond
+		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
+				 (values g (store-constraint s g)))]
+		     [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
+		     [else (values fail failure)]))]
+     [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
+     [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
+
   (define (may-unify g v)
     (cond
      [(==? g) (or (equal? (==-lhs g) v) (equal? (==-rhs g) v))]
@@ -14,74 +68,23 @@
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
      [else #f]))
   
-  (define (store-const2 s g)
+  (define (store-disjunctions g s)
+    ;; Because simplify-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (cond
-     [(conj? g) (store-const2 (store-const2 s (conj-car g)) (conj-cdr g))]
+     [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
      [(disj? g) (store-constraint s g)]
      [else s]))
-  
-  (define (run-dfs g s conjs out mode)
-    (assert (and (goal? g) (state? s) (goal? conjs) (number? mode)))
-    (cond
-     [(fail? g) (values fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values out s) (run-dfs conjs s succeed out 1))]
-     [(==? g) (let-values ([(g^ s) (unify s (==-lhs g) (==-rhs g))])
-		(if (fail? g^) (values fail failure)
-		    (run-dfs (conj* conjs (get-constraints s (attributed-vars g^)))
-			     (remove-constraints s (attributed-vars g^))
-			     succeed (normalized-conj* out g^) 1)))]
-     [(and (noto? g) (==? (noto-goal g)))
-      (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
-	(cond
-	 [(succeed? g) (values fail failure)]
-	 [(fail? g) (run-dfs conjs s succeed out 1)]
-	 [(==? g)
-	  (if (may-unify (get-constraints s (attributed-vars g)) (car (attributed-vars g)))
-	      (run-dfs (conj* conjs (get-constraints s (attributed-vars g)))
-		       (store-constraint (remove-constraints s (attributed-vars g)) (noto g))
-		       succeed (normalized-conj* (noto g) out) 1)
-	      (run-dfs conjs (store-constraint s (noto g)) succeed (normalized-conj* (noto g) out)  1))]
-	 [else
-	  (run-dfs conjs
-		   (store-constraint
-		    (store-constraint s (noto g))
-		    (normalized-disj* (disj-cdr (noto g)) (disj-car (noto g))))
-		   succeed
-		   (normalized-conj* out (noto g)) 1)]))]
-     [(disj? g) (let-values ([(g^ s^) (run-dfs (disj-car g) s conjs out 1)])
-		  (cond
-		   [(eq? g^ out) (values out s)]
-		   [(fail? g^) (run-dfs (disj-cdr g) s conjs out mode)]
-		   [else
-		    (if (zero? mode) ;TODO can we special case some disj to only save on one disjunct?
-			(values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)
-			(let-values ([(g2 s2) (run-dfs (disj-cdr g) s conjs out 0)])
-			  (cond
-			   [(fail? g2) (values (normalized-conj* g^ out) s^)]
-			   [(succeed? g2) (values out s^)]
-			   [else (values (normalized-disj* g^ g2) s)])))]))]
-     [(conj? g) (run-dfs (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out 1)]
-     [(constraint? g) (run-dfs (constraint-goal g) s conjs out 1)]
-     [(guardo? g) (let ([v (walk s (guardo-var g))])
-		    (cond
-		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
-				 (values g (store-constraint s g)))]
-		     [(pair? v) (run-dfs ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
-		     [else (values fail failure)]))]
-     [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
-     [else (assertion-violation 'run-dfs "Unrecognized constraint type" g)]))
 
-  ;; constraint pulls all attributed vars into big conj. simplifies alone in state. recurse on that. if ever we pull only successes, just attribute
-
-  (define (store-constraint s c)
+  (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (assert (or (guardo? c) (noto? c) (disj? c))))) ; -> state?
+    (assert (and (state? s) (assert (or (guardo? g) (noto? g) (disj? g))))) ; -> state?
     (cond
-     [(disj? c) (let* ([vars1 (attributed-vars c)]
-		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr c)))]) ;TODO be more specific about how many disjuncts we need attr vars from
-		  (state-add-constraint (state-add-constraint s (invert-disj c) vars2) c vars1))]
+     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))]
+     [(disj? g) (let* ([vars1 (attributed-vars g)]
+		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr g)))]) ;TODO be more specific about how many disjuncts we need attr vars from
+		  (state-add-constraint (state-add-constraint s (invert-disj g) vars2) g vars1))]
      [else ; All other constraints get assigned to their attributed variables.
-      (state-add-constraint s c (attributed-vars c))]))
+      (state-add-constraint s g (attributed-vars g))]))
 
   (define (invert-disj ds)
     ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
