@@ -365,7 +365,7 @@
     
     (tassert "dfs ==" (reify (values-ref (run-dfs (== x1 1) empty-state succeed succeed 1) 1) x1) 1)
     (tassert "dfs =/=" (reify (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) x1) (=/= x1 1))
-    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (first-value (unify empty-state x1 1)) succeed succeed 1) 1))) '())
+    (tassert "dfs disj ==" (constraint-store-constraints (state-constraints (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (unify empty-state x1 1) 1) succeed succeed 1) 1))) '())
     (tassert "dfs =/= ==|==" (reify (values-ref (run-dfs (conj* (=/= x1 1) (disj* (== x1 1) (== x1 2))) empty-state succeed succeed 1) 1) x1) 2)
     (tassert "dfs ==|== =/=" (reify (values-ref (run-dfs (conj* (disj* (== x1 1) (== x1 2)) (=/= x1 1)) empty-state succeed succeed 1) 1) x1) 2)
     (tassert "dfs =/= & ==|==" (reify (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) (values-ref (run-dfs (=/= x1 1) empty-state succeed succeed 1) 1) succeed succeed 1) 1) x1) 2)
