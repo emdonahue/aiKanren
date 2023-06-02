@@ -1,5 +1,5 @@
 ;;TODO test more efficient constraint stores
-(library (store)
+(library (store) ; Constraint store
   (export get-constraint add-constraint remove-constraint reify-constraint)
   (import (chezscheme) (datatypes))
 

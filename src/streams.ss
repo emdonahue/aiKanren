@@ -3,8 +3,6 @@
   (export run-goal stream-step bind mplus) ; TODO trim exports
   (import (chezscheme) (state) (failure) (goals) (package) (values) (store) (negation) (datatypes) (solver)) 
 
-  ;; === STREAMS ===
-  
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?

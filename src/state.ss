@@ -1,4 +1,4 @@
-(library (state)
+(library (state) ; Main state object that holds substitution & constraints
   (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify) ;;TODO double check state exports
   (import (chezscheme) (store) (sbral) (datatypes))
 

@@ -1,4 +1,4 @@
-(library (solver)
+(library (solver) ; Constraint solving
   (export run-constraint)
   (import (chezscheme) (state) (negation) (datatypes))
 
