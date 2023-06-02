@@ -1,5 +1,5 @@
 (library (disequality)
   (export)
-  (import (chezscheme) (streams) (state))
+  (import (chezscheme))
 
   )
