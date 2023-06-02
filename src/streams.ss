@@ -5,51 +5,46 @@
   (import (chezscheme) (state) (failure) (goals) (package) (values) (constraint-store) (negation) (datatypes) (prefix (substitution) substitution:) (mini-substitution)) 
 
   (define (run-goal g s p)
+    ;; Converts a goal into a stream
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
     (cond
-     [(succeed? g) (values s p)]
-     [(fail? g) (values failure p)]
-     [(==? g) (values (fire-dfs g s) p)]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
-     [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)]
-			      [(s p) (bind (conj-cdr g) s p)])
-		  (values s p))]
+     [(conj? g) (let*-values ([(s p) (run-goal (conj-car g) s p)])
+		  (bind (conj-cdr g) s p))]
      [(disj? g) (let*-values
 		    ([(lhs p) (run-goal (disj-car g) s p)]
-		     [(rhs p) (run-goal (disj-cdr g) s p)])
+		     [(rhs p) (run-goal (disj-cdr g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		  (values (mplus lhs rhs) p))]
-     [(and (noto? g) (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])
+     [(and (noto? g)
+	   (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])
 					       (values (make-bind (noto g) s) p))] 
-     [(and (noto? g) (not (fresh? (noto-goal g)))) (values (fire-dfs g s) p)]
-     [(constraint? g) (values (fire-dfs (constraint-goal g) s) p)]
-     [(pconstraint? g) (values (fire-dfs g s) p)]
-     [(guardo? g) (values (fire-dfs g s) p)]
-     [else (assertion-violation 'run-goal "Unrecognized goal type" g)]))
+     [else (values (fire-dfs g s) p)]))
   
   (define (mplus lhs rhs)
+    ;; Interleaves two branches of the search
     (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
-     [(answer? lhs) (answers lhs rhs)]
+     [(answer? lhs) (answers lhs rhs)] ; Float answers to the front of the tree
      [(answers? lhs) (answers (answers-car lhs) (mplus rhs (answers-cdr lhs)))]
      [(answer? rhs) (answers rhs lhs)]
      [(answers? rhs) (answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
   (define (bind g s p)
+    ;; Applies g to all states in s.
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
     (cond
      [(failure? s) (values failure p)]
-     [(state? s) (let-values ([(s p) (run-goal g s p)])
-		   (values s p))]
+     [(state? s) (run-goal g s p)]
      [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
      [(answers? s) (let*-values
-			([(h p lhv) (run-goal g (answers-car s) p)]
-			 [(r p rhv) (bind g (answers-cdr s) p)])
-		      (values (mplus h r) p))]
-     [else (assert #f)]))
+			([(lhs p) (run-goal g (answers-car s) p)]
+			 [(rhs p) (bind g (answers-cdr s) p)])
+		      (values (mplus lhs rhs) p))]
+     [else (assertion-violation 'bind "Unrecognized stream type" s)]))
   
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
