@@ -64,7 +64,7 @@
 			 (let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out)])
 			   (cond
 			    [(fail? g2) (values (normalized-conj* g^ out) s^)]
-			    [(succeed? g2) (values out s^)]
+			    [(eq? g2 out) (values out s^)]
 			    [else (values (normalized-disj* g^ g2) s)]))))])))
   
   (define (simplify-guardo g s conjs out)
