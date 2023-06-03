@@ -222,7 +222,7 @@
 	 [else (cons (car ds) rest)]))]))
 
   (define (disj-car d)
-    (car (disj-disjuncts d)))
+    (if (disj? d) (car (disj-disjuncts d)) d))
 
   (define (disj-cdr d)
-    (disj (cdr (disj-disjuncts d)))))
+    (if (disj? d) (disj (cdr (disj-disjuncts d))) fail)))

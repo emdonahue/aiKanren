@@ -15,7 +15,8 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (simplify-constraint conjs s succeed out))]
      [(==? g) (simplify-== g s conjs out)]
      [(and (noto? g) (==? (noto-goal g))) (simplify-=/= g s conjs out)]
-     [(disj? g) (simplify-disj g s conjs out (simplification-level))]
+     [(disj? g) (let-values ([(g s) (simplify-disj g s conjs (simplification-level))])
+		  (values (normalized-conj* out g) s))]
      [(conj? g) (simplify-constraint (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out)]
      [(constraint? g) (simplify-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (simplify-guardo g s conjs out)]
@@ -52,20 +53,28 @@
 				 succeed
 				 (normalized-conj* out not-g)))])))
 
-  (define (simplify-disj g s conjs out s-level)
-    (let-values ([(g^ s^) (simplify-constraint (disj-car g) s conjs out)])
-		  (cond
-		   [(eq? g^ out) (values out s)]
-		   [(fail? g^) (simplify-constraint (disj-cdr g) s conjs out)]
-		   [else
-		    (if (zero? s-level) ;TODO can we special case some disj to only save on one disjunct?
-			(values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)
-			(parameterize ([simplification-level 0])
-			 (let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out)])
-			   (cond
-			    [(fail? g2) (values (normalized-conj* g^ out) s^)]
-			    [(eq? g2 out) (values out s^)]
-			    [else (values (normalized-disj* g^ g2) s)]))))])))
+  (define (simplify-disj g s conjs s-level)
+    (if (or (zero? s-level) (fail? g))
+	(values g s)
+	(let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
+	  (cond
+	   [(succeed? g0) (values succeed s)]
+	   [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)]
+	   [else ;TODO should we be threading out through or should we be stopping it here and conjing to entire disj?
+	    (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
+	      (cond
+	       [(succeed? g^) (values succeed s)]
+	       [(fail? g^) (values g0 s0)]
+	       [else (values (normalized-disj* g0 g^) s)]))
+	    #;
+	    (if (zero? s-level) ;TODO can we special case some disj to only save on one disjunct?
+		(values (normalized-disj* g0 (normalized-conj* (disj-cdr g) conjs)) s)
+		(parameterize ([simplification-level 0])
+		  (let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out)])
+		    (cond
+		     [(fail? g2) (values (normalized-conj* g0 out) s0)]
+		     [(eq? g2 out) (values out s0)]
+		     [else (values (normalized-disj* g0 g2) s)]))))]))))
   
   (define (simplify-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
