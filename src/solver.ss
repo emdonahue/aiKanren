@@ -24,6 +24,7 @@
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
 
   (define (simplify-== g s conjs out)
+    ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
       (if (fail? g) (values fail failure)
 	  (simplify-constraint ; Run constraints attributed to all unified vars
@@ -36,7 +37,9 @@
 	(cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (simplify-constraint conjs s succeed out)]
-	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
+	 [(==? g)
+	  #;
+	  (let* ([c (get-constraints s (attributed-vars g))]
 			 [not-g (noto g)]
 			 [out (normalized-conj* out not-g)])
 		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
@@ -44,10 +47,10 @@
 					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
 					    succeed out)
 		       (simplify-constraint conjs (store-constraint s not-g) succeed out)))
-
-	  #;
-	  (let-values ([(g s) (simplify-=/=-disj g s conjs)]) ;
-	  (values (normalized-conj* out (noto g)) s))]
+	  ;(simplify-=/=-disj g s conjs out)
+	  
+	  (let-values ([(g^ s) (simplify-=/=-disj g s conjs out)])
+	    (values (normalized-conj* g^ (noto g)) s))]
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
 	    (simplify-constraint conjs
@@ -57,7 +60,20 @@
 				 succeed
 				 (normalized-conj* out not-g)))])))
 
-  (define (simplify-=/=-disj g s conjs)
+  (define (simplify-=/=-disj g s conjs out)
+    (let-values ([(g^ s) 
+		  (let* ([c (get-constraints s (attributed-vars g))]
+			 [not-g (noto g)]
+			 #;
+			 [out (normalized-conj* out not-g)])
+		    (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
+			(simplify-constraint (conj* c conjs)
+					     (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+					     succeed out)
+			(simplify-constraint conjs (store-constraint s not-g) succeed out)))])
+      (values g^ s))
+
+    #;
     (let* ([c (get-constraints s (attributed-vars g))]
 			[not-g (noto g)])
 		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
@@ -71,11 +87,11 @@
     ;; level 1 - only worry about failing if a unification violates a constraint.
     ;; level 2 - level 1 + if we can commit to a single branch and turn a constraint into a unification, do it.
     ;; level -1 - simplify all disjuncts to lowest terms.
-    (cond
+    (cond 
      [(fail? g) (values fail failure)]
      [(zero? s-level) (values g s)]
-     [else
-      (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)]) ;TODO test whether we need to pass g0 as the conjunct in case we return simply
+     [else ;TODO do we need to simplify disjs that dont contain any ==?
+      (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.

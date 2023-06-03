@@ -40,7 +40,7 @@
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
-       [(and (pair? x) (pair? y))
+       [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
 	    ([(car-extensions s) (unify s (car x) (car y))])
 	  (if (failure? s)

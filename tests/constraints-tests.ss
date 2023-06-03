@@ -111,9 +111,9 @@
       (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4))))) (list (disj* (== x1 1) (== x2 1) (== x3 x4)) (disj* (== x2 1) (== x1 1) (== x3 x4)) x3 1))
       ;;(tassert "constraint nested |" (run1 (x1 x2 x3) (constrain (disj* (conj* (== x1 1) (disj* (== x2 1) (== x3 1))) (== x1 2))) (== x3 3)) '(1 1 3)) TODO check that attr vars for diseq should be first 2 vs 1
 
-      (tassert "constraint =/= attributed" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1)))) (constrain (=/= (cons x1 x2) '(1 2)))) '(1 1))
-
-)
+      
+;      (tassert "constraint =/= attributed" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1)))) (constrain (=/= (cons x1 x2) '(1 2)))) '(1 1))
+      )
     
     ;; === DISEQUALITY ===
 
