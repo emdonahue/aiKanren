@@ -37,8 +37,9 @@
 	(cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (simplify-constraint conjs s succeed out)]
-	 [(==? g) (let-values ([(g^ s) (simplify-=/=-disj (noto g) s conjs)])
+	 [else (let-values ([(g^ s) (simplify-=/=-disj (noto g) s conjs)])
 		    (values (normalized-conj* out (noto g) g^) s))]
+	 #;
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
 	    (simplify-constraint conjs
@@ -49,17 +50,16 @@
 				 (normalized-conj* out not-g)))])))
 
   (define (simplify-=/=-disj g s gs)
-    (assert (and (goal? g) (state? s) (goal? g))) ; -> goal? state-or-failure?
-    
+    (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
     (let* ([g0 (disj-car g)]
 	   [c (get-constraints s (attributed-vars g0))] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere
 	   [c (if (may-unify c (car (attributed-vars g0))) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
 	   [s (if (succeed? c) s (remove-constraints s (attributed-vars g0)))]) ; If we are not applying the constraint, leave it in the store.
       (let-values ([(g^ s^) (simplify-constraint c (store-constraint s g0) gs succeed)])
 	(cond
-	 [(noto? g0) (values g^ s^)] ; This is not a disjunction, so just modify the state and proceed.
+	 [(noto? g) (values g^ s^)] ; This is not a disjunction, so just modify the state and proceed.
 	 [(succeed? g^) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
-	 [(fail? g^) (simplify-=/=-disj (disj-cdr g) s gs)] ; The head of the disjunction fails, so continue with other disjuncts.
+	 [(fail? g^) (if (disj? g) (simplify-=/=-disj (disj-cdr g) s gs) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 	 [else (values (normalized-disj* g^ (disj-cdr g)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
 
   (define (may-unify g v)
