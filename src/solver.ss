@@ -49,7 +49,7 @@
 		       (simplify-constraint conjs (store-constraint s not-g) succeed out)))
 	  ;(simplify-=/=-disj g s conjs out)
 	  
-	  (let-values ([(g^ s) (simplify-=/=-disj g s conjs out)])
+	  (let-values ([(g^ s) (simplify-=/=-disj (noto g) s conjs out)])
 	    (values (normalized-conj* out (noto g) g^) s))]
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
@@ -62,14 +62,14 @@
 
   (define (simplify-=/=-disj g s conjs out)
     (let* ([c (get-constraints s (attributed-vars g))]
-	   [not-g (noto g)]
+	   
 	   #;
 	   [out (normalized-conj* out not-g)])
       (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
 	  (simplify-constraint (conj* c conjs)
-			       (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+			       (store-constraint (remove-constraints s (attributed-vars g)) g)
 			       succeed succeed)
-	  (simplify-constraint conjs (store-constraint s not-g) succeed succeed)))
+	  (simplify-constraint conjs (store-constraint s g) succeed succeed)))
 
     #;
     (let* ([c (get-constraints s (attributed-vars g))]
@@ -88,7 +88,7 @@
     (cond 
      [(fail? g) (values fail failure)]
      [(zero? s-level) (values g s)]
-     [else ;TODO do we need to simplify disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct
+     [else ;TODO do we need to simplify disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct. in fact, that disjunct MUST unify if we are to care about it, so the == must be in the top level conjunction of the goal
       (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
