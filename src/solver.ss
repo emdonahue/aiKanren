@@ -88,11 +88,12 @@
     (cond 
      [(fail? g) (values fail failure)]
      [(zero? s-level) (values g s)]
-     [else ;TODO do we need to simplify disjs that dont contain any ==?
+     [else ;TODO do we need to simplify disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct
       (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
+	 [(disj? g0) (values (normalized-disj* g0 (disj-cdr g)) s)]
 	 [else ; At least one satisfiable disjunct
 	  (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
 	    (cond
