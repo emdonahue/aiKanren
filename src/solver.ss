@@ -61,25 +61,19 @@
 				 (normalized-conj* out not-g)))])))
 
   (define (simplify-=/=-disj g s conjs out)
-    (let* ([c (get-constraints s (attributed-vars g))]
-	   
-	   #;
-	   [out (normalized-conj* out not-g)])
-      (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
-	  (simplify-constraint (conj* c conjs)
-			       (store-constraint (remove-constraints s (attributed-vars g)) g)
-			       succeed succeed)
-	  (simplify-constraint conjs (store-constraint s g) succeed succeed)))
+    (let* ([c (get-constraints s (attributed-vars g))] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere
+	   [c (if (may-unify c (car (attributed-vars g))) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
+	   [s (if (succeed? c) s (remove-constraints s (attributed-vars g)))]) ; If we are not applying the constraint, leave it in the store.
+      (simplify-constraint (conj* c conjs) (store-constraint s g) succeed succeed)))
 
-    #;
-    (let* ([c (get-constraints s (attributed-vars g))]
-			[not-g (noto g)])
-		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
-		       (simplify-constraint (conj* c conjs)
-					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
-					    succeed succeed)
-		       (simplify-constraint conjs (store-constraint s not-g) succeed succeed))))
-
+  (define (may-unify g v)
+    ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
+    (cond
+     [(==? g) (or (equal? (==-lhs g) v))] ; Existing constraints are already normalized, so only lhs need be checked.
+     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
+     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
+     [else #f]))
+  
   (define (simplify-disj g s conjs s-level)
     ;; Test as many disjuncts as needed to satisfy the desired simplification-level, and leave the rest untouched
     ;; level 1 - only worry about failing if a unification violates a constraint.
@@ -108,13 +102,6 @@
 				 (values g (store-constraint s g)))]
 		     [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
 		     [else (values fail failure)])))
-  
-  (define (may-unify g v)
-    (cond
-     [(==? g) (or (equal? (==-lhs g) v) (equal? (==-rhs g) v))]
-     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
-     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-cdr g) v))]
-     [else #f]))
   
   (define (store-disjunctions g s)
     (assert (and (goal? g) (or (fail? g) (not (failure? s)))))

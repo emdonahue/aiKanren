@@ -1,4 +1,5 @@
-;;TODO test more efficient constraint stores. perhaps all constraint lookups receive pointers to a single store so that we can cheeply copy pointers to different attributed variables but only remove and apply the constraint once instead of copying the constraint and applying it many times 
+;;TODO perhaps all constraint lookups receive pointers to a single store so that we can cheeply copy pointers to different attributed variables but only remove and apply the constraint once instead of copying the constraint and applying it many times
+;;TODO == and =/= have different attributed variables, so each variable should store two lists. moreover, == are a superset of =/= so == list can just store the diff and then append them
 (library (store) ; Constraint store
   (export get-constraint add-constraint remove-constraint reify-constraint)
   (import (chezscheme) (datatypes))
