@@ -37,13 +37,17 @@
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (simplify-constraint conjs s succeed out)]
 	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
-			[not-g (noto g)]
-			[out (normalized-conj* not-g out)])
+			 [not-g (noto g)]
+			 [out (normalized-conj* out not-g)])
 		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
 		       (simplify-constraint (conj* c conjs)
 					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
 					    succeed out)
-		       (simplify-constraint conjs (store-constraint s not-g) succeed out)))]
+		       (simplify-constraint conjs (store-constraint s not-g) succeed out)))
+
+	  #;
+	  (let-values ([(g s) (simplify-=/=-disj g s conjs)]) ;
+	  (values (normalized-conj* out (noto g)) s))]
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
 	    (simplify-constraint conjs
@@ -52,6 +56,15 @@
 				  (normalized-disj* (disj-cdr not-g) (disj-car not-g)))
 				 succeed
 				 (normalized-conj* out not-g)))])))
+
+  (define (simplify-=/=-disj g s conjs)
+    (let* ([c (get-constraints s (attributed-vars g))]
+			[not-g (noto g)])
+		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
+		       (simplify-constraint (conj* c conjs)
+					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+					    succeed succeed)
+		       (simplify-constraint conjs (store-constraint s not-g) succeed succeed))))
 
   (define (simplify-disj g s conjs s-level)
     ;; Test as many disjuncts as needed to satisfy the desired simplification-level, and leave the rest untouched
@@ -62,7 +75,7 @@
      [(fail? g) (values fail failure)]
      [(zero? s-level) (values g s)]
      [else
-      (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
+      (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)]) ;TODO test whether we need to pass g0 as the conjunct in case we return simply
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
