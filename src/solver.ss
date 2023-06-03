@@ -54,27 +54,24 @@
 				 (normalized-conj* out not-g)))])))
 
   (define (simplify-disj g s conjs s-level)
-    (if (or (zero? s-level) (fail? g))
-	(values g s)
-	(let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
-	  (cond
-	   [(succeed? g0) (values succeed s)]
-	   [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)]
-	   [else ;TODO should we be threading out through or should we be stopping it here and conjing to entire disj?
-	    (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
-	      (cond
-	       [(succeed? g^) (values succeed s)]
-	       [(fail? g^) (values g0 s0)]
-	       [else (values (normalized-disj* g0 g^) s)]))
-	    #;
-	    (if (zero? s-level) ;TODO can we special case some disj to only save on one disjunct?
-		(values (normalized-disj* g0 (normalized-conj* (disj-cdr g) conjs)) s)
-		(parameterize ([simplification-level 0])
-		  (let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out)])
-		    (cond
-		     [(fail? g2) (values (normalized-conj* g0 out) s0)]
-		     [(eq? g2 out) (values out s0)]
-		     [else (values (normalized-disj* g0 g2) s)]))))]))))
+    ;; Test as many disjuncts as needed to satisfy the desired simplification-level, and leave the rest untouched
+    ;; level 1 - only worry about failing if a unification violates a constraint.
+    ;; level 2 - level 1 + if we can commit to a single branch and turn a constraint into a unification, do it.
+    ;; level -1 - simplify all disjuncts to lowest terms.
+    (cond
+     [(fail? g) (values fail failure)]
+     [(zero? s-level) (values g s)]
+     [else
+      (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
+	(cond
+	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
+	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
+	 [else ; At least one satisfiable disjunct
+	  (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
+	    (cond
+	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
+	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
+	     [else (values (normalized-disj* g0 g^) s)]))]))])) ; Return a new, simplified disjunction.
   
   (define (simplify-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
@@ -92,6 +89,7 @@
      [else #f]))
   
   (define (store-disjunctions g s)
+    (assert (and (goal? g) (not (fail? g))))
     ;; Because simplify-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (cond
      [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
