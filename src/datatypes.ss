@@ -141,12 +141,12 @@
   (define (normalize-conj cs)
     (cond
      [(null? cs) '()]
-     [(fail? (car cs)) fail]
-     [(succeed? (car cs)) (cdr cs)]
+     [(fail? (car cs)) fail]     
      [else
       (let ([rest (normalize-conj (cdr cs))])
 	(cond
 	 [(fail? rest) fail]
+	 [(succeed? (car cs)) rest]
 	 [(conj? (car cs)) (fold-right (lambda (c cs)
 					 (if (member c cs) cs (cons c cs)))
 				       rest (conj-conjuncts (car cs)))]
@@ -213,11 +213,11 @@
     (cond
      [(null? ds) '()]
      [(succeed? (car ds)) succeed]
-     [(fail? (car ds)) (cdr ds)]
      [else
       (let ([rest (normalize-disj (cdr ds))])
 	(cond
 	 [(succeed? rest) succeed]
+	 [(fail? (car ds)) rest]
 	 [(disj? (car ds)) (append (disj-disjuncts (car ds)) rest)]
 	 [else (cons (car ds) rest)]))]))
 

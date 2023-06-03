@@ -50,7 +50,7 @@
 	  ;(simplify-=/=-disj g s conjs out)
 	  
 	  (let-values ([(g^ s) (simplify-=/=-disj g s conjs out)])
-	    (values (normalized-conj* g^ (noto g)) s))]
+	    (values (normalized-conj* out (noto g) g^) s))]
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
 	    (simplify-constraint conjs
@@ -68,8 +68,8 @@
       (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
 	  (simplify-constraint (conj* c conjs)
 			       (store-constraint (remove-constraints s (attributed-vars g)) not-g)
-			       succeed out)
-	  (simplify-constraint conjs (store-constraint s not-g) succeed out)))
+			       succeed succeed)
+	  (simplify-constraint conjs (store-constraint s not-g) succeed succeed)))
 
     #;
     (let* ([c (get-constraints s (attributed-vars g))]
