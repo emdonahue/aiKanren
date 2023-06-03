@@ -5,15 +5,17 @@
   
   (define-syntax tassert
     (syntax-rules ()
-      [(_ title received expected)
+      [(_ title received! expected!)
        (with-exception-handler
 	(lambda (e) (printf "Exception in ~s~%" title)
 		(raise e))
 	(lambda ()
-	  (when (not (equal? expected received))
-	    (parameterize ([pretty-initial-indent 10]
-			   [pretty-standard-indent 0])
-	      (printf "Failed: ~s~%Expected: " title)
-	      (pretty-print expected)
-	      (printf "Received: ")
-	      (pretty-print received)))))])))
+	  (let ([expected expected!]
+		[received received!])
+	      (when (not (equal? expected received))
+	     (parameterize ([pretty-initial-indent 10]
+			    [pretty-standard-indent 0])
+	       (printf "Failed: ~s~%Expected: " title)
+	       (pretty-print expected)
+	       (printf "Received: ")
+	       (pretty-print received))))))])))
