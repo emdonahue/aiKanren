@@ -61,17 +61,15 @@
 				 (normalized-conj* out not-g)))])))
 
   (define (simplify-=/=-disj g s conjs out)
-    (let-values ([(g^ s) 
-		  (let* ([c (get-constraints s (attributed-vars g))]
-			 [not-g (noto g)]
-			 #;
-			 [out (normalized-conj* out not-g)])
-		    (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
-			(simplify-constraint (conj* c conjs)
-					     (store-constraint (remove-constraints s (attributed-vars g)) not-g)
-					     succeed out)
-			(simplify-constraint conjs (store-constraint s not-g) succeed out)))])
-      (values g^ s))
+    (let* ([c (get-constraints s (attributed-vars g))]
+	   [not-g (noto g)]
+	   #;
+	   [out (normalized-conj* out not-g)])
+      (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
+	  (simplify-constraint (conj* c conjs)
+			       (store-constraint (remove-constraints s (attributed-vars g)) not-g)
+			       succeed out)
+	  (simplify-constraint conjs (store-constraint s not-g) succeed out)))
 
     #;
     (let* ([c (get-constraints s (attributed-vars g))]
