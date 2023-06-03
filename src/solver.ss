@@ -89,7 +89,7 @@
      [else #f]))
   
   (define (store-disjunctions g s)
-    (assert (and (goal? g) (not (fail? g))))
+    (assert (and (goal? g) (or (fail? g) (not (failure? s)))))
     ;; Because simplify-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (cond
      [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
