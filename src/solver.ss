@@ -5,44 +5,44 @@
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
-    (call-with-values (lambda () (simplify-constraint g s succeed succeed 1)) store-disjunctions))
+    (call-with-values (lambda () (simplify-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (simplify-constraint g s conjs out mode)
+  (define (simplify-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
-    (assert (and (goal? g) (state? s) (goal? conjs) (number? mode))) ; -> goal? state-or-failure?
+    (assert (and (goal? g) (state? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
      [(fail? g) (values fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values out s) (simplify-constraint conjs s succeed out 1))]
-     [(==? g) (simplify-== g s conjs out mode)]
-     [(and (noto? g) (==? (noto-goal g))) (simplify-=/= g s conjs out mode)]
-     [(disj? g) (simplify-disj g s conjs out mode)]
-     [(conj? g) (simplify-constraint (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out 1)]
-     [(constraint? g) (simplify-constraint (constraint-goal g) s conjs out 1)]
-     [(guardo? g) (simplify-guardo g s conjs out 1)]
+     [(succeed? g) (if (succeed? conjs) (values out s) (simplify-constraint conjs s succeed out))]
+     [(==? g) (simplify-== g s conjs out)]
+     [(and (noto? g) (==? (noto-goal g))) (simplify-=/= g s conjs out)]
+     [(disj? g) (simplify-disj g s conjs out (simplification-level))]
+     [(conj? g) (simplify-constraint (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out)]
+     [(constraint? g) (simplify-constraint (constraint-goal g) s conjs out)]
+     [(guardo? g) (simplify-guardo g s conjs out)]
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
 
-  (define (simplify-== g s conjs out mode)
+  (define (simplify-== g s conjs out)
     (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
       (if (fail? g) (values fail failure)
 	  (simplify-constraint ; Run constraints attributed to all unified vars
 	   (conj* (get-constraints s (attributed-vars g)) conjs)
 	   (remove-constraints s (attributed-vars g))
-	   succeed (normalized-conj* out g) 1))))
+	   succeed (normalized-conj* out g)))))
   
-  (define (simplify-=/= g s conjs out mode)
-    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))])
+  (define (simplify-=/= g s conjs out)
+    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]) ;TODO disunification unifier can be small step: we only need to know 1 =/= succeeds before proceeding with search
 	(cond
 	 [(succeed? g) (values fail failure)]
-	 [(fail? g) (simplify-constraint conjs s succeed out 1)]
+	 [(fail? g) (simplify-constraint conjs s succeed out)]
 	 [(==? g) (let* ([c (get-constraints s (attributed-vars g))]
 			[not-g (noto g)]
 			[out (normalized-conj* not-g out)])
 		   (if (may-unify c (car (attributed-vars g))) ; Only fire constraints on the attributed var of the =/= if there is a chance they might try to unify it and thereby conflict with the =/= and possibly cancel a disjunct and arrive at a pure ==.
 		       (simplify-constraint (conj* c conjs)
 					    (store-constraint (remove-constraints s (attributed-vars g)) not-g)
-					    succeed out 1)
-		       (simplify-constraint conjs (store-constraint s not-g) succeed out  1)))]
+					    succeed out)
+		       (simplify-constraint conjs (store-constraint s not-g) succeed out)))]
 	 [else ; Disjunction of =/=. TODO disj of =/= this cancel if the vars are different?
 	  (let ([not-g (noto g)])
 	    (simplify-constraint conjs
@@ -50,28 +50,29 @@
 				  (store-constraint s not-g)
 				  (normalized-disj* (disj-cdr not-g) (disj-car not-g)))
 				 succeed
-				 (normalized-conj* out not-g) 1))])))
+				 (normalized-conj* out not-g)))])))
 
-  (define (simplify-disj g s conjs out mode)
-    (let-values ([(g^ s^) (simplify-constraint (disj-car g) s conjs out 1)])
+  (define (simplify-disj g s conjs out s-level)
+    (let-values ([(g^ s^) (simplify-constraint (disj-car g) s conjs out)])
 		  (cond
 		   [(eq? g^ out) (values out s)]
-		   [(fail? g^) (simplify-constraint (disj-cdr g) s conjs out mode)]
+		   [(fail? g^) (simplify-constraint (disj-cdr g) s conjs out)]
 		   [else
-		    (if (zero? mode) ;TODO can we special case some disj to only save on one disjunct?
+		    (if (zero? s-level) ;TODO can we special case some disj to only save on one disjunct?
 			(values (normalized-disj* g^ (normalized-conj* (disj-cdr g) conjs)) s)
-			(let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out 0)])
-			  (cond
-			   [(fail? g2) (values (normalized-conj* g^ out) s^)]
-			   [(succeed? g2) (values out s^)]
-			   [else (values (normalized-disj* g^ g2) s)])))])))
+			(parameterize ([simplification-level 0])
+			 (let-values ([(g2 s2) (simplify-constraint (disj-cdr g) s conjs out)])
+			   (cond
+			    [(fail? g2) (values (normalized-conj* g^ out) s^)]
+			    [(succeed? g2) (values out s^)]
+			    [else (values (normalized-disj* g^ g2) s)]))))])))
   
-  (define (simplify-guardo g s conjs out mode)
+  (define (simplify-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
 		    (cond
 		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
 				 (values g (store-constraint s g)))]
-		     [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out 1)]
+		     [(pair? v) (simplify-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
 		     [else (values fail failure)])))
   
   (define (may-unify g v)

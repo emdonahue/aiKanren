@@ -1,6 +1,7 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export make-runner set-runner-stream runner? runner-stream runner-query runner-package
+  (export simplification-level
+	  make-runner set-runner-stream runner? runner-stream runner-query runner-package
 	  package? empty-package
 	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
@@ -13,6 +14,9 @@
 	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
+  ;; === RUNTIME PARAMETERS ===
+  (define simplification-level (make-parameter 2))
+  
   ;; === RUNNER ===
   (define-structure (runner stream query package))
   
