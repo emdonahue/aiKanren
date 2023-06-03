@@ -42,16 +42,16 @@
 
   (define (simplify-=/=* g s gs)
     (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
-    (let* ([g0 (disj-car g)]
-	   [c (get-constraints s (attributed-vars g0))] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere
-	   [c (if (may-unify c (car (attributed-vars g0))) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
-	   [s (if (succeed? c) s (remove-constraints s (attributed-vars g0)))]) ; If we are not applying the constraint, leave it in the store.
-      (let-values ([(g^ s^) (simplify-constraint c (store-constraint s g0) gs succeed)])
+    (let* ([a-vars (attributed-vars (disj-car g))]
+	   [c (get-constraints s a-vars)] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere
+	   [c (if (may-unify c (car a-vars)) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
+	   [s (if (succeed? c) s (remove-constraints s a-vars))]) ; If we are not applying the constraint, leave it in the store.
+      (let-values ([(g0 s0) (simplify-constraint c (store-constraint s (disj-car g)) gs succeed)])
 	(cond
-	 [(noto? g) (values g^ s^)] ; This is not a disjunction, so just modify the state and proceed.
-	 [(succeed? g^) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
-	 [(fail? g^) (if (disj? g) (simplify-=/=* (disj-cdr g) s gs) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-	 [else (values (normalized-disj* g^ (disj-cdr g)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
+	 [(noto? g) (values g0 s0)] ; This is not a disjunction, so just modify the state and proceed.
+	 [(succeed? g0) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
+	 [(fail? g0) (if (disj? g) (simplify-=/=* (disj-cdr g) s gs) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+	 [else (values (normalized-disj* g0 (disj-cdr g)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
 
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
