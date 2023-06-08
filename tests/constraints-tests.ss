@@ -3,19 +3,15 @@
   (export run-constraints-tests)
   (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state) (goals) (values) (sbral))
 
+  (define (forever x)
+    (fresh (y) (forever x)))
+  
   (define (run-constraints-tests)
     (define x1 (make-var 1))
     (define x2 (make-var 2))
     (define x3 (make-var 3))
     (define x4 (make-var 4))
     (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
-
-    (define ones
-      (lambda (v)
-	(constrain
-	 (fresh (a d)
-	   (== v (cons a d))
-	   (disj* (== a 1) (ones d))))))
 
     ;; === CON/DISJUNCTION ===
     
@@ -24,9 +20,7 @@
     (tassert "conj compress succeed" (conj succeed succeed) succeed)
     (tassert "conj single goals" (conj* (== 1 1)) (== 1 1))
     (tassert "conj keep normal goals" (conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
-    ;(tassert "conj remove duplicates" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1)))
-    ;(tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
-    ;(tassert "conj remove duplicate conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 2 2) (== 3 3))) (conj* (== 1 1) (== 2 2) (== 3 3)))
+    (tassert "conj avoids divergence" (run1 (x1) (forever x1) (== 1 2)) (void))
 
     (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
     (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)

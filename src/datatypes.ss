@@ -128,6 +128,7 @@
      [(or (fail? lhs) (fail? rhs)) fail]
      [(succeed? lhs) rhs]
      [(succeed? rhs) lhs]
+     [(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)]
      [else (make-conj lhs rhs)]))
   
   (define (conj* . conjs)
