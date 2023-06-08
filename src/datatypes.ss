@@ -131,7 +131,7 @@
      [else (make-conj lhs rhs)]))
   
   (define (conj* . conjs)
-    (fold-right (lambda (cs c) (conj c cs)) succeed conjs))
+    (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
 
   (define (normalized-conj c)
     (assert #f)
@@ -203,7 +203,7 @@
 		   (p s (conj-lhs cs)))])
       (if (conj? (conj-rhs cs))
 	  (conj-fold p lhs (conj-rhs cs))
-	  (p s (conj-rhs cs)))))
+	  (p lhs (conj-rhs cs)))))
   
   (define (disj disjuncts)
     (assert (list? disjuncts))

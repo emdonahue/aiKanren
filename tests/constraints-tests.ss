@@ -87,7 +87,6 @@
 	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
 		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
 
-    (exit)
     
     ;; === SIMPLIFICATION ===
 
