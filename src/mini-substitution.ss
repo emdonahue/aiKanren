@@ -27,7 +27,7 @@
 	  (if (failure? s)
 	      (values failure fail)
 	      (let-values ([(s cdr-extensions) (mini-unify s (cdr x) (cdr y))])
-		(values s (normalized-conj* car-extensions cdr-extensions)))))] ; TODO make unifier normalize?
+		(values s (conj car-extensions cdr-extensions)))))]
        [else (values failure fail)])))
 
   (define (mini-constraint-check s g)

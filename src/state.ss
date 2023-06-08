@@ -46,7 +46,7 @@
 	  (if (failure? s)
 	      (values fail failure)
 	      (let-values ([(cdr-extensions s) (unify s (cdr x) (cdr y))])
-		(values (normalized-conj* car-extensions cdr-extensions) s))))] ; TODO make unifier normalize?
+		(values (conj car-extensions cdr-extensions) s))))] ; TODO make unifier normalize?
        [else (values fail failure)])))
   
   (define (extend s x y)
@@ -66,7 +66,7 @@
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
   (define (get-constraints s vs)
-    (fold-left normalized-conj* succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
+    (fold-left conj succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
 
   (define (remove-constraints s vs)
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))

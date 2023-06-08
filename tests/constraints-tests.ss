@@ -19,11 +19,11 @@
 
     ;; === CON/DISJUNCTION ===
     
-    (tassert "conj fail first" (normalized-conj* fail succeed) fail)
-    (tassert "conj fail rest" (normalized-conj* succeed fail) fail)
-    (tassert "conj compress succeed" (normalized-conj* succeed succeed) succeed)
-    (tassert "conj single goals" (normalized-conj* (== 1 1)) (== 1 1))
-    (tassert "conj keep normal goals" (normalized-conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
+    (tassert "conj fail first" (conj fail succeed) fail)
+    (tassert "conj fail rest" (conj succeed fail) fail)
+    (tassert "conj compress succeed" (conj succeed succeed) succeed)
+    (tassert "conj single goals" (conj* (== 1 1)) (== 1 1))
+    (tassert "conj keep normal goals" (conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
     ;(tassert "conj remove duplicates" (normalized-conj* (== 1 1) succeed (== 1 1)) (conj* (== 1 1)))
     ;(tassert "conj append conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 3 3) (== 4 4))) (conj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
     ;(tassert "conj remove duplicate conjs" (normalized-conj* (conj* (== 1 1) (== 2 2)) (conj* (== 2 2) (== 3 3))) (conj* (== 1 1) (== 2 2) (== 3 3)))

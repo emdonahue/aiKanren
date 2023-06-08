@@ -11,7 +11,7 @@
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  empty-substitution
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? conj conj-lhs conj-rhs conj* conj-fold normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? conj conj-lhs conj-rhs conj* conj-fold conj? conj-car conj-cdr == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -132,61 +132,6 @@
   
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
-
-  (define (normalized-conj c)
-    (assert #f)
-    (let ([c (normalize-conj c)])
-      (if (fail? c) fail (conj c c))))
-
-  (define (conj-conjuncts x)
-    (assert #f) x)
-  (define (normalize-conj cs)
-    (assert #f)
-    (cond
-     [(null? cs) '()]
-     [(fail? (car cs)) fail]     
-     [else
-      (let ([rest (normalize-conj (cdr cs))])
-	(cond
-	 [(fail? rest) fail]
-	 [(succeed? (car cs)) rest]
-	 [(conj? (car cs)) (fold-right (lambda (c cs)
-					 (if (member c cs) cs (cons c cs)))
-				       rest (conj-conjuncts (car cs)))]
-	 [(disj? (car cs))
-	  (if (member (car cs) rest) rest
-	      (let-values ([(ds prims) (partition disj? rest)])
-			     (append prims (list (car cs)) ds)))]
-	 [else (if (member (car cs) rest) rest
-		   (cons (car cs) rest))]))]))
-
-  (define normalized-conj* conj*)
-  #;
-  (define (normalized-conj* . conjuncts)
-    (normalized-conj conjuncts))
-
-  (define (cartesian-product ls)
-    (fold-right
-     (lambda (a b) 
-       (apply append
-	      (map (lambda (x)
-		     (map (lambda (y)
-			    (list x y)) (cadr ls)))
-		   (car ls)))) '() ls))
-  
-  
-  (define (conjunctive-normal-form g)
-    (assert (goal? g))
-    (cond
-      [(conj? g) (normalized-conj (map conjunctive-normal-form (conj-conjuncts g)))]
-      [(disj? g) (normalized-conj
-		  (map normalized-disj
-		       (cartesian-product
-			(map (lambda (g) (if (conj? g) (conj-conjuncts g) (list g)))
-			     (disj-disjuncts g)))))]
-      [else g]
-      )
-    )
   
   (define (conj-car c)
     (assert (conj? c))

@@ -16,8 +16,8 @@
      [(==? g) (solve-== g s conjs out)]
      [(and (noto? g) (==? (noto-goal g))) (solve-=/= g s conjs out)]
      [(disj? g) (let-values ([(g s) (solve-disj g s conjs (simplification-level))])
-		  (values (normalized-conj* out g) s))]
-     [(conj? g) (solve-constraint (conj-car g) s (normalized-conj* (conj-cdr g) conjs) out)]
+		  (values (conj out g) s))]
+     [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
@@ -30,7 +30,7 @@
 	  (solve-constraint ; Run constraints attributed to all unified vars
 	   (conj* (get-constraints s (attributed-vars g)) gs)
 	   (remove-constraints s (attributed-vars g))
-	   succeed (normalized-conj* out g)))))
+	   succeed (conj out g)))))
   
   (define (solve-=/= g s conjs out)
     (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
@@ -47,7 +47,7 @@
 
 	  
 	  (let-values ([(g^ s) (solve-=/=* (noto g) s conjs)]) ;
-	    (values (normalized-conj* out (noto g) g^) s))])))
+	    (values (conj* out (noto g) g^) s))])))
 
   (define (solve-=/=* g s gs)
     (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
@@ -60,7 +60,7 @@
 	 [(noto? g) (values g0 s0)] ; This is not a disjunction, so just modify the state and proceed.
 	 [(succeed? g0) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
 	 [(fail? g0) (if (disj? g) (solve-=/=* (disj-cdr g) s gs) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-	 [else (values (normalized-disj* g0 (normalized-conj* (disj-cdr g) gs)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
+	 [else (values (normalized-disj* g0 (conj (disj-cdr g) gs)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
 
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
@@ -85,14 +85,14 @@
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (solve-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
-	 [(disj? g0) (values (normalized-disj* g0 (normalized-conj* (disj-cdr g) conjs)) s)]
+	 [(disj? g0) (values (normalized-disj* g0 (conj (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
 	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (- s-level 1))])
 	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%" g0 g g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
-	     [else (values (normalized-disj* g0 g^ (normalized-conj* (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
+	     [else (values (normalized-disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
   
   (define (solve-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
