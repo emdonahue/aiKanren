@@ -19,15 +19,15 @@
  (define-syntax runner
     (syntax-rules ()
       [(_ () g ...)
-       (top-level-runner empty-state '() g ...)]
+       (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q) g ...)
        (fresh-vars
 	empty-state start-state (q)
-	(top-level-runner start-state q g ...))]
+	(top-level-runner start-state q (conj* g ...)))]
       [(_ (q0 q ...) g ...)
        (fresh-vars
 	empty-state start-state (q0 q ...)
-	(top-level-runner start-state (list q0 q ...) g ...))]))
+	(top-level-runner start-state (list q0 q ...) (conj* g ...)))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -77,5 +77,5 @@
        (let-values ([(q0 intermediate-state) (instantiate-var start-state)])
 	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
 
-    (define (top-level-runner state query . conjuncts)
-      (make-runner (make-bind (conj conjuncts) state) query empty-package)))
+    (define (top-level-runner state query conjuncts)
+      (make-runner (make-bind conjuncts state) query empty-package)))

@@ -11,7 +11,7 @@
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  empty-substitution
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? make-conj conj conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? conj conj-lhs conj-rhs conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -111,7 +111,7 @@
 
   ;; === GOALS ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
-  (define-structure (conj conjuncts))
+  (define-structure (conj lhs rhs))
   (define-structure (disj disjuncts))
   (define-structure (noto goal)) ; Negated goal
 
@@ -122,23 +122,26 @@
   (define (goal? g)
     (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g)))
 
-  (define (conj conjuncts)
-    (assert (list? conjuncts))
-    ;;TODO move failures to the front so they run first, but do not fail immediately in case we need to negate
-    ;;TODO append subconjuncts into a flat list
+  (define (conj lhs rhs)
+    (assert (and (goal? lhs) (goal? rhs)))
     (cond
-     [(null? conjuncts) succeed]
-     [(null? (cdr conjuncts)) (car conjuncts)]
-     [else (make-conj conjuncts)]))
+     [(or (fail? lhs) (fail? rhs)) fail]
+     [(succeed? lhs) rhs]
+     [(succeed? rhs) lhs]
+     [else (make-conj lhs rhs)]))
   
   (define (conj* . conjs)
-    (conj conjs))
+    (fold-right (lambda (cs c) (conj c cs)) succeed conjs))
 
   (define (normalized-conj c)
+    (assert #f)
     (let ([c (normalize-conj c)])
-      (if (fail? c) fail (conj c))))
-  
+      (if (fail? c) fail (conj c c))))
+
+  (define (conj-conjuncts x)
+    (assert #f) x)
   (define (normalize-conj cs)
+    (assert #f)
     (cond
      [(null? cs) '()]
      [(fail? (car cs)) fail]     
@@ -157,6 +160,8 @@
 	 [else (if (member (car cs) rest) rest
 		   (cons (car cs) rest))]))]))
 
+  (define normalized-conj* conj*)
+  #;
   (define (normalized-conj* . conjuncts)
     (normalized-conj conjuncts))
 
@@ -185,11 +190,11 @@
   
   (define (conj-car c)
     (assert (conj? c))
-    (car (conj-conjuncts c)))
+    (if (conj? (conj-lhs c)) (conj-car (conj-lhs c)) (conj-lhs c)))
 
   (define (conj-cdr c)
     (assert (conj? c))
-    (conj (cdr (conj-conjuncts c))))
+    (if (conj? (conj-lhs c)) (conj (conj-cdr (conj-lhs c)) (conj-rhs c)) (conj-rhs c)))
 
   (define (disj disjuncts)
     (assert (list? disjuncts))
