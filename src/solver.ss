@@ -87,12 +87,12 @@
 	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
 	 [(disj? g0) (values (normalized-disj* g0 (normalized-conj* (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
-	  (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
+	  (let-values ([(g^ s^) (simplify-disj (disj-car (disj-cdr g)) s conjs (- s-level 1))])
 	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%" g0 g g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
-	     [else (values (normalized-disj* g0 g^) s)]))]))])) ; Return a new, simplified disjunction.
+	     [else (values (normalized-disj* g0 g^ (normalized-conj* (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
   
   (define (simplify-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
