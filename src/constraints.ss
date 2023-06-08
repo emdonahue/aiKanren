@@ -8,6 +8,15 @@
        [(== v #t)]
        [(== v #f)])))
 
+  #;
+  (define (listo l)
+    (constrain
+     (conde
+       [(== l '())]
+       [(fresh (a d)
+	  (== l (cons a d))
+	  (listo d))])))
+
   (define (listo l)
     (constrain
      (conde

@@ -23,22 +23,31 @@
      [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
 
-  (define (simplify-== g s conjs out)
+  (define (simplify-== g s gs out)
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
       (if (fail? g) (values fail failure)
 	  (simplify-constraint ; Run constraints attributed to all unified vars
-	   (conj* (get-constraints s (attributed-vars g)) conjs)
+	   (conj* (get-constraints s (attributed-vars g)) gs)
 	   (remove-constraints s (attributed-vars g))
 	   succeed (normalized-conj* out g)))))
   
   (define (simplify-=/= g s conjs out)
-    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]) ;TODO disunification unifier can be small step: we only need to know 1 =/= succeeds before proceeding with search
+    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
 	(cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (simplify-constraint conjs s succeed out)]
-	 [else (let-values ([(g^ s) (simplify-=/=* (noto g) s conjs)])
-		    (values (normalized-conj* out (noto g) g^) s))])))
+	 [else
+	  #;
+	  (simplify-constraint ; Run constraints attributed to all unified vars
+	   (conj* (get-constraints s (attributed-vars (noto g))) conjs)
+	   (store-constraint (remove-constraints s (attributed-vars (noto g))) g)
+	   succeed out)
+
+
+	  
+	  (let-values ([(g^ s) (simplify-=/=* (noto g) s conjs)]) ;
+	    (values (normalized-conj* out (noto g) g^) s))])))
 
   (define (simplify-=/=* g s gs)
     (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
@@ -66,17 +75,20 @@
     ;; level 1 - only worry about failing if a unification violates a constraint.
     ;; level 2 - level 1 + if we can commit to a single branch and turn a constraint into a unification, do it.
     ;; level -1 - simplify all disjuncts to lowest terms.
+    ;;TODO if we maintain a list of all simplified == and =/= seen in each simplified disjunct, we can keep consuming disjuncts until the list of those that have appeared in each case is empty. if we get to the end and some still appear in that case, we'll want to factor them out of the disj and apply them to the state. as an optimization, if the list of values in any state is already exactly that list, we can just reuse that state instead of reapplying them to the blank state
     (cond 
      [(fail? g) (values fail failure)]
      [(zero? s-level) (values g s)]
      [else ;TODO do we need to simplify disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct. in fact, that disjunct MUST unify if we are to care about it, so the == must be in the top level conjunction of the goal
       (let-values ([(g0 s0) (simplify-constraint (disj-car g) s conjs succeed)])
+	;(printf "1HEAD: ~s~%1ORIG: ~s~%" g0 g)
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (simplify-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
-	 [(disj? g0) (values (normalized-disj* g0 (disj-cdr g)) s)]
+	 [(disj? g0) (values (normalized-disj* g0 (normalized-conj* (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
 	  (let-values ([(g^ s^) (simplify-disj (disj-cdr g) s conjs (- s-level 1))])
+	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%" g0 g g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
