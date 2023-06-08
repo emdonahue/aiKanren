@@ -137,13 +137,13 @@
     (assert (goal? g))
     (cond
      [(succeed? g) '()]
-     [(disj? g) (attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
-     [(conj? g) (apply append (map attributed-vars (conj-conjuncts g)))]
-     [(noto? g) (attributed-vars (noto-goal g))]
+     [(disj? g) (non-unique-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+     [(conj? g) (conj-fold (lambda (vs c) (append (non-unique-attributed-vars c) vs)) '() g)]
+     [(noto? g) (non-unique-attributed-vars (noto-goal g))]
      [(==? g) (assert (var? (==-lhs g))) (list (==-lhs g))]
      [(pconstraint? g) (pconstraint-vars g)]
      [(guardo? g) (list (guardo-var g))]
-     [(constraint? g) (attributed-vars (constraint-goal g))]
+     [(constraint? g) (non-unique-attributed-vars (constraint-goal g))]
      [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)]))
   
 )

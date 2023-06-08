@@ -11,7 +11,7 @@
 	  failure failure? guarded? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  empty-substitution
-	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? conj conj-lhs conj-rhs conj* normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
+	  make-== ==? ==-lhs ==-rhs disj make-disj disj* normalized-disj normalized-disj* disj? disj-car disj-cdr disj-disjuncts goal? fresh? conj conj-lhs conj-rhs conj* conj-fold normalized-conj normalized-conj* conjunctive-normal-form conj? conj-car conj-cdr conj-conjuncts == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -196,6 +196,15 @@
     (assert (conj? c))
     (if (conj? (conj-lhs c)) (conj (conj-cdr (conj-lhs c)) (conj-rhs c)) (conj-rhs c)))
 
+  (define (conj-fold p s cs)
+    (assert (and (procedure? p) (conj? cs)))
+    (let ([lhs (if (conj? (conj-lhs cs))
+		   (conj-fold p s (conj-lhs cs))
+		   (p s (conj-lhs cs)))])
+      (if (conj? (conj-rhs cs))
+	  (conj-fold p lhs (conj-rhs cs))
+	  (p s (conj-rhs cs)))))
+  
   (define (disj disjuncts)
     (assert (list? disjuncts))
     ;;TODO move successes to front of disj so they turn into failures if negated
