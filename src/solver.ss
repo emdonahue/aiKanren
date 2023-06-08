@@ -132,7 +132,8 @@
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (fold-right (lambda (v vs) (if (memq v vs) vs (cons v vs))) '() (non-unique-attributed-vars g)))
   
-  (define (non-unique-attributed-vars g)    
+  (define (non-unique-attributed-vars g)
+    ;; TODO thread attrvars list through all constraints monadically to pick up vars with cons
     ;; TODO optimize which constraint we pick to minimize free vars
     (assert (goal? g))
     (cond

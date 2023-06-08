@@ -1,6 +1,6 @@
 #!/usr/bin/env -S scheme --libdirs src:tests:. --script
 
-(import (chezscheme) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests))
+(import (chezscheme) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests))
 
 (run-sbral-tests)
 (run-mini-substitution-tests)
@@ -8,5 +8,6 @@
 (run-runner-tests)
 (run-negation-tests)
 (run-constraints-tests)
+(run-listo-tests)
 
 (display "Testing Complete\n")

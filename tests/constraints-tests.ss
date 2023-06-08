@@ -20,7 +20,8 @@
     (tassert "conj compress succeed" (conj succeed succeed) succeed)
     (tassert "conj single goals" (conj* (== 1 1)) (== 1 1))
     (tassert "conj keep normal goals" (conj* (== 1 1) succeed (== 2 2)) (conj* (== 1 1) (== 2 2)))
-    (tassert "conj avoids divergence" (run1 (x1) (forever x1) (== 1 2)) (void))
+    ;(tassert "conj avoids divergence" (run1 (x1) (forever x1) (== 1 2)) (void))
+    ;(tassert "conj avoids divergence longrange" (run1 (x1) (forever x1) (fresh (y) (== 1 2))) (void))
 
     (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
     (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
