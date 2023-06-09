@@ -11,10 +11,10 @@
    (syntax-rules ()
      [(_ () g ...) (conj* g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
      [(_ (q ...) g ...)
-      (lambda (start-state p)
+      (lambda (state p)
 	(fresh-vars
-	 start-state end-state (q ...)
-	 (values (fresh () g ...) end-state p)))]))
+	 (state-varid state) varid (q ...)
+	 (values (fresh () g ...) (set-state-varid state varid) p)))]))
 
  (define-syntax runner
     (syntax-rules ()
@@ -22,12 +22,12 @@
        (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q) g ...)
        (fresh-vars
-	empty-state start-state (q)
-	(top-level-runner start-state q (conj* g ...)))]
+	(state-varid empty-state) varid (q)
+	(top-level-runner (set-state-varid empty-state varid) q (conj* g ...)))]
       [(_ (q0 q ...) g ...)
        (fresh-vars
-	empty-state start-state (q0 q ...)
-	(top-level-runner start-state (list q0 q ...) (conj* g ...)))]))
+	(state-varid empty-state) varid (q0 q ...)
+	(top-level-runner (set-state-varid empty-state varid) (list q0 q ...) (conj* g ...)))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -70,12 +70,14 @@
 
     (define-syntax fresh-vars
     (syntax-rules ()
-      [(_ start-state end-state (q) body ...)
-       (let-values ([(q end-state) (instantiate-var start-state)])
+      [(_ start-varid end-varid (q) body ...)
+       (let ([q (make-var start-varid)]
+		    [end-varid (fx1+ start-varid)])
 	 body ...)]
-      [(_ start-state end-state (q0 q ...) body ...)
-       (let-values ([(q0 intermediate-state) (instantiate-var start-state)])
-	 (fresh-vars intermediate-state end-state (q ...) body ...))]))
+      [(_ start-varid end-varid (q0 q ...) body ...)
+       (let ([q0 (make-var start-varid)]
+	     [intermediate-varid (fx1+ start-varid)])
+	 (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
 
     (define (top-level-runner state query conjuncts)
       (make-runner (make-bind conjuncts state) query empty-package)))
