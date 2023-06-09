@@ -138,9 +138,13 @@
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   
-  (define conj-car conj-lhs)
+  (define (conj-car c)
+    (assert (conj? c))
+    (conj-lhs c))
   
-  (define conj-cdr conj-rhs)
+  (define (conj-cdr c)
+    (assert (conj? c))
+    (conj-rhs c))
   
   (define (conj-fold p s cs) ;TODO is conj-fold ever used?
     (assert (and (procedure? p) (conj? cs)))
