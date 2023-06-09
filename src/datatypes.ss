@@ -128,25 +128,16 @@
     (assert (and (goal? lhs) (goal? rhs)))
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]
-     [(succeed? lhs) rhs]
      [(succeed? rhs) lhs]
+     [(succeed? lhs) rhs]
      ;[(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)]
      [else (make-conj lhs rhs)]))
   
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   
-  (define (conj-car c)
-    (assert (conj? c))
-    (conj-lhs c)
-    #;
-    (if (conj? (conj-lhs c)) (conj-car (conj-lhs c)) (conj-lhs c)))
-
-  (define (conj-cdr c)
-    (assert (conj? c))
-    (conj-rhs c)
-    #;
-    (if (conj? (conj-lhs c)) (conj (conj-cdr (conj-lhs c)) (conj-rhs c)) (conj-rhs c)))
+  (define conj-car conj-lhs)
+  (define conj-cdr conj-rhs)
 
   (define (conj-fold p s cs)
     (assert (and (procedure? p) (conj? cs)))
