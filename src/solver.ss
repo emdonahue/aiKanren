@@ -60,7 +60,7 @@
 	 [(noto? g) (values g0 s0)] ; This is not a disjunction, so just modify the state and proceed.
 	 [(succeed? g0) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
 	 [(fail? g0) (if (disj? g) (solve-=/=* (disj-cdr g) s gs) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-	 [else (values (normalized-disj* g0 (conj (disj-cdr g) gs)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
+	 [else (values (disj g0 (conj (disj-cdr g) gs)) s)])))) ; The head is simplified, and since pure =/= can only fail but not collapse, return as is with 1 level of simplification.
 
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
@@ -85,14 +85,14 @@
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (solve-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
-	 [(disj? g0) (values (normalized-disj* g0 (conj (disj-cdr g) conjs)) s)]
+	 [(disj? g0) (values (disj g0 (conj (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
 	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (- s-level 1))])
 	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%" g0 g g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
-	     [else (values (normalized-disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
+	     [else (values (disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
   
   (define (solve-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
@@ -125,16 +125,15 @@
     ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
     (let ([rest (disj-cdr ds)])
       (if (disj? rest)
-	  (normalized-disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
-	  (normalized-disj* rest (disj-car ds)))))
+	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
+	  (disj rest (disj-car ds)))))
   
   (define (attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (_attributed-vars g '()))
   
   (define (_attributed-vars g vs)
-    ;; TODO thread attrvars list through all constraints monadically to pick up vars with cons
-    ;; TODO optimize which constraint we pick to minimize free vars
+    ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
     (assert (goal? g))
     (cond
      [(succeed? g) vs]

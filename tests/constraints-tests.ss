@@ -23,12 +23,12 @@
     ;(tassert "conj avoids divergence" (run1 (x1) (forever x1) (== 1 2)) (void))
     ;(tassert "conj avoids divergence longrange" (run1 (x1) (forever x1) (fresh (y) (== 1 2))) (void))
 
-    (tassert "disj succeed first" (normalized-disj* succeed fail) succeed)
-    (tassert "disj succeed rest" (normalized-disj* fail succeed) succeed)
-    (tassert "disj compress fail" (normalized-disj* fail fail) fail)
-    (tassert "disj single goals" (normalized-disj* (== 1 1)) (== 1 1))
-    (tassert "disj keep normal goals" (normalized-disj* (== 1 1) fail (== 1 1)) (disj* (== 1 1) (== 1 1)))
-    (tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
+    (tassert "disj succeed first" (disj succeed fail) succeed)
+    (tassert "disj succeed rest" (disj fail succeed) succeed)
+    (tassert "disj compress fail" (disj fail fail) fail)
+    (tassert "disj single goals" (disj* (== 1 1)) (== 1 1))
+    (tassert "disj keep normal goals" (disj* (== 1 1) fail (== 1 1)) (disj (== 1 1) (== 1 1)))
+    ;(tassert "disj append disjs" (normalized-disj* (disj* (== 1 1) (== 2 2)) (disj* (== 3 3) (== 4 4))) (disj* (== 1 1) (== 2 2) (== 3 3) (== 4 4)))
 
     #;
     (begin
@@ -321,8 +321,7 @@
       (tassert "presento unbound term"
 	       s
 	       (disj* (== x1 1)		; car is not 1
-		      (cadr		; car is not recursive pair
-		       (disj-disjuncts s)))))
+		      (disj-car (disj-cdr s)))))
     #;
     (let* ([c (presento (cons x1 2) 1)]	; ; ;
     [s (run1 (x1) c )])			; ; ;
