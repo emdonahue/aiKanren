@@ -9,7 +9,7 @@
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure clear-state-constraints
 	  guardo? make-guardo guardo-var guardo-procedure guardo
-	  failure failure? guarded? answer? state-or-failure?
+	  failure failure? answer? state-or-failure?
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  empty-substitution
 	  make-== ==? ==-lhs ==-rhs goal? fresh?
@@ -39,42 +39,44 @@
   (define var-equal? equal?)
   
   ;; === STREAMS ===
-  (define failure '())
-  (define failure? null?)
+  (define failure '(failure))
+  (define (failure? s) (eq? s failure))
+  
   (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
   (define-structure (answers car cdr))
   
   (define (stream? s)
-    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (guarded? s) (answers? s)))
+    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (answers? s)))
   
-  ;; === GOALS ===
-  
+  ;; === GOALS ===  
   (define-values (succeed fail) (values '(succeed) '(fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
 
     ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
-  (define-structure (constraint goal))
-  (define-structure (pconstraint vars procedure))
-  (define (pconstraint vars procedure)
-    (make-pconstraint (if (list? vars) vars (list vars)) procedure))
   (define empty-constraint-store (make-constraint-store '()))
+
+  (define-structure (constraint goal))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
-
+  
+  (define-structure (pconstraint vars procedure))
+  (define (pconstraint vars procedure)
+    (make-pconstraint (if (list? vars) vars (list vars)) procedure))
+  
   (define-structure (guardo var procedure))
   (define guardo make-guardo)
 
-    ;; === SUBSTITUTION ===
+  ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
   
   ;; === STATE ===
-  (define-structure (state substitution constraints guards pseudocounts varid))
-  (define empty-state (make-state empty-substitution empty-constraint-store '() #f 1))
+  (define-structure (state substitution constraints pseudocounts varid))
+  (define empty-state (make-state empty-substitution empty-constraint-store #f 1))
 
   (define (set-state-substitution s substitution)
     (if (not (failure? substitution))
@@ -108,11 +110,7 @@
 
   ;; === STREAMS ===
 
-  (define (answer? s)
-    (and (state? s) (null? (state-guards s))))
-  
-  (define (guarded? s)
-    (and (state? s) (not (null? (state-guards s)))))
+  (define answer? state?)
 
   ;; === GOALS ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
