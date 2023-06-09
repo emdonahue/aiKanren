@@ -8,6 +8,7 @@
   ;; === VARIABLES ===
   
   (define (reify s v)
+    ;;TODO support cyclic terms in reifier
     (cond
      [(pair? v) (cons (reify s (car v)) (reify s (cdr v)))]
      [(var? v)
