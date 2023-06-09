@@ -1,22 +1,28 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
   (export simplification-level
-	  make-runner set-runner-stream runner? runner-stream runner-query runner-package
+	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
-	  make-==  make-bind  stream?  bind? bind-goal bind-stream
-	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
-	  succeed fail succeed? fail?
-	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure clear-state-constraints
-	  guardo? make-guardo guardo-var guardo-procedure guardo
-	  failure failure? answer? state-or-failure?
-	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
-	  empty-substitution
-	  make-== ==? ==-lhs ==-rhs goal? fresh?
-	  == make-noto noto? noto-goal
+	  stream?
+	  failure failure?
+	  make-bind bind? bind-goal bind-stream
+	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-answers answers? answers-car answers-cdr
+	  answer? state-or-failure?
+	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var
+	  empty-substitution
+	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
+	  make-constraint constraint? constraint-goal set-constraint-goal
+	  goal?
+	  succeed fail succeed? fail?
+	  == ==? ==-lhs ==-rhs
+	  fresh?
 	  conj conj? conj-car conj-cdr conj* conj-fold
-	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs)
+	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
+	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
+	  guardo? make-guardo guardo-var guardo-procedure guardo
+	  make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -37,22 +43,6 @@
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
   (define var-equal? equal?)
-  
-  ;; === STREAMS ===
-  (define failure '(failure))
-  (define (failure? s) (eq? s failure))
-  
-  (define-structure (mplus lhs rhs))
-  (define-structure (bind goal stream))
-  (define-structure (answers car cdr))
-  
-  (define (stream? s)
-    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (answers? s)))
-  
-  ;; === GOALS ===  
-  (define-values (succeed fail) (values '(succeed) '(fail)))
-  (define (succeed? g) (eq? g succeed))
-  (define (fail? g) (eq? g fail))
 
     ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
@@ -89,14 +79,13 @@
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
 
-
-
   (define (increment-varid s)
     (assert (state? s))
     (let ([s (vector-copy s)])
       (set-state-varid! s (+ 1 (state-varid s))) s))
 
   (define (set-state-varid s v)
+    ;;TODO remove set-state-varid
     (assert (and (state? s) (number? v) (<= (state-varid s) v)))
     (if (= (state-varid s) v) s
 	(let ([s (vector-copy s)])
@@ -108,10 +97,22 @@
     (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === STREAMS ===
+  (define failure '(failure))
+  (define (failure? s) (eq? s failure))
+  
+  (define-structure (mplus lhs rhs))
+  (define-structure (bind goal stream))
+  (define-structure (answers car cdr))
 
   (define answer? state?)
-
+  
+  (define (stream? s)
+    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (answers? s)))
+  
   ;; === GOALS ===
+  (define-values (succeed fail) (values '(succeed) '(fail)))
+  (define (succeed? g) (eq? g succeed))
+  (define (fail? g) (eq? g fail))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
@@ -131,7 +132,7 @@
      [(or (fail? lhs) (fail? rhs)) fail]
      [(succeed? rhs) lhs]
      [(succeed? lhs) rhs]
-     ;[(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)]
+     ;[(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)] ;TODO evaluate divergence avoidance in conj goals
      [else (make-conj lhs rhs)]))
   
   (define (conj* . conjs)
