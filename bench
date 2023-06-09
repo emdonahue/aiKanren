@@ -1,4 +1,4 @@
-#!/usr/bin/env -S scheme --libdirs src:benchmarks:. --script
+#!/usr/bin/env -S scheme --optimize-level 3 --libdirs src:benchmarks:. --script
 
 (import (chezscheme) (aikanren))
 

@@ -44,7 +44,7 @@
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
   (define var-equal? equal?)
 
-    ;; === CONSTRAINT STORE ===
+  ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
   (define empty-constraint-store (make-constraint-store '()))
 

@@ -32,7 +32,7 @@
   (define (sbral-set-ref s n elt default)
     (assert (and (sbral? s) (< n (sbral-length s))))
     (cond
-     [(< n -1) (sbral-set-ref (sbral-cons default s) (+ n 1) elt default)]
+     [(< n -1) (sbral-set-ref (sbral-cons default s) (+ n 1) elt default)] ; Pack empty indices with default.
      [(= n -1) (sbral-cons elt s)]
      [else (_sbral-set-ref s n elt)]))
 
