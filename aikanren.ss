@@ -6,7 +6,7 @@
   (export
    run1 run run* ;Run Interface
    
-   succeed == conde ;Goals
+   succeed == conde fresh ;Goals
    )
   (import (chezscheme) (ui))
 

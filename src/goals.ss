@@ -26,10 +26,10 @@
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
-     [(answer? lhs) (answers lhs rhs)] ; Float answers to the front of the tree
-     [(answers? lhs) (answers (answers-car lhs) (mplus rhs (answers-cdr lhs)))]
-     [(answer? rhs) (answers rhs lhs)]
-     [(answers? rhs) (answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
+     [(answer? lhs) (make-answers lhs rhs)] ; Float answers to the front of the tree
+     [(answers? lhs) (make-answers (answers-car lhs) (mplus rhs (answers-cdr lhs)))]
+     [(answer? rhs) (make-answers rhs lhs)]
+     [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
   (define (bind g s p)

@@ -3,7 +3,7 @@
   (export simplification-level
 	  make-runner set-runner-stream runner? runner-stream runner-query runner-package
 	  package? empty-package
-	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream
+	  make-==  make-bind  stream?  bind? bind-goal bind-stream
 	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
@@ -13,9 +13,10 @@
 	  make-constraint constraint? empty-constraint-store constraint-store? constraint-goal constraint-store-constraints make-constraint-store set-constraint-goal
 	  empty-substitution
 	  make-== ==? ==-lhs ==-rhs goal? fresh?
+	  == make-noto noto? noto-goal
+	  make-answers answers? answers-car answers-cdr
 	  conj conj? conj-car conj-cdr conj* conj-fold
-	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
-	  == make-noto noto? noto-goal)
+	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -40,13 +41,9 @@
   ;; === STREAMS ===
   (define failure '())
   (define failure? null?)
-  (define-structure (mplus lhs rhs)) ;TODO test mplus with just pairs
-					;(define-values (make-mplus mplus? mplus-lhs mplus-rhs) (values cons (lambda (s) (and (pair? s) (not (answer? (car s))))) car cdr))
-  
+  (define-structure (mplus lhs rhs))
   (define-structure (bind goal stream))
-					;(define-values (answers answers? answers-car answers-cdr) (values cons (lambda (s) (and (pair? s) (answer? (car s)))) car cdr)) ; A answers stream is one with at least one answer and either more answers or a bind stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
   (define-structure (answers car cdr))
-  (define answers make-answers)
   
   (define (stream? s)
     (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (guarded? s) (answers? s)))
