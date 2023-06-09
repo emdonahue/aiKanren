@@ -130,21 +130,22 @@
   
   (define (attributed-vars g)
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (fold-right (lambda (v vs) (if (memq v vs) vs (cons v vs))) '() (non-unique-attributed-vars g)))
+    (_attributed-vars g '()))
   
-  (define (non-unique-attributed-vars g)
+  (define (_attributed-vars g vs)
     ;; TODO thread attrvars list through all constraints monadically to pick up vars with cons
     ;; TODO optimize which constraint we pick to minimize free vars
     (assert (goal? g))
     (cond
-     [(succeed? g) '()]
-     [(disj? g) (non-unique-attributed-vars (disj-car g))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
-     [(conj? g) (conj-fold (lambda (vs c) (append (non-unique-attributed-vars c) vs)) '() g)]
-     [(noto? g) (non-unique-attributed-vars (noto-goal g))]
-     [(==? g) (assert (var? (==-lhs g))) (list (==-lhs g))]
-     [(pconstraint? g) (pconstraint-vars g)]
-     [(guardo? g) (list (guardo-var g))]
-     [(constraint? g) (non-unique-attributed-vars (constraint-goal g))]
+     [(succeed? g) vs]
+     [(disj? g) (_attributed-vars (disj-car g) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+     [(conj? g) (_attributed-vars (conj-car g) (_attributed-vars (conj-cdr g) vs))]
+     [(noto? g) (_attributed-vars (noto-goal g) vs)]
+     [(==? g) (assert (var? (==-lhs g)))
+      (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+     [(pconstraint? g) (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
+     [(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
+     [(constraint? g) (_attributed-vars (constraint-goal g) vs)]
      [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)]))
   
 )
