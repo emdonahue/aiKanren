@@ -12,8 +12,8 @@
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 		  (bind (conj-cdr g) s p))]
      [(disj? g) (let*-values
-		    ([(lhs p) (run-goal (disj-car g) s p)]
-		     [(rhs p) (run-goal (disj-cdr g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
+		    ([(lhs p) (run-goal (disj-lhs g) s p)]
+		     [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		  (values (mplus lhs rhs) p))]
      [(and (noto? g)
 	   (fresh? (noto-goal g))) (let-values ([(g s p) ((noto-goal g) s p)])

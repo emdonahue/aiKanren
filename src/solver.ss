@@ -81,14 +81,14 @@
      [(zero? s-level) (values g s)]
      [else ;TODO do we need to solve disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct. in fact, that disjunct MUST unify if we are to care about it, so the == must be in the top level conjunction of the goal
       (let-values ([(g0 s0) (solve-constraint (disj-car g) s conjs succeed)])
-	;(printf "1HEAD: ~s~%1ORIG: ~s~%" g0 g)
+	;(printf "1HEAD: ~s~%SOLV: ~s~%1ORIG: ~s~%" (disj-car g) g0 g)
 	(cond
 	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
 	 [(fail? g0) (solve-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
 	 [(disj? g0) (values (disj g0 (conj (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
 	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (- s-level 1))])
-	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%" g0 g g^)
+	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%2SOLV: ~s~%" g0 g (disj-car (disj-cdr g)) g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
