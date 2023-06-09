@@ -3,7 +3,8 @@
   (export simplification-level
 	  make-runner set-runner-stream runner? runner-stream runner-query runner-package
 	  package? empty-package
-	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream make-mplus mplus? mplus-lhs mplus-rhs
+	  make-==  make-bind answers? stream? answers answers? answers-car answers-cdr bind? bind-goal bind-stream
+	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-var var? var-id var-equal?
 	  succeed fail succeed? fail?
 	  make-state empty-state state? set-state-substitution state-constraints state-substitution state-varid increment-varid instantiate-var set-state-constraints set-state-varid pconstraint? pconstraint pconstraint-vars pconstraint-procedure clear-state-constraints
@@ -40,8 +41,12 @@
   (define failure '())
   (define failure? null?)
   (define-structure (mplus lhs rhs)) ;TODO test mplus with just pairs
+					;(define-values (make-mplus mplus? mplus-lhs mplus-rhs) (values cons (lambda (s) (and (pair? s) (not (answer? (car s))))) car cdr))
+  
   (define-structure (bind goal stream))
-  (define-values (answers answers? answers-car answers-cdr) (values cons pair? car cdr)) ; A answers stream is one with at least one answer and either more answers or a bind stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+					;(define-values (answers answers? answers-car answers-cdr) (values cons (lambda (s) (and (pair? s) (answer? (car s)))) car cdr)) ; A answers stream is one with at least one answer and either more answers or a bind stream. It is represented as an improper list of answer?s, possibly with an improper stream tail.
+  (define-structure (answers car cdr))
+  (define answers make-answers)
   
   (define (stream? s)
     (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (guarded? s) (answers? s)))
