@@ -128,23 +128,23 @@
 	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
 	  (disj rest (disj-car ds)))))
   
-  (define (attributed-vars g)
+  (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (_attributed-vars g '()))
-  
-  (define (_attributed-vars g vs)
-    ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
-    (assert (goal? g))
-    (cond
-     [(succeed? g) vs]
-     [(disj? g) (_attributed-vars (disj-car g) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
-     [(conj? g) (_attributed-vars (conj-car g) (_attributed-vars (conj-cdr g) vs))]
-     [(noto? g) (_attributed-vars (noto-goal g) vs)]
-     [(==? g) (assert (var? (==-lhs g)))
-      (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
-     [(pconstraint? g) (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
-     [(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
-     [(constraint? g) (_attributed-vars (constraint-goal g) vs)]
-     [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)]))
+    (case-lambda 
+      [(g) (attributed-vars g '())]
+      [(g vs)
+       ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
+       (assert (goal? g))
+       (cond
+	[(succeed? g) vs]
+	[(disj? g) (attributed-vars (disj-car g) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
+	[(noto? g) (attributed-vars (noto-goal g) vs)]
+	[(==? g) (assert (var? (==-lhs g)))
+	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+	[(pconstraint? g) (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
+	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
+	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
+	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
   
 )

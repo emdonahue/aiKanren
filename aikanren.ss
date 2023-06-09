@@ -3,8 +3,12 @@
 ;; TODO bool is just true or false. does this automatically gel with =/= of the other one?
 ;; TODO we can get finite domain like ability to actually generate the answers by popping the constraint and treating it as a goal
 (library (aikanren)
-  (export)
+  (export
+   run1 run run* ;Run Interface
+   
+   succeed == conde ;Goals
+   )
   (import (chezscheme) (ui))
 
 
-  (define x 1))
+)
