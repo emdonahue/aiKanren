@@ -13,7 +13,7 @@
 	  empty-substitution
 	  make-== ==? ==-lhs ==-rhs goal? fresh?
 	  conj conj? conj-car conj-cdr conj* conj-fold
-	  disj disj? disj-lhs disj-rhs disj-car disj-cdr disj*
+	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
 	  == make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 

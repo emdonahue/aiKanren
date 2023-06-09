@@ -26,7 +26,7 @@
 
   (define (finite-domain v ds)
     (assert (list? ds))
-    (constrain (disj (map (lambda (d) (== v d)) ds))))
+    (constrain (apply disj* (map (lambda (d) (== v d)) ds))))
 
   (define (==> antecedent consequent)
     (assert (and (goal? antecedent) (goal? consequent)))

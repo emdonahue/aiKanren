@@ -108,11 +108,7 @@
       (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
       (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x2 1))) (constrain (== x2 1))) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
       (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4))))) (list (disj* (== x1 1) (== x2 1) (== x3 x4)) (disj* (== x2 1) (== x1 1) (== x3 x4)) x3 1))
-
-      (display "START\n")
       (tassert "constraint disj quits early if head is already normalized disj" (run1 (x1 x2) (== x1 1) (constrain (disj* (conj* (== x1 1) (disj* (== x2 x1) (== x2 x1))) (== x2 x1)))) (list 1 (disj (disj (== x2 1) (== x2 1)) (== x2 x1))))
-
-      (exit)
       (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
       (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (disj* (=/= x1 1) (=/= x1 1)) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
       (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
