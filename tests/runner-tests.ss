@@ -1,6 +1,6 @@
 (library (runner-tests)
   (export run-runner-tests)
-  (import (chezscheme) (ui) (test-runner) (datatypes))
+  (import (chezscheme) (aikanren) (test-runner) (datatypes))
 
   (define x1 (make-var 1))
   (define x2 (make-var 2))

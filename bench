@@ -1,6 +1,6 @@
 #!/usr/bin/env -S scheme --optimize-level 3 --libdirs src:benchmarks:. --script
 
-(import (chezscheme) (aikanren))
+(import (chezscheme) (aikanren) (goals))
 
 (include "benchmarks/core-benchmarks.ss")
 

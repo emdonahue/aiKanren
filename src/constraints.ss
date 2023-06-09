@@ -1,7 +1,10 @@
 (library (constraints)
-  (export booleano presento absento listo finite-domain ==> typeo symbolo)
-  (import (chezscheme) (datatypes) (ui) (state))
+  (export =/= booleano presento absento listo finite-domain ==> typeo symbolo)
+  (import (chezscheme) (datatypes) (ui) (negation) (state))
 
+  (define (=/= lhs rhs)
+    (noto (== lhs rhs)))
+  
   (define (booleano v)
     (constrain
      (conde

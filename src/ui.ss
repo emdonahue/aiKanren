@@ -1,6 +1,6 @@
 (library (ui)
-  (export == conde run run* run1 run-states run*-states run1-states fresh runner runner-next runner-step runner-take failure? =/= constrain fail succeed noto guard)
-  (import (chezscheme) (running) (datatypes) (negation))
+  (export run run* run1 run-states run*-states run1-states fresh conde constrain)
+  (import (chezscheme) (running) (datatypes))
 
   (define-syntax conde
     (syntax-rules ()
@@ -62,9 +62,6 @@
    (define-syntax constrain
      (syntax-rules ()
        [(_ g ...) (make-constraint (conj* g ...))]))
-
-   (define (=/= lhs rhs)
-    (noto (== lhs rhs)))
   
   ;; === UTILITIES ===
 

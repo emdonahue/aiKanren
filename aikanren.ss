@@ -8,8 +8,9 @@
    run1 run run* ;Run Interface
    
    succeed == conde fresh ;Goals
+   noto =/= ;Constraints
    )
-  (import (chezscheme) (ui))
+  (import (chezscheme) (ui) (datatypes) (negation) (constraints))
 
 
 )
