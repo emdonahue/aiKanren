@@ -5,10 +5,10 @@
 ;;TODO test whether optimize level works for whole library
 (library (aikanren)
   (export
-   run1 run run* ;Run Interface
-   
+   run run* run1 run-states run*-states run1-states ;Run Interface
+   fresh conde constrain ;Goal Interface
    succeed == conde fresh ;Goals
-   noto =/= ;Constraints
+   noto =/= booleano presento absento listo finite-domain ==> typeo symbolo ;Constraints
    )
   (import (chezscheme) (ui) (datatypes) (negation) (constraints))
 

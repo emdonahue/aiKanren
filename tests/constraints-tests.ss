@@ -1,7 +1,7 @@
 ;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (ui) (test-runner) (datatypes) (constraints) (state) (goals) (values) (sbral))
+  (import (chezscheme) (test-runner) (aikanren) (datatypes) (values) (state))
 
   (define (forever x)
     (fresh (y) (forever x)))
