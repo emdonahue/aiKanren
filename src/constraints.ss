@@ -62,7 +62,7 @@
   ;;    one+ walked summand is var
   ;;    no walked summands are 
   
-  ;;if sum is a number, subtract all other numbers from it and pick two random vars from the other side (+ is assoc)
+  ;;if sum is a number, subtract all other numbers from it and pick two random vars from the other side ( + is assoc)
   ;; if sum is a var, choose one var from the other side and bunch the numbers up on the front of the var list
   ;; run don the list including sum. walk each var/num. if num add to running count. when we get 2 vars, stop
   ;; walk sum. if var, add to var list. if num, negate and add to cumulative count. when returned, if sum was num, subtract 

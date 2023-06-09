@@ -5,8 +5,8 @@
        (run* (x)
 	 (let recur ([n 10])
 	   (if (zero? n) (== 1 1)
-	       (conde [(recur (- n 1))]
-		      [(recur (- n 1))])))))
+	       (conde [(recur (fx- n 1))]
+		      [(recur (fx- n 1))])))))
 
 (bench "streams - mplus" 100
        ;; Pure interleaving speed
@@ -14,8 +14,8 @@
 	 (let recur ([n 10])
 	   (fresh (x)
 	    (if (zero? n) (== 1 1)
-		(conde [(recur (- n 1))]
-		       [(recur (- n 1))]))))))
+		(conde [(recur (fx- n 1))]
+		       [(recur (fx- n 1))]))))))
 
 (bench "substitution - extend" 100
        ;; Extending the substitution without referencing the bindings
@@ -23,5 +23,5 @@
 	 (let recur ([n 1000])
 	   (fresh (y)
 	    (if (zero? n) (== 1 1)
-		(conde [(== y 1) (recur (- n 1))] ; Hide extension in a conj to avoid optimizations that skip substitution
+		(conde [(== y 1) (recur (fx- n 1))] ; Hide extension in a conj to avoid optimizations that skip substitution
 		       [(== 1 2)]))))))

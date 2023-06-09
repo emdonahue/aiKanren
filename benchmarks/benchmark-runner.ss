@@ -14,4 +14,4 @@
 			       benchmark
 			       (time-difference (current-time) start)))
 			   (iota (if (odd? iterations) iterations
-				     (+ iterations 1))))) (quotient iterations 2)))])))
+				     (fx+ iterations 1))))) (fxquotient iterations 2)))])))

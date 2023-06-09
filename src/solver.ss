@@ -87,7 +87,7 @@
 	 [(fail? g0) (solve-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
 	 [(disj? g0) (values (disj g0 (conj (disj-cdr g) conjs)) s)]
 	 [else ; At least one satisfiable disjunct
-	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (- s-level 1))])
+	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (fx- s-level 1))])
 	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%2SOLV: ~s~%" g0 g (disj-car (disj-cdr g)) g^)
 	    (cond
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.

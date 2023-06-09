@@ -82,12 +82,12 @@
   (define (increment-varid s)
     (assert (state? s))
     (let ([s (vector-copy s)])
-      (set-state-varid! s (+ 1 (state-varid s))) s))
+      (set-state-varid! s (fx1+ (state-varid s))) s))
 
   (define (set-state-varid s v)
     ;;TODO remove set-state-varid
-    (assert (and (state? s) (number? v) (<= (state-varid s) v)))
-    (if (= (state-varid s) v) s
+    (assert (and (state? s) (number? v) (fx<= (state-varid s) v)))
+    (if (fx= (state-varid s) v) s
 	(let ([s (vector-copy s)])
 	  (set-state-varid! s v) s)))
 

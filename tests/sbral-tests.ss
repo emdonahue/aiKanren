@@ -30,9 +30,9 @@
     (tassert "sbral-set-ref 2.-2" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 0 -3) 3)
     (tassert "sbral-set-ref 2.-2 nil" (sbral-ref (sbral-set-ref (sbral-cons 2 (sbral-cons 1 sbral-empty)) -2 3 4) 1 -3) 4)
 
-    (do ([i 1 (+ i 1)]) ((= i 50)) ; Build a sbral of this length, 
+    (do ([i 1 (fx+ i 1)]) ((fx= i 50)) ; Build a sbral of this length, 
       (let ([s (fold-left (lambda (r e) (sbral-cons e r)) sbral-empty (iota i))])
-	(do ([j 0 (+ j 1)]) ((= i j)) ;and confirm it contains these values
-	  (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j -3) (- i j 1))
+	(do ([j 0 (fx+ j 1)]) ((fx= i j)) ;and confirm it contains these values
+	  (tassert (string-append "sbral-ref " (number->string i) "@" (number->string j)) (sbral-ref s j -3) (fx- i j 1))
 	  (tassert (string-append "sbral-set-ref " (number->string i) "@" (number->string j)) (sbral-ref (sbral-set-ref s j -1 -2) j -3) -1))))
 ))

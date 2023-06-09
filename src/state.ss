@@ -21,7 +21,7 @@
     (if (var? v)
 	(let ([walked (sbral-ref
 		       (state-substitution s)
-		       (- (sbral-length (state-substitution s)) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+		       (fx- (sbral-length (state-substitution s)) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
 		       unbound)]) 
 	  (if (unbound? walked) v (walk s walked)))
 	v))
@@ -36,7 +36,7 @@
        [(eq? x y) (values succeed s)]
        [(and (var? x) (var? y))
 	(cond
-	 [(< (var-id x) (var-id y)) (extend s x y)]
+	 [(fx< (var-id x) (var-id y)) (extend s x y)]
 	 [(var-equal? x y) (assert #f) (values succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
@@ -57,7 +57,7 @@
      (set-state-substitution s
       (sbral-set-ref
        (state-substitution s)
-       (- (sbral-length (state-substitution s)) (var-id x)) y unbound))))
+       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound))))
 
   ;; === CONSTRAINTS ===
 
@@ -75,4 +75,4 @@
    ;; === DEBUGGING ===
 
   (define (print-substitution s)
-    (map (lambda (p) (cons (make-var (- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))
+    (map (lambda (p) (cons (make-var (fx- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))
