@@ -1,5 +1,5 @@
 (import (benchmark-runner))
-
+#;
 (bench "streams - answers" 100
        ;; Tests the speed at which we assemble our answer stream if there are no freshes to check for unnecessary suspension.
        (run* (x)
@@ -7,7 +7,7 @@
 	   (if (fx= 0 n) (== 1 1)
 	       (conde [(recur (fx- n 1))]
 		      [(recur (fx- n 1))])))))
-
+#;
 (bench "streams - mplus" 100
        ;; Pure interleaving speed
        (run* (x)
