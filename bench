@@ -1,4 +1,4 @@
-#!/usr/bin/env -S scheme --optimize-level 3 --libdirs lib:benchmarks --import-notify --script
+#!/usr/bin/env -S scheme --optimize-level 3 --libdirs lib:benchmarks --script
 
 (import (chezscheme) (aikanren))
 
