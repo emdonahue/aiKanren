@@ -17,7 +17,9 @@
        [(and (var? x) (var? y))
 	(cond
 	 [(fx< (var-id x) (var-id y)) (extend s x y)]
-	 [(var-equal? x y) (assert #f) (values s succeed)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [(var-equal? x y)
+	  (assert #f)
+	  (values s succeed)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]

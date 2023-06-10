@@ -1,4 +1,4 @@
-#!/usr/bin/env -S scheme --libdirs src:tests:. --script
+#!/usr/bin/env -S scheme --libdirs src:tests --script
 
 (import (chezscheme) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests))
 

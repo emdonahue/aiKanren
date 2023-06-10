@@ -20,7 +20,9 @@
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
-     [(pconstraint? g) (assert #f) (values ((pconstraint-procedure g) s) s)]
+     [(pconstraint? g)
+      (assert #f)
+      (values ((pconstraint-procedure g) s) s)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-== g s gs out)
@@ -140,7 +142,8 @@
 	[(disj? g) (attributed-vars (disj-car g) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
 	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
 	[(noto? g) (attributed-vars (noto-goal g) vs)]
-	[(==? g) (assert (var? (==-lhs g)))
+	[(==? g)
+	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
 	[(pconstraint? g) (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
 	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]

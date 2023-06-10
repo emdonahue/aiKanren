@@ -1,15 +1,26 @@
-.PHONY: all clean
+.PHONY: default clean
 
-all: lib/aikanren.wpo lib/aikanren.so
+SRC = $(wildcard src/*.ss)
+PREPROCESSED = $(subst src/,object/,$(SRC))
+OBJ = $(subst .ss,.so,$(PREPROCESSED))
+
+default: lib/aikanren.wpo lib/aikanren.so
+
 clean:
-	rm -f lib/aikanren.wpo lib/aikanren.so
-	rmdir lib
-	rm -f precompilation/*.ss
-	rmdir precompilation
-lib/aikanren.wpo lib/aikanren.so: precompilation/aikanren.ss
+	rm -rf lib object
+
+lib/aikanren.wpo lib/aikanren.so: $(OBJ)
 	mkdir -p lib
-	echo '(generate-wpo-files #t) (compile-library "precompilation/aikanren.ss" "lib/aikanren.so")' | scheme --libdirs precompilation --optimize-level 3 -q 
-precompilation/aikanren.ss: src/aikanren.ss
-	mkdir -p precompilation
-	find src -type f -execdir sed -ne '/(assert /d' -e 'w ../precompilation/'{} {} \;
-	find src -execdir sed '/(assert /d' {} > ../precompilation \;
+#	echo '(generate-wpo-files #t) (compile-whole-library "object/aikanren.wpo" "lib/aikanren.so")' | scheme --libdirs object --optimize-level 3 -q
+
+object/%.ss: src/%.ss
+	mkdir -p object
+	sed '/(assert /d' $< > $@
+
+object/%.so: $(PREPROCESSED)
+	echo '(generate-wpo-files #t) (compile-library "'$(subst .ss,.so,$@)'" "'$@'")' | scheme --libdirs object --optimize-level 3 -q
+
+#object/aikanren.ss: src/aikanren.ss
+#	mkdir -p object
+#	find src -type f -execdir sed -ne '/(assert /d' -e 'w ../object/'{} {} \;
+#	find src -execdir sed '/(assert /d' {} > ../object \;
