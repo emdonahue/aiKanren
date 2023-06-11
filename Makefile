@@ -1,21 +1,25 @@
 .PHONY: default clean
 
 SRC = $(wildcard src/*.ss)
-PREPROCESSED = $(subst src/,object/,$(SRC))
-OBJ = $(subst .ss,.so,$(PREPROCESSED))
+PRE = $(SRC:src/%=build/preprocessed/%)
+OBJ = $(PRE:build/preprocessed/%.ss=build/object/%.so)
 
 default: lib/aikanren.wpo lib/aikanren.so
 
 clean:
-	rm -rf lib object
+	rm -rf lib build
 
 lib/aikanren.wpo lib/aikanren.so &: $(OBJ)
-	mkdir -p lib
-	echo '(compile-imported-libraries #t) (generate-wpo-files #t) (compile-whole-library "object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs object --optimize-level 3
+# Object file directory must come before source directory, but need both for wpo.
+	mkdir lib
+	echo '(generate-wpo-files #t) (compile-whole-library "build/object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/preprocessed:build/object --compile-imported-libraries --optimize-level 3
 
-object/%.ss: src/%.ss
-	mkdir -p object
+build/preprocessed/%.ss: src/%.ss
+# Strip out the assertions and generate new source files as a preprocessing step. Assertions are assumed to be on their own lines.
+	mkdir -p build/preprocessed
 	sed '/(assert /d' $< > $@
 
-object/%.so: $(PREPROCESSED)
-	echo '(compile-imported-libraries #t) (generate-wpo-files #t) (compile-library "'$(subst .so,.ss,$@)'" "'$@'")' | scheme -q --libdirs object --optimize-level 3
+build/object/%.so: $(PRE)
+# Compile each library separately before compiling them all together as a whole library object file.
+	mkdir -p build/object
+	echo '(generate-wpo-files #t) (compile-library "'$(@:build/object/%.so=build/preprocessed/%.ss)'" "'$@'")' | scheme -q --libdirs build/preprocessed --compile-imported-libraries --optimize-level 3
