@@ -30,7 +30,7 @@
     (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
       (if (fail? g) (values fail failure)
 	  (solve-constraint ; Run constraints attributed to all unified vars
-	   (conj* (get-constraints s (attributed-vars g)) gs)
+	   (conj (get-constraints s (attributed-vars g)) gs)
 	   (remove-constraints s (attributed-vars g))
 	   succeed (conj out g)))))
   
@@ -49,7 +49,7 @@
 
 	  
 	  (let-values ([(g^ s) (solve-=/=* (noto g) s conjs)]) ;
-	    (values (conj* out (noto g) g^) s))])))
+	    (values (conj out (conj (noto g) g^)) s))])))
 
   (define (solve-=/=* g s gs)
     (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
