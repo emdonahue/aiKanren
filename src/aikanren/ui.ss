@@ -9,7 +9,8 @@
   
  (define-syntax fresh
    (syntax-rules ()
-     [(_ () g ...) (conj* g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
+     [(_ () g) g] ; No reason to suspend if not creating new vars, since computation will be finite.
+     [(_ () g0 g ...) (make-conj g0 (fresh () g ...))] 
      [(_ (q ...) g ...)
       (lambda (state p)
 	(fresh-vars

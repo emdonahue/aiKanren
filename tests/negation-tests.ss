@@ -9,7 +9,7 @@
     (tassert "negate fail" (noto fail) succeed)
     (tassert "negate unification" (noto (== 1 2)) (make-noto (== 1 2)))
     (tassert "negate disunification" (noto (noto (== 1 2))) (== 1 2))
-    (tassert "negate disjunction" (noto (conde [(=/= 1 2)] [succeed] [fail])) (fresh () (== 1 2) fail succeed))
+    (tassert "negate disjunction" (noto (conde [(=/= 1 2)] [succeed] [fail])) (conj* (== 1 2) fail succeed))
     (tassert "negate conjunction" (noto (fresh () (== 1 2) fail succeed)) succeed)
     (tassert "negate fresh" (noto? (noto (fresh (q) succeed))) #t)
     (tassert "negate noto" (fresh? (noto (noto (fresh (q) succeed)))) #t)

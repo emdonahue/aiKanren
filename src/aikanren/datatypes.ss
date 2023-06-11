@@ -18,8 +18,8 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  conj conj? conj-car conj-cdr conj* conj-fold
-	  disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
+	  make-conj conj conj? conj-car conj-cdr conj* conj-fold
+	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? make-guardo guardo-var guardo-procedure guardo
 	  make-noto noto? noto-goal)
@@ -134,7 +134,7 @@
      [(succeed? lhs) rhs]
      ;[(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)] ;TODO evaluate divergence avoidance in conj goals
      [else (make-conj lhs rhs)]))
-  
+
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   
