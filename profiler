@@ -1,6 +1,0 @@
-#!/usr/bin/env -S scheme --optimize-level 3 --libdirs src:benchmarks --script
-(compile-profile 'source)
-(import (chezscheme) (aikanren))
-(load "benchmarks/core-benchmarks.ss")
-(profile-dump-html "profiler-dump/")
-
