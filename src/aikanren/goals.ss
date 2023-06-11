@@ -6,16 +6,17 @@
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
-    (goal-cond g
-     [conj (let-values ([(s p) (run-goal (conj-car g) s p)])
-		  (bind (conj-cdr g) s p))]
-     [fresh (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		   (values (make-bind g s) p))]
-     [disj (let*-values
-		    ([(lhs p) (run-goal (disj-lhs g) s p)]
-		     [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
-		  (values (mplus lhs rhs) p))]
-     [noto-fresh
+    (cond
+     [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
+	       (bind (conj-cdr g) s p))]
+     [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
+		(values (make-bind g s) p))]
+     [(disj? g) (let*-values
+		 ([(lhs p) (run-goal (disj-lhs g) s p)]
+		  [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
+		 (values (mplus lhs rhs) p))]
+     #;
+     [(and (noto? g) (fresh? (noto-goal g)))
       (assert #f)
       (let-values ([(g s p) ((noto-goal g) s p)])
 				     (values (make-bind (noto g) s) p))] 

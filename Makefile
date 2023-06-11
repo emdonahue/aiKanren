@@ -1,5 +1,5 @@
-SHELL := /bin/bash
-.PHONY: default clean profile bench
+SHELL := /bin/zsh
+.PHONY: default clean profile bench repl
 
 SRC = $(wildcard src/aikanren/*.ss)
 PRE = $(SRC:src/aikanren/%=build/preprocessed/%)
@@ -42,7 +42,11 @@ profile/profile.html: $(PRE)
 bench: benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
 	cat benchmarks/bench
-benchmarks/bench: lib/aikanren.so
+benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(($(ls -1 marks | { cut -c7-; echo 0 } | sort -nr | head -n1) + 1)); fi
 	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' > benchmarks/bench
+
+repl:
+# Boot up a REPL preloaded with aiKanren
+	scheme --libdirs src/aikanren =(echo '(import (aikanren))')

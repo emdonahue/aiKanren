@@ -125,7 +125,7 @@
   (define (goal? g)
     (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g)))
 
-  (define-syntax goal-cond
+  (define-syntax goal-cond ;TODO delete goal-cond
     (syntax-rules ()
       [(_ goal clauses ...)
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
