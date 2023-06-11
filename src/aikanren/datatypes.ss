@@ -14,7 +14,7 @@
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
 	  make-constraint constraint? constraint-goal set-constraint-goal
-	  goal?
+	  goal? goal-cond
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
@@ -110,7 +110,7 @@
     (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (answers? s)))
   
   ;; === GOALS ===
-  (define-values (succeed fail) (values '(succeed) '(fail)))
+  (define-values (succeed fail) (values (vector 'succeed) (vector 'fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
@@ -125,6 +125,12 @@
   (define (goal? g)
     (or (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g)))
 
+  (define-syntax goal-cond
+    (syntax-rules ()
+      [(_ goal clauses ...)
+       (case (if (procedure? goal) 'fresh (vector-ref goal 0))
+	 clauses ...)]))
+  
   ;; CONJ
   (define (conj lhs rhs)
     (assert (and (goal? lhs) (goal? rhs)))
