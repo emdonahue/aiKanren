@@ -27,4 +27,4 @@ build/object/%.so: $(PRE)
 profile: profile/profile.html
 profile/profile.html: $(PRE)
 	mkdir -p profile
-	echo '(compile-profile (quote source)) (import (chezscheme) (aikanren)) (load "benchmarks/core-benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:benchmarks' --optimize-level 3
+	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "benchmarks/core-benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:benchmarks' --optimize-level 3
