@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: default clean profile bench repl
+.PHONY: default clean profile bench repl rebench
 
 SRC = $(wildcard src/aikanren/*.ss)
 PRE = $(SRC:src/aikanren/%=build/preprocessed/%)
@@ -41,16 +41,19 @@ profile/profile.html: $(PRE)
 
 bench: benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
-	cat benchmarks/bench
+	if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1 benchmarks | sort -nr | head -n1); join -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement"} {$$4=-100*($$3-$$2)/$$2" %"; print}' | column -ts$$'\t'; else cat benchmarks/bench | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | column -ts$$'\t'; fi
+rebench:
+# If you don't believe the numbers bench gave you, re-roll until your optimization wins!
+	rm -f benchmarks/bench
+	make bench
 benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 	mkdir -p benchmarks
-	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(($(ls -1 marks | { cut -c7-; echo 0 } | sort -nr | head -n1) + 1)); fi
+	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
 	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' > benchmarks/bench
 
 repl:
 # Boot up a REPL preloaded with aiKanren
-#TODO switch to bash and make this bash compatible
-	REPLBOOT=$(shell mktemp); \
+	REPLBOOT=$$(mktemp); \
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
 	scheme --libdirs src/aikanren "$$REPLBOOT"
