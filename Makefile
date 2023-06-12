@@ -1,4 +1,4 @@
-SHELL := /bin/zsh
+SHELL := /bin/bash
 .PHONY: default clean profile bench repl
 
 SRC = $(wildcard src/aikanren/*.ss)
@@ -49,4 +49,8 @@ benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 
 repl:
 # Boot up a REPL preloaded with aiKanren
-	scheme --libdirs src/aikanren =(echo '(import (aikanren))')
+#TODO switch to bash and make this bash compatible
+	REPLBOOT=$(shell mktemp); \
+	trap "rm -f $$REPLBOOT" EXIT; \
+	echo '(import (aikanren))' > "$$REPLBOOT"; \
+	scheme --libdirs src/aikanren "$$REPLBOOT"

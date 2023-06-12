@@ -132,7 +132,7 @@
 	 clauses ...)]))
   
   ;; CONJ
-  (define (conj lhs rhs)
+  (define (conj lhs rhs) ;TODO replace conj with make-conj where possible
     (assert (and (goal? lhs) (goal? rhs)))
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]

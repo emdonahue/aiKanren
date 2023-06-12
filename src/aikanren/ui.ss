@@ -2,7 +2,7 @@
   (export run run* run1 run-states run*-states run1-states fresh conde constrain)
   (import (chezscheme) (running) (datatypes))
 
-  (define-syntax conde
+  (define-syntax conde ;TODO make conde expand syntactically
     (syntax-rules ()
       [(_ (g ...) ...)
        (disj* (conj* g ...) ...)]))
