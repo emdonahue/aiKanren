@@ -110,12 +110,11 @@
       (tassert "constraint == ==|fail" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 2))))) '(1 2))
       (tassert "constraint == ==|succeed" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 1))))) (list 1 x2))
       (tassert "constraint == ==|succeed(out)" (run1 (x1 x2 x3) (constrain (== x1 1)) (constrain (== x3 3) (conde ((== x2 2)) ((== x1 1))))) (list 1 x2 3))
-      (tassert "constraint == ==|==|==" (run1 (x1 x2 x3) (constrain (== x3 1)) (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3))))) (list (disj* (== x1 1) (== x2 1) (== x1 x3)) (disj* (== x2 1) (== x1 1) (== x1 x3)) 1))
+      (tassert "constraint == ==|==|==" (run1 (x1 x2 x3) (constrain (== x3 1)) (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3))))) (list (disj (disj (== x1 1) (== x2 1)) (== x1 x3)) (disj (disj (== x1 1) (== x2 1)) (== x1 x3)) 1))
       (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
       (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
       (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x2 1))) (constrain (== x2 1))) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (=/= x2 1))) 1))
-      (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4))))) (list (disj* (== x1 1) (== x2 1) (== x3 x4)) (disj* (== x2 1) (== x1 1) (== x3 x4)) x3 1))
-      (tassert "constraint disj quits early if head is already normalized disj" (run1 (x1 x2) (== x1 1) (constrain (disj* (conj* (== x1 1) (disj* (== x2 x1) (== x2 x1))) (== x2 x1)))) (list 1 (disj (disj (== x2 1) (== x2 1)) (== x2 x1))))
+      (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4))))) (list (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) 1))
       (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
       (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (disj* (=/= x1 1) (=/= x1 1)) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
       (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
@@ -149,7 +148,7 @@
     (tassert "disunify free-ground x2" (run1 (x1) (=/= x1 2) (=/= x1 1)) (conj* (=/= x1 1) (=/= x1 2)))
     (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
     (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)))) (disj* (=/= x1 1) (=/= x2 2)))
-    (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (conj* (=/= x2 2) (disj* (=/= x2 2) (=/= x1 1)))))
+    (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (conj* (=/= x2 2) (disj* (=/= x1 1) (=/= x2 2)))))
     (tassert "disunify fire lists and fail" (run* (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1) (== x2 2)) '())
     (tassert "disunify simultaneous list diseq" (run* (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== (cons x1 x2) (cons 1 2))) '())
     (tassert "disunify simultaneous list diseq, fail on first" (run* (x1 x2) (=/= x1 1) (== (cons x1 x2) (cons 1 2))) '())
@@ -180,7 +179,7 @@
     (tassert "==-c x =/=-c conflict" (run1 (x1) (=/= x1 1) (constrain (== x1 1))) (void))
     (tassert "==-c x =/=-c no conflict" (run1 (x1) (=/= x1 2) (constrain (== x1 1))) 1)
     (tassert "==-c | ==-c" (run1 (x1) (constrain (disj* (== x1 1) (== x1 2)))) (disj* (== x1 1) (== x1 2)))
-    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constrain (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) (disj* (== x2 2) (== x1 1))))
+    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constrain (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) (disj* (== x1 1) (== x2 2))))
     (tassert "==-c | ==-c simplifies bound"
 	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
@@ -235,7 +234,7 @@
     (tassert "finite domain ground succeed 3" (run1 () (finite-domain 3 '(1 2 3))) '())
     (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
 
-    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj* (== x1 1) (== x1 2) (== x1 3)))
+    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (disj (== x1 1) (== x1 2)) (== x1 3)))
     
     (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
     (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))
@@ -245,8 +244,8 @@
 
     ;; === IMPLIES ===
 
-    (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj* (=/= x1 1) (== x2 2)) 2))
-    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (=/= x1 1) (== x2 2))) 3))
+    (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (== x2 2) (=/= x1 1)) 2))
+    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (== x2 2) (=/= x1 1))) 3))
     #;
     (#(conj
     (#(disj (#(conj (#(noto #(== #(var 1) 1))

@@ -101,7 +101,12 @@
   (define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
-     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn)) (if (and (not (disj? lhs-disj)) (fail? rhs-disj)) s^ s))]
+     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn))
+					    (cond
+					     [(and (fail? lhs-disj) (fail? rhs-disj)) failure]
+					     [(or (and (fail? lhs-disj) (not (disj? rhs-disj)))
+						  (and (fail? rhs-disj) (not (disj? lhs-disj)))) s^]
+					     [else s]))]
      [(disj? g) (solve-disj2 (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
      [else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
 	      (cond
@@ -177,6 +182,8 @@
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
 
+  (define (invert-disj ds) ds) ;TODO reevaluate inverting disj given that they are now binary
+  #;
   (define (invert-disj ds)
     ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
     (let ([rest (disj-cdr ds)])
@@ -193,15 +200,25 @@
        (assert (goal? g))
        (cond
 	[(succeed? g) vs]
-	[(disj? g) (attributed-vars (disj-car g) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+	[(disj? g) (let-values ([(_ vs) (attributed-vars-disj g 2 vs)]) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
 	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
 	[(noto? g) (attributed-vars (noto-goal g) vs)]
 	[(==? g)
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
-	[(pconstraint? g) (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
+	[(pconstraint? g)
+	 (assert #f)
+	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
 	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
+
+  (define (attributed-vars-disj d num-branches vs)
+    (if (disj? d)
+	(let-values ([(num-remaining vs) (attributed-vars-disj (disj-lhs d) num-branches vs)])
+	  (if (fx= num-remaining 0)
+	      (values 0 vs)
+	      (attributed-vars-disj (disj-rhs d) num-remaining vs)))
+	(values (fx1- num-branches) (attributed-vars d vs))))
   
 )
