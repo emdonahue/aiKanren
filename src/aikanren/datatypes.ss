@@ -174,7 +174,13 @@
     (fold-right (lambda (lhs rhs) (disj lhs rhs)) fail disjs))
 
   (define (disj-car c)
-    (if (disj? c) (disj-car (disj-lhs c)) c))
+    (if (disj? c)
+	(disj-lhs c)
+	#;
+	(disj-car (disj-lhs c)) c))
 
   (define (disj-cdr c)
-    (if (disj? c) (disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail)))
+    (if (disj? c)
+	(disj-rhs c)
+	#;
+	(disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail)))

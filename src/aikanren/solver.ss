@@ -15,7 +15,7 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(and (noto? g) (==? (noto-goal g))) (solve-=/= g s conjs out)]
-     [(disj? g) (let-values ([(g s) (solve-disj g s conjs (simplification-level))])
+     [(disj? g) (let-values ([(g s) (solve-disj2 g s conjs succeed fail)])
 		  (values (conj out g) s))]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
@@ -96,12 +96,26 @@
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
 	     [else (values (disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
 
+
+  (define (solve-disj2 g s ctn ==s disjs)
+    (assert (and (goal? g) (state? s) (goal? ctn)))
+    (if (not (disj? g)) (solve-constraint g s ctn succeed)
+	(let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
+	  (cond
+	   [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+	   [(fail? g0) (solve-disj2 (disj-cdr g) s ctn ==s disjs)] ; First disjunct fails => check next disjunct.
+	   [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
+		   (if (succeed? ==s) ; If none left, 
+		       (values (disj (disj disjs g0) (conj (disj-cdr g) ctn))) ; just freeze the constraint and return.
+		       (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))]))))
+  
+  #;
   (define (solve-disj2 g s ctn ==s disjs)
     (assert (and (disj? g) (state? s) (goal? ctn)))
     (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
       (cond
        [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-       [(fail? g0 (solve-disj2 (disj-cdr g) s ctn disjs))] ; First disjunct fails => check next disjunct.
+       [(fail? g0 (solve-disj2 (disj-cdr g) s ctn ==s disjs))] ; First disjunct fails => check next disjunct.
        [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
 	       (if (succeed? ==s) ; If none left, 
 		   (values (disj (disj disjs g0) (conj (disj-cdr g) ctn))) ; just freeze the constraint and return.
@@ -110,6 +124,7 @@
   (define (diff-== a b)
     (cond
      [(succeed? a) b]
+     [(succeed? b) a]
      [(==? a) (conj-member b a)]
      [(conj? a) (conj (diff-== (conj-car a) b) (diff-== (conj-cdr a) b))]
      [else succeed]))

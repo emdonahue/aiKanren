@@ -1,1 +1,1 @@
-scheme --debug-on-exception --libdirs src:tests:. --script test
+scheme --debug-on-exception --libdirs src/aikanren:tests:. --script test
