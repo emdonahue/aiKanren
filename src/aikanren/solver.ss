@@ -93,7 +93,7 @@
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
   
   (define (diff-== a b)
-    (cond
+    (cond ; TODO succeed should probably skip any computations in diff-==
      [(fail? a) b]
      [(fail? b) a]
      [(==? a) (conj-member b a)]

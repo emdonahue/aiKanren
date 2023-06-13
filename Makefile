@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: default clean profile bench repl rebench
+.PHONY: default clean profile bench repl rebench doc
 
 SRC = $(wildcard src/aikanren/*.ss)
 PRE = $(SRC:src/aikanren/%=build/preprocessed/%)
@@ -57,3 +57,8 @@ repl:
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
 	scheme --libdirs src/aikanren "$$REPLBOOT"
+
+doc:
+	sed -i -n '1,/^## Documentation/ p' README.md
+	echo '## TODO' >> README.md
+	grep -nr 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
