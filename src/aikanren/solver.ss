@@ -85,7 +85,7 @@
 						[(or (and (fail? lhs-disj) (not (disj? rhs-disj)))
 						     (and (fail? rhs-disj) (not (disj? lhs-disj)))) s^]
 						[else s]))]
-	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
+	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (make-disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
 	[else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
 		(cond
 		 [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
