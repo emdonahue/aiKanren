@@ -95,6 +95,31 @@
 	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
 	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
 	     [else (values (disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
+
+  (define (solve-disj2 g s ctn ==s disjs)
+    (assert (and (disj? g) (state? s) (goal? ctn)))
+    (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
+      (cond
+       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+       [(fail? g0 (solve-disj2 (disj-cdr g) s ctn disjs))] ; First disjunct fails => check next disjunct.
+       [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
+	       (if (succeed? ==s) ; If none left, 
+		   (values (disj (disj disjs g0) (conj (disj-cdr g) ctn))) ; just freeze the constraint and return.
+		   (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))]))) ; Else, keep searching for shared ==s.
+
+  (define (diff-== a b)
+    (cond
+     [(succeed? a) b]
+     [(==? a) (conj-member b a)]
+     [(conj? a) (conj (diff-== (conj-car a) b) (diff-== (conj-cdr a) b))]
+     [else succeed]))
+
+  (define (conj-member c e)
+    (cond
+     [(equal? c e) e]
+     [(conj? c) (let ([lhs (conj-member (conj-car c) e)])
+		  (if (succeed? lhs) (conj-member (conj-cdr c) e) lhs))]
+     [else succeed]))
   
   (define (solve-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
