@@ -7,7 +7,7 @@
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (trace-define (solve-constraint g s conjs out)
+  (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -98,10 +98,10 @@
 
 
   
-  (trace-define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
+  (define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
-     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn)) (if (and (fail? lhs-disj) (fail? rhs-disj)) s^ s))]
+     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn)) (if (and (not (disj? lhs-disj)) (fail? rhs-disj)) s^ s))]
      [(disj? g) (solve-disj2 (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
      [else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
 	      (cond
