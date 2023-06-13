@@ -15,8 +15,7 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(and (noto? g) (==? (noto-goal g))) (solve-=/= g s conjs out)]
-     [(disj? g) (let-values ([(g s) (solve-disj2 g s s conjs fail fail fail)])
-		  (values (conj out g) s))]
+     [(disj? g) (solve-disj g s conjs out)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
@@ -71,75 +70,28 @@
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
+   
+  (define solve-disj
+    (case-lambda
+      [(g s conjs out)
+       (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
+	 (values (conj out g) s))]
+      [(g s s^ ctn ==s lhs-disj rhs-disj)
+       (assert (and (goal? g) (state? s) (goal? ctn)))
+       (cond ;TODO break fail and succeed into separate cases
+	[(or (succeed? ==s) (fail? g)) (values (conj ==s (disj (disj lhs-disj g) (conj rhs-disj ctn)))
+					       (cond
+						[(and (fail? lhs-disj) (fail? rhs-disj)) failure]
+						[(or (and (fail? lhs-disj) (not (disj? rhs-disj)))
+						     (and (fail? rhs-disj) (not (disj? lhs-disj)))) s^]
+						[else s]))]
+	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
+	[else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
+		(cond
+		 [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
+		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
   
-  (define (solve-disj g s conjs s-level)
-    ;; Test as many disjuncts as needed to satisfy the desired simplification-level, and leave the rest untouched
-    ;; level 1 - only worry about failing if a unification violates a constraint.
-    ;; level 2 - level 1 + if we can commit to a single branch and turn a constraint into a unification, do it.
-    ;; level -1 - solve all disjuncts to lowest terms.
-    ;;TODO if we maintain a list of all simplified == and =/= seen in each simplified disjunct, we can keep consuming disjuncts until the list of those that have appeared in each case is empty. if we get to the end and some still appear in that case, we'll want to factor them out of the disj and apply them to the state. as an optimization, if the list of values in any state is already exactly that list, we can just reuse that state instead of reapplying them to the blank state
-    (cond 
-     [(fail? g) (values fail failure)]
-     [(zero? s-level) (values g s)]
-     [else ;TODO do we need to solve disjs that dont contain any ==? in fact, we can stop as soon as we find one such disjunct. in fact, that disjunct MUST unify if we are to care about it, so the == must be in the top level conjunction of the goal
-      (let-values ([(g0 s0) (solve-constraint (disj-car g) s conjs succeed)])
-	;(printf "1HEAD: ~s~%SOLV: ~s~%1ORIG: ~s~%" (disj-car g) g0 g)
-	(cond
-	 [(succeed? g0) (values succeed s)] ; The whole disjunction is satisfied, so just drop it.
-	 [(fail? g0) (solve-disj (disj-cdr g) s conjs s-level)] ; Keep going until we find a satisfiable disjunct or run out.
-	 [(disj? g0) (values (disj g0 (conj (disj-cdr g) conjs)) s)]
-	 [else ; At least one satisfiable disjunct
-	  (let-values ([(g^ s^) (solve-disj (disj-car (disj-cdr g)) s conjs (fx- s-level 1))])
-	    ;(printf "2HEAD: ~s~%2ORIG: ~s~%2BODY: ~s~%2SOLV: ~s~%" g0 g (disj-car (disj-cdr g)) g^)
-	    (cond
-	     [(succeed? g^) (values succeed s)] ; Turns out the whole disjunction succeeded, so drop everything.
-	     [(fail? g^) (values g0 s0)] ; Only one disjunct succeeded, so commit to it.
-	     [else (values (disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
-
-
-  
-  (define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
-    (assert (and (goal? g) (state? s) (goal? ctn)))
-    (cond
-     [(or (succeed? ==s) (fail? g)) (values (conj ==s (disj (disj lhs-disj g) (conj rhs-disj ctn)))
-					    (cond
-					     [(and (fail? lhs-disj) (fail? rhs-disj)) failure]
-					     [(or (and (fail? lhs-disj) (not (disj? rhs-disj)))
-						  (and (fail? rhs-disj) (not (disj? lhs-disj)))) s^]
-					     [else s]))]
-     [(disj? g) (solve-disj2 (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
-     [else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
-	      (cond
-	       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	       [(fail? g0) (solve-disj2 (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
-	       [else (solve-disj2 (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))]))
-  
-  #;
-  (trace-define (solve-disj2 g s ctn ==s disjs)
-    (assert (and (goal? g) (state? s) (goal? ctn)))
-    (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
-      (cond
-       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-       [(fail? g0) (if (disj? (disj-cdr g))
-		       (solve-disj2 (disj-cdr g) s ctn ==s disjs)
-		       (solve-constraint (disj-cdr g) s ctn succeed))] ; First disjunct fails => check next disjunct.
-       [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
-	       (if (succeed? ==s) ; If none left, 
-		   (values (disj (disj disjs g0) (conj (disj-cdr g) ctn)) s) ; just freeze the constraint and return.
-		   (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))])))
-  
-  #;
-  (define (solve-disj2 g s ctn ==s disjs)
-    (assert (and (disj? g) (state? s) (goal? ctn)))
-    (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
-      (cond
-       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-       [(fail? g0 (solve-disj2 (disj-cdr g) s ctn ==s disjs))] ; First disjunct fails => check next disjunct.
-       [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
-	       (if (succeed? ==s) ; If none left, 
-		   (values (disj (disj disjs g0) (conj (disj-cdr g) ctn))) ; just freeze the constraint and return.
-		   (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))]))) ; Else, keep searching for shared ==s.
-
   (define (diff-== a b)
     (cond
      [(fail? a) b]
