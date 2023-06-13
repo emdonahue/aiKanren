@@ -101,7 +101,7 @@
   (define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
-     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn))
+     [(or (succeed? ==s) (fail? g)) (values (conj ==s (disj (disj lhs-disj g) (conj rhs-disj ctn)))
 					    (cond
 					     [(and (fail? lhs-disj) (fail? rhs-disj)) failure]
 					     [(or (and (fail? lhs-disj) (not (disj? rhs-disj)))

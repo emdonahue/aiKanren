@@ -118,10 +118,11 @@
       (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
       (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (disj* (=/= x1 1) (=/= x1 1)) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
       (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
-      ;(display "START\n")
+      
       ;(pretty-print (run* (x1 x2) (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1))) (=/= (cons x1 x2) '(1 . 2))))
 
-      ;(exit)
+      ;(pretty-print (run1 (x1 x2) (constrain (disj (== x1 1) (== x1 2)) (== x2 3))))
+      
       
 					;(tassert "constraint =/=* collapses ==|== where 1 == fails all =/=" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1)))) (constrain (=/= (cons x1 x2) '(1 . 2)))) '(2 1))
 					;(pretty-print (run* (x1 x2) (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2))) (disj* (== x1 1) (== x2 1))))
