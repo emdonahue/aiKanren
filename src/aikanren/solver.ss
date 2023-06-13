@@ -7,7 +7,7 @@
     (assert (and (goal? g) (state? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (solve-constraint g s conjs out)
+  (trace-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -15,7 +15,7 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(and (noto? g) (==? (noto-goal g))) (solve-=/= g s conjs out)]
-     [(disj? g) (let-values ([(g s) (solve-disj2 g s conjs succeed fail)])
+     [(disj? g) (let-values ([(g s) (solve-disj2 g s s conjs fail fail fail)])
 		  (values (conj out g) s))]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
@@ -97,17 +97,31 @@
 	     [else (values (disj* g0 g^ (conj (disj-cdr (disj-cdr g)) conjs)) s)]))]))])) ; Return a new, simplified disjunction.
 
 
-  (define (solve-disj2 g s ctn ==s disjs)
+  
+  (trace-define (solve-disj2 g s s^ ctn ==s lhs-disj rhs-disj)
     (assert (and (goal? g) (state? s) (goal? ctn)))
-    (if (not (disj? g)) (solve-constraint g s ctn succeed)
-	(let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
-	  (cond
-	   [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	   [(fail? g0) (solve-disj2 (disj-cdr g) s ctn ==s disjs)] ; First disjunct fails => check next disjunct.
-	   [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
-		   (if (succeed? ==s) ; If none left, 
-		       (values (disj (disj disjs g0) (conj (disj-cdr g) ctn))) ; just freeze the constraint and return.
-		       (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))]))))
+    (cond
+     [(or (succeed? ==s) (fail? g)) (values (disj (disj lhs-disj g) (conj rhs-disj ctn)) (if (and (fail? lhs-disj) (fail? rhs-disj)) s^ s))]
+     [(disj? g) (solve-disj2 (disj-car g) s s^ ctn ==s lhs-disj (disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
+     [else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
+	      (cond
+	       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+	       [(fail? g0) (solve-disj2 (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
+	       [else (solve-disj2 (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))]))
+  
+  #;
+  (trace-define (solve-disj2 g s ctn ==s disjs)
+    (assert (and (goal? g) (state? s) (goal? ctn)))
+    (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
+      (cond
+       [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+       [(fail? g0) (if (disj? (disj-cdr g))
+		       (solve-disj2 (disj-cdr g) s ctn ==s disjs)
+		       (solve-constraint (disj-cdr g) s ctn succeed))] ; First disjunct fails => check next disjunct.
+       [else (let ([==s (diff-== ==s g0)]) ; First disjunct satisfiable => check for ==s that may be entailed by all branches.
+	       (if (succeed? ==s) ; If none left, 
+		   (values (disj (disj disjs g0) (conj (disj-cdr g) ctn)) s) ; just freeze the constraint and return.
+		   (solve-disj2 (disj-cdr g) s ctn ==s (disj disjs g0))))])))
   
   #;
   (define (solve-disj2 g s ctn ==s disjs)
@@ -123,8 +137,8 @@
 
   (define (diff-== a b)
     (cond
-     [(succeed? a) b]
-     [(succeed? b) a]
+     [(fail? a) b]
+     [(fail? b) a]
      [(==? a) (conj-member b a)]
      [(conj? a) (conj (diff-== (conj-car a) b) (diff-== (conj-cdr a) b))]
      [else succeed]))
