@@ -26,6 +26,8 @@
 
   (define (solve-== g s gs out)
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
+    ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
+    ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
     (let-values ([(g s) (unify s (==-lhs g) (==-rhs g))])
       (if (fail? g) (values fail failure)
 	  (solve-constraint ; Run constraints attributed to all unified vars
@@ -79,6 +81,8 @@
       [(g s s^ ctn ==s lhs-disj rhs-disj)
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases
+	[(succeed? ==s) (values (disj (disj lhs-disj g) (conj rhs-disj ctn))
+				(if (and (fail? rhs-disj) (not (disj? lhs-disj))) s^ s))]
 	[(or (succeed? ==s) (fail? g)) (values (conj ==s (disj (disj lhs-disj g) (conj rhs-disj ctn)))
 					       (cond
 						[(and (fail? lhs-disj) (fail? rhs-disj)) failure]

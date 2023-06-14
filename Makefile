@@ -49,7 +49,7 @@ rebench:
 benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
-	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' > benchmarks/bench
+	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | LC_COLLATE=C sort > benchmarks/bench
 
 repl:
 # Boot up a REPL preloaded with aiKanren

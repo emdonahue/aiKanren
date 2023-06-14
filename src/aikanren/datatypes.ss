@@ -114,6 +114,7 @@
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
+  ;;TODO make == pre-unify with an empty mini-substitution to catch failing ground violations. useful if we want to quick check the constraints with new extensions
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
