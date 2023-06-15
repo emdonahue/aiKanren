@@ -16,18 +16,18 @@
 
       (define pattern-vars
 	(case-lambda
-	  [(pattern) (pattern-vars pattern '())]
+	  [(pattern) (pattern-vars (analyze-pattern pattern) '())]
 	  [(pattern vs)
 	   (cond
-	    [(identifier? pattern) (cons pattern vs)]
-	    [(pair? pattern) (pattern-vars (cdr pattern) (pattern-vars (car pattern) vs))]
+	    [(identifier? pattern) (if (memp (lambda (e) (bound-identifier=? e pattern)) vs) vs (cons pattern vs))]
+	    [(pair? pattern) (pattern-vars (car pattern) (pattern-vars (cdr pattern) vs))]
 	    [else vs])]))
       
       (define get-vars
 	(lambda (vp)
 	  (printf "input ~s~%" (syntax->list (cadar vp)))
 	  (printf "pattern analysis ~s~%" (analyze-pattern (cadar vp)))
-	  (printf "pattern vars ~s~%" (pattern-vars (analyze-pattern (cadar vp))))
+	  (printf "pattern vars ~s~%" (pattern-vars (cadar vp)))
 	  '(b)))
       
       (syntax-case x ()
