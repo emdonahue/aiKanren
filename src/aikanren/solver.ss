@@ -81,14 +81,17 @@
       [(g s s^ ctn ==s lhs-disj rhs-disj)
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases
-	[(succeed? ==s) (values (disj (disj lhs-disj g) (conj rhs-disj ctn))
-				(if (and (fail? rhs-disj) (not (disj? lhs-disj))) s^ s))]
-	[(or (succeed? ==s) (fail? g)) (values (conj ==s (disj (disj lhs-disj g) (conj rhs-disj ctn)))
-					       (cond
-						[(and (fail? lhs-disj) (fail? rhs-disj)) failure]
-						[(or (and (fail? lhs-disj) (not (disj? rhs-disj)))
-						     (and (fail? rhs-disj) (not (disj? lhs-disj)))) s^]
-						[else s]))]
+	[(succeed? ==s) ; No ==s are common to all branches => stop early.
+	 (values
+	  (disj (disj lhs-disj g) (conj rhs-disj ctn)) ;TODO if we return the state, we should also strip the goal of conjuncts so we dont double tap
+	  (if (and (fail? rhs-disj) (not (disj? lhs-disj))) s^ s))] ; If there is only one succeeding branch, return the state
+	[(fail? g)
+	 (values
+	  (conj ==s (disj lhs-disj (conj rhs-disj ctn))) ; Final disjunct => return constraint.
+	  (cond
+	   [(fail? lhs-disj) failure] ; All lhs and rhs disjuncts failed.
+	   [(not (disj? lhs-disj)) s^]
+	   [else s]))]
 	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (make-disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
 	[else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
 		(cond

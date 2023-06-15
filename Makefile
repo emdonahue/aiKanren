@@ -41,7 +41,7 @@ profile/profile.html: $(PRE)
 
 bench: benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
-	if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1 benchmarks | sort -nr | head -n1); join -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement"} {$$4=-100*($$3-$$2)/$$2" %"; print}' | column -ts$$'\t'; else cat benchmarks/bench | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | column -ts$$'\t'; fi
+	if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); join -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement"} {$$4=-100*($$3-$$2)/$$2" %"; print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
 rebench:
 # If you don't believe the numbers bench gave you, re-roll until your optimization wins!
 	rm -f benchmarks/bench
@@ -49,7 +49,7 @@ rebench:
 benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
-	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | LC_COLLATE=C sort > benchmarks/bench
+	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 
 repl:
 # Boot up a REPL preloaded with aiKanren

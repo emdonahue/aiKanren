@@ -1,6 +1,6 @@
-#!/usr/bin/env -S scheme --libdirs src/aikanren:tests --script
+#!/usr/bin/env -S scheme --libdirs src/aikanren:tests:src/benchmarks --script
 
-(import (chezscheme) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests))
+(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests))
 
 (run-sbral-tests)
 (run-mini-substitution-tests)
@@ -9,5 +9,6 @@
 (run-negation-tests)
 (run-constraints-tests)
 (run-listo-tests)
-
+(parameterize ([benchmark-testing #t])
+  (include "src/benchmarks/core-benchmarks.ss"))
 (display "Testing Complete\n")
