@@ -34,7 +34,7 @@
       (syntax-case x ()
 	[(m ([v pattern] ...) body ...)
 	 (let ([vs (get-vars #'([v pattern] ...))])
-	   #`(let ([#,(car vs) 3]) (body ...)))])))
+	   #`(let ([#,(car vs) (make-var #,(car vs))]) (body ...)))])))
 
 
 
