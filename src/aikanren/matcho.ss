@@ -1,6 +1,6 @@
 (library (matcho)
   (export matcho)
-  (import (chezscheme) (datatypes) (mini-substitution))
+  (import (chezscheme) (datatypes) (mini-substitution) (ui))
 
   #;
   (define-syntax matcho
@@ -53,7 +53,7 @@
 	 [else pattern]))
 
       (define (walk-vars vs sub body)
-	(if (null? vs) sub
+	(if (null? vs) body
 	    #`(let ([#,(car vs) (mini-reify #,sub #,(car vs))])
 		#,(walk-vars (cdr vs) sub body))))
 
@@ -65,7 +65,7 @@
 		#`(let ([substitution
 
 			 #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
-		    #,(walk-vars (get-vars #'([v (pattern ...)] ...)) #'substitution #'(body ...)))))])))
+		    #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution #'(fresh () body ...)))))])))
 
 
 
