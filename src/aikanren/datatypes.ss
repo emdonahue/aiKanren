@@ -3,7 +3,7 @@
   (export simplification-level
 	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
-	  make-var var? var-id var-equal?
+	  make-var var? var-id var-equal? set-var-id!
 	  stream?
 	  failure failure?
 	  make-bind bind? bind-goal bind-stream

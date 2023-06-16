@@ -7,6 +7,8 @@
     (syntax-rules ()
       [(_ ([v (pattern ...)]))]))
 
+        (define (mutate-vars vs varid)
+	(void))
 
   (define-syntax matcho
     (lambda (x)
@@ -46,7 +48,7 @@
 	(if (null? v-patterns) #''()
 	    #`(mini-unify #,(build-unification (cdr v-patterns)) #,(build-pattern (cadar v-patterns)) #,(caar v-patterns))))
 
-      (trace-define (build-pattern pattern)
+      (define (build-pattern pattern)
 	(cond
 	 [(null? pattern) #''()]
 	 [(pair? pattern) #`(cons #,(build-pattern (car pattern)) #,(build-pattern (cdr pattern)))]
@@ -57,15 +59,30 @@
 	    #`(let ([#,(car vs) (mini-reify #,sub #,(car vs))])
 		#,(walk-vars (cdr vs) sub body))))
 
+
+      
+      #;
+      (define (mutate-vars vs varid body)
+	#`(let ([varid #,(mutate-var vs varid)])
+	    #,body))
+
+      (define (mutate-var vs varid)
+	(if (null? vs) varid
+	    #`(if (and (var? #,(car vs)) (fx=? 0 (var-id #,(car vs))))
+		  (begin (set-var-id! #,(car vs) #,varid) #,(mutate-var (cdr vs) #`(fx1+ #,varid)))
+		  #,(car vs))))
+      
       (syntax-case x ()
 	[(_ ([v (p-car . p-cdr)] ...) body ...)
 	 #`(lambda (state)
 	     #,(build-vars
 		(get-vars #'([v (p-car . p-cdr)] ...))
-		#`(let ([substitution
-
-			 #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
-		    #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution #'(fresh () body ...)))))])))
+		#`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
+		    #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
+				 #`(begin
+				     (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
+						  #'(state-varid state))
+				     (fresh () body ...))))))])))
 
 
 
