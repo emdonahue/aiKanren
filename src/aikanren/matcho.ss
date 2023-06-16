@@ -7,8 +7,15 @@
     (syntax-rules ()
       [(_ ([v (pattern ...)]))]))
 
-        (define (mutate-vars vs varid)
-	(void))
+  (define (mutate-vars vs state)
+    (let increment ([vs vs]
+		    [var-id (state-varid state)])
+      (if (null? vs) (set-state-varid state var-id)
+	  (if (and (var? (car vs)) (zero? (var-id (car vs))))
+	      (begin
+		(set-var-id! (car vs) var-id)
+		(increment (cdr vs) (fx1+ var-id)))
+	      (increment (cdr vs) var-id)))))
 
   (define-syntax matcho
     (lambda (x)
@@ -38,13 +45,13 @@
 
       (define get-vars
 	(lambda (vp)
-	  (printf "input ~s~%" (syntax->list (cadar vp)))
-	  (printf "pattern analysis ~s~%" (analyze-pattern (cadar vp)))
-	  (printf "pattern vars ~s~%" (pattern-vars (cadar vp)))
+	  ;;(printf "input ~s~%" (syntax->list (cadar vp)))
+	  ;;(printf "pattern analysis ~s~%" (analyze-pattern (cadar vp)))
+	  ;;(printf "pattern vars ~s~%" (pattern-vars (cadar vp)))
 	  (pattern-vars (cadar vp))))
 
       (define (build-unification v-patterns)
-	(printf "vpatterns: ~s~%" v-patterns)
+	;;(printf "vpatterns: ~s~%" v-patterns)
 	(if (null? v-patterns) #''()
 	    #`(mini-unify #,(build-unification (cdr v-patterns)) #,(build-pattern (cadar v-patterns)) #,(caar v-patterns))))
 
@@ -58,23 +65,10 @@
 	(if (null? vs) body
 	    #`(let ([#,(car vs) (mini-reify #,sub #,(car vs))])
 		#,(walk-vars (cdr vs) sub body))))
-
-
-      
-      #;
-      (define (mutate-vars vs varid body)
-	#`(let ([varid #,(mutate-var vs varid)])
-	    #,body))
-
-      (define (mutate-var vs varid)
-	(if (null? vs) varid
-	    #`(if (and (var? #,(car vs)) (fx=? 0 (var-id #,(car vs))))
-		  (begin (set-var-id! #,(car vs) #,varid) #,(mutate-var (cdr vs) #`(fx1+ #,varid)))
-		  #,(car vs))))
       
       (syntax-case x ()
 	[(_ ([v (p-car . p-cdr)] ...) body ...)
-	 #`(lambda (state)
+	 #`(lambda (state package)
 	     #,(build-vars
 		(get-vars #'([v (p-car . p-cdr)] ...))
 		#`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
@@ -82,4 +76,5 @@
 				 #`(values
 				    (fresh () body ...)
 				    (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
-						 #'state))))))]))))
+						 state)
+				    package)))))]))))

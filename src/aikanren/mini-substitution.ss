@@ -10,7 +10,7 @@
 	  (if b (mini-walk s (cdr b)) v))
 	v))
 
-  (define (mini-reify s v)
+  (define (mini-reify s v);TODO make mini reify full reification
     (mini-walk s v))
 
   (define (mini-unify s x y)
