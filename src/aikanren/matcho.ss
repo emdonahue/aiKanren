@@ -9,13 +9,13 @@
 
   (define (mutate-vars vs state)
     (let increment ([vs vs]
-		    [var-id (state-varid state)])
-      (if (null? vs) (set-state-varid state var-id)
+		    [varid (state-varid state)])
+      (if (null? vs) (set-state-varid state varid)
 	  (if (and (var? (car vs)) (zero? (var-id (car vs))))
 	      (begin
-		(set-var-id! (car vs) var-id)
-		(increment (cdr vs) (fx1+ var-id)))
-	      (increment (cdr vs) var-id)))))
+		(set-var-id! (car vs) varid)
+		(increment (cdr vs) (fx1+ varid)))
+	      (increment (cdr vs) varid)))))
 
   (define-syntax matcho
     (lambda (x)
@@ -72,9 +72,10 @@
 	     #,(build-vars
 		(get-vars #'([v (p-car . p-cdr)] ...))
 		#`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
-		    #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
-				 #`(values
-				    (fresh () body ...)
-				    (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
-						 state)
-				    package)))))]))))
+		    (if (failure? substitution) (values fail failure package)
+			#,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
+				     #`(values
+					(fresh () body ...)
+					(mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
+						     state)
+					package))))))]))))
