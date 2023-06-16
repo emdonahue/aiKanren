@@ -41,11 +41,6 @@
 	  (printf "pattern vars ~s~%" (pattern-vars (cadar vp)))
 	  (pattern-vars (cadar vp))))
 
-      #;
-      (trace-define (build-unification v-patterns)
-
-	#`#,(cadar v-patterns))
-
       (define (build-unification v-patterns)
 	(printf "vpatterns: ~s~%" v-patterns)
 	(if (null? v-patterns) #''()
@@ -56,11 +51,6 @@
 	 [(null? pattern) #''()]
 	 [(pair? pattern) #`(cons #,(build-pattern (car pattern)) #,(build-pattern (cdr pattern)))]
 	 [else pattern]))
-      #;
-      (define (build-unification v-patterns sub body)
-	(if (null? v-patterns) body
-	    #`(let ([sub (mini-unify sub #,(cdar v-patterns) #,(caar v-patterns))])
-		#,(build-unification (cdr v-patterns) #'sub body))))
 
       (define (walk-vars vs sub body)
 	(if (null? vs) sub
@@ -75,8 +65,6 @@
 		#`(let ([substitution
 
 			 #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
-		    substitution
-		    #;
 		    #,(walk-vars (get-vars #'([v (pattern ...)] ...)) #'substitution #'(body ...)))))])))
 
 
