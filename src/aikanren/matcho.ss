@@ -79,11 +79,7 @@
 		(get-vars #'([v (p-car . p-cdr)] ...))
 		#`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
 		    #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
-				 #`(begin
-				     (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
-						  #'(state-varid state))
-				     (fresh () body ...))))))])))
-
-
-
-)
+				 #`(values
+				    (fresh () body ...)
+				    (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
+						 #'state))))))]))))
