@@ -75,7 +75,7 @@
 		    (if (failure? substitution) (values fail failure package)
 			#,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
 				     #`(values
-					(fresh () body ...)
+					(fresh () succeed body ...)
 					(mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
 						     state)
 					package))))))]))))
