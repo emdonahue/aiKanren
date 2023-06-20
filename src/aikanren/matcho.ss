@@ -55,6 +55,12 @@
 	(if (null? v-patterns) #''()
 	    #`(mini-unify #,(build-unification (cdr v-patterns)) #,(build-pattern (cadar v-patterns)) #,(caar v-patterns))))
 
+      (define (build-extension v-patterns substitution)
+	;;(printf "vpatterns: ~s~%" v-patterns)
+	(if (null? v-patterns) #'succeed
+	    #`(make-conj (== #,(caar v-patterns) (mini-reify #,substitution #,(caar v-patterns)))
+			 #,(build-extension (cdr v-patterns) substitution))))
+
       (define (build-pattern pattern)
 	(cond
 	 [(null? pattern) #''()]
@@ -75,7 +81,7 @@
 		    (if (failure? substitution) (values fail failure package)
 			#,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
 				     #`(values
-					(fresh () succeed body ...)
+					(fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
 					(mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
 						     state)
 					package))))))]))))

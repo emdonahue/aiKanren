@@ -24,13 +24,6 @@
 	(let ([x (mini-walk s x)] [y (mini-walk s y)])
 	  (cond
 	   [(eq? x y) s]
-	   [(and (var? x) (var? y))
-	    (cond
-	     [(fx< (var-id x) (var-id y)) (extend s x y)]
-	     [(var-equal? x y)
-	      (assert #f)
-	      s] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	     [else (extend s y x)])]
 	   [(var? x) (extend s x y)]
 	   [(var? y) (extend s y x)]
 	   [(and (pair? x) (pair? y))
