@@ -62,15 +62,14 @@
     
     (syntax-case x ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
-       (let ([in-vars (pattern-vars #'((p-car . p-cdr) ...))])
-					;(printf "~s~%" #`(let #,(map (lambda (v) (list v #'(make-var 0))) in-vars) success))
+       (with-syntax ([(in-var ...) (pattern-vars #'((p-car . p-cdr) ...))])
 	 #`(lambda (state package)
-	     (let #,(map (lambda (vr) (list vr #'(make-var 0))) in-vars) 
+	     (let ((in-var (make-var 0)) ...) 
 	       (let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
 		 (if (failure? substitution) (values fail failure package)
-		     #,(walk-vars in-vars #'substitution
+		     #,(walk-vars #'(in-var ...) #'substitution
 				  #`(values
 				     (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
-				     (mutate-vars #,(build-pattern in-vars)
+				     (mutate-vars #,(build-pattern #'(in-var ...))
 						  state)
 				     package)))))))])))
