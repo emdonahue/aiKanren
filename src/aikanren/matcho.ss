@@ -24,6 +24,7 @@
 
 
     (define pattern-vars
+      ;; Extracts unique identifiers from arbitrary pattern.
       (case-lambda
 	[(pattern) (pattern-vars (analyze-pattern pattern) '())]
 	[(pattern vs)
@@ -36,9 +37,8 @@
       (if (null? vs) body
 	  #`(let ([#,(car vs) (make-var 0)]) #,(build-vars (cdr vs) body))))
 
-    (define get-vars
-      (lambda (vp)
-	(pattern-vars (cadar vp))))
+    (define (get-vars vp)
+      (pattern-vars (cadar vp)))
 
     (define (build-unification v-patterns)
       (if (null? v-patterns) #''()
@@ -62,14 +62,15 @@
     
     (syntax-case x ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
-       #`(lambda (state package)
-	   #,(build-vars
-	      (get-vars #'([v (p-car . p-cdr)] ...))
-	      #`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
-		  (if (failure? substitution) (values fail failure package)
-		      #,(walk-vars (get-vars #'([v (p-car . p-cdr)] ...)) #'substitution
-				   #`(values
-				      (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
-				      (mutate-vars #,(build-pattern (get-vars #'([v (p-car . p-cdr)] ...)))
-						   state)
-				      package))))))])))
+       (let ([in-vars (pattern-vars #'((p-car . p-cdr) ...))])
+	 #`(lambda (state package)
+	     #,(build-vars
+		in-vars
+		#`(let ([substitution #,(build-unification (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
+		    (if (failure? substitution) (values fail failure package)
+			#,(walk-vars in-vars #'substitution
+				     #`(values
+					(fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
+					(mutate-vars #,(build-pattern in-vars)
+						     state)
+					package)))))))])))
