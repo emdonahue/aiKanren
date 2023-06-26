@@ -19,14 +19,15 @@
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
-     [(pconstraint? g) (let ([g ((pconstraint-procedure g) s)]) (values g (store-constraint s g)))]
+     [(pconstraint? g) (solve-pconstraint g s conjs out)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)
     (if (==? g) (solve-=/= g s ctn out)
 	(let-values ([(g s^) (solve-constraint g s ctn out)])
 	  (let ([g (noto g)])
-	    (values g (store-constraint s g))))))
+	    (if (fail? g) (values fail failure)
+		(solve-constraint ctn (store-constraint s g) succeed (conj out g)))))))
   
   (define (solve-== g s gs out)
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
@@ -117,6 +118,13 @@
 				 (values g (store-constraint s g)))]
 		     [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
 		     [else (values fail failure)])))
+
+  (define (solve-pconstraint g s ctn out)
+		(let ([g ((pconstraint-procedure g) s)])
+		  (cond
+		   [(succeed? g) (values succeed s)]
+		   [(fail? g) (values fail failure)]
+		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
   
   (define (store-disjunctions g s)
     (assert (and (goal? g) (or (fail? g) (not (failure? s)))))

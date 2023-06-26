@@ -21,7 +21,7 @@
 	  make-conj conj conj? conj-car conj-cdr conj* conj-fold
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
-	  guardo? make-guardo guardo-var guardo-procedure guardo
+	  guardo? guardo-var guardo-procedure guardo
 	  make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 

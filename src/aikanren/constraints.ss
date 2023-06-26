@@ -35,7 +35,7 @@
     (assert (and (goal? antecedent) (goal? consequent)))
     (constrain (conde [consequent] [(noto antecedent)])))
 
-  (define (typeo v t?)
+  (define (typeo v t?) ; TODO make typo reject immediately if ground term not a type
     (assert (procedure? t?))
     (pconstraint
      v (lambda (s)
@@ -48,6 +48,9 @@
 
   (define (symbolo v)
     (typeo v symbol?))
+
+  (define (pairo v)
+    (typeo v pair?))
 
 
   #;
@@ -115,10 +118,14 @@
      (fresh ()
        (=/= term absent)
        (conde
-	 [(noto (typeo term pair?))]
+	 [(noto (pairo term))]
 	 [(guardo term
 		  (lambda (a d)
-		    (conj*
+		    #;
+		    (pretty-print (conj
+		     (absento a absent)
+		     (absento d absent)))
+		    (conj
 		     (absento a absent)
 		     (absento d absent))))]))))
 

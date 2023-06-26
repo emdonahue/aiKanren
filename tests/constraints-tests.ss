@@ -281,6 +281,7 @@
     
 
     ;; === ABSENTO ===
+    (tassert "absento ground cdr fail" (run1 () (absento (cons 2 1) 1)) (void))
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
     (tassert "absento ground succeed" (run1 () (absento 2 1)) '()) 
     (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento x1 1)) (void)) 
