@@ -1,3 +1,4 @@
+;; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables ""
 (library (matcho)
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui))
@@ -8,6 +9,7 @@
       [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern p))]))
   
   (define-syntax build-pattern
+    ;; Turn a pattern match schema into a full scheme object for unification.
     (syntax-rules (quote)
       [(_ (quote q)) 'q]
       [(_ (h . t)) (cons (build-pattern h) (build-pattern t))]
@@ -31,19 +33,18 @@
     
     (syntax-case bindings ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
-       (with-syntax ([(in-var ...)
-		      (extract-vars #'(p-car ... p-cdr ...))])
+       (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(lambda (state package)
-	     (let ([in-var (make-var 0)] ...)
-	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
+	     (let ([in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
+	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)]) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		 (if (failure? substitution) (values fail failure package)
 		     (let* ([varid (state-varid state)]
-			    [in-var (mini-reify substitution in-var)] ...
-			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var)))
+			    [in-var (mini-reify substitution in-var)] ... ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
+			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var))) ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
 				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
 		       (values
 			(fresh ()
-			  (== v (mini-reify substitution v)) ...
+			  (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
 			  body ...)
 			(set-state-varid state varid)
 			package)))))))])))
