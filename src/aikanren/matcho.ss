@@ -5,12 +5,12 @@
   (define-syntax build-substitution
     (syntax-rules ()
       [(_) '()]
-      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern2 p))]))
+      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern p))]))
   
-  (define-syntax build-pattern2
-    (syntax-rules ()
-;      [(_ (quote q)) 'q]
-      [(_ (h . t)) (cons (build-pattern2 h) (build-pattern2 t))]
+  (define-syntax build-pattern
+    (syntax-rules (quote)
+      [(_ (quote q)) 'q]
+      [(_ (h . t)) (cons (build-pattern h) (build-pattern t))]
       [(_ ()) '()]
       [(_ v) v]))
 
@@ -46,10 +46,10 @@
 			    [in-var (mini-reify substitution in-var)] ...
 			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var)))
 				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
-;		       (printf "~s\t~s~%" substitution (list (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...))
+;		       (printf "~s\t~s~%" substitution (list (== (build-pattern v) (mini-reify substitution (build-pattern v))) ...))
 		       (values
 			(fresh ()
-			  (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...
+			  (== (build-pattern v) (mini-reify substitution (build-pattern v))) ...
 			  body ...)
 			(set-state-varid state varid)
 			package)))))))])))
