@@ -9,21 +9,10 @@
   
   (define-syntax build-pattern2
     (syntax-rules ()
+;      [(_ (quote q)) 'q]
       [(_ (h . t)) (cons (build-pattern2 h) (build-pattern2 t))]
       [(_ ()) '()]
       [(_ v) v]))
-  
-  (define (mutate-vars vs state)
-    (let increment ([vs vs]
-		    [varid (state-varid state)])
-      (if (null? vs) (set-state-varid state varid)
-	  (if (and (var? (car vs)) (zero? (var-id (car vs))))
-	      (begin
-		(set-var-id! (car vs) varid)
-		(increment (cdr vs) (fx1+ varid)))
-	      (increment (cdr vs) varid)))))
-
-
 
   (define-syntax (matcho x)
     (define (analyze-pattern pattern)
@@ -45,37 +34,6 @@
 	  [(identifier? pattern) (if (memp (lambda (e) (bound-identifier=? e pattern)) vs) vs (cons pattern vs))]
 	  [(pair? pattern) (pattern-vars (car pattern) (pattern-vars (cdr pattern) vs))]
 	  [else vs])]))
-
-    (define (build-vars vs body)
-      (if (null? vs) body
-	  #`(let ([#,(car vs) (make-var 0)]) #,(build-vars (cdr vs) body))))
-    
-
-    (define (build-extension v-patterns substitution)
-      (if (null? v-patterns) #'succeed
-	  #`(make-conj (== #,(caar v-patterns) (mini-reify #,substitution #,(caar v-patterns)))
-		       #,(build-extension (cdr v-patterns) substitution))))
-
-    (define (build-pattern pattern)
-      (cond
-       [(null? pattern) #''()]
-       [(pair? pattern) #`(cons #,(build-pattern (car pattern)) #,(build-pattern (cdr pattern)))]
-       [else pattern]))
-
-
-    
-    (define (walk-vars vs sub body)
-      (if (null? vs) body
-	  #`(let ([#,(car vs) (mini-reify #,sub #,(car vs))])
-	      #,(walk-vars (cdr vs) sub body))))
-#;
-    (fold-left (lambda (sub evar-pattern)
-    (mini-unify sub (car evar-pattern) (cdr evar-pattern)) '() ((v . (p-car . p-cdr)) ...)))
-
-#;
-(fold-left (lambda (sub evar-pattern)
-    (mini-unify sub (car evar-pattern) (cdr evar-pattern))) '() (list (cons v (cons p-car p-cdr)) ...))
-
     
     (syntax-case x ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
@@ -88,9 +46,12 @@
 			    [in-var (mini-reify substitution in-var)] ...
 			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var)))
 				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
+;		       (printf "~s\t~s~%" substitution (list (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...))
 		       (values
 			(fresh ()
 			  (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...
 			  body ...)
 			(set-state-varid state varid)
 			package)))))))])))
+
+

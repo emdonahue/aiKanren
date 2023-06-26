@@ -14,6 +14,6 @@
     (tassert "match pair extract" (run1 (x1 x2) (let ([p '(1 . 2)]) (matcho ([p (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
     (tassert "match pair extend" (run1 (x1) (let ([p (cons 1 x1)]) (matcho ([p (a . 2)])))) 2)
     ;(tassert "match pair symbols" (run1 (x1 x2) (let ([p (cons 'one x2)]) (matcho ([p (a . 'two)]) (== a x1)))) '(one two))
-
+    ;TODO make matcho handle symbol extraction
     
     ))
