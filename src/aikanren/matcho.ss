@@ -2,16 +2,16 @@
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui))
 
-  (define-syntax analyze-pattern2
+  (define-syntax build-pattern
     (syntax-rules ()
-      [(_ (h . t)) (cons (analyze-pattern2 h) (analyze-pattern2 t))]
+      [(_ (h . t)) (cons (build-pattern h) (build-pattern t))]
       [(_ ()) '()]
       [(_ v) v]))
 
   (define-syntax build-substitution
     (syntax-rules ()
       [(_) '()]
-      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (analyze-pattern2 p))]))
+      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern p))]))
   
   (define (mutate-vars vs state)
     (let increment ([vs vs]
