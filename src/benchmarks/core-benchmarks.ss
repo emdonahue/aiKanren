@@ -1,6 +1,7 @@
 (import (benchmark-runner))
 
-(begin ; Easy form to comment out if need to focus on one test
+(begin
+  
   (bench "streams - answers" 100
 	 ;; Tests the speed at which we assemble our answer stream if there are no freshes to check for unnecessary suspension.
 	 (run* (x)
