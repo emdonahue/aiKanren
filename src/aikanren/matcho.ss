@@ -85,11 +85,15 @@
 	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
 		 (if (failure? substitution) (values fail failure package)
 		     (let ([in-var (mini-reify substitution in-var)] ...)
-		       #,#`(values
-			  (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
-			  (mutate-vars #,(build-pattern #'(in-var ...))
-				       state)
-			  package))
+		       (values
+			(fresh ()
+			  (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...
+			  #;
+			  #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution)
+			  body ...)
+			(mutate-vars #,(build-pattern #'(in-var ...))
+				     state)
+			package))
 		     #;
 		     #,(walk-vars #'(in-var ...) #'substitution
 				  #`(values
