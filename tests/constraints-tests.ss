@@ -256,25 +256,23 @@
     #(== #(var 2) 2))))) 2)
     
     ;; === SYMBOLO ===
-    #;
-    (begin				; ; ;
-    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '()) ; ; ;
-    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void)) ; ; ;
-					; ; ; ; ; ; ;
-    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol) ; ; ;
-    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void)) ; ; ;
-					; ; ; ; ; ; ;
-    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol) ; ; ;
-    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void)) ; ; ;
-					; ; ; ; ; ; ;
-    (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void)) ; ; ;
-    (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '()) ; ; ;
-					; ; ; ; ; ; ;
-    (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void)) ; ; ;
-    (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42) ; ; ;
-					; ; ; ; ; ; ;
-    (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void)) ; ; ;
-    (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42))
+    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '()) 
+    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void)) 
+
+    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol) 
+    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void)) 
+
+    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol) 
+    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void)) 
+
+    (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void)) 
+    (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '()) 
+
+    (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void)) 
+    (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42) 
+
+    (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void)) 
+    (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
 
     ;; === PLUSO ===
 

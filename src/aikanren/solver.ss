@@ -14,16 +14,20 @@
      [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
-     [(and (noto? g) (==? (noto-goal g))) (solve-=/= g s conjs out)]
+     [(noto? g) (solve-noto (noto-goal g) s conjs out)]
      [(disj? g) (solve-disj g s conjs out)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
-     [(pconstraint? g)
-      (assert #f)
-      (values ((pconstraint-procedure g) s) s)]
+     [(pconstraint? g) (let ([g ((pconstraint-procedure g) s)]) (values g (store-constraint s g)))]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
+  (define (solve-noto g s ctn out)
+    (if (==? g) (solve-=/= g s ctn out)
+	(let-values ([(g s^) (solve-constraint g s ctn out)])
+	  (let ([g (noto g)])
+	    (values g (store-constraint s g))))))
+  
   (define (solve-== g s gs out)
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
@@ -36,20 +40,12 @@
 	   succeed (conj out g)))))
   
   (define (solve-=/= g s conjs out)
-    (let-values ([(g s^) (unify s (==-lhs (noto-goal g)) (==-rhs (noto-goal g)))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
+    (let-values ([(g s^) (unify s (==-lhs g) (==-rhs g))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
 	(cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (solve-constraint conjs s succeed out)]
 	 [else
-	  #;
-	  (solve-constraint ; Run constraints attributed to all unified vars
-	   (conj* (get-constraints s (attributed-vars (noto g))) conjs)
-	   (store-constraint (remove-constraints s (attributed-vars (noto g))) g)
-	   succeed out)
-
-
-	  
-	  (let-values ([(g^ s) (solve-=/=* (noto g) s conjs)]) ;
+	  (let-values ([(g^ s) (solve-=/=* (noto g) s conjs)])
 	    (values (conj out (conj (noto g) g^)) s))])))
 
   (define (solve-=/=* g s gs)
@@ -132,8 +128,10 @@
 
   (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (assert (or (guardo? g) (noto? g) (disj? g))))) ; -> state?
+    (assert (and (state? s) (assert (or (guardo? g) (noto? g) (disj? g) (pconstraint? g) (succeed? g) (fail? g))))) ; -> state?
     (cond
+     [(succeed? g) s]
+     [(fail? g) failure]
      [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))]
      [(disj? g) (let* ([vars1 (attributed-vars g)]
 		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr g)))]) ;TODO be more specific about how many disjuncts we need attr vars from
@@ -166,7 +164,6 @@
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
 	[(pconstraint? g)
-	 (assert #f)
 	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
 	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]

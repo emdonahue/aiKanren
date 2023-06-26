@@ -119,7 +119,7 @@
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
 
-  (define == make-==)
+  (define == make-==) ;TODO make == do an eq? check and resolve if ground. if equal? then if not var or pair (eq? failed), then make
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
