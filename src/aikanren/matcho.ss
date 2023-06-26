@@ -14,20 +14,22 @@
       [(_ ()) '()]
       [(_ v) v]))
 
-  (define-syntax (matcho x)
+  (define-syntax (matcho bindings)
 
     (define extract-vars
+      ;; Extracts unique logic variable identifiers from the aggregate patterns.
       (case-lambda
 	[(pattern) (extract-vars pattern '())]
 	[(pattern vs)
 	 (if (pair? pattern) (extract-vars (car pattern) (extract-vars (cdr pattern) vs))
-	     (syntax-case pattern ()
+	     (syntax-case pattern (quote)
+	       [(quote q) vs]
 	       [v (identifier? #'v)
 		  (if (memp (lambda (e) (bound-identifier=? e #'v)) vs) vs (cons #'v vs))]
 	       [(h . t) (extract-vars #'h (extract-vars #'t vs))]
 	       [a vs]))]))
     
-    (syntax-case x ()
+    (syntax-case bindings ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
        (with-syntax ([(in-var ...)
 		      (extract-vars #'(p-car ... p-cdr ...))])
