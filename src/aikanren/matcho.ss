@@ -7,6 +7,11 @@
       [(_ (h . t)) (cons (analyze-pattern2 h) (analyze-pattern2 t))]
       [(_ ()) '()]
       [(_ v) v]))
+
+  (define-syntax build-substitution
+    (syntax-rules ()
+      [(_) '()]
+      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (analyze-pattern2 p))]))
   
   (define (mutate-vars vs state)
     (let increment ([vs vs]
@@ -46,11 +51,6 @@
 	  #`(let ([#,(car vs) (make-var 0)]) #,(build-vars (cdr vs) body))))
     
 
-    (define (build-substitution v-patterns)
-      (if (null? v-patterns) #''()
-	  #`(mini-unify #,(build-substitution (cdr v-patterns))
-			#,(build-pattern (cadar v-patterns)) #,(caar v-patterns))))
-
     (define (build-extension v-patterns substitution)
       (if (null? v-patterns) #'succeed
 	  #`(make-conj (== #,(caar v-patterns) (mini-reify #,substitution #,(caar v-patterns)))
@@ -82,11 +82,8 @@
        (with-syntax ([(in-var ...) (pattern-vars #'((p-car . p-cdr) ...))])
 	 #`(lambda (state package)
 	     (let ([in-var (make-var 0)] ...)
-	       (printf "~s\t~s\t~s~%"
-		       '([v (p-car . p-cdr)] ...)
-		       (expand '(analyze-pattern2 ([v (p-car . p-cdr)] ...)))
-		       (analyze-pattern2 ([v (p-car . p-cdr)] ...)))
-	       (let ([substitution #,(build-substitution (analyze-pattern #'([v (p-car . p-cdr)] ...)))])
+	       (let ([substitution
+		      (build-substitution (v (p-car . p-cdr)) ...)])
 		 (if (failure? substitution) (values fail failure package)
 		     #,(walk-vars #'(in-var ...) #'substitution
 				  #`(values
