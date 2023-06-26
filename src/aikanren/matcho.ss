@@ -15,6 +15,17 @@
       [(_ v) v]))
 
   (define-syntax (matcho x)
+
+    (define extract-vars
+      (case-lambda
+	[(pattern) (extract-vars pattern '())]
+	[(pattern vs)
+	 (syntax-case pattern ()
+	   [v (identifier? #'v)
+	      (if (memp (lambda (e) (bound-identifier=? e #'v)) vs) vs (cons #'v vs))]
+	   [(h . t) (extract-vars #'h (extract-vars #'t vs))]
+	   [a vs])]))
+    
     (define (analyze-pattern pattern)
       (if (pair? pattern) (cons (analyze-pattern (car pattern))
 				(analyze-pattern (cdr pattern)))
@@ -37,7 +48,9 @@
     
     (syntax-case x ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
-       (with-syntax ([(in-var ...) (pattern-vars #'((p-car . p-cdr) ...))])
+       (with-syntax ([(in-var ...)
+
+		      (pattern-vars #'((p-car . p-cdr) ...))])
 	 #`(lambda (state package)
 	     (let ([in-var (make-var 0)] ...)
 	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
@@ -49,7 +62,7 @@
 ;		       (printf "~s\t~s~%" substitution (list (== (build-pattern v) (mini-reify substitution (build-pattern v))) ...))
 		       (values
 			(fresh ()
-			  (== (build-pattern v) (mini-reify substitution (build-pattern v))) ...
+			  (== v (mini-reify substitution v)) ...
 			  body ...)
 			(set-state-varid state varid)
 			package)))))))])))
