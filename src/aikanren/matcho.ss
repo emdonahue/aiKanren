@@ -84,20 +84,13 @@
 	     (let ([in-var (make-var 0)] ...)
 	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
 		 (if (failure? substitution) (values fail failure package)
-		     (let ([in-var (mini-reify substitution in-var)] ...)
+		     (let* ([varid (state-varid state)]
+			    [in-var (mini-reify substitution in-var)] ...
+			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var)))
+				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
 		       (values
 			(fresh ()
 			  (== (build-pattern2 v) (mini-reify substitution (build-pattern2 v))) ...
-			  #;
-			  #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution)
 			  body ...)
-			(mutate-vars #,(build-pattern #'(in-var ...))
-				     state)
-			package))
-		     #;
-		     #,(walk-vars #'(in-var ...) #'substitution
-				  #`(values
-				     (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
-				     (mutate-vars #,(build-pattern #'(in-var ...))
-						  state)
-				     package)))))))])))
+			(set-state-varid state varid)
+			package)))))))])))
