@@ -2,16 +2,16 @@
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui))
 
-  (define-syntax build-pattern
-    (syntax-rules ()
-      [(_ (h . t)) (cons (build-pattern h) (build-pattern t))]
-      [(_ ()) '()]
-      [(_ v) v]))
-
   (define-syntax build-substitution
     (syntax-rules ()
       [(_) '()]
-      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern p))]))
+      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern2 p))]))
+  
+  (define-syntax build-pattern2
+    (syntax-rules ()
+      [(_ (h . t)) (cons (build-pattern2 h) (build-pattern2 t))]
+      [(_ ()) '()]
+      [(_ v) v]))
   
   (define (mutate-vars vs state)
     (let increment ([vs vs]
@@ -82,9 +82,15 @@
        (with-syntax ([(in-var ...) (pattern-vars #'((p-car . p-cdr) ...))])
 	 #`(lambda (state package)
 	     (let ([in-var (make-var 0)] ...)
-	       (let ([substitution
-		      (build-substitution (v (p-car . p-cdr)) ...)])
+	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
 		 (if (failure? substitution) (values fail failure package)
+		     (let ([in-var (mini-reify substitution in-var)] ...)
+		       #,#`(values
+			  (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
+			  (mutate-vars #,(build-pattern #'(in-var ...))
+				       state)
+			  package))
+		     #;
 		     #,(walk-vars #'(in-var ...) #'substitution
 				  #`(values
 				     (fresh () #,(build-extension (analyze-pattern #'([v (p-car . p-cdr)] ...)) #'substitution) body ...)
