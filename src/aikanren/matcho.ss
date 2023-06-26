@@ -20,37 +20,17 @@
       (case-lambda
 	[(pattern) (extract-vars pattern '())]
 	[(pattern vs)
-	 (syntax-case pattern ()
-	   [v (identifier? #'v)
-	      (if (memp (lambda (e) (bound-identifier=? e #'v)) vs) vs (cons #'v vs))]
-	   [(h . t) (extract-vars #'h (extract-vars #'t vs))]
-	   [a vs])]))
-    
-    (define (analyze-pattern pattern)
-      (if (pair? pattern) (cons (analyze-pattern (car pattern))
-				(analyze-pattern (cdr pattern)))
-	  (syntax-case pattern ()
-	    [() '()]
-	    [v (identifier? #'v) #'v]
-	    [(h . t) (cons #'h (analyze-pattern #'t))]
-	    [a #'a])))
-
-
-    (define pattern-vars
-      ;; Extracts unique identifiers from arbitrary pattern.
-      (case-lambda
-	[(pattern) (pattern-vars (analyze-pattern pattern) '())]
-	[(pattern vs)
-	 (cond
-	  [(identifier? pattern) (if (memp (lambda (e) (bound-identifier=? e pattern)) vs) vs (cons pattern vs))]
-	  [(pair? pattern) (pattern-vars (car pattern) (pattern-vars (cdr pattern) vs))]
-	  [else vs])]))
+	 (if (pair? pattern) (extract-vars (car pattern) (extract-vars (cdr pattern) vs))
+	     (syntax-case pattern ()
+	       [v (identifier? #'v)
+		  (if (memp (lambda (e) (bound-identifier=? e #'v)) vs) vs (cons #'v vs))]
+	       [(h . t) (extract-vars #'h (extract-vars #'t vs))]
+	       [a vs]))]))
     
     (syntax-case x ()
       [(_ ([v (p-car . p-cdr)] ...) body ...)
        (with-syntax ([(in-var ...)
-
-		      (pattern-vars #'((p-car . p-cdr) ...))])
+		      (extract-vars #'(p-car ... p-cdr ...))])
 	 #`(lambda (state package)
 	     (let ([in-var (make-var 0)] ...)
 	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)])
@@ -59,7 +39,6 @@
 			    [in-var (mini-reify substitution in-var)] ...
 			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var)))
 				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
-;		       (printf "~s\t~s~%" substitution (list (== (build-pattern v) (mini-reify substitution (build-pattern v))) ...))
 		       (values
 			(fresh ()
 			  (== v (mini-reify substitution v)) ...
