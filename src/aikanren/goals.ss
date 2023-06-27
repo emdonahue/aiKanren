@@ -11,7 +11,7 @@
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (if (matcho? g)
-		       (if (null? (matcho-in-vars g))
+		       (if (null? (matcho-out-vars g))
 			   (run-goal (matcho-goal g) s p)
 			   (values (make-bind (matcho-goal g) s) p))
 		       (values (make-bind g s) p)))]

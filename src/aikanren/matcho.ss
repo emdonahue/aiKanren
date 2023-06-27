@@ -41,8 +41,8 @@
 		     (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		       (values
 			(make-matcho
-			 (filter var? (list v ...))
-			 (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...))
+			 (filter var? (list v ...)) ; External vars
+			 (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...)) ; Internal vars are those that are 0 prior to subsequent mutation to give them ids.
 			 (fresh ()
 			   (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
 			   body ...))
