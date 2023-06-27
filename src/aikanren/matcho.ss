@@ -12,11 +12,13 @@
   (define-syntax build-substitution
     (syntax-rules ()
       [(_ state substitution () body ...) (if (failure? substitution) failure (begin body ...))]
-      [(_ state substitution ((out-var pattern) bindings ...) body ...)
-       (if (failure? substitution) failure
-	   (let* ([out-var (walk state out-var)]
-		  [substitution (mini-unify substitution out-var (build-pattern pattern))])
-	     (build-substitution state substitution (bindings ...) body ...)))]
+      [(_ state substitution ((out-var pattern)) body ...)
+       (let* ([out-var (walk state out-var)]
+	      [substitution (mini-unify substitution out-var (build-pattern pattern))])
+	 (if (failure? substitution) failure (begin body ...)))]
+      [(_ state substitution (binding bindings ...) body ...)
+       (build-substitution state substitution (binding)
+			   (build-substitution state substitution (bindings ...) body ...))]
 ))
   
   (define-syntax build-pattern
