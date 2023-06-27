@@ -16,7 +16,7 @@
       [(_ ()) '()]
       [(_ v) v]))
 
-  (define-syntax (matcho bindings)
+  (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
 
     (define extract-vars
       ;; Extracts unique logic variable identifiers from the aggregate patterns.
