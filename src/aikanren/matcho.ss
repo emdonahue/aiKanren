@@ -11,14 +11,14 @@
 
   (define-syntax build-substitution
     (syntax-rules ()
-      [(_ state substitution () body ...) (if (failure? substitution) failure (begin body ...))]
-      [(_ state substitution ((out-var pattern)) body ...)
+;      [(_ state package substitution () body ...) (if (failure? substitution) (values fail failure package) (begin body ...))]
+      [(_ state package substitution ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
 	      [substitution (mini-unify substitution out-var (build-pattern pattern))])
-	 (if (failure? substitution) failure (begin body ...)))]
-      [(_ state substitution (binding bindings ...) body ...)
-       (build-substitution state substitution (binding)
-			   (build-substitution state substitution (bindings ...) body ...))]
+	 (if (failure? substitution) (values fail failure package) (begin body ...)))]
+      [(_ state package substitution (binding bindings ...) body ...)
+       (build-substitution state package substitution (binding)
+			   (build-substitution state package substitution (bindings ...) body ...))]
 ))
   
   (define-syntax build-pattern
@@ -52,6 +52,7 @@
 		   [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
 	       (build-substitution
 		state
+		package
 		substitution
 		((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		(let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
