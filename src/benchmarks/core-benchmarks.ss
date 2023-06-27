@@ -1,5 +1,3 @@
-(import (benchmark-runner))
-
 (begin
   
   (bench "streams - answers" 100

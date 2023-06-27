@@ -11,5 +11,7 @@
 (run-listo-tests)
 (run-matcho-tests)
 (parameterize ([benchmark-testing #t])
-  (include "src/benchmarks/core-benchmarks.ss"))
+  (include "src/benchmarks/core-benchmarks.ss")
+  (include "src/benchmarks/disequality-benchmarks.ss")
+  (include "src/benchmarks/absento-benchmarks.ss"))
 (display "Testing Complete\n")

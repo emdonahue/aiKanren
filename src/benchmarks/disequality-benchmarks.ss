@@ -1,5 +1,3 @@
-(import (benchmark-runner))
-
 (begin
 
   (bench "disequality - ground" 1000

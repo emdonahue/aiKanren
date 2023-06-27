@@ -49,7 +49,7 @@ rebench:
 benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
-	echo '(import (chezscheme) (aikanren)) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
+	echo '(import (chezscheme) (aikanren) (benchmark-runner)) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 
 repl:
 # Boot up a REPL preloaded with aiKanren
@@ -57,6 +57,7 @@ repl:
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
 	scheme --libdirs src/aikanren "$$REPLBOOT"
+
 
 doc:
 	sed -i -n '1,/^## Documentation/ p' README.md
