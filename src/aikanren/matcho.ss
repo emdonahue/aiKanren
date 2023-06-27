@@ -46,7 +46,7 @@
 			(let ([g (fresh ()
 				   (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
 				   body ...)])
-			  (if (null? (filter var? (list in-var ...))) (make-matcho g) g))
+			  (if (memp var? (list in-var ...)) g (make-matcho g)))
 			
 			
 			(set-state-varid state varid)
