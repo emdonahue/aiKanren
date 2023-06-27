@@ -66,16 +66,16 @@
   
   ;; === UTILITIES ===
 
-    (define-syntax fresh-vars
-    (syntax-rules ()
-      [(_ start-varid end-varid (q) body ...)
-       (let ([q (make-var start-varid)]
-		    [end-varid (fx1+ start-varid)])
-	 body ...)]
-      [(_ start-varid end-varid (q0 q ...) body ...)
-       (let ([q0 (make-var start-varid)]
-	     [intermediate-varid (fx1+ start-varid)])
-	 (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
+   (define-syntax fresh-vars ;TODO make fresh-vars non-recursive ala matcho
+     (syntax-rules ()
+       [(_ start-varid end-varid (q) body ...)
+	(let ([q (make-var start-varid)]
+	      [end-varid (fx1+ start-varid)])
+	  body ...)]
+       [(_ start-varid end-varid (q0 q ...) body ...)
+	(let ([q0 (make-var start-varid)]
+	      [intermediate-varid (fx1+ start-varid)])
+	  (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
 
     (define (top-level-runner state query conjuncts)
       (make-runner (make-bind conjuncts state) query empty-package)))

@@ -102,7 +102,7 @@
 	 [(var? v) (symbolo v)]
 	 [else fail]))))
 
-  (define (presento term present)
+  (define (presento present term)
     ;; TODO try making constraint freshes that don't bind any external variables just commit. eg for ground terms. maybe their partner in == is ground or also from a constraint fresh?
     (constrain
      (conde
@@ -110,10 +110,10 @@
        [(guardo term
 		(lambda (a d)
 		  (conde
-		   [(presento a present)]
-		   [(presento d present)])))])))
+		   [(presento present a)]
+		   [(presento present d)])))])))
 
-  (define (absento term absent)
+  (define (absento absent term)
     (constrain
      (fresh ()
        (=/= term absent)
@@ -126,8 +126,8 @@
 		     (absento a absent)
 		     (absento d absent)))
 		    (conj
-		     (absento a absent)
-		     (absento d absent))))]))))
+		     (absento absent a)
+		     (absento absent d))))]))))
 
   #;
   (define (absento3 term absent)
