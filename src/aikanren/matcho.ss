@@ -43,9 +43,12 @@
 			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var))) ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
 				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
 		       (values
-			(fresh ()
-			  (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
-			  body ...)
+			(let ([g (fresh ()
+				   (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
+				   body ...)])
+			  (if (null? (filter var? (list in-var ...))) (make-matcho g) g))
+			
+			
 			(set-state-varid state varid)
 			package)))))))])))
 
