@@ -22,6 +22,7 @@
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
+	  make-matcho guardo? matcho-vars matcho-procedure
 	  make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
@@ -118,6 +119,7 @@
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
+  (define-structure (matcho vars procedure))
 
   (define == make-==) ;TODO make == do an eq? check and resolve if ground. if equal? then if not var or pair (eq? failed), then make
 
