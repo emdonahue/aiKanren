@@ -6,7 +6,8 @@
   (define-syntax build-substitution
     (syntax-rules ()
       [(_) '()]
-      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern p))]))
+      [(_ (v p) b ...) (let ([s (build-substitution b ...)])
+			 (if (failure? s) s (mini-unify s v (build-pattern p))))]))
   
   (define-syntax build-pattern
     ;; Turn a pattern match schema into a full scheme object for unification.

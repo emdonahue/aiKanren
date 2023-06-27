@@ -20,15 +20,14 @@
      [else v]))
 
   (define (mini-unify s x y)
-    (if (failure? s) failure
-	(let ([x (mini-walk s x)] [y (mini-walk s y)])
-	  (cond
-	   [(eq? x y) s]
-	   [(var? x) (extend s x y)]
-	   [(var? y) (extend s y x)]
-	   [(and (pair? x) (pair? y))
-	    (mini-unify (mini-unify s (car x) (car y)) (cdr x) (cdr y))]
-	   [else failure]))))
+    (let ([x (mini-walk s x)] [y (mini-walk s y)])
+      (cond
+       [(eq? x y) s]
+       [(var? x) (extend s x y)]
+       [(var? y) (extend s y x)]
+       [(and (pair? x) (pair? y))
+	(mini-unify (mini-unify s (car x) (car y)) (cdr x) (cdr y))]
+       [else failure])))
 
   (define (extend s x y)
     (cons (cons x y) s)))
