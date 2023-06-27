@@ -15,4 +15,8 @@
     (tassert "match pair symbol list" (run1 (x1 x2) (let ([p (cons 'one x2)]) (matcho ([p (a . '(two three))]) (== a x1)))) '(one (two three)))
 
     (tassert "match eager" (run* (x1) (conde [(let ([p (list 1 2)]) (matcho ([p (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
-    (tassert "match lazy" (run* (x1) (conde [(let ([p (list x1 2)]) (matcho ([p (a 2)]) (== a 1)))] [(== x1 2)])) '(2 1))))
+    (tassert "match lazy" (run* (x1) (conde [(let ([p (list x1 2)]) (matcho ([p (a 2)]) (== a 1)))] [(== x1 2)])) '(2 1))
+
+    (tassert "match ground constraint" (run* (x1) (let ([p (list 1 2)]) (constrain (matcho ([p (a 2)]) (== a x1))))) '(1))
+
+    ))
