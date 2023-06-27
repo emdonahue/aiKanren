@@ -38,18 +38,20 @@
 	     (let ([in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
 	       (let ([substitution (build-substitution (v (p-car . p-cdr)) ...)]) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		 (if (failure? substitution) (values fail failure package)
-		     (let* ([varid (state-varid state)]
-			    [in-var (mini-reify substitution in-var)] ... ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
-			    [varid (if (and (var? in-var) (fx= 0 (var-id in-var))) ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
-				       (begin (set-var-id! in-var varid) (fx1+ varid)) varid)] ...)
+		     (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		       (values
-			(let ([g (fresh ()
-				   (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
-				   body ...)])
-			  (if (memp var? (list in-var ...)) g (make-matcho g)))
-			
-			
-			(set-state-varid state varid)
+			(make-matcho
+			 (filter var? (list v ...))
+			 (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...))
+			 (fresh ()
+			   (== v (mini-reify substitution v)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
+			   body ...))
+			(set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
+			 state (fold-left
+				(lambda (varid var)
+				  (if (and (var? var) (fx= 0 (var-id var))) 
+				      (begin (set-var-id! var varid) (fx1+ varid)) varid))
+				(state-varid state) (list in-var ...)))
 			package)))))))])))
 
 

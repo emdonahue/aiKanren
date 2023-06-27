@@ -130,6 +130,17 @@
 		     (absento absent d))))]))))
 
   #;
+    (define (absento2 absent term)
+    (constrain
+     (fresh ()
+       (=/= term absent)
+       (conde
+	 [(noto (pairo term))]
+	 [(matcho ([term (a . d)])
+		  (absento absent a)
+		  (absento absent d))]))))
+  
+  #;
   (define (absento3 term absent)
     (constrain
      (fresh ()

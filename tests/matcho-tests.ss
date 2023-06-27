@@ -19,6 +19,9 @@
     (tassert "match eager" (run* (x1) (conde [(let ([m (list 1 2)]) (matcho ([m (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
     (tassert "match lazy" (run* (x1) (conde [(let ([m (list x1 2)]) (matcho ([m (a 2)]) (== a 1)))] [(== x1 2)])) '(2 1))
 
-    (tassert "match ground constraint" (run* (x1) (let ([m (list 1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) '(1))
+    ;;TODO test matcho with unwalked vars
+
+    (tassert "match ground constraint" (run* (x1) (let ([m '(1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) '(1))
+;    (tassert "match free constraint" (run* (x1) (let ([m (list x1 2)]) (constrain (matcho ([m (a 2)]) (== a 1))))) 1)
 
     ))

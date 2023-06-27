@@ -19,8 +19,13 @@
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
-     [(fresh? g) (solve-constraint (let-values ([(g s p) (g s empty-package)]) g) s conjs out)]
-     [(matcho? g) (solve-constraint (matcho-goal g) s conjs out)]
+     [(fresh? g) (let-values ([(g s p) (g s empty-package)])
+		   (solve-constraint g s conjs out))]
+     [(matcho? g) (if (null? (matcho-in-vars g))
+		      (solve-constraint (matcho-goal g) s conjs out)
+		      
+		      (assert #f)
+		      )]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
