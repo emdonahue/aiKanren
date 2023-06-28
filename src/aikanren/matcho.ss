@@ -3,18 +3,12 @@
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
 
-  #;
-  (define-syntax build-substitution
-    (syntax-rules ()
-      [(_) '()]
-      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern2 p))]))
-  
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
     (syntax-rules ()
       [(_ state package substitution ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
-	      [substitution (mini-unify substitution out-var (build-pattern pattern))])
+	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
 	 (if (failure? substitution)
 	     (values #f fail failure package)
 	     (begin body ...)))]

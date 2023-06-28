@@ -302,7 +302,7 @@
     (tassert "absento fire cdr fail" (run1 (x1) (absento 1 x1) (== x1 '(2 . 1))) (void)) 
     (tassert "absento fire cdr succeed" (run1 (x1) (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
 
-        (exit)
+
     (display "START\n")
 
     (tassert "absento hangs"
