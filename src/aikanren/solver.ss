@@ -75,7 +75,8 @@
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g))
-	(solve-constraint (matcho-goal g) s ctn out)
+	(let-values ([(_ g s p) ((matcho-goal g) s empty-package)])
+	  (solve-constraint g s ctn out))
 	(let ([v (walk s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
 	  (if (var? v)
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])

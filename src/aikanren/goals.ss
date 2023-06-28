@@ -15,11 +15,10 @@
 		 ([(lhs p) (run-goal (disj-lhs g) s p)]
 		  [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
-     [(matcho? g) ;(printf "initial matcho run: ~s~%" g)
-      (let-values ([(g^ s p) ((matcho-goal g) s p)])
-	(if (null? (matcho-out-vars g))
-	    (run-goal g^ s p)
-	    (values (make-bind g^ s) p)))
+     [(matcho? g) (let-values ([(structurally-recursive? g s p) ((matcho-goal g) s p)])
+		    (if structurally-recursive?
+			(run-goal g s p)
+			(values (make-bind g s) p)))
 
       #;
       (let-values ([(g s p) ((matcho-goal g) s p)])

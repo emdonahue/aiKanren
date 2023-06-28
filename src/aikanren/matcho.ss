@@ -16,7 +16,7 @@
        (let* ([out-var (walk state out-var)]
 	      [substitution (mini-unify substitution out-var (build-pattern pattern))])
 	 (if (failure? substitution)
-	     (values fail failure package)
+	     (values #f fail failure package)
 	     (begin body ...)))]
       [(_ state package substitution (binding bindings ...) body ...)
        (build-substitution state package substitution (binding)
@@ -62,6 +62,7 @@
 		 ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		   (values
+		    (or (not (var? out-var)) ...) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
 		    (fresh ()
 		      (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
 		      body ...)
