@@ -62,14 +62,9 @@
 		 ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		   (values
-		    (make-matcho ;TODO if we dont need out vars, generate an (or ...) to test whether any vars are ground and continue with structural recursion
-		     (list out-var ...)
-		     '()
-		     ;(filter var? (list out-var ...)) ; External vars
-		     ;TODO (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...)) ; Internal vars are those that are 0 prior to subsequent mutation to give them ids.
-		     (fresh ()
-		       (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
-		       body ...))
+		    (fresh ()
+		      (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
+		      body ...)
 		    (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
 		     state (fold-left
 			    (lambda (id v)

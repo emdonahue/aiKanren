@@ -15,11 +15,13 @@
 		 ([(lhs p) (run-goal (disj-lhs g) s p)]
 		  [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
-     #;
-     [(and (noto? g) (fresh? (noto-goal g)))
-      (assert #f)
-      (let-values ([(g s p) ((noto-goal g) s p)])
-				     (values (make-bind (noto g) s) p))] 
+     [(matcho? g) ;(printf "initial matcho run: ~s~%" g)
+      (let-values ([(g s p) ((matcho-goal g) s p)])
+	(cond
+	 [(fail? g) (values failure p)]
+	 [(null? (matcho-out-vars g)) ;(printf "running immediate: ~s~%" g) (run-goal g s p)
+	  ]
+	 [else (values (make-bind g s) p)]))]
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)
@@ -52,9 +54,8 @@
     (cond
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
-     [(bind? s)
-      (let-values ([(s^ p) (stream-step (bind-stream s) p)])
-	(bind (bind-goal s) s^ p))]
+     [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
+		  (bind (bind-goal s) s^ p))]
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		   (values (mplus (mplus-rhs s) lhs) p))]
      [(answers? s) (values (answers-cdr s) p)]
