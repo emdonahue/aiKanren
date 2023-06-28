@@ -1,5 +1,6 @@
 ;;TODO perhaps all constraint lookups receive pointers to a single store so that we can cheeply copy pointers to different attributed variables but only remove and apply the constraint once instead of copying the constraint and applying it many times
 ;;TODO == and =/= have different attributed variables, so each variable should store two lists. moreover, == are a superset of =/= so == list can just store the diff and then append them
+;;TODO if we have a central constraint lookup with pointers, some constraints will simplify in place and so we can add them back with the same pointer without updating other pointers, while some will generate new constraints that need to be assigned to new pointers. we can perhaps diff the new and old constraints and only add to new pointers
 (library (store) ; Constraint store
   (export get-constraint add-constraint remove-constraint reify-constraint)
   (import (chezscheme) (datatypes))

@@ -4,6 +4,7 @@
 
   (define (run-matcho-tests)
     (define x1 (make-var 1))
+    (define x2 (make-var 2))
 
     (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho ([m (a 1)])))) (void))
     (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho ([m (a 1)])))) '())
@@ -24,7 +25,10 @@
     (tassert "match eager bound vars" (run* (x1 x2) (conde [(== x2 '(1 2)) (matcho ([x1 (a 2)] [x2 (1 2)]) (== a 1))] [(== x1 3) (== x2 4)])) '(((1 2) (1 2)) (3 4)))
     (tassert "match lazy var" (run* (x1) (conde [(matcho ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '(2 (1 2)))
 
-    (tassert "match ground constraint" (run1 (x1) (let ([m '(1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) 1)
-    (tassert "match ground-free constraint" (run1 (x1) (let ([m (list x1 2)]) (constrain (matcho ([m (a 2)]) (== a 1))))) 1)
-    (tassert "match free constraint" (matcho-out-vars (run1 (x1) (constrain (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
+    (tassert "match constraint ground" (run1 (x1) (let ([m '(1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) 1)
+    (tassert "match constraint ground-free" (run1 (x1) (let ([m (list x1 2)]) (constrain (matcho ([m (a 2)]) (== a 1))))) 1)
+    (tassert "match constraint free" (matcho-out-vars (run1 (x1) (constrain (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
+    (tassert "match constraint disj first" (matcho-out-vars (cadr (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))))) (list x2))
+    (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
+        (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
     ))

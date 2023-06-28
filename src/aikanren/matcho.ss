@@ -51,7 +51,7 @@
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(make-matcho
 	    (or (memp var? (list out-var ...)) '())
-	    'dummy-ground-out-vars
+	    'dummy-ground-out-vars ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
 	    (lambda (state package)
 	      (let ([substitution '()]
 		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
