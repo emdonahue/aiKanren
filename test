@@ -1,7 +1,10 @@
 #!/usr/bin/env -S scheme --libdirs src/aikanren:tests:src/benchmarks --script
 
 (import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests))
-  
+
+(parameterize ([benchmark-testing #t])
+  (include "src/benchmarks/absento-benchmarks.ss"))
+
 (run-sbral-tests)
 (run-mini-substitution-tests)
 (run-state-tests)
