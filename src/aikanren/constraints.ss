@@ -1,6 +1,6 @@
 (library (constraints)
   (export =/= booleano presento absento listo finite-domain ==> typeo symbolo)
-  (import (chezscheme) (datatypes) (ui) (negation) (state))
+  (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho))
 
   (define (=/= lhs rhs)
     (noto (== lhs rhs)))
@@ -113,7 +113,7 @@
 		   [(presento present a)]
 		   [(presento present d)])))])))
 
-  (define (absento absent term)
+  (define (absento2 absent term)
     (constrain
      (fresh ()
        (=/= term absent)
@@ -129,8 +129,8 @@
 		     (absento absent a)
 		     (absento absent d))))]))))
 
-  #;
-    (define (absento2 absent term)
+
+    (define (absento absent term)
     (constrain
      (fresh ()
        (=/= term absent)
