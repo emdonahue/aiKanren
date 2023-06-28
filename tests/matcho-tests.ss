@@ -20,6 +20,7 @@
     (tassert "match eager" (run* (x1) (conde [(let ([m (list 1 2)]) (matcho ([m (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
     (tassert "match eager var" (run* (x1) (conde [(let ([m (list x1 2)]) (matcho ([m (a 2)]) (== a 1)))] [(== x1 2)])) '(1 2))
     (tassert "match eager bound var" (run* (x1) (conde [(== x1 '(1 2)) (matcho ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2))
+    (tassert "match eager bound vars" (run* (x1 x2) (conde [(== x2 '(1 2)) (matcho ([x1 (a 2)] [x2 (1 2)]) (== a 1))] [(== x1 3) (== x2 4)])) '(((1 2) (1 2)) (3 4)))
     (tassert "match lazy var" (run* (x1) (conde [(matcho ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '(2 (1 2)))
 
     ;;TODO test matcho with unwalked vars
