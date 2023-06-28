@@ -7,7 +7,6 @@
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
     (cond
-     [(fail? g) (values failure p)]
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
