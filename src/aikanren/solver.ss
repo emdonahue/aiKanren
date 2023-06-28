@@ -27,7 +27,7 @@
 
   (define (solve-noto g s ctn out)
     (if (==? g) (solve-=/= g s ctn out)
-	(let-values ([(g s^) (solve-constraint g s ctn out)])
+	(let-values ([(g s^) (solve-constraint g s succeed out)])
 	  (let ([g (noto g)])
 	    (if (fail? g) (values fail failure)
 		(solve-constraint ctn (store-constraint s g) succeed (conj out g)))))))

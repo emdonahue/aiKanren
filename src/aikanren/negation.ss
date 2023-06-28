@@ -12,7 +12,4 @@
      [(conj? g) (disj (noto (conj-car g)) (noto (conj-cdr g)))]
      [(noto? g) (noto-goal g)]
      [(constraint? g) (make-constraint (noto (constraint-goal g)))]
-     [else (assertion-violation 'noto "Unrecognized constraint type" g)]
-     )
-    )
-)
+     [else (assertion-violation 'noto "Unrecognized constraint type" g)])))

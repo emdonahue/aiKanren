@@ -273,6 +273,7 @@
 
     (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void)) 
     (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
+    (tassert "noto does not mangle ctn" (run1 (x1) (constrain (noto (symbolo x1)) (matcho ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
 
     ;; === PLUSO ===
 
