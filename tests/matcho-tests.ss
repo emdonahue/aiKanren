@@ -30,5 +30,6 @@
     (tassert "match constraint free" (matcho-out-vars (run1 (x1) (constrain (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
     (tassert "match constraint disj first" (matcho-out-vars (cadr (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))))) (list x2))
     (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
-        (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
-    ))
+    (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
+
+    (tassert "match constraint no fresh" (run1 (x1 x2) (constrain (matcho ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))))

@@ -278,9 +278,7 @@
     ;; === PLUSO ===
 
     ;;(tassert "pluso ground 1" (run1 () (pluso 42)) '())
-    
-    
-
+       
     ;; === ABSENTO ===
     (tassert "absento ground cdr fail" (run1 () (absento 1  (cons 2 1))) (void))
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
@@ -303,6 +301,14 @@
     (tassert "absento bound cdr succeed" (run1 (x1) (== x1 '(2 . 2)) (absento 1 x1)) '(2 . 2)) 
     (tassert "absento fire cdr fail" (run1 (x1) (absento 1 x1) (== x1 '(2 . 1))) (void)) 
     (tassert "absento fire cdr succeed" (run1 (x1) (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
+
+        (exit)
+    (display "START\n")
+
+    (tassert "absento hangs"
+	     (run1 (x0 x1 x2 x3)
+		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 3) (1 2 3) (2 3) 3))
+    (exit)
 
 ;    (display "start")
 #;
