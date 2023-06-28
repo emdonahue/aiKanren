@@ -302,14 +302,11 @@
     (tassert "absento fire cdr fail" (run1 (x1) (absento 1 x1) (== x1 '(2 . 1))) (void)) 
     (tassert "absento fire cdr succeed" (run1 (x1) (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
 
-
-    (display "START\n")
-
-    (tassert "absento hangs"
+    (tassert "absento hangs if matcho generates free vars in constraint"
 	     (run1 (x0 x1 x2 x3)
-		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 3) (1 2 3) (2 3) 3))
-    (exit)
+		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
+    
 ;    (display "start")
 #;
     (run1 (x0 x1 x2)
