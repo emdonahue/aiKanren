@@ -6,7 +6,7 @@
     (syntax-rules ()
       [(_ name iterations benchmark)
        (if (benchmark-testing)
-	   benchmark
+	   (begin benchmark (void))
 	   (printf "~s\t~s~%" name
 		   (list-ref
 		    (sort time<?
