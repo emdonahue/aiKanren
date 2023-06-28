@@ -4,12 +4,12 @@
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
-    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
+    (assert (and (goal? g) (state? s))) ; -> goal? state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
   (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
-    (assert (and (goal? g) (state? s) (goal? conjs))) ; -> goal? state-or-failure?
+    (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
      [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
@@ -21,11 +21,7 @@
      [(guardo? g) (solve-guardo g s conjs out)]
      [(fresh? g) (let-values ([(g s p) (g s empty-package)])
 		   (solve-constraint g s conjs out))]
-     [(matcho? g) (if (null? (matcho-in-vars g))
-		      (solve-constraint (matcho-goal g) s conjs out)
-		      
-		      (assert #f)
-		      )]
+     [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
@@ -76,7 +72,16 @@
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
-   
+
+  (define (solve-matcho g s ctn out)
+    (if (null? (matcho-out-vars g))
+	(solve-constraint (matcho-goal g) s ctn out)
+	(let ([v (walk s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
+	  (if (var? v)
+	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
+		(values m (store-constraint s m)))
+	     (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
+  
   (define solve-disj
     (case-lambda
       [(g s conjs out)
@@ -143,7 +148,7 @@
 
   (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (assert (or (guardo? g) (noto? g) (disj? g) (pconstraint? g) (succeed? g) (fail? g))))) ; -> state?
+    (assert (and (state? s) (assert (or (guardo? g) (matcho? g) (noto? g) (disj? g) (pconstraint? g) (succeed? g) (fail? g))))) ; -> state?
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
@@ -178,6 +183,9 @@
 	[(==? g)
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+	[(matcho? g)
+	 (assert (var? (car (matcho-out-vars g))))
+	 (if (memq (car (matcho-out-vars g)) vs) vs (cons (car (matcho-out-vars g)) vs))]
 	[(pconstraint? g)
 	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
 	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]

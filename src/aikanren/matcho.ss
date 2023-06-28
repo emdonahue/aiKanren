@@ -3,23 +3,24 @@
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
 
-  (define-syntax build-substitution2
-    (syntax-rules ()
-      [(_) '()]
-      [(_ (v p) b ...) (let ([s (build-substitution b ...)])
-			 (if (failure? s) s (mini-unify s v (build-pattern p))))]))
-
+  #;
   (define-syntax build-substitution
     (syntax-rules ()
-;      [(_ state package substitution () body ...) (if (failure? substitution) (values fail failure package) (begin body ...))]
+      [(_) '()]
+      [(_ (v p) b ...) (mini-unify (build-substitution b ...) v (build-pattern2 p))]))
+  
+  (define-syntax build-substitution
+    ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
+    (syntax-rules ()
       [(_ state package substitution ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
 	      [substitution (mini-unify substitution out-var (build-pattern pattern))])
-	 (if (failure? substitution) (values fail failure package) (begin body ...)))]
+	 (if (failure? substitution)
+	     (values fail failure package)
+	     (begin body ...)))]
       [(_ state package substitution (binding bindings ...) body ...)
        (build-substitution state package substitution (binding)
-			   (build-substitution state package substitution (bindings ...) body ...))]
-))
+			   (build-substitution state package substitution (bindings ...) body ...))]))
   
   (define-syntax build-pattern
     ;; Turn a pattern match schema into a full scheme object for unification.
@@ -30,6 +31,7 @@
       [(_ v) v]))
 
   (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
+    ;; TODO can we fire matcho immediately if its structural recursion instead of waiting on a conjunct ahead of it that may be all free? reordering conjuncts
 
     (define extract-vars
       ;; Extracts unique logic variable identifiers from the aggregate patterns.
@@ -45,30 +47,35 @@
 	       [a vs]))]))
     
     (syntax-case bindings ()
-      [(_ ([out-var (p-car . p-cdr)] ...) body ...)
+      [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
-	 #`(lambda (state package)
-	     (let ([substitution '()]
-		   [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
-	       (build-substitution
-		state
-		package
-		substitution
-		((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
-		(let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
-		  (values
-		   (make-matcho
-		    (filter var? (list out-var ...)) ; External vars
-		    (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...)) ; Internal vars are those that are 0 prior to subsequent mutation to give them ids.
-		    (fresh ()
-		      (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
-		      body ...))
-		   (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
-		    state (fold-left
-			   (lambda (id v)
-			     (if (and (var? v) (fx= 0 (var-id v))) 
-				 (begin (set-var-id! v id) (fx1+ id)) id))
-			   (state-varid state) (list in-var ...)))
-		   package))))))])))
+	 #`(make-matcho
+	    (or (memp var? (list out-var ...)) '())
+	    'dummy-ground-out-vars
+	    (lambda (state package)
+	      (let ([substitution '()]
+		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
+		(build-substitution
+		 state
+		 package
+		 substitution
+		 ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
+		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
+		   (values
+		    (make-matcho ;TODO if we dont need out vars, generate an (or ...) to test whether any vars are ground and continue with structural recursion
+		     (list out-var ...)
+		     '()
+		     ;(filter var? (list out-var ...)) ; External vars
+		     ;TODO (filter (lambda (var) (and (var? var) (zero? (var-id var)))) (list in-var ...)) ; Internal vars are those that are 0 prior to subsequent mutation to give them ids.
+		     (fresh ()
+		       (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
+		       body ...))
+		    (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
+		     state (fold-left
+			    (lambda (id v)
+			      (if (and (var? v) (fx= 0 (var-id v))) 
+				  (begin (set-var-id! v id) (fx1+ id)) id))
+			    (state-varid state) (list in-var ...)))
+		    package)))))))])))
 
 

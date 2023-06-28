@@ -10,11 +10,7 @@
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		   (if (matcho? g)
-		       (if (null? (matcho-out-vars g))
-			   (run-goal (matcho-goal g) s p)
-			   (values (make-bind (matcho-goal g) s) p))
-		       (values (make-bind g s) p)))]
+		   (values (make-bind g s) p))]
      [(disj? g) (let*-values
 		 ([(lhs p) (run-goal (disj-lhs g) s p)]
 		  [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
