@@ -4,7 +4,7 @@
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
-    (assert (and (goal? g) (state? s))) ; -> goal? state-or-failure?
+    (assert (and (goal? g) (state? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
   (define (solve-constraint g s conjs out)

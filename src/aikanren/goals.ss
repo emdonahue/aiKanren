@@ -5,8 +5,9 @@
 
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
-    (assert (and (goal? g) (state? s) (package? p))) ; -> goal? stream? package?
+    (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
     (cond
+     [(fail? g) (values failure p)]
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
@@ -16,10 +17,16 @@
 		  [(rhs p) (run-goal (disj-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
      [(matcho? g) ;(printf "initial matcho run: ~s~%" g)
+      (let-values ([(g^ s p) ((matcho-goal g) s p)])
+	(if (null? (matcho-out-vars g))
+	    (run-goal g^ s p)
+	    (values (make-bind g^ s) p)))
+
+      #;
       (let-values ([(g s p) ((matcho-goal g) s p)])
 	(cond
 	 [(fail? g) (values failure p)]
-	 [(null? (matcho-out-vars g)) ;(printf "running immediate: ~s~%" g) (run-goal g s p)
+	 [(null? (matcho-out-vars g)) (printf "running immediate: ~s~%" g) (run-goal g s p)
 	  ]
 	 [else (values (make-bind g s) p)]))]
      [else (values (run-constraint g s) p)]))
