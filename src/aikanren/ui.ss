@@ -4,13 +4,14 @@
 
   (define-syntax conde ;TODO make conde expand syntactically
     (syntax-rules ()
-      [(_ (g ...) ...)
-       (disj* (conj* g ...) ...)]))
+      [(_ (g ...)) (fresh () g ...)]
+      [(_ c0 c ...)
+       (make-conde (conde c0) (conde c ...))]))
   
- (define-syntax fresh
+ (define-syntax fresh ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
    (syntax-rules ()
      [(_ () g) g] ; No reason to suspend if not creating new vars, since computation will be finite.
-     [(_ () g0 g ...) (make-conj g0 (fresh () g ...))] 
+     [(_ () g0 g ...) (conj g0 (fresh () g ...))] 
      [(_ (q ...) g ...)
       (lambda (state p)
 	(fresh-vars

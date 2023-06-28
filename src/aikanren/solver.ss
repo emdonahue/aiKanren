@@ -16,6 +16,7 @@
      [(==? g) (solve-== g s conjs out)]
      [(noto? g) (solve-noto (noto-goal g) s conjs out)]
      [(disj? g) (solve-disj g s conjs out)]
+     [(conde? g) (solve-constraint (conde->disj g) s conjs out)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
      [(guardo? g) (solve-guardo g s conjs out)]
@@ -87,7 +88,12 @@
     (case-lambda
       [(g s conjs out)
        (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
-	 (values (conj out g) s))]
+	 (values (conj out g) s))
+	   #;
+       (if (disj-succeeds? g);TODO remove disj succeeds
+	   (values succeed s)
+	   (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
+	     (values (conj out g) s)))]
       [(g s s^ ctn ==s lhs-disj rhs-disj)
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases

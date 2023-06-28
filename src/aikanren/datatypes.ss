@@ -19,7 +19,8 @@
 	  == ==? ==-lhs ==-rhs
 	  fresh?
 	  make-conj conj conj? conj-car conj-cdr conj* conj-fold
-	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs
+	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
+	  make-conde conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
@@ -118,15 +119,20 @@
   ;;TODO make == pre-unify with an empty mini-substitution to catch failing ground violations. useful if we want to quick check the constraints with new extensions
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
+  (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
   (define-structure (matcho out-vars in-vars goal))
 
-  (define == make-==) ;TODO make == do an eq? check and resolve if ground. if equal? then if not var or pair (eq? failed), then make
+  (define (== x y)
+    (cond
+     [(equal? x y) succeed]
+     [(or (var? x) (var? y) (and (pair? x) (pair? y))) (make-== x y)]
+     [else fail]))
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g)))
+    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g)))
 
   (define-syntax goal-cond ;TODO delete goal-cond
     (syntax-rules ()
@@ -186,4 +192,14 @@
     (if (disj? c)
 	(disj-rhs c)
 	#;
-	(disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail)))
+	(disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail))
+
+  (define (conde->disj c)
+    (if (conde? c) (disj (conde->disj (conde-lhs c)) (conde->disj (conde-rhs c))) c))
+  
+  (define (disj-succeeds? d)
+    ;; True if d contains a literal succeed goal.
+    (cond
+     [(succeed? d) #t]
+     [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
+     [else #f])))

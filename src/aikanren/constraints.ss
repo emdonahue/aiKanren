@@ -11,21 +11,12 @@
        [(== v #t)]
        [(== v #f)])))
 
-  #;
   (define (listo l)
     (constrain
      (conde
        [(== l '())]
-       [(fresh (a d)
-	  (== l (cons a d))
-	  (listo d))])))
-
-  (define (listo l)
-    (constrain
-     (conde
-       [(== l '())]
-       [(guardo l (lambda (a d)
-		    (listo d)))])))
+       [(matcho ([l (a . d)])
+		(listo d))])))
 
   (define (finite-domain v ds)
     (assert (list? ds))
