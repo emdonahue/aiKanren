@@ -1,6 +1,6 @@
 (library (listo-tests)
   (export run-listo-tests)
-  (import (chezscheme) (test-runner) (listo) (ui))
+  (import (chezscheme) (test-runner) (aikanren))
   
   (define (run-listo-tests)
 

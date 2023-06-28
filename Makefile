@@ -65,7 +65,7 @@ doc:
 	grep -nr 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
 
 test:
-	@echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests))'\
-	'(run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-matcho-tests) (run-runner-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests)'\
+	@echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests))'\
+	'(run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-matcho-tests) (run-runner-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests)'\
 	'(parameterize ([benchmark-testing #t]) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss"))'\
 	'(display "Testing Complete\n")' | scheme -q --libdirs src/aikanren:src/tests:src/benchmarks 
