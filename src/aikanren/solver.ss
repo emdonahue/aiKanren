@@ -187,9 +187,9 @@
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
 	[(matcho? g)
-	 	 (when (not (var? (car (matcho-out-vars g)))) (printf "M: ~s~%" g))
-	 (assert (var? (car (matcho-out-vars g))))
-	 (if (memq (car (matcho-out-vars g)) vs) vs (cons (car (matcho-out-vars g)) vs))]
+	 (when (not (or (null? (matcho-out-vars g)) (var? (car (matcho-out-vars g))))) (printf "M: ~s~%" g))
+	 (assert (or (null? (matcho-out-vars g)) (var? (car (matcho-out-vars g)))))
+	 (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs))]
 	[(pconstraint? g)
 	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
 	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
