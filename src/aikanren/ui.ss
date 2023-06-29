@@ -6,7 +6,7 @@
     (syntax-rules ()
       [(_ (g ...)) (fresh () g ...)]
       [(_ c0 c ...)
-       (make-conde (conde c0) (conde c ...))]))
+       (conde-disj (conde c0) (conde c ...))]))
   
  (define-syntax fresh ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
    (syntax-rules ()

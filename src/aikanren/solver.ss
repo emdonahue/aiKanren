@@ -88,12 +88,7 @@
     (case-lambda
       [(g s conjs out)
        (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
-	 (values (conj out g) s))
-	   #;
-       (if (disj-succeeds? g);TODO remove disj succeeds
-	   (values succeed s)
-	   (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
-	     (values (conj out g) s)))]
+	 (values (conj out g) s))]
       [(g s s^ ctn ==s lhs-disj rhs-disj)
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases

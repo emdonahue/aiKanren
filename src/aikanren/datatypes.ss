@@ -20,7 +20,7 @@
 	  fresh?
 	  make-conj conj conj? conj-car conj-cdr conj* conj-fold
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
-	  make-conde conde? conde-lhs conde-rhs conde->disj
+	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
@@ -125,8 +125,9 @@
 
   (define (== x y)
     (cond
+     [(or (var? x) (var? y)) (make-== x y)]
      [(equal? x y) succeed]
-     [(or (var? x) (var? y) (and (pair? x) (pair? y))) (make-== x y)]
+     [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
@@ -139,6 +140,13 @@
       [(_ goal clauses ...)
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
 	 clauses ...)]))
+
+  (define (conde-disj x y)
+    ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
+    (cond
+     [(fail? x) y]
+     [(fail? y) x]
+     [else (make-conde x y)]))
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj where possible

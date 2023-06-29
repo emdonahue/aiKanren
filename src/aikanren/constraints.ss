@@ -7,16 +7,14 @@
   
   (define (booleano v)
     (constrain
-     (conde
-       [(== v #t)]
-       [(== v #f)])))
+     (disj (== v #t) (== v #f))))
 
   (define (listo l)
     (constrain
-     (conde
-       [(== l '())]
-       [(matcho ([l (a . d)])
-		(listo d))])))
+     (disj
+      (== l '())
+      (matcho ([l (a . d)])
+	      (listo d)))))
 
   (define (finite-domain v ds)
     (assert (list? ds))
@@ -24,17 +22,19 @@
 
   (define (==> antecedent consequent)
     (assert (and (goal? antecedent) (goal? consequent)))
-    (constrain (conde [consequent] [(noto antecedent)])))
+    (constrain (disj consequent (noto antecedent))))
 
   (define (typeo v t?) ; TODO make typo reject immediately if ground term not a type
     (assert (procedure? t?))
-    (pconstraint
-     v (lambda (s)
-	 (let ([v (walk s v)])
-	   (cond
-	    [(var? v) (typeo v t?)]
-	    [(t? v) succeed]	    
-	    [else fail])))))
+    (if (not (var? v))
+	(if (t? v) succeed fail)
+	(pconstraint
+	 v (lambda (s)
+	     (let ([v (walk s v)])
+	       (cond
+		[(var? v) (typeo v t?)]
+		[(t? v) succeed]	    
+		[else fail]))))))
 
 
   (define (symbolo v)
@@ -83,75 +83,22 @@
        
        ))
     )
-  
-  #;
-  (define (symbolo v)
-    (lambda (s)
-      (let ([v (walk s)])
-	(cond
-	 [(symbol? v) succeed]
-	 [(var? v) (symbolo v)]
-	 [else fail]))))
 
   (define (presento present term)
-    ;; TODO try making constraint freshes that don't bind any external variables just commit. eg for ground terms. maybe their partner in == is ground or also from a constraint fresh?
     (constrain
-     (conde
-       [(== term present)]
-       [(guardo term
-		(lambda (a d)
-		  (conde
-		   [(presento present a)]
-		   [(presento present d)])))])))
+     (disj
+       (== term present)
+       (matcho ([term (a . d)])
+	       (disj
+		(presento present a)
+		(presento present d))))))
 
-  (define (absento2 absent term)
+  (define (absento absent term)
     (constrain
      (fresh ()
        (=/= term absent)
-       (conde
-	 [(noto (pairo term))]
-	 [(guardo term
-		  (lambda (a d)
-		    #;
-		    (pretty-print (conj
-		     (absento a absent)
-		     (absento d absent)))
-		    (conj
-		     (absento absent a)
-		     (absento absent d))))]))))
-
-
-    (define (absento absent term)
-    (constrain
-     (fresh ()
-       (=/= term absent)
-       (conde
-	 [(noto (pairo term))]
-	 [(matcho ([term (a . d)])
-		  (absento absent a)
-		  (absento absent d))]))))
-  
-  #;
-  (define (absento3 term absent)
-    (constrain
-     (fresh ()
-       (=/= term absent)
-       (conde
-	 [(forall (a d) (=/= term (cons a d)))]
-	 [(fresh (a d)
-	    (== term (cons a d))
-	    (absento a absent)
-	    (absento d absent))]))))
-#;
-    (define (presento2 term absent)
-    (constrain
-     (conde
-       [(== term absent)]
-       [(fresh (a d) (== term (cons a d)))
-	(forall (a d)
-	  (=/= term (cons a d))
-	  (noto (absento a absent))
-	  (noto (absento d absent)))])))
-#;
-  (define (absento2 term absent)
-    (noto (presento term absent))))
+       (disj
+	(noto (pairo term))
+	(matcho ([term (a . d)])
+		(absento absent a)
+		(absento absent d)))))))

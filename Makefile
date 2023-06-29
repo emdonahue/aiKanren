@@ -41,7 +41,7 @@ profile/profile.html: $(PRE)
 
 bench: benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
-	if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); join -e0 -oauto -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement"} {$$4=$$2==0||$$3==0?"-":-100*($$3-$$2)/$$2" %"; print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
+	@if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); join -e0 -oauto -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement"} {$$4=$$2==0||$$3==0?"-":-100*($$3-$$2)/$$2" %"; print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
 rebench:
 # If you don't believe the numbers bench gave you, re-roll until your optimization wins!
 	rm -f benchmarks/bench
@@ -65,7 +65,7 @@ doc:
 	grep -nr 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
 
 test:
-	@echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (runner-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests))'\
-	'(run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-matcho-tests) (run-runner-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests)'\
+	@echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests))'\
+	'(run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-matcho-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests)'\
 	'(parameterize ([benchmark-testing #t]) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss"))'\
 	'(display "Testing Complete\n")' | scheme -q --libdirs src/aikanren:src/tests:src/benchmarks 
