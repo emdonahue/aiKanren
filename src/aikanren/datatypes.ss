@@ -149,7 +149,7 @@
      [else (make-conde x y)]))
 
   (define (expand-matcho g s p)
-    ((matcho-goal g) s p (matcho-in-vars g)))
+    ((matcho-goal g) s p )) ;(matcho-in-vars g)
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj where possible

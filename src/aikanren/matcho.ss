@@ -8,7 +8,7 @@
     (syntax-rules ()
       [(_ state package substitution vals ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
-	      [vals (if (null? vals) vals (cdr vals))]
+	      ;[vals (if (null? vals) vals (cdr vals))]
 	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
 	 (if (failure? substitution)
 	     (values #f fail failure package)
@@ -47,9 +47,9 @@
 	 #`(make-matcho
 	    (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
 	    '()
-	    (lambda (state package vals)
+	    (lambda (state package)
 	      (let ([substitution '()]
-		    [vals (reverse vals)]
+		    ;[vals '()]
 		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
 		(build-substitution
 		 state package substitution vals
