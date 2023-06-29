@@ -5,7 +5,8 @@
 
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
-    (assert (and (goal? g) (not (disj? g)) (state-or-failure? s) (package? p))) ; -> stream? package?
+    (when (not (and (goal? g) (state-or-failure? s) (package? p))) (printf "GOAL: ~s~%" g))
+    (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
     (cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]

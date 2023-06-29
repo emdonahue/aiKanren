@@ -6,16 +6,16 @@
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
     (syntax-rules ()
-      [(_ state package substitution vals ((out-var pattern)) body ...)
+      [(_ state package substitution ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
 	      ;[vals (if (null? vals) vals (cdr vals))]
 	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
 	 (if (failure? substitution)
 	     (values #f fail failure package)
 	     (begin body ...)))]
-      [(_ state package substitution vals (binding bindings ...) body ...)
-       (build-substitution state package substitution vals (binding)
-			   (build-substitution state package substitution vals (bindings ...) body ...))]))
+      [(_ state package substitution (binding bindings ...) body ...)
+       (build-substitution state package substitution (binding)
+			   (build-substitution state package substitution (bindings ...) body ...))]))
   
   (define-syntax build-pattern
     ;; Turn a pattern match schema into a full scheme object for unification.
@@ -52,7 +52,7 @@
 		    ;[vals '()]
 		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
 		(build-substitution
-		 state package substitution vals
+		 state package substitution
 		 ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
 		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		   (values

@@ -100,5 +100,8 @@
        (disj
 	(noto (pairo term))
 	(matcho ([term (a . d)])
-		(absento absent a)
-		(absento absent d)))))))
+		(begin
+		  ;TODO(printf "A: ~s D: ~s~%" a d)
+		  (fresh ()
+		    (absento absent a)
+		    (absento absent d)))))))))

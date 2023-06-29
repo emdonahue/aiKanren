@@ -13,7 +13,7 @@
 	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  make-constraint constraint? constraint-goal set-constraint-goal
+	  constraint constraint? constraint-goal set-constraint-goal
 	  goal? goal-cond
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
@@ -51,6 +51,8 @@
   (define empty-constraint-store (make-constraint-store '()))
 
   (define-structure (constraint goal))
+  (define (constraint g)
+    (if (or (conj? g) (matcho? g) (conde? g)) (make-constraint g) g))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
     (let ([c (vector-copy c)])

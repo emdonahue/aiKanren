@@ -191,7 +191,7 @@
     (tassert "booleano ground t" (run1 () (booleano #t)) '())
     (tassert "booleano ground f" (run1 () (booleano #f)) '())
     (tassert "booleano ground undecidable" (run1 () (booleano 'undecidable)) (void))
-    (tassert "booleano free t" (run1 (x1) (booleano x1)) (conde->disj (constraint-goal (booleano x1))))
+    (tassert "booleano free t" (run1 (x1) (booleano x1)) (conde->disj (booleano x1)))
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
     (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (booleano x1)) (void))
@@ -308,6 +308,13 @@
     (tassert "absento hangs if matcho generates free vars in constraint"
 	     (run1 (x0 x1 x2 x3)
 		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
+
+    
+    (display "start\n")
+    (tassert "absento hangs on this"
+	     (run1 (x1 x2 x3 x4)
+		   (absento 100 x1)  (== x1 (cons 1 x2))) 3)
+;    (exit)
 
     
 ;    (display "start")

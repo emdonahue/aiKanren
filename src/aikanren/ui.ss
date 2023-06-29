@@ -63,7 +63,7 @@
 
    (define-syntax constrain
      (syntax-rules ()
-       [(_ g ...) (make-constraint (fresh () g ...))]))
+       [(_ g ...) (constraint (fresh () g ...))]))
   
   ;; === UTILITIES ===
 
