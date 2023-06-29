@@ -82,7 +82,7 @@
 	  (if (var? v)
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
 		(values m (store-constraint s m)))
-	     (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
+	     (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
   
   (define solve-disj
     (case-lambda

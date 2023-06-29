@@ -8,6 +8,7 @@
     (syntax-rules ()
       [(_ state package substitution vals ((out-var pattern)) body ...)
        (let* ([out-var (walk state out-var)]
+	      [vals (if (null? vals) vals (cdr vals))]
 	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
 	 (if (failure? substitution)
 	     (values #f fail failure package)
