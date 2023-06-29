@@ -23,7 +23,7 @@
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
+	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho
 	  make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
@@ -147,6 +147,9 @@
      [(fail? x) y]
      [(fail? y) x]
      [else (make-conde x y)]))
+
+  (define (expand-matcho g s p)
+    ((matcho-goal g) s p (matcho-in-vars g)))
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj where possible

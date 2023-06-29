@@ -7,6 +7,8 @@
     
     (tassert "goal == simplifies atoms fail" (== 1 2) fail)
     (tassert "goal == simplifies atoms succeed" (== 1 1) succeed)
+    (tassert "goal =/= simplifies atoms fail" (=/= 1 2) succeed)
+    (tassert "goal =/= simplifies atoms succeed" (=/= 1 1) fail)
     (tassert "goal conj simplifies succeed" (conj succeed succeed) succeed)
     (tassert "goal conj simplifies fail" (conj (== x1 1) fail) fail)
     (tassert "goal conde simplifies fail" (conde [(== x1 1)] [fail]) (== x1 1))

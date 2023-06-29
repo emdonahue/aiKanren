@@ -15,7 +15,7 @@
 		 ([(lhs p) (run-goal (conde-lhs g) s p)]
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
-     [(matcho? g) (let-values ([(structurally-recursive? g s p) ((matcho-goal g) s p)])
+     [(matcho? g) (let-values ([(structurally-recursive? g s p) (expand-matcho g s p)])
 		    (if structurally-recursive? ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s p) ; so continue running aggressively on this branch.
 			(values (make-bind g s) p)))] ; Otherwise suspend like a normal fresh.

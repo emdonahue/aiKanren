@@ -256,6 +256,9 @@
     #(== #(var 2) 2))))) 2)
     
     ;; === SYMBOLO ===
+    (tassert "symbolo simplifies succeed" (symbolo 'symbol) succeed)
+    (tassert "symbolo simplifies fail" (symbolo 42) fail)
+    
     (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '()) 
     (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void)) 
 

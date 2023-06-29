@@ -2,7 +2,7 @@
 (library (matcho)
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
-
+  
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
     (syntax-rules ()
@@ -44,9 +44,9 @@
       [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(make-matcho
-	    (or (memp var? (list out-var ...)) '())
-	    'dummy-ground-out-vars ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
-	    (lambda (state package)
+	    (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
+	    '()
+	    (lambda (state package vals)
 	      (let ([substitution '()]
 		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
 		(build-substitution
