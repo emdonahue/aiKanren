@@ -123,8 +123,13 @@
   (define-structure (disj lhs rhs))
   (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
-  (define-structure (matcho out-vars in-vars goal))
+  (define-structure (matcho2 out-vars in-vars goal))
+  (define-values (matcho? matcho-out-vars matcho-in-vars matcho-goal) (values matcho2? matcho2-out-vars matcho2-in-vars matcho2-goal))
 
+  (define (make-matcho out in g)
+;    (when (not (or (null? out) (and (var? (car out)) (not (null? (car out)))))) (printf "AHA: ~s ~s ~s~%" out in g))
+    (make-matcho2 out in g))
+  
   (define (== x y)
     (cond
      [(or (var? x) (var? y)) (make-== x y)]

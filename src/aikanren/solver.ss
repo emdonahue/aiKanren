@@ -82,8 +82,8 @@
 	  ;(printf "walked ~s to ~s~%" (car (matcho-out-vars g)) v)
 	  (if (var? v)
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
-		(values m (store-constraint s m)))
-	     (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
+		(solve-constraint ctn (store-constraint s m) succeed (conj out m)))
+	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
   
   (define solve-disj
     (case-lambda
@@ -187,6 +187,7 @@
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
 	[(matcho? g)
+	 	 (when (not (var? (car (matcho-out-vars g)))) (printf "M: ~s~%" g))
 	 (assert (var? (car (matcho-out-vars g))))
 	 (if (memq (car (matcho-out-vars g)) vs) vs (cons (car (matcho-out-vars g)) vs))]
 	[(pconstraint? g)

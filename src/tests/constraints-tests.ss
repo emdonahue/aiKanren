@@ -312,9 +312,9 @@
     
     (display "start\n")
     (tassert "absento hangs on this"
-	     (run1 (x1 x2 x3 x4)
-		   (absento 100 x1)  (== x1 (cons 1 x2))) 3)
-;    (exit)
+	     (car (run1 (x1 x2)
+		    (absento 100 x1)  (== x1 (cons 1 x2)))) 3)
+
 
     
 ;    (display "start")
