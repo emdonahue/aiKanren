@@ -2,9 +2,6 @@
 (library (matcho)
   (export matcho)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
-
-  (define (normalize-matcho out in proc)
-    (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
   
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.

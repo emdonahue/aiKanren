@@ -94,10 +94,12 @@
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases
 	[(succeed? ==s) ; No ==s are common to all branches => stop early.
+	 (display "disj succeed ==s\n")
 	 (values
 	  (disj (disj lhs-disj g) (conj rhs-disj ctn)) ;TODO if we return the state, we should also strip the goal of conjuncts so we dont double tap
 	  (if (and (fail? rhs-disj) (not (disj? lhs-disj))) s^ s))] ; If there is only one succeeding branch, return the state
 	[(fail? g)
+	 (display "disj fail\n")
 	 (values
 	  (conj ==s (disj lhs-disj (conj rhs-disj ctn))) ; Final disjunct => return constraint.
 	  (cond
@@ -107,8 +109,8 @@
 	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (make-disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
 	[else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
 		(cond
-		 [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
+		 [(succeed? g0) (display "disj2 succ\n") (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+		 [(fail? g0) (display "disj2 fail\n") (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
   
   (define (diff-== a b)
@@ -155,7 +157,7 @@
     (cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))]
+     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO consider reversing constraint storage to put old constraints first
      [(disj? g) (let* ([vars1 (attributed-vars g)]
 		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr g)))]) ;TODO be more specific about how many disjuncts we need attr vars from
 		  (state-add-constraint (state-add-constraint s (invert-disj g) vars2) g vars1))]
@@ -187,8 +189,6 @@
 	 (assert (var? (==-lhs g)))
 	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
 	[(matcho? g)
-	 (when (not (or (null? (matcho-out-vars g)) (var? (car (matcho-out-vars g))))) (printf "M: ~s~%" g))
-	 (assert (or (null? (matcho-out-vars g)) (var? (car (matcho-out-vars g)))))
 	 (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs))]
 	[(pconstraint? g)
 	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]

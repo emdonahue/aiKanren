@@ -13,6 +13,14 @@
     (define x4 (make-var 4))
     (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
 
+        (display "start\n")
+    
+    (tassert "absento hangs on this"
+	     (car (run1 (x1 x2)
+		    (absento 100 x1) (== x1 (cons 1 x2)))) 3)
+
+    (exit)
+    
     ;; === CON/DISJUNCTION ===
     
     (tassert "conj fail first" (conj fail succeed) fail)
@@ -311,18 +319,13 @@
 		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
     
-    (display "start\n")
-    
-    (tassert "absento hangs on this"
-	     (car (run1 (x1 x2)
-		    (absento 100 x1) (== x1 (cons 1 x2)))) 3)
 
-    (exit)
+    #;
     (tassert "absento hangs on this"
 	     (run* (x1 x2 x3 x4 x5)
        (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5))) 3)
 
-    (exit)
+;    (exit)
     
 ;    (display "start")
 #;

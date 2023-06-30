@@ -23,7 +23,7 @@
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho
+	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal)
   (import (chezscheme) (sbral))
 
@@ -123,12 +123,6 @@
   (define-structure (disj lhs rhs))
   (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
-  (define-structure (matcho2 out-vars in-vars goal))
-  (define-values (matcho? matcho-out-vars matcho-in-vars matcho-goal) (values matcho2? matcho2-out-vars matcho2-in-vars matcho2-goal))
-
-  (define (make-matcho out in g)
-;    (when (not (or (null? out) (and (var? (car out)) (not (null? (car out)))))) (printf "AHA: ~s ~s ~s~%" out in g))
-    (make-matcho2 out in g))
   
   (define (== x y)
     (cond
@@ -138,6 +132,14 @@
      [else fail]))
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
+
+  (define-structure (matcho2 out-vars in-vars goal))
+  (define-values (matcho? matcho-out-vars matcho-in-vars matcho-goal) (values matcho2? matcho2-out-vars matcho2-in-vars matcho2-goal))
+  (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
+    (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
+  (define (make-matcho out in g) ;TODO remove matcho debugging indirection
+;    (when (not (or (null? out) (and (var? (car out)) (not (null? (car out)))))) (printf "AHA: ~s ~s ~s~%" out in g))
+    (make-matcho2 out in g))
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g)))
@@ -159,7 +161,7 @@
     ((matcho-goal g) s p )) ;(matcho-in-vars g)
   
   ;; CONJ
-  (define (conj lhs rhs) ;TODO replace conj with make-conj where possible
+  (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
     (assert (and (goal? lhs) (goal? rhs)))
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]

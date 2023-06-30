@@ -1,5 +1,5 @@
 ;; Utilities for working with multiple value returns
-(library (values)
+(library (utils)
   (export with-values first-value list-values values-ref)
   (import (chezscheme))
 
