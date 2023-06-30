@@ -7,8 +7,8 @@
   (define total (make-parameter 0))
 
   (define (tmessage)
-    (if (= 0 (failed)) (printf "All Tests Pass (~s)" (total))
-	(printf "Tests Failed: ~s/~s" (failed) (total))))
+    (if (= 0 (failed)) (printf "All Tests Pass (~s)~%" (total))
+	(printf "Tests Failed: ~s/~s~%" (failed) (total))))
   
   (define-syntax tassert
     (syntax-rules ()
