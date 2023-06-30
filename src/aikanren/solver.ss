@@ -7,7 +7,7 @@
     (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (solve-constraint g s conjs out)
+  (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -86,7 +86,7 @@
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
   
   (define solve-disj
-    (org-case-lambda solve-disj
+    (case-lambda
       [(g s conjs out)
        (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
 	 (values (conj out g) s))]
@@ -113,7 +113,7 @@
 		 [(fail? g0) (display "disj2 fail\n") (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
   
-  (org-define (diff-== a b)
+  (define (diff-== a b)
     (cond ; TODO succeed should probably skip any computations in diff-==
      [(fail? a) (conj-filter b ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
      [(fail? b) a] ; A failed goal has no bearing on the ==s common to succeeding goals.

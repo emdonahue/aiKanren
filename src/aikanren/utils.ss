@@ -1,6 +1,6 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda)
+  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace)
   (import (chezscheme))
 
   (define-syntax with-values
@@ -19,31 +19,41 @@
     (syntax-rules ()
       [(_ vals n) (list-ref (list-values vals) n)]))
 
-  (define trace-depth (make-parameter 1))
 
   ;; === ORG-TRACE ===
   ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers
+  
+  (define trace-depth (make-parameter 1))
+  (define trace-on (make-parameter #f))
+    
+  (define-syntax org-trace
+    (syntax-rules ()
+      [(_ body ...) (parameterize ([trace-on #t]) body ...)]))
+
+  (define (org-print . args)
+    (when (trace-on) (apply printf args)))
   
   (define-syntax org-lambda
     (syntax-rules ()
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
-	 (printf "~a ~s~%" (make-string (trace-depth) #\*) 'name)
+	 (org-print "~a ~s~%" (make-string (trace-depth) #\*) 'name)
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
-	   (printf "~a ~s~%" (make-string (trace-depth) #\*) "arguments")
-	   (begin (printf " - ~a: " 'arg)
+	   (org-print "~a ~s~%" (make-string (trace-depth) #\*) "arguments")
+	   (begin (org-print " - ~a: " 'arg)
 		  (parameterize ([pretty-initial-indent 3]
 				 [pretty-standard-indent 0])
-		    (pretty-print arg))
-		  (printf "~%")) ...
-		  (printf "~a ~s~%" (make-string (trace-depth) #\*) "logs")
+		    (when (trace-on) (pretty-print arg)))
+		  (org-print "~%")) ...
+		  (org-print "~a ~s~%" (make-string (trace-depth) #\*) "logs")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
-	     (printf "~a ~s~%" (make-string (trace-depth) #\*) "return")
-	     (for-each (lambda (r) (printf " - ")
+	     (org-print "~a ~s~%" (make-string (trace-depth) #\*) "return")
+	     (for-each (lambda (r) (org-print " - ")
 			       (parameterize ([pretty-initial-indent 3]
 					      [pretty-standard-indent 0])
-				 (pretty-print r))
-			       (printf "~%")) return)
+				 (when (trace-on) (pretty-print r)))
+			       (org-print "~%")) return)
+	     ;(when (fx= 2 (trace-depth)) (org-print "* top level messages~%")) TODO evaluate top level messages printer
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
