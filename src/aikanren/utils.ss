@@ -1,6 +1,6 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values first-value list-values values-ref)
+  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda)
   (import (chezscheme))
 
   (define-syntax with-values
@@ -17,7 +17,36 @@
 
   (define-syntax values-ref
     (syntax-rules ()
-      [(_ vals n) (list-ref (list-values vals) n)])))
+      [(_ vals n) (list-ref (list-values vals) n)]))
+
+  (define trace-depth (make-parameter 1))
+
+  ;; === ORG-TRACE ===
+  ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers
+  
+  (define-syntax org-lambda
+    (syntax-rules ()
+      [(_ name (arg ...) body0 body ...)
+       (lambda (arg ...)
+	 (printf "~a ~s~%" (make-string (trace-depth) #\*) 'name)
+	 (parameterize ([trace-depth (fx1+ (trace-depth))])
+	   (printf "~a ~s~%" (make-string (trace-depth) #\*) "arguments")
+	   (begin (printf " - ") (pretty-print arg) (printf "~%")) ...
+	   (let ([return (call-with-values (lambda () body0 body ...) list)])
+	     (printf "~a ~s~%" (make-string (trace-depth) #\*) "return")
+	     (for-each (lambda (r) (printf " - ") (pretty-print r) (printf "~%")) return)
+	     (apply values return))))]))
+
+  (define-syntax org-case-lambda
+    (syntax-rules ()
+      [(_ name [(arg ...) body ...] ...)
+       (case-lambda
+	 [(arg ...) ((org-lambda name (arg ...) body ...) arg ...)] ...)]))
+  
+  (define-syntax org-define
+    (syntax-rules ()
+      [(_ (var . idspec) body ...) (define var (org-lambda var idspec body ...))]))
+  )
 
 
 

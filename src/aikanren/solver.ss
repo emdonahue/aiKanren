@@ -1,6 +1,6 @@
 (library (solver) ; Constraint solving
   (export run-constraint)
-  (import (chezscheme) (state) (negation) (datatypes))
+  (import (chezscheme) (state) (negation) (datatypes) (utils))
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.

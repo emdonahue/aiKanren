@@ -13,11 +13,16 @@
     (define x4 (make-var 4))
     (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
 
-        (display "start\n")
+
+
+
+    
+    (display "start\n")
+
     
     (tassert "absento hangs on this"
 	     (car (run1 (x1 x2)
-		    (absento 100 x1) (== x1 (cons 1 x2)))) 3)
+			(absento 100 x1) (== x1 (cons 1 x2)))) 3)
 
     (exit)
     
