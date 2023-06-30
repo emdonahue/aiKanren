@@ -29,4 +29,5 @@
 		(printf "Failed: ~s~%Expected: " title)
 		(pretty-print expected)
 		(printf "Received: ")
-		(pretty-print received))))))])))
+		(pretty-print received)
+		(printf "~%"))))))])))
