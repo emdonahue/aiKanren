@@ -1,6 +1,6 @@
 (library (matcho-tests)
   (export run-matcho-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (values))
+  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils))
 
   (define (run-matcho-tests)
     (define x1 (make-var 1))

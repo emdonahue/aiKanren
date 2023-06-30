@@ -1,7 +1,7 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
   (export run-goal stream-step) ; TODO trim exports
-  (import (chezscheme) (state) (failure) (package) (values) (store) (negation) (datatypes) (solver)) 
+  (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver)) 
 
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
