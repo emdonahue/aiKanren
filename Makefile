@@ -15,7 +15,7 @@ clean:
 lib/aikanren.wpo lib/aikanren.so &: $(OBJ)
 # Source file directory must come before object directory, but need both for wpo.
 	mkdir -p lib
-	echo '(generate-wpo-files #t) (compile-whole-library "build/object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/object --compile-imported-libraries --optimize-level 3 --import-notify
+	echo '(generate-wpo-files #t) (compile-whole-library "build/object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/object --compile-imported-libraries --optimize-level 3
 
 build/preprocessed/%.ss: src/aikanren/%.ss
 # Strip out the assertions and generate new source files as a preprocessing step. Assertions are assumed to be on their own lines.
@@ -65,7 +65,14 @@ doc:
 	grep -nr 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
 
 test:
-	@echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests))'\
+	@TESTSUITE=$$(mktemp); \
+	trap "rm -f $$TESTSUITE" EXIT; \
+	echo  '(import (chezscheme) (aikanren) (benchmark-runner) (sbral-tests) (state-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests))'\
 	'(run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-matcho-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests)'\
-	'(parameterize ([benchmark-testing #t]) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss"))'\
-	'(display "Testing Complete\n")' | scheme -q --libdirs src/aikanren:src/tests:src/benchmarks 
+	'(parameterize ([benchmark-testing #t]) (include "src/benchmarks/benchmarks.ss"))'\
+	'(display "Testing Complete\n")' > "$$TESTSUITE"; \
+	scheme --libdirs src/aikanren:src/tests:src/benchmarks --script "$$TESTSUITE" || true
+
+#aiKanren$ echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss")' | scheme -q --libdirs src/aikanren:src/benchmarks --compile-imported-libraries --optimize-level 3 --import-notify
+#aiKanren$ echo '(compile-whole-program "src/benchmarks/benchmarks.wpo" "realbench.so")' | scheme -q --libdirs src/aikanren:src/benchmarks --compile-imported-libraries --optimize-level 3 --import-notify
+

@@ -1,1 +1,0 @@
-scheme --debug-on-exception --libdirs lib:src/tests:src/benchmarks --script test
