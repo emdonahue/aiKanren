@@ -49,7 +49,7 @@ rebench:
 benchmarks/bench: build/benchmarks.so
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
-	echo '(import (chezscheme) (aikanren) (benchmark-runner)) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
+	scheme --program build/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 build/benchmarks.so: lib/aikanren.wpo $(wildcard src/benchmarks/*) $(OBJ)
 	cp -fr src/benchmarks build
 	echo '(generate-wpo-files #t) (compile-program "build/benchmarks/benchmarks.ss")' | scheme -q --libdirs 'build/object:build/benchmarks' --compile-imported-libraries --optimize-level 3

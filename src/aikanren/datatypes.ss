@@ -52,7 +52,7 @@
 
   (define-structure (constraint goal))
   (define (constraint g)
-    (if (or (conj? g) (matcho? g) (conde? g)) (make-constraint g) g))
+    (if (or (fail? g) (succeed? g)) g (make-constraint g)))
   (define (set-constraint-goal c g)
     (assert (and (constraint? c) (goal? g)))
     (let ([c (vector-copy c)])

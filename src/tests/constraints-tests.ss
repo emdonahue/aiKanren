@@ -191,8 +191,7 @@
     (tassert "booleano ground t" (run1 () (booleano #t)) '())
     (tassert "booleano ground f" (run1 () (booleano #f)) '())
     (tassert "booleano ground undecidable" (run1 () (booleano 'undecidable)) (void))
-        (display (conde->disj (booleano x1)))
-    (tassert "booleano free t" (run1 (x1) (booleano x1)) (conde->disj (booleano x1)))
+    (tassert "booleano free t" (run1 (x1) (booleano x1)) (conde->disj (constraint-goal (booleano x1))))
 
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
@@ -313,11 +312,17 @@
 
     
     (display "start\n")
+    
     (tassert "absento hangs on this"
 	     (car (run1 (x1 x2)
-		    (absento 100 x1)  (== x1 (cons 1 x2)))) 3)
+		    (absento 100 x1) (== x1 (cons 1 x2)))) 3)
 
+    (exit)
+    (tassert "absento hangs on this"
+	     (run* (x1 x2 x3 x4 x5)
+       (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5))) 3)
 
+    (exit)
     
 ;    (display "start")
 #;
