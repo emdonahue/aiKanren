@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  make-conj conj conj? conj-car conj-cdr conj* conj-fold
+	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
@@ -180,6 +180,13 @@
   (define (conj-cdr c)
     (assert (conj? c))
     (conj-rhs c))
+
+  (define (conj-filter c p)
+    (if (conj? c)
+	(conj
+	 (conj-filter (conj-lhs c) p)
+	 (conj-filter (conj-rhs c) p))
+	(if (p c) c succeed)))
   
   (define (conj-fold p s cs) ;TODO is conj-fold ever used?
     (assert (and (procedure? p) (conj? cs)))

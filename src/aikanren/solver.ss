@@ -86,7 +86,7 @@
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
   
   (define solve-disj
-    (case-lambda
+    (org-case-lambda solve-disj
       [(g s conjs out)
        (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
 	 (values (conj out g) s))]
@@ -113,11 +113,11 @@
 		 [(fail? g0) (display "disj2 fail\n") (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
   
-  (define (diff-== a b)
+  (org-define (diff-== a b)
     (cond ; TODO succeed should probably skip any computations in diff-==
-     [(fail? a) b]
-     [(fail? b) a]
-     [(==? a) (conj-member b a)]
+     [(fail? a) (conj-filter b ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
+     [(fail? b) a] ; A failed goal has no bearing on the ==s common to succeeding goals.
+     [(==? a) (if (fail? b) a (conj-member b a))]
      [(conj? a) (conj (diff-== (conj-car a) b) (diff-== (conj-cdr a) b))]
      [else succeed]))
 

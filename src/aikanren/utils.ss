@@ -31,10 +31,19 @@
 	 (printf "~a ~s~%" (make-string (trace-depth) #\*) 'name)
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
 	   (printf "~a ~s~%" (make-string (trace-depth) #\*) "arguments")
-	   (begin (printf " - ") (pretty-print arg) (printf "~%")) ...
+	   (begin (printf " - ~a: " 'arg)
+		  (parameterize ([pretty-initial-indent 3]
+				 [pretty-standard-indent 0])
+		    (pretty-print arg))
+		  (printf "~%")) ...
+		  (printf "~a ~s~%" (make-string (trace-depth) #\*) "logs")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
 	     (printf "~a ~s~%" (make-string (trace-depth) #\*) "return")
-	     (for-each (lambda (r) (printf " - ") (pretty-print r) (printf "~%")) return)
+	     (for-each (lambda (r) (printf " - ")
+			       (parameterize ([pretty-initial-indent 3]
+					      [pretty-standard-indent 0])
+				 (pretty-print r))
+			       (printf "~%")) return)
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
