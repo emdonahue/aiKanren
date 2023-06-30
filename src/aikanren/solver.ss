@@ -86,7 +86,7 @@
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
   
   (define solve-disj
-    (case-lambda
+    (org-case-lambda solve-disj
       [(g s conjs out)
        (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
 	 (values (conj out g) s))]
@@ -94,9 +94,10 @@
        (assert (and (goal? g) (state? s) (goal? ctn)))
        (cond ;TODO break fail and succeed into separate cases
 	[(succeed? ==s) ; No ==s are common to all branches => stop early.
+	 (assert (not (fail? g)))
 	 (values
 	  (disj (disj lhs-disj g) (conj rhs-disj ctn)) ;TODO if we return the state, we should also strip the goal of conjuncts so we dont double tap
-	  (if (and (fail? rhs-disj) (not (disj? lhs-disj))) s^ s))] ; If there is only one succeeding branch, return the state
+	  (if (and (fail? rhs-disj) (fail? lhs-disj)) s^ s))] ; If there is only one succeeding branch, return the state
 	[(fail? g)
 	 (values
 	  (conj ==s (disj lhs-disj (conj rhs-disj ctn))) ; Final disjunct => return constraint.

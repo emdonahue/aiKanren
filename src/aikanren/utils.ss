@@ -28,7 +28,10 @@
     
   (define-syntax org-trace
     (syntax-rules ()
-      [(_ body ...) (parameterize ([trace-on #t]) body ...)]))
+      [(_ body ...)
+       (parameterize ([trace-on #t])
+	 body ...
+	 (when (fx= 1 (trace-depth)) (printf "* top level messages~%")))]))
 
   (define (org-print . args)
     (when (trace-on) (apply printf args)))
@@ -45,15 +48,14 @@
 				 [pretty-standard-indent 0])
 		    (when (trace-on) (pretty-print arg)))
 		  (org-print "~%")) ...
-		  (org-print "~a ~s~%" (make-string (trace-depth) #\*) "logs")
+		  (org-print "~a ~s~%" (make-string (fx1+ (trace-depth)) #\*) "logs")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
 	     (org-print "~a ~s~%" (make-string (trace-depth) #\*) "return")
 	     (for-each (lambda (r) (org-print " - ")
 			       (parameterize ([pretty-initial-indent 3]
 					      [pretty-standard-indent 0])
 				 (when (trace-on) (pretty-print r)))
-			       (org-print "~%")) return)
-	     ;(when (fx= 2 (trace-depth)) (org-print "* top level messages~%")) TODO evaluate top level messages printer
+			       (org-print "~%")) return)	     
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
