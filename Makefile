@@ -37,7 +37,7 @@ build/profiled/%.ss: build/preprocessed/%.ss
 	cp $< $@
 profile/profile.html: $(PRE)
 	mkdir -p profile
-	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/benchmarks/core-benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:src/benchmarks' --optimize-level 3
+	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/benchmarks/benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:src/benchmarks' --optimize-level 3
 
 bench: benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
@@ -46,10 +46,14 @@ rebench:
 # If you don't believe the numbers bench gave you, re-roll until your optimization wins!
 	rm -f benchmarks/bench
 	make bench
-benchmarks/bench: lib/aikanren.so $(wildcard src/benchmarks/*)
+benchmarks/bench: build/benchmarks.so
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
 	echo '(import (chezscheme) (aikanren) (benchmark-runner)) (include "src/benchmarks/core-benchmarks.ss") (include "src/benchmarks/disequality-benchmarks.ss") (include "src/benchmarks/absento-benchmarks.ss")' | scheme -q --optimize-level 3 --libdirs 'lib:src/benchmarks' | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
+build/benchmarks.so: lib/aikanren.wpo $(wildcard src/benchmarks/*) $(OBJ)
+	cp -fr src/benchmarks build
+	echo '(generate-wpo-files #t) (compile-program "build/benchmarks/benchmarks.ss")' | scheme -q --libdirs 'build/object:build/benchmarks' --compile-imported-libraries --optimize-level 3
+	echo '(compile-whole-program "build/benchmarks/benchmarks.wpo" "build/benchmarks.so")' | scheme -q --libdirs 'build/object:build/benchmarks' --compile-imported-libraries --optimize-level 3
 
 repl:
 # Boot up a REPL preloaded with aiKanren
