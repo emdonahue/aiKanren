@@ -7,7 +7,7 @@
     (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (org-define (solve-constraint g s conjs out)
+  (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -15,7 +15,7 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(noto? g) (solve-noto (noto-goal g) s conjs out)]
-     [(disj? g) (solve-disj g s conjs out)]
+     [(disj? g) (solve-disjunction g s conjs out)]
      [(conde? g) (solve-constraint (conde->disj g) s conjs out)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
@@ -113,27 +113,31 @@
 		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
 
-    (define solve-disj
-    (org-case-lambda solve-disj
-      [(g s conjs out)
-       (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
-	 (values (conj out g) s))]
-      [(g s s^ ctn ==s lhs-disj rhs-disj)
-       (assert (and (goal? g) (state? s) (goal? ctn)))
-       (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
-	 (cond
-	  [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	  [(fail? g0) (solve-disj (disj-rest g) s s^ ctn ==s lhs-disj rhs-disj)] ; First disjunct fails => check next disjunct.
-	  [else
-	   (assert #f)
-	   (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))]))
+  (define (solve-disjunction g s ctn out)
+    (let-values ([(g s) (solve-disj g s ctn fail)])
+	 (values (conj out g) s)))
   
-  (define (diff-== a b)
+  (org-define (solve-disj g s ctn ==s)
+    (assert (and (goal? g) (state? s) (goal? ctn)))
+    (cond
+     [(fail? g) (values fail failure)]
+     [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
+	     (org-cond
+	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
+	      [else
+	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn ==s)])
+		 (org-cond
+		  [(fail? g) (values g0 s0)]
+		  [(succeed? g) (values succeed s)]
+		  [else (values (make-disj g0 g) s)]))]))]))
+  
+  (define (diff-== ==s g)
     (cond ; TODO succeed should probably skip any computations in diff-==
-     [(fail? a) (conj-filter b ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
-     [(fail? b) a] ; A failed goal has no bearing on the ==s common to succeeding goals.
-     [(==? a) (if (fail? b) a (conj-member b a))]
-     [(conj? a) (conj (diff-== (conj-car a) b) (diff-== (conj-cdr a) b))]
+     [(fail? ==s) (conj-filter g ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
+     [(fail? g) ==s] ; A failed goal has no bearing on the ==s common to succeeding goals.
+     [(==? ==s) (if (fail? g) ==s (conj-member g ==s))]
+     [(conj? ==s) (conj (diff-== (conj-car ==s) g) (diff-== (conj-cdr ==s) g))]
      [else succeed]))
 
   (define (conj-member c e)
