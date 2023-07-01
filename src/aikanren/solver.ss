@@ -84,7 +84,8 @@
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
 		(solve-constraint ctn (store-constraint s m) succeed (conj out m)))
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
-  
+
+  #;
   (define solve-disj
     (org-case-lambda solve-disj
       [(g s conjs out)
@@ -111,6 +112,21 @@
 		 [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
+
+    (define solve-disj
+    (org-case-lambda solve-disj
+      [(g s conjs out)
+       (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
+	 (values (conj out g) s))]
+      [(g s s^ ctn ==s lhs-disj rhs-disj)
+       (assert (and (goal? g) (state? s) (goal? ctn)))
+       (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
+	 (cond
+	  [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+	  [(fail? g0) (solve-disj (disj-rest g) s s^ ctn ==s lhs-disj rhs-disj)] ; First disjunct fails => check next disjunct.
+	  [else
+	   (assert #f)
+	   (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))]))
   
   (define (diff-== a b)
     (cond ; TODO succeed should probably skip any computations in diff-==
