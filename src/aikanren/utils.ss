@@ -43,7 +43,7 @@
 
   (define (org-print-item name value)
     (org-print " - ~a: " name)
-    (parameterize ([pretty-initial-indent (+ 3 (string-length (symbol->string name)))]
+    (parameterize ([pretty-initial-indent (+ 3 (string-length (if (string? name) name (symbol->string name))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
     (org-print "~%"))
@@ -59,11 +59,10 @@
 		  (org-print-header "logs")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
 	     (org-print-header "return")
-	     (for-each (lambda (r) (org-print " - ")
-			       (parameterize ([pretty-initial-indent 3]
-					      [pretty-standard-indent 0])
-				 (when (trace-on) (pretty-print r)))
-			       (org-print "~%")) return)	     
+	     (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
+	     (when (< 1 (trace-depth))
+	       (parameterize ([trace-depth (fx1- (trace-depth))])
+		 (org-print-header "logs")))
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
@@ -76,7 +75,10 @@
     (syntax-rules (else)
       [(_ (head body ...) ...)
        (cond
-	[head (org-print " - cond: ~a~%" 'head) body ...] ...)]))
+	[head (org-print " - cond: ~a~%" 'head) body ...] ...)]
+      [(_ name (head body ...) ...)
+       (cond
+	[head (org-print " - cond (~a): ~a~%" 'name 'head) body ...] ...)]))
   
   (define-syntax org-define
     (syntax-rules ()

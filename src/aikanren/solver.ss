@@ -2,12 +2,12 @@
   (export run-constraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils))
 
-  (define (run-constraint g s)
+  (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (solve-constraint g s conjs out)
+  (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -113,22 +113,23 @@
 		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
 		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
 
-  (define (solve-disjunction g s ctn out)
+  (org-define (solve-disjunction g s ctn out)
     (let-values ([(g s) (solve-disj g s ctn fail)])
 	 (values (conj out g) s)))
   
-  (org-define (solve-disj g s ctn ==s)
+  (org-define (solve-disj g s ctn ==s) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
      [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
      [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
      [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
-	     (org-cond
+	     (org-cond g0
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
+	      [(disj? g0) (assert #f)]
 	      [else
 	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
-		 (org-cond
+		 (org-cond g-rest
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
 		  [else (values (make-disj g0 g) s)]))]))]))
@@ -178,9 +179,6 @@
      [(succeed? g) s]
      [(fail? g) failure]
      [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO consider reversing constraint storage to put old constraints first
-     [(disj? g) (let* ([vars1 (attributed-vars g)]
-		       [vars2 (remp (lambda (v) (memq v vars1)) (attributed-vars (disj-cdr g)))]) ;TODO be more specific about how many disjuncts we need attr vars from
-		  (state-add-constraint (state-add-constraint s (invert-disj g) vars2) g vars1))]
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
 
@@ -195,14 +193,14 @@
   
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (case-lambda 
+    (case-lambda
       [(g) (attributed-vars g '())]
       [(g vs)
        ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
        (assert (goal? g))
        (cond
 	[(succeed? g) vs]
-	[(disj? g) (let-values ([(_ vs) (attributed-vars-disj g 2 vs)]) vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+	[(disj? g) (attributed-vars-disj g vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
 	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
 	[(noto? g) (attributed-vars (noto-goal g) vs)]
 	[(==? g)
@@ -216,12 +214,16 @@
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
-  (define (attributed-vars-disj d num-branches vs)
-    (if (disj? d)
-	(let-values ([(num-remaining vs) (attributed-vars-disj (disj-lhs d) num-branches vs)])
-	  (if (fx= num-remaining 0)
-	      (values 0 vs)
-	      (attributed-vars-disj (disj-rhs d) num-remaining vs)))
-	(values (fx1- num-branches) (attributed-vars d vs))))
-  
-)
+  (define (attributed-vars-disj d vs)
+    (if (maybe-==? (disj-first d))
+	(attributed-vars (disj-first d) (attributed-vars (disj-first (disj-rest d)) vs))
+	(attributed-vars (disj-first d) vs)))
+
+    (define (maybe-==? g)
+    ;; True if a goal might imply a extension of the substitution.
+    (assert (not (or (succeed? g) (fail? g) (disj? g))))
+    (cond
+     [(conj? g) (or (maybe-==? (conj-car g)) (maybe-==? (conj-cdr g)))]
+     [(noto? g) #f]
+     [(constraint? g) (maybe-==? (constraint-goal g))]
+     [else #t])))
