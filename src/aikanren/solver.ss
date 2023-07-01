@@ -2,12 +2,12 @@
   (export run-constraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils))
 
-  (org-define (run-constraint g s)
+  (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (org-define (solve-constraint g s conjs out)
+  (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (cond
@@ -85,51 +85,23 @@
 		(solve-constraint ctn (store-constraint s m) succeed (conj out m)))
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
 
-  #;
-  (define solve-disj
-    (org-case-lambda solve-disj
-      [(g s conjs out)
-       (let-values ([(g s) (solve-disj g s s conjs fail fail fail)])
-	 (values (conj out g) s))]
-      [(g s s^ ctn ==s lhs-disj rhs-disj)
-       (assert (and (goal? g) (state? s) (goal? ctn)))
-       (cond ;TODO break fail and succeed into separate cases
-	[(succeed? ==s) ; No ==s are common to all branches => stop early.
-	 (assert (not (fail? g)))
-	 (values
-	  (disj (disj lhs-disj g) (conj rhs-disj ctn)) ;TODO if we return the state, we should also strip the goal of conjuncts so we dont double tap
-	  (if (and (fail? rhs-disj) (fail? lhs-disj)) s^ s))] ; If there is only one succeeding branch, return the state
-	[(fail? g)
-	 (values
-	  (conj ==s (disj lhs-disj (conj rhs-disj ctn))) ; Final disjunct => return constraint.
-	  (cond
-	   [(fail? lhs-disj) failure] ; All lhs and rhs disjuncts failed.
-	   [(not (disj? lhs-disj)) s^]
-	   [else s]))]
-	[(disj? g) (solve-disj (disj-car g) s s^ ctn ==s lhs-disj (make-disj (disj-cdr g) rhs-disj))] ;TODO replace disj with make-disj where possible
-	[else (let-values ([(g0 s0) (solve-constraint g s ctn succeed)])
-		(cond
-		 [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-		 [(fail? g0) (solve-disj (disj-car rhs-disj) s s^ ctn ==s lhs-disj (disj-cdr rhs-disj))] ; First disjunct fails => check next disjunct.
-		 [else (solve-disj (disj-car rhs-disj) s s0 ctn (diff-== ==s g0) (disj lhs-disj g0) (disj-cdr rhs-disj))]))])]))
-
-  (org-define (solve-disjunction g s ctn out)
+  (define (solve-disjunction g s ctn out)
     (let-values ([(g s) (solve-disj g s ctn fail)])
 	 (values (conj out g) s)))
   
-  (org-define (solve-disj g s ctn ==s) ;TODO delete extracted == from disj clauses
+  (define (solve-disj g s ctn ==s) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
      [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
      [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
      [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
-	     (org-cond g0
+	     (cond
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
 	      [(disj? g0) (values (disj g0 (make-conj (disj-rest g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
 	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
-		 (org-cond g-rest
+		 (cond
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
 		  [else (values (make-disj g0 g) s)]))]))]))
