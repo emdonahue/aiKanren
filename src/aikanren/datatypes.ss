@@ -19,7 +19,7 @@
 	  == ==? ==-lhs ==-rhs
 	  fresh?
 	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
-	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
+	  make-disj disj disj? disj-car disj-cdr disj-first disj-rest disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
@@ -220,6 +220,16 @@
 	(disj-rhs c)
 	#;
 	(disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail))
+
+  (define (disj-first g)
+    (if (disj? g)
+	(disj-first (disj-lhs g))
+	g))
+
+  (define (disj-rest g)
+    (if (disj? g)
+	(disj (disj-rest (disj-lhs g)) (disj-rhs g))
+	fail))
 
   (define (conde->disj c)
     (if (conde? c) (disj (conde->disj (conde-lhs c)) (conde->disj (conde-rhs c))) c))
