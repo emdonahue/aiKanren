@@ -123,7 +123,7 @@
   (define-structure (disj lhs rhs))
   (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
-  
+
   (define (== x y)
     (cond
      [(or (var? x) (var? y)) (make-== x y)]
