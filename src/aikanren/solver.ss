@@ -126,7 +126,7 @@
 	     (org-cond g0
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
-	      [(disj? g0) (assert #f)]
+	      [(disj? g0) (values (disj g0 (make-conj (disj-rest g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
 	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
 		 (org-cond g-rest

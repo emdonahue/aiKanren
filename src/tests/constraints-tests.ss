@@ -180,9 +180,6 @@
 	     (run1 (x0 x1 x2 x3)
 		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
-    
-
-    #;
     (tassert "absento hangs on this"
 	     (run* (x1 x2 x3 x4 x5)
        (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5))) 3)
