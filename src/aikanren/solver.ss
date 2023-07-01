@@ -120,19 +120,20 @@
   (org-define (solve-disj g s ctn ==s)
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (cond
-     [(fail? g) (values fail failure)]
+     [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
+     [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
      [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
 	     (org-cond
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
 	      [else
-	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn ==s)])
+	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
 		 (org-cond
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
 		  [else (values (make-disj g0 g) s)]))]))]))
   
-  (define (diff-== ==s g)
+  (define (diff-== ==s g) ;TODO make diff-== just a list. no need to dedup because we are dredging normalized output
     (cond ; TODO succeed should probably skip any computations in diff-==
      [(fail? ==s) (conj-filter g ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
      [(fail? g) ==s] ; A failed goal has no bearing on the ==s common to succeeding goals.
