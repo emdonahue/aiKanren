@@ -32,8 +32,7 @@
     (syntax-rules ()
       [(_ body ...)
        (parameterize ([trace-on #t])
-	 body ...
-	 (when (fx= 1 (trace-depth)) (printf "* top level messages~%")))]))
+	 body ...)]))
 
   (define (org-print . args)
     (when (trace-on) (apply printf args)))
@@ -56,13 +55,12 @@
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
 	   (org-print-header "arguments")
 	   (org-print-item 'arg arg) ...
-		  (org-print-header "logs")
+		  (org-print-header "logging")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
 	     (org-print-header "return")
 	     (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
-	     (when (< 1 (trace-depth))
-	       (parameterize ([trace-depth (fx1- (trace-depth))])
-		 (org-print-header "logs")))
+	     (parameterize ([trace-depth (fx1- (trace-depth))])
+	       (org-print-header "logging"))
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
