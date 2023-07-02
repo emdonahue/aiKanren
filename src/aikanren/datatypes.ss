@@ -118,7 +118,6 @@
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
-  ;;TODO make == pre-unify with an empty mini-substitution to catch failing ground violations. useful if we want to quick check the constraints with new extensions
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
   (define-structure (conde lhs rhs))
@@ -133,13 +132,9 @@
 
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
 
-  (define-structure (matcho2 out-vars in-vars goal))
-  (define-values (matcho? matcho-out-vars matcho-in-vars matcho-goal) (values matcho2? matcho2-out-vars matcho2-in-vars matcho2-goal))
+  (define-structure (matcho out-vars in-vars goal))
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
-  (define (make-matcho out in g) ;TODO remove matcho debugging indirection
-;    (when (not (or (null? out) (and (var? (car out)) (not (null? (car out)))))) (printf "AHA: ~s ~s ~s~%" out in g))
-    (make-matcho2 out in g))
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g)))
@@ -158,7 +153,7 @@
      [else (make-conde x y)]))
 
   (define (expand-matcho g s p)
-    ((matcho-goal g) s p )) ;(matcho-in-vars g)
+    ((matcho-goal g) s p (matcho-in-vars g)))
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
