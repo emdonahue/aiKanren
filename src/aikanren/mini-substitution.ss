@@ -11,8 +11,7 @@
 	v))
 
   (define (mini-reify s v)
-    (cond
-     [(failure? s) v]
+    (exclusive-cond
      [(pair? v) (cons (mini-reify s (car v)) (mini-reify s (cdr v)))]
      [(var? v)
       (let ([v^ (mini-walk s v)])

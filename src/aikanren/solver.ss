@@ -10,7 +10,7 @@
   (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
-    (cond
+    (exclusive-cond
      [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
@@ -46,7 +46,7 @@
   
   (define (solve-=/= g s conjs out)
     (let-values ([(g s^) (unify s (==-lhs g) (==-rhs g))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
-	(cond
+	(exclusive-cond
 	 [(succeed? g) (values fail failure)]
 	 [(fail? g) (solve-constraint conjs s succeed out)]
 	 [else
@@ -68,7 +68,7 @@
 
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
-    (cond
+    (exclusive-cond
      [(==? g) (or (equal? (==-lhs g) v))] ; Existing constraints are already normalized, so only lhs need be checked.
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
@@ -91,17 +91,17 @@
   
   (define (solve-disj g s ctn ==s) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
-    (cond
+    (exclusive-cond
      [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
      [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
      [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
-	     (cond
+	     (exclusive-cond
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
 	      [(disj? g0) (values (disj g0 (make-conj (disj-rest g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
 	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
-		 (cond
+		 (exclusive-cond
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
 		  [else (values (make-disj g0 g) s)]))]))]))
@@ -123,7 +123,7 @@
   
   (define (solve-guardo g s conjs out)
     (let ([v (walk s (guardo-var g))])
-		    (cond
+		    (exclusive-cond
 		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
 				 (values g (store-constraint s g)))]
 		     [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
@@ -131,7 +131,7 @@
 
   (define (solve-pconstraint g s ctn out)
 		(let ([g ((pconstraint-procedure g) s)])
-		  (cond
+		  (exclusive-cond
 		   [(succeed? g) (values succeed s)]
 		   [(fail? g) (values fail failure)]
 		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
@@ -139,7 +139,7 @@
   (define (store-disjunctions g s)
     (assert (and (goal? g) (or (fail? g) (not (failure? s)))))
     ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
-    (cond
+    (exclusive-cond
      [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
      [(disj? g) (store-constraint s g)]
      [else s]))
@@ -147,7 +147,7 @@
   (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state? s) (assert (or (guardo? g) (matcho? g) (noto? g) (disj? g) (pconstraint? g) (succeed? g) (fail? g))))) ; -> state?
-    (cond
+    (exclusive-cond
      [(succeed? g) s]
      [(fail? g) failure]
      [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO consider reversing constraint storage to put old constraints first
@@ -170,7 +170,7 @@
       [(g vs)
        ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
        (assert (goal? g))
-       (cond
+       (exclusive-cond
 	[(succeed? g) vs]
 	[(disj? g) (attributed-vars-disj g vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
 	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
@@ -194,7 +194,7 @@
     (define (maybe-==? g)
     ;; True if a goal might imply a extension of the substitution.
     (assert (not (or (succeed? g) (fail? g) (disj? g))))
-    (cond
+    (exclusive-cond
      [(conj? g) (or (maybe-==? (conj-car g)) (maybe-==? (conj-cdr g)))]
      [(noto? g) #f]
      [(constraint? g) (maybe-==? (constraint-goal g))]

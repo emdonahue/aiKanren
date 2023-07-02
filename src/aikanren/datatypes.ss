@@ -101,7 +101,6 @@
     (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === STREAMS ===
-;  (define-structure (failure2))
   (define failure (vector 'failure))
   (define (failure? s) (eq? s failure))
   
@@ -163,7 +162,6 @@
      [(or (fail? lhs) (fail? rhs)) fail]
      [(succeed? rhs) lhs]
      [(succeed? lhs) rhs]
-     ;[(and (or (fresh? lhs) (disj? lhs)) (not (or (fresh? rhs) (disj? rhs)))) (make-conj rhs lhs)] ;TODO evaluate divergence avoidance in conj goals
      [else (make-conj lhs rhs)]))
 
   (define (conj* . conjs)

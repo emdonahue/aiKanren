@@ -6,7 +6,7 @@
   (define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
-    (cond
+    (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
@@ -36,7 +36,7 @@
   (define (bind g s p)
     ;; Applies g to all states in s.
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
-    (cond
+    (exclusive-cond
      [(failure? s) (values failure p)]
      [(state? s) (run-goal g s p)]
      [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
@@ -48,7 +48,7 @@
   
   (define (stream-step s p)
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
-    (cond
+    (exclusive-cond
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
      [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
