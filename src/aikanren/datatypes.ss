@@ -101,7 +101,8 @@
     (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === STREAMS ===
-  (define failure '(failure))
+;  (define-structure (failure2))
+  (define failure (vector 'failure))
   (define (failure? s) (eq? s failure))
   
   (define-structure (mplus lhs rhs))

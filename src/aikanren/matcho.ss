@@ -7,7 +7,7 @@
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
     (syntax-rules ()
       [(_ state package substitution grounding ((out-var pattern)) body ...)
-       (let* ([out-var (walk state out-var)]
+       (let* ([out-var (if (null? grounding) (walk state out-var) (car grounding))]
 	      [grounding (if (null? grounding) grounding (cdr grounding))]
 	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
 	 (if (failure? substitution)
