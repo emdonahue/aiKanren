@@ -29,7 +29,21 @@
     (syntax-rules ()
       [(_ ([out-var (p-car . p-cdr)]) body ...)
        (exclusive-cond
-	[(var? out-var) (matcho ([out-var (p-car . p-cdr)]) body ...)]
+	[(var? out-var)
+	 (make-matcho
+	  (list out-var) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
+	  '()
+	  (lambda (state package grounding)
+	    (let ([out-var (if (null? grounding) (walk state out-var) (car grounding))])
+	      (if (not (or (var? out-var) (pair? out-var)))
+		  (values #t fail failure package)
+		  (values
+		   (not (var? out-var)) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
+		   (let ([p-car (if (var? out-var) (make-var (state-varid state)) (car out-var))]
+			 [p-cdr (if (var? out-var) (make-var (fx1+ (state-varid state))) (cdr out-var))])
+		     body ...)
+		   (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
+		   package)))))] ;(matcho ([out-var (p-car . p-cdr)]) body ...)
 	[(pair? out-var)
 	 (let ([p-car (car out-var)]
 	       [p-cdr (cdr out-var)])
