@@ -167,7 +167,7 @@
      [else (make-conj lhs rhs)]))
 
 
-  (define-syntax conj2
+  (define-syntax conj2 ;TODO experiment with short circuiting cond and disj macros
     (syntax-rules ()
       [(_ lhs rhs)
        (let ([l lhs])
