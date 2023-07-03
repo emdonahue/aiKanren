@@ -171,13 +171,13 @@
     (syntax-rules ()
       [(_) succeed]
       [(_ g) g]
-      [(_ lhs rhs ...)
+      [(_ lhs rhs ...) (conj lhs (conj* rhs ...))
+       #;
        (let ([l lhs])
 	 (if (fail? l) fail
 	     (let ([r (conj* rhs ...)])
 	       (cond
-		[(or (fail? r) (succeed? l)) r]
-		[(succeed? r) l]
+		[(fail? r) r]
 		[else (make-conj l r)]))))]))
 
   #;
