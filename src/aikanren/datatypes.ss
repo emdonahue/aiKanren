@@ -14,7 +14,7 @@
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
 	  constraint constraint? constraint-goal set-constraint-goal
-	  goal? goal-cond
+	  goal? ;goal-cond
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
@@ -139,9 +139,10 @@
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g)))
 
-  (define-syntax goal-cond ;TODO delete goal-cond
+  #;
+  (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed
     (syntax-rules ()
-      [(_ goal clauses ...)
+      [(_ goal (predicate body ...) ...)
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
 	 clauses ...)]))
 

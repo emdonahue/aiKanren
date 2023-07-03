@@ -1,6 +1,6 @@
 ;; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables ""
 (library (matcho)
-  (export matcho)
+  (export matcho matcho-pair)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
   
   (define-syntax build-substitution
@@ -25,6 +25,17 @@
       [(_ ()) '()]
       [(_ v) v]))
 
+  (define-syntax matcho-pair
+    (syntax-rules ()
+      [(_ ([out-var (p-car . p-cdr)]) body ...)
+       (exclusive-cond
+	[(var? out-var) (matcho ([out-var (p-car . p-cdr)]) body ...)]
+	[(pair? out-var)
+	 (let ([p-car (car out-var)]
+	       [p-cdr (cdr out-var)])
+	   body ...)]
+	[else fail])]))
+  
   (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
     ;; TODO can we fire matcho immediately if its structural recursion instead of waiting on a conjunct ahead of it that may be all free? reordering conjuncts
 
