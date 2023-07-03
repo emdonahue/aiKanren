@@ -42,13 +42,13 @@
 		   (not (var? out-var))
 		   (let ([p-car (if (var? out-var) (make-var (state-varid state)) (car out-var))]
 			 [p-cdr (if (var? out-var) (make-var (fx1+ (state-varid state))) (cdr out-var))])
-		     (fresh () succeed body ...))
+		     (conj* body ...))
 		   (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
 		   package)))))]
 	[(pair? out-var) ; If the term is ground, just destructure it and continue.
 	 (let ([p-car (car out-var)]
 	       [p-cdr (cdr out-var)])
-	   (fresh () succeed body ...))]
+	   (conj* body ...))]
 	[else fail])]))
   
   (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)

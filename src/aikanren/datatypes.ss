@@ -169,6 +169,7 @@
 
   (define-syntax conj* ;TODO experiment with short circuiting conj and disj macros
     (syntax-rules ()
+      [(_) succeed]
       [(_ g) g]
       [(_ lhs rhs ...)
        (let ([l lhs])
