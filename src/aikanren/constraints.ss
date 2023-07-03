@@ -95,11 +95,10 @@
 
   (define (absento absent term) (constrain (absento* absent term)))
   (define (absento* absent term)
-    (conj2
+    (fresh ()
       (=/= term absent)
       (disj
        (noto (pairo term))
        (matcho ([term (a . d)])
-	       (conj2
-		(absento* absent a)
-		(absento* absent d)))))))
+	       (absento* absent a)
+	       (absento* absent d))))))

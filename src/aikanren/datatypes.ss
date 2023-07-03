@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter conj2
+	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
 	  make-disj disj disj? disj-car disj-cdr disj-first disj-rest disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
@@ -158,6 +158,7 @@
   
   ;; CONJ
 
+
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
     (assert (and (goal? lhs) (goal? rhs)))
     (cond
@@ -166,21 +167,19 @@
      [(succeed? lhs) rhs]
      [else (make-conj lhs rhs)]))
 
-
-  (define-syntax conj2 ;TODO experiment with short circuiting cond and disj macros
+  (define-syntax conj* ;TODO experiment with short circuiting conj and disj macros
     (syntax-rules ()
-      [(_ lhs rhs)
+      [(_ g) g]
+      [(_ lhs rhs ...)
        (let ([l lhs])
-	 (cond
-	  [(fail? l) fail]
-	  [(succeed? l) rhs]
-	  [else
-	   (let ([r rhs])
-	     (cond
-	      [(fail? r) fail]
-	      [(succeed? r) l]
-	      [else (make-conj l r)]))]))]))
+	 (if (fail? l) fail
+	     (let ([r (conj* rhs ...)])
+	       (cond
+		[(or (fail? r) (succeed? l)) r]
+		[(succeed? r) l]
+		[else (make-conj l r)]))))]))
 
+  #;
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   

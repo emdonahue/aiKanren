@@ -70,7 +70,7 @@ doc:
 test:
 	@TESTSUITE=$$(mktemp); \
 	trap "rm -f $$TESTSUITE" EXIT; \
-	echo '(import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests)) (run-sbral-tests) (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-solver-tests) (run-matcho-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests) (parameterize ([benchmark-testing #t]) (include "src/benchmarks/benchmarks.ss")) (tmessage)' > "$$TESTSUITE"; \
+	echo '(import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests)) (run-sbral-tests)  (run-mini-substitution-tests) (run-state-tests) (run-goal-tests) (run-solver-tests) (run-matcho-tests) (run-negation-tests) (run-constraints-tests) (run-listo-tests) (parameterize ([benchmark-testing #t]) (include "src/benchmarks/benchmarks.ss")) (tmessage)' > "$$TESTSUITE"; \
 	scheme --libdirs src/aikanren:src/tests:src/benchmarks --script "$$TESTSUITE" || true
 
 debug:
