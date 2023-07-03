@@ -15,20 +15,20 @@
       (lambda (state p)
 	(fresh-vars
 	 (state-varid state) varid (q ...)
-	 (values (fresh () g ...) (set-state-varid state varid) p)))]))
+	 (values (conj* g ...) (set-state-varid state varid) p)))]))
 
  (define-syntax runner
     (syntax-rules ()
       [(_ () g ...)
-       (top-level-runner empty-state '() (fresh () g ...))]
+       (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q) g ...)
        (fresh-vars
 	(state-varid empty-state) varid (q)
-	(top-level-runner (set-state-varid empty-state varid) q (fresh () g ...)))]
+	(top-level-runner (set-state-varid empty-state varid) q (conj* g ...)))]
       [(_ (q0 q ...) g ...)
        (fresh-vars
 	(state-varid empty-state) varid (q0 q ...)
-	(top-level-runner (set-state-varid empty-state varid) (list q0 q ...) (fresh () g ...)))]))
+	(top-level-runner (set-state-varid empty-state varid) (list q0 q ...) (conj* g ...)))]))
   
   (define-syntax run
     (syntax-rules ()
@@ -62,7 +62,7 @@
 
    (define-syntax constrain
      (syntax-rules ()
-       [(_ g ...) (constraint (fresh () g ...))]))
+       [(_ g ...) (constraint (conj* g ...))]))
   
   ;; === UTILITIES ===
 

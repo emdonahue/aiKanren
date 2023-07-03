@@ -10,4 +10,4 @@
     (tassert "negate unification" (noto (== x1 2)) (make-noto (== x1 2)))
     (tassert "negate disunification" (noto (noto (== x1 2))) (== x1 2))
     (tassert "negate disjunction" (noto (conde [(=/= x1 2)] [succeed] [fail])) (conj* (== x1 2) fail succeed))
-    (tassert "negate conjunction" (noto (fresh () (== x1 2) fail succeed)) succeed)))
+    (tassert "negate conjunction" (noto (conj* (== x1 2) fail succeed)) succeed)))

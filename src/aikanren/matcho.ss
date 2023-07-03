@@ -86,7 +86,7 @@
 		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
 		   (values
 		    (or (not (var? out-var)) ...) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
-		    (fresh ()
+		    (conj*
 		      (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
 		      body ...)
 		    (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.

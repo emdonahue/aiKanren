@@ -24,8 +24,8 @@
 
     (tassert "succeed goal" (run* (x1) succeed) (list x1))
     (tassert "fail goal" (run* (x1) fail) '())
-    (tassert "conj fail" (run* (x1) (fresh () succeed fail)) '())
-    (tassert "conj fail 2" (run* (x1) (fresh () fail succeed)) '())
+    (tassert "conj fail" (run* (x1) (conj* succeed fail)) '())
+    (tassert "conj fail 2" (run* (x1) (conj* fail succeed)) '())
     (tassert "bind" (run* (x1) (fresh (x2) (fresh (x3) (fresh (x4) (== x1 1))))) '(1))
     
     (tassert "mplus fail lhs" (run* (x1) (conde [fail] [(== x1 1)])) '(1))
