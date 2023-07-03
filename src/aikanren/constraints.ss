@@ -99,7 +99,7 @@
        (=/= term absent)
        (disj
 	(noto (pairo term))
-	(matcho-pair ([term (a . d)])
+	(matcho ([term (a . d)])
 		(begin
 		  (fresh ()
 		    (absento absent a)

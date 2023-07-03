@@ -41,13 +41,13 @@
 		   (not (var? out-var)) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
 		   (let ([p-car (if (var? out-var) (make-var (state-varid state)) (car out-var))]
 			 [p-cdr (if (var? out-var) (make-var (fx1+ (state-varid state))) (cdr out-var))])
-		     body ...)
+		     (fresh () succeed body ...))
 		   (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
 		   package)))))] ;(matcho ([out-var (p-car . p-cdr)]) body ...)
 	[(pair? out-var)
 	 (let ([p-car (car out-var)]
 	       [p-cdr (cdr out-var)])
-	   body ...)]
+	   (fresh () succeed body ...))]
 	[else fail])]))
   
   (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
@@ -67,6 +67,9 @@
 	       [a vs]))]))
     
     (syntax-case bindings ()
+      [(_ ([out-var (p-car . p-cdr)]) body ...)
+       (and (identifier? #'p-car) (identifier? #'p-cdr))
+       #'(matcho-pair ([out-var (p-car . p-cdr)]) body ...)]
       [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(normalize-matcho

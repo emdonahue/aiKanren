@@ -1,6 +1,6 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace org-cond)
+  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace org-cond org-printf)
   (import (chezscheme))
 
   (define-syntax with-values
@@ -34,33 +34,33 @@
        (parameterize ([trace-on #t])
 	 body ...)]))
 
-  (define (org-print . args)
-    (when (trace-on) (apply printf args)))
+  (define (org-printf . args)
+    (when (trace-on) (apply printf args)) (apply values (cdr args)))
 
-  (define (org-print-header header)
-    (org-print "~a ~s~%" (make-string (trace-depth) #\*) header))
+  (define (org-printf-header header)
+    (org-printf "~a ~s~%" (make-string (trace-depth) #\*) header))
 
-  (define (org-print-item name value)
-    (org-print " - ~a: " name)
+  (define (org-printf-item name value)
+    (org-printf " - ~a: " name)
     (parameterize ([pretty-initial-indent (+ 3 (string-length (if (string? name) name (symbol->string name))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
-    (org-print "~%"))
+    (org-printf "~%"))
   
   (define-syntax org-lambda
     (syntax-rules ()
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
-	 (org-print-header 'name)
+	 (org-printf-header 'name)
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
-	   (org-print-header "arguments")
-	   (org-print-item 'arg arg) ...
-		  (org-print-header "logging")
+	   (org-printf-header "arguments")
+	   (org-printf-item 'arg arg) ...
+		  (org-printf-header "logging")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
-	     (org-print-header "return")
-	     (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
+	     (org-printf-header "return")
+	     (for-each (lambda (i r) (org-printf-item (number->string i) r)) (enumerate return) return)
 	     (parameterize ([trace-depth (fx1- (trace-depth))])
-	       (org-print-header "logging"))
+	       (org-printf-header "logging"))
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
@@ -73,10 +73,10 @@
     (syntax-rules (else)
       [(_ (head body ...) ...)
        (cond
-	[head (org-print " - cond: ~a~%" 'head) body ...] ...)]
+	[head (org-printf " - cond: ~a~%" 'head) body ...] ...)]
       [(_ name (head body ...) ...)
        (cond
-	[head (org-print " - cond (~a): ~a~%" 'name 'head) body ...] ...)]))
+	[head (org-printf " - cond (~a): ~a~%" 'name 'head) body ...] ...)]))
   
   (define-syntax org-define
     (syntax-rules ()
