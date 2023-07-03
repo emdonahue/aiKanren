@@ -69,7 +69,7 @@
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
   (define (get-constraints s vs)
-    (fold-left (lambda (lhs rhs) (conj lhs rhs)) succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
+    (fold-left make-conj succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
 
   (define (remove-constraints s vs)
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
