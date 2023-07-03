@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
+	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter conj2
 	  make-disj disj disj? disj-car disj-cdr disj-first disj-rest disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
@@ -157,6 +157,7 @@
     ((matcho-goal g) s p (matcho-in-vars g)))
   
   ;; CONJ
+
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
     (assert (and (goal? lhs) (goal? rhs)))
     (cond
@@ -164,6 +165,21 @@
      [(succeed? rhs) lhs]
      [(succeed? lhs) rhs]
      [else (make-conj lhs rhs)]))
+
+
+  (define-syntax conj2
+    (syntax-rules ()
+      [(_ lhs rhs)
+       (let ([l lhs])
+	 (cond
+	  [(fail? l) fail]
+	  [(succeed? l) rhs]
+	  [else
+	   (let ([r rhs])
+	     (cond
+	      [(fail? r) fail]
+	      [(succeed? r) l]
+	      [else (make-conj l r)]))]))]))
 
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
