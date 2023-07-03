@@ -93,14 +93,14 @@
 		(presento present a)
 		(presento present d))))))
 
-  (define (absento absent term)
-    (constrain
-     (fresh ()
-       (=/= term absent)
-       (disj
-	(noto (pairo term))
-	(matcho ([term (a . d)])
-		(begin
-		  (fresh ()
-		    (absento absent a)
-		    (absento absent d)))))))))
+  (define (absento absent term) (constrain (absento* absent term)))
+  (define (absento* absent term)
+    (fresh ()
+      (=/= term absent)
+      (disj
+       (noto (pairo term))
+       (matcho ([term (a . d)])
+	       (begin
+		 (fresh ()
+		   (absento* absent a)
+		   (absento* absent d))))))))
