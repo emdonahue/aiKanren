@@ -123,6 +123,7 @@
     ;; === SUBSTITUTION ===
     (tassert "substitution constraint fails" (run1 (x1) (== x1 (=/= x1 1)) (== x1 1)) (void))
     (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== x1 2)) 2)
-
+    (tassert "substitution constraint fails" (run1 (x1) (== x1 (=/= x1 1)) (== 1 x1)) (void))
+    (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== 2 x1)) 2)
     
 ))
