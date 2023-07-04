@@ -59,7 +59,7 @@
 		   [s s^])
 	     (cond
 	      [(noto? g) (values (conj out (conj g g0)) s0)] ; This is not a disjunction, so just modify the state and proceed.
-	      [(succeed? g0) (values succeed s)] ; The head of the disjunction succeeds, so discard it.
+	      [(succeed? g0) (values (conj g out) s)] ; The head of the disjunction succeeds, so discard it.
 	      [(fail? g0) (if (disj? g) (solve-=/= (disj-cdr g) s ctn out) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 	      [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)]))
 

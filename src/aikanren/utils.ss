@@ -1,6 +1,6 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace org-cond org-printf)
+  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf)
   (import (chezscheme))
 
   (define-syntax with-values
@@ -68,7 +68,7 @@
       [(_ name [(arg ...) body ...] ...)
        (case-lambda
 	 [(arg ...) ((org-lambda name (arg ...) body ...) arg ...)] ...)]))
-
+  
   (define-syntax org-cond
     (syntax-rules (else)
       [(_ (head body ...) ...)
@@ -77,6 +77,8 @@
       [(_ name (head body ...) ...)
        (cond
 	[head (org-printf " - cond (~a): ~a~%" 'name 'head) body ...] ...)]))
+
+  (define-syntax org-exclusive-cond (identifier-syntax org-cond))
   
   (define-syntax org-define
     (syntax-rules ()
