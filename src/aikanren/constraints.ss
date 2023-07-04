@@ -6,23 +6,21 @@
     (noto (== lhs rhs)))
   
   (define (booleano v)
-    (constrain
-     (disj (== v #t) (== v #f))))
+    (disj (== v #t) (== v #f)))
 
   (define (listo l)
-    (constrain
-     (disj
-      (== l '())
-      (matcho ([l (a . d)])
-	      (listo d)))))
+    (disj
+     (== l '())
+     (matcho ([l (a . d)])
+	     (listo d))))
 
   (define (finite-domain v ds)
     (assert (list? ds))
-    (constrain (apply disj* (map (lambda (d) (== v d)) ds))))
+    (apply disj* (map (lambda (d) (== v d)) ds)))
 
   (define (==> antecedent consequent)
     (assert (and (goal? antecedent) (goal? consequent)))
-    (constrain (disj consequent (noto antecedent))))
+    (disj consequent (noto antecedent)))
 
   (define (typeo v t?) ; TODO make typo reject immediately if ground term not a type
     (assert (procedure? t?))
@@ -85,20 +83,18 @@
     )
 
   (define (presento present term)
-    (constrain
-     (disj
-       (== term present)
-       (matcho ([term (a . d)])
-	       (disj
-		(presento present a)
-		(presento present d))))))
+    (disj
+     (== term present)
+     (matcho ([term (a . d)])
+	     (disj
+	      (presento present a)
+	      (presento present d)))))
 
-  (define (absento absent term) (constrain (absento* absent term)))
-  (define (absento* absent term)
-    (fresh ()
+  (define (absento absent term)
+    (conj*
       (=/= term absent)
       (disj
        (noto (pairo term))
        (matcho ([term (a . d)])
-	       (absento* absent a)
-	       (absento* absent d))))))
+	       (absento absent a)
+	       (absento absent d))))))
