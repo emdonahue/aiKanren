@@ -42,11 +42,11 @@
   ;; constraint x pair - simplify var
   ;; constraint x constraint - simplify one and extend the var of the other
   
-  (define (unify s x y)
+  (org-define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
-      (cond
+      (org-cond
        [(and (eq? x y) (not (goal? y))) (values succeed s)]
        [(and (var? x) (var? y))
 	(cond
@@ -59,7 +59,7 @@
        [(goal? x)
 	(if (goal? y)
 	    (assert #f)
-	    (simplify-constraint x y-var y))]
+	    (values (simplify-constraint x x-var y) (extend2 s x-var y)))] ; TODO When should simplifying a constraint commit more ==?
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
 	    ([(car-extensions s) (unify s (car x) (car y))])
@@ -77,10 +77,20 @@
       (sbral-set-ref
        (state-substitution s)
        (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound))))
+
+  
+  (define (extend2 s x y) ;TODO merge extend2
+    ;; Insert a new binding between x and y into the substitution.
+    (set-state-substitution
+     s
+     (sbral-set-ref
+      (state-substitution s)
+      (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
+  
   
   ;; === CONSTRAINTS ===
 
-  (trace-define (simplify-constraint g v x)
+  (org-define (simplify-constraint g v x)
     (assert (and (goal? g) (var? v) (not (var? x))))
     (exclusive-cond
      [(==? g)
