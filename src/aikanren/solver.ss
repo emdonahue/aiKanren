@@ -94,13 +94,13 @@
     (exclusive-cond
      [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
      [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
-     [else (let-values ([(g0 s0) (solve-constraint (disj-first g) s ctn succeed)])
+     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
 	     (exclusive-cond
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	      [(fail? g0) (solve-disj (disj-rest g) s ctn ==s)] ; First disjunct fails => check next disjunct.
-	      [(disj? g0) (values (disj g0 (make-conj (disj-rest g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
+	      [(fail? g0) (solve-disj (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
+	      [(disj? g0) (values (disj g0 (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
-	       (let-values ([(g s^) (solve-disj (disj-rest g) s ctn (diff-== ==s g0))])
+	       (let-values ([(g s^) (solve-disj (disj-cdr g) s ctn (diff-== ==s g0))])
 		 (exclusive-cond
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
@@ -187,9 +187,9 @@
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
   (define (attributed-vars-disj d vs)
-    (if (maybe-==? (disj-first d))
-	(attributed-vars (disj-first d) (attributed-vars (disj-first (disj-rest d)) vs))
-	(attributed-vars (disj-first d) vs)))
+    (if (maybe-==? (disj-car d))
+	(attributed-vars (disj-car d) (attributed-vars (disj-car (disj-cdr d)) vs))
+	(attributed-vars (disj-car d) vs)))
 
     (define (maybe-==? g)
     ;; True if a goal might imply a extension of the substitution.

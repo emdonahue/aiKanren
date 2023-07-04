@@ -19,7 +19,7 @@
 	  == ==? ==-lhs ==-rhs
 	  fresh?
 	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
-	  make-disj disj disj? disj-car disj-cdr disj-first disj-rest disj* disj-lhs disj-rhs disj-succeeds?
+	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
@@ -44,7 +44,8 @@
   
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
-  (define var-equal? equal?)
+  ;;TODO microbenchmark fxvector for var
+  (define var-equal? equal?) ;TODO microbenchmark var-equal? vs fx=
 
   ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
@@ -220,26 +221,14 @@
   (define (disj* . disjs)
     (fold-right (lambda (lhs rhs) (disj lhs rhs)) fail disjs))
 
-  (define (disj-car c)
-    (if (disj? c)
-	(disj-lhs c)
-	#;
-	(disj-car (disj-lhs c)) c))
-
-  (define (disj-cdr c)
-    (if (disj? c)
-	(disj-rhs c)
-	#;
-	(disj (disj-cdr (disj-lhs c)) (disj-rhs c)) fail))
-
-  (define (disj-first g)
+  (define (disj-car g)
     (if (disj? g)
-	(disj-first (disj-lhs g))
+	(disj-car (disj-lhs g))
 	g))
 
-  (define (disj-rest g)
+  (define (disj-cdr g)
     (if (disj? g)
-	(disj (disj-rest (disj-lhs g)) (disj-rhs g))
+	(disj (disj-cdr (disj-lhs g)) (disj-rhs g))
 	fail))
 
   (define (conde->disj c)

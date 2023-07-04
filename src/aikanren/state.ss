@@ -1,6 +1,6 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify) ;;TODO double check state exports
-  (import (chezscheme) (store) (sbral) (datatypes))
+  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify) ;;TODO double check state exports
+  (import (chezscheme) (store) (sbral) (datatypes) (negation))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
@@ -38,7 +38,6 @@
 	(cond
 	 [(fx< (var-id x) (var-id y)) (extend s x y)]
 	 [(var-equal? x y)
-	  (assert #f)
 	  (values succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
@@ -60,7 +59,7 @@
       (sbral-set-ref
        (state-substitution s)
        (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound))))
-
+  
   ;; === CONSTRAINTS ===
 
   (define (state-add-constraint s c vs)
@@ -73,6 +72,28 @@
 
   (define (remove-constraints s vs)
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
+
+  (define (disunify s x y)
+    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
+    (assert (state? s)) ; -> substitution? goal?
+    (let ([x (walk s x)] [y (walk s y)])
+      (cond
+       [(eq? x y) fail]
+       [(and (var? x) (var? y))
+	(cond
+	 [(fx< (var-id x) (var-id y)) (noto (== x y))]
+	 [(var-equal? x y)
+	  fail] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	 [else (noto (== y x))])]
+       [(var? x) (noto (== x y))]
+       [(var? y) (noto (== y x))]
+       [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
+	(let ([lhs (disunify s (car x) (car y))])
+	  (cond
+	   [(succeed? lhs) succeed] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
+	   [(fail? lhs) (disunify s (cdr x) (cdr y))]
+	   [else (disj lhs (noto (== (cdr x) (cdr y))))]))]
+       [else succeed])))
   
    ;; === DEBUGGING ===
 
