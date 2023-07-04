@@ -18,15 +18,25 @@
      [else v]))
 
   (define (walk s v)
+    (assert (state? s))
+    (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
+
+  (define (walk-binding s v)
+    (assert (sbral? s))
     (if (var? v)
 	(let ([walked (sbral-ref
-		       (state-substitution s)
-		       (fx- (sbral-length (state-substitution s)) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+		       s
+		       (fx- (sbral-length s) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
 		       unbound)]) 
-	  (if (unbound? walked) v (walk s walked)))
-	v))
+	  (if (unbound? walked) (values v v) (walk-binding s walked)))
+	(values v v)))
 
   ;; === UNIFICATION ===
+
+  ;; constraint x var - extend var
+  ;; constraint x constant - simplify var
+  ;; constraint x pair - simplify var
+  ;; constraint x constraint - simplify one and extend the var of the other
   
   (define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
