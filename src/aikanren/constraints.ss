@@ -28,11 +28,7 @@
 	(if (t? v) succeed fail)
 	(pconstraint
 	 v (lambda (s)
-	     (let ([v (walk s v)])
-	       (cond
-		[(var? v) (typeo v t?)]
-		[(t? v) succeed]	    
-		[else fail]))))))
+	     (typeo (walk s v) t?)))))
 
 
   (define (symbolo v)
