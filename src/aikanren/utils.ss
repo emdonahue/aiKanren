@@ -1,23 +1,23 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values first-value list-values values-ref org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf)
+  (export with-values values-car values->list values-ref org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf)
   (import (chezscheme))
 
   (define-syntax with-values
     (syntax-rules ()
       [(_ vals proc) (call-with-values (lambda () vals) proc)]))
 
-  (define-syntax first-value
+  (define-syntax values-car
     (syntax-rules ()
       [(_ vals) (with-values vals (lambda (first . rest) first))]))
 
-  (define-syntax list-values
+  (define-syntax values->list
     (syntax-rules ()
       [(_ vals) (with-values vals list)]))
 
   (define-syntax values-ref
     (syntax-rules ()
-      [(_ vals n) (list-ref (list-values vals) n)]))
+      [(_ vals n) (list-ref (values->list vals) n)]))
 
 
   ;; === ORG-TRACE ===

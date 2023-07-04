@@ -1,5 +1,5 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify) ;;TODO double check state exports
+  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (store) (sbral) (datatypes) (negation))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
