@@ -13,7 +13,7 @@
   (define (add-constraint s v c)
     (assert (and (constraint-store? s) (var? v) (goal? c)))
     (let ([b (get-constraint-binding s v)])
-      (if b (update-constraint s b (conj c (cdr b)))
+      (if b (update-constraint s b (conj (cdr b) c))
 	  (insert-constraint s v c))))
 
   (define (get-constraint-binding s v)

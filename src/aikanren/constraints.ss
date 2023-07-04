@@ -22,7 +22,7 @@
     (assert (and (goal? antecedent) (goal? consequent)))
     (disj consequent (noto antecedent)))
 
-  (define (typeo v t?) ; TODO make typo reject immediately if ground term not a type
+  (define (typeo v t?)
     (assert (procedure? t?))
     (if (not (var? v))
 	(if (t? v) succeed fail)

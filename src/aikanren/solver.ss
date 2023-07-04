@@ -145,11 +145,11 @@
 
   (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (assert (or (guardo? g) (matcho? g) (noto? g) (disj? g) (pconstraint? g) (succeed? g) (fail? g))))) ; -> state?
+    (assert (and (state? s) (goal? g) (not (conde? g)))) ; -> state?
     (exclusive-cond
      [(succeed? g) s]
      [(fail? g) failure]
-     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO consider reversing constraint storage to put old constraints first
+     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
 
