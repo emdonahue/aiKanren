@@ -118,13 +118,14 @@
     (let ([x (walk s x)] [y (walk s y)])
       (cond
        [(eq? x y) fail]
-       [(and (var? x) (var? y))
-	(cond
-	 [(fx< (var-id x) (var-id y)) (noto (== x y))]
-	 [(var-equal? x y)
-	  fail] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	 [else (noto (== y x))])]
-       [(var? x) (noto (== x y))]
+       [(var? x)
+	(if (var? y)
+	    (cond
+	     [(fx< (var-id x) (var-id y)) (noto (== x y))]
+	     [(var-equal? x y)
+	      fail] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	     [else (noto (== y x))])
+	    (noto (== x y)))]
        [(var? y) (noto (== y x))]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let ([lhs (disunify s (car x) (car y))])
