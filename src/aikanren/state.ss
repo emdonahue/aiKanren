@@ -48,13 +48,14 @@
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
       (org-cond
        [(and (eq? x y) (not (goal? y))) (values succeed s)]
-       [(and (var? x) (var? y))
-	(cond
-	 [(fx< (var-id x) (var-id y)) (extend s x y)]
-	 [(var-equal? x y)
-	  (values succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	 [else (extend s y x)])]
-       [(var? x) (extend s x y)]
+       [(var? x)
+	(if (var? y)
+	    (cond
+	     [(fx< (var-id x) (var-id y)) (extend s x y)]
+	     [(var-equal? x y)
+	      (values succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	     [else (extend s y x)])
+	    (extend s x y))]
        [(var? y) (extend s y x)]
        [(goal? x)
 	(if (goal? y)
