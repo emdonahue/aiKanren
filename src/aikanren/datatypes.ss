@@ -168,7 +168,7 @@
      [else (make-conj lhs rhs)]))
 
   (define-syntax conj* ;TODO experiment with short circuiting conj and disj macros
-    (syntax-rules ()
+    (syntax-rules () ;TODO make conj a macro but when it is just an identifier macro make it return a function of itself for use with higher order fns
       [(_) succeed]
       [(_ g) g]
       [(_ lhs rhs ...) (conj lhs (conj* rhs ...))
