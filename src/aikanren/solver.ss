@@ -48,7 +48,6 @@
   
   (define (solve-=/= g s ctn out)   
     (let ([g (disunify s (==-lhs g) (==-rhs g))])
-      (assert (goal? g))
       (exclusive-cond
        [(fail? g) (values fail failure)]
        [(succeed? g) (solve-constraint ctn s succeed out)]
@@ -58,16 +57,16 @@
 	       [c (if (may-unify c (car a-vars)) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
 	       [s (if (succeed? c) s (remove-constraints s a-vars))]) ; If we are not applying the constraint, leave it in the store.
 	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
-	    (cond ;TODO check noto after succ/fail
-	     [(noto? g) (values (conj out (conj g g0)) s0)] ; This is not a disjunction, so just modify the state and proceed.
-	     [(succeed? g0) (values (conj g out) s)] ; The head of the disjunction succeeds, so discard it.
-	     ;;TODO let solve constraint handle fail case
-	     [(fail? g0) (if (disj? g) (solve-constraint (disj-cdr g) s ctn out) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-	     [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])
+	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
+		(exclusive-cond
+		 [(succeed? g0) (values (conj g out) s)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+		 ;;TODO let solve constraint handle fail case
+		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])) ; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 
 	    #;
-	    	  (let-values ([(g^ s) (solve-=/=* (noto g) s ctn)])
-		    (values (conj out (conj (noto g) g^)) s))))])))
+	    (let-values ([(g^ s) (solve-=/=* (noto g) s ctn)])
+	    (values (conj out (conj (noto g) g^)) s))))])))
   
   #;
   (define (solve-=/= g s ctn out)   
