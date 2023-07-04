@@ -5,7 +5,7 @@
 
   (define (forever x)
     (fresh (y) (forever x)))
-  
+
   (define (run-constraints-tests)
     (define x1 (make-var 1))
     (define x2 (make-var 2))
@@ -30,7 +30,7 @@
     (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
     (tassert "constraint bind store" (reify s x1) 1) ;
     (tassert "constraint bind vid" (state-varid s) 2))
-    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])      
+    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])
       (tassert "constraint disj succeed store" (reify s x1) x1)
       (tassert "constraint disj succeed vid" (state-varid s) 2))
 
@@ -71,7 +71,7 @@
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
 
     ;; === LISTO ===
-    
+
     (tassert "listo ground number" (run1 () (listo 1)) (void))
     (tassert "listo ground 1-list" (run1 () (listo '(1))) '())
     (tassert "listo ground 2-list" (run1 () (listo '(1 2))) '())
@@ -107,7 +107,7 @@
     (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
 
     (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (== x1 1) (disj (== x1 2) (== x1 3))))
-    
+
     (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
     (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))
 
@@ -117,7 +117,7 @@
     ;; === IMPLIES ===
 
     (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (== x2 2) (=/= x1 1)) 2))
-    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (=/= x1 1) (disj* (== x2 2) (=/= x1 1))) 3))
+    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (disj* (== x2 2) (=/= x1 1)) (=/= x1 1)) 3))
     #;
     (#(conj
     (#(disj (#(conj (#(noto #(== #(var 1) 1))
@@ -125,55 +125,55 @@
     #(== #(var 2) 2)))
     #(disj (#(noto #(== #(var 1) 1))
     #(== #(var 2) 2))))) 2)
-    
+
     ;; === SYMBOLO ===
     (tassert "symbolo simplifies succeed" (symbolo 'symbol) succeed)
     (tassert "symbolo simplifies fail" (symbolo 42) fail)
-    
-    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '()) 
-    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void)) 
 
-    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol) 
-    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void)) 
+    (tassert "symbolo ground succeed" (run1 () (symbolo 'symbol)) '())
+    (tassert "symbolo ground fail" (run1 () (symbolo 42)) (void))
 
-    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol) 
-    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void)) 
+    (tassert "symbolo bound succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
+    (tassert "symbolo bound fail" (run1 (x1) (== x1 42) (symbolo x1)) (void))
 
-    (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void)) 
-    (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '()) 
+    (tassert "symbolo fire succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
+    (tassert "symbolo fire fail" (run1 (x1) (symbolo x1) (== x1 42)) (void))
 
-    (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void)) 
-    (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42) 
+    (tassert "not symbolo ground fail" (run1 () (noto (symbolo 'symbol))) (void))
+    (tassert "not symbolo ground succeed" (run1 () (noto (symbolo 42))) '())
 
-    (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void)) 
+    (tassert "not symbolo bound fail" (run1 (x1) (== x1 'symbol) (noto (symbolo x1))) (void))
+    (tassert "not symbolo bound succeed" (run1 (x1) (== x1 42) (noto (symbolo x1))) 42)
+
+    (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void))
     (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
     (tassert "noto does not mangle ctn" (run1 (x1) (constrain (noto (symbolo x1)) (matcho ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
 
     ;; === PLUSO ===
 
     ;;(tassert "pluso ground 1" (run1 () (pluso 42)) '())
-       
+
     ;; === ABSENTO ===
     (tassert "absento ground cdr fail" (run1 () (absento 1  (cons 2 1))) (void))
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
-    (tassert "absento ground succeed" (run1 () (absento 1 2)) '()) 
-    (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento 1 x1)) (void)) 
-    (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento 2 x1)) 1) 
-    (tassert "absento fire ground term fail" (run1 (x1) (absento 1 x1) (== x1 1)) (void)) 
-    (tassert "absento fire ground term succeed" (run1 (x1) (absento 2 x1) (== x1 1)) 1) 
+    (tassert "absento ground succeed" (run1 () (absento 1 2)) '())
+    (tassert "absento bound ground term fail" (run1 (x1) (== x1 1) (absento 1 x1)) (void))
+    (tassert "absento bound ground term succeed" (run1 (x1) (== x1 1) (absento 2 x1)) 1)
+    (tassert "absento fire ground term fail" (run1 (x1) (absento 1 x1) (== x1 1)) (void))
+    (tassert "absento fire ground term succeed" (run1 (x1) (absento 2 x1) (== x1 1)) 1)
 
-    (tassert "absento ground car fail" (run1 () (absento 1 (cons 1 2))) (void)) 
-    (tassert "absento ground car succeed" (run1 () (absento 1 (cons 2 2))) '()) 
-    (tassert "absento bound car fail" (run1 (x1) (== x1 '(1)) (absento 1 x1)) (void)) 
-    (tassert "absento bound car succeed" (run1 (x1) (== x1 '(1)) (absento 2 x1)) '(1)) 
-    (tassert "absento fire car fail" (run1 (x1) (absento 1 x1) (== x1 '(1))) (void)) 
-    (tassert "absento fire car succeed" (run1 (x1) (absento 2 x1) (== x1 '(1))) '(1)) 
+    (tassert "absento ground car fail" (run1 () (absento 1 (cons 1 2))) (void))
+    (tassert "absento ground car succeed" (run1 () (absento 1 (cons 2 2))) '())
+    (tassert "absento bound car fail" (run1 (x1) (== x1 '(1)) (absento 1 x1)) (void))
+    (tassert "absento bound car succeed" (run1 (x1) (== x1 '(1)) (absento 2 x1)) '(1))
+    (tassert "absento fire car fail" (run1 (x1) (absento 1 x1) (== x1 '(1))) (void))
+    (tassert "absento fire car succeed" (run1 (x1) (absento 2 x1) (== x1 '(1))) '(1))
 
-    (tassert "absento ground cdr fail" (run1 () (absento 1 (cons 2 1))) (void))	
-    (tassert "absento ground cdr succeed" (run1 () (absento 1 (cons 2 2))) '()) 
-    (tassert "absento bound cdr fail" (run1 (x1) (== x1 '(2 . 1)) (absento 1 x1)) (void)) 
-    (tassert "absento bound cdr succeed" (run1 (x1) (== x1 '(2 . 2)) (absento 1 x1)) '(2 . 2)) 
-    (tassert "absento fire cdr fail" (run1 (x1) (absento 1 x1) (== x1 '(2 . 1))) (void)) 
+    (tassert "absento ground cdr fail" (run1 () (absento 1 (cons 2 1))) (void))
+    (tassert "absento ground cdr succeed" (run1 () (absento 1 (cons 2 2))) '())
+    (tassert "absento bound cdr fail" (run1 (x1) (== x1 '(2 . 1)) (absento 1 x1)) (void))
+    (tassert "absento bound cdr succeed" (run1 (x1) (== x1 '(2 . 2)) (absento 1 x1)) '(2 . 2))
+    (tassert "absento fire cdr fail" (run1 (x1) (absento 1 x1) (== x1 '(2 . 1))) (void))
     (tassert "absento fire cdr succeed" (run1 (x1) (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
 
     (tassert "absento hangs if matcho generates free vars in constraint"
@@ -185,7 +185,7 @@
 	       (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
 ;    (exit)
-    
+
 ;    (display "start")
 #;
     (run1 (x0 x1 x2)
@@ -198,12 +198,12 @@
     ;;(display "START\n\n")
     ;;(display (run1-states (x1) (constrain (=/= x1 1) (disj* (== x1 1) (== x1 2)) )))
 
-    
 
 
-    
+
+
     ;; === PRESENTO ===
-    
+
     (let* ([c (presento 1 x1)]
 	   [s (run1 (x1) c)])
       ;; #(disj (#(== #(var 1) 1) #<procedure at constraints.ss:509>))
@@ -236,14 +236,14 @@
     s (disj* (== x3 1) ; cdr is not 1	; ; ;
     (cadr ; car is not recursive pair	; ; ;
     (disj-disjuncts s)))))
-    
+
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 1 2)) (void))
     (tassert "presento bound ground term succeed" (run1 (x1) (== x1 1) (presento 1 x1)) 1)
     (tassert "presento bound ground term fail" (run1 (x1) (== x1 1) (presento 2 x1)) (void))
     (tassert "presento fire ground term succeed" (run1 (x1) (presento 1 x1) (== x1 1)) 1)
     (tassert "presento fire ground term fail" (run1 (x1) (presento 2 x1) (== x1 1)) (void))
-    
+
     (tassert "presento ground car succeed" (run1 () (presento 1 (cons 1 2))) '())
     (tassert "presento ground car fail" (run1 () (presento 1 (cons 2 2))) (void))
     (tassert "presento bound ground car succeed" (run1 (x1) (== x1 '(1)) (presento 1 x1)) '(1))
@@ -251,7 +251,7 @@
     (tassert "presento fire ground car succeed" (run1 (x1) (presento 1 x1) (== x1 '(1))) '(1))
     (tassert "presento fire ground car fail" (run1 (x1) (presento 2 x1) (== x1 '(1))) (void))
 
-    (tassert "presento ground cdr succeed" (run1 () (presento 1 (cons 2 1))) '())    
+    (tassert "presento ground cdr succeed" (run1 () (presento 1 (cons 2 1))) '())
     (tassert "presento ground cdr fail" (run1 () (presento 1 (cons 2 2))) (void))
     (tassert "presento bound ground cdr succeed" (run1 (x1) (== x1 '(2 . 1)) (presento 1 x1)) '(2 . 1))
     (tassert "presento bound ground cdr fail" (run1 (x1) (== x1 '(2 . 2)) (presento 1 x1)) (void))
@@ -259,7 +259,7 @@
     (tassert "presento fire ground cdr fail" (run1 (x1) (presento 3 x1) (== x1 '(2 . 1))) (void))
 
     (tassert "presento fuzz fail" (run1 (x1) (presento 1 (list 2 (list 2 (cons 2 (cons 2 (cons 2 x1)))))) (== x1 2)) (void))
-    
+
     ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. Now it is mounted on the testing wall. Like a trophy.
     (tassert "presento fuzz succeed ground" (run1 (x1) (presento 1 (cons (list 2 3 4 5 1) 6))) x1)
     (tassert "presento fuzz succeed bound" (run1 (x1) (== x1 1) (presento 1 (cons (list 2 3 4 5 x1) 6))) 1)
@@ -276,21 +276,21 @@
 
 
 
-    
 
-    
+
+
 
 
 
     ;;(pretty-print (run-constraint (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)))
 
     ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))
-    
+
 					;(tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
 					; (tassert "dfs == constrained =/=" (values-ref (run-dfs (== x1 1) empty-state (list (cons x1 (=/= x1 1))) succeed) 1) failure)
 
 
-    
+
     ;;code for inspecting presento constraints
     #;
     (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))] ; ; ;

@@ -80,7 +80,7 @@
     (tassert "disunify free-free" (run1 (x1 x2) (=/= x1 x2)) (list (=/= x1 x2) x2))
     (tassert "disunify bound" (run* (x1) (== x1 1) (=/= x1 1)) '())
     (tassert "disunify check" (run* (x1) (=/= x1 1) (== x1 1)) '())
-    (tassert "disunify free-ground x2" (run1 (x1) (=/= x1 2) (=/= x1 1)) (conj* (=/= x1 1) (=/= x1 2)))
+    (tassert "disunify free-ground x2" (run1 (x1) (=/= x1 2) (=/= x1 1)) (conj* (=/= x1 2) (=/= x1 1)))
     (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
     (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)))) (disj* (=/= x1 1) (=/= x2 2)))
     (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (=/= x2 2)))
@@ -92,7 +92,7 @@
     (tassert "disunify transfer on free-free down varid" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "disunify fire low varid" (run1 (x1 x2) (=/= x1 x2) (== x2 x1)) (void))
     (tassert "disunify conj" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2))
-	     (list (conj* (=/= x2 1) (=/= x2 2)) (conj* (=/= x2 1) (=/= x2 2))))
+	     (list (conj* (=/= x2 2) (=/= x2 1)) (conj* (=/= x2 2) (=/= x2 1))))
     (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2)) (void))
     (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2)) (void))
     (tassert "disunify constraint cleared after fired"
