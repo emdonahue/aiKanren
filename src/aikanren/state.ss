@@ -27,8 +27,11 @@
 	(let ([walked (sbral-ref
 		       s
 		       (fx- (sbral-length s) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
-		       unbound)]) 
-	  (if (unbound? walked) (values v v) (walk-binding s walked)))
+		       unbound)])
+	  (exclusive-cond
+	   [(unbound? walked) (values v v)]
+	   [(var? walked) (walk-binding s walked)]
+	   [else (values v walked)]))
 	(values v v)))
 
   ;; === UNIFICATION ===
@@ -39,12 +42,12 @@
   ;; constraint x pair - simplify var
   ;; constraint x constraint - simplify one and extend the var of the other
   
-  (org-define (unify s x y)
+  (define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
-      (org-cond
-       [(and (eq? x y) (not (constraint? y))) (values succeed s)]
+      (cond
+       [(and (eq? x y) (not (goal? y))) (values succeed s)]
        [(and (var? x) (var? y))
 	(cond
 	 [(fx< (var-id x) (var-id y)) (extend s x y)]
@@ -53,8 +56,8 @@
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
-       [(constraint? x)
-	(if (constraint? y)
+       [(goal? x)
+	(if (goal? y)
 	    (assert #f)
 	    (simplify-constraint x y-var y))]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
@@ -77,8 +80,8 @@
   
   ;; === CONSTRAINTS ===
 
-  (define (simplify-constraint g v x)
-    (assert (and (constraint? g) (var? v) (not (var? x))))
+  (trace-define (simplify-constraint g v x)
+    (assert (and (goal? g) (var? v) (not (var? x))))
     (exclusive-cond
      [(==? g)
       (assert (equal? (==-lhs g) v))

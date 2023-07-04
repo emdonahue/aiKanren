@@ -122,7 +122,7 @@
 
     ;; === SUBSTITUTION ===
     (tassert "substitution constraint fails" (run1 (x1) (== x1 (=/= x1 1)) (== x1 1)) (void))
-(org-trace    (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== x1 2)) 2))
+    (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== x1 2)) 2)
 
     
 ))
