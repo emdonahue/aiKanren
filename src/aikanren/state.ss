@@ -1,6 +1,6 @@
 (library (state) ; Main state object that holds substitution & constraints
   (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (store) (sbral) (datatypes) (negation))
+  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
   (define (unbound? v) (eq? unbound v))
@@ -33,17 +33,18 @@
 
   ;; === UNIFICATION ===
 
-  ;; constraint x var - extend var
+  ;; constraint x var - extend var - handled by var
+  
   ;; constraint x constant - simplify var
   ;; constraint x pair - simplify var
   ;; constraint x constraint - simplify one and extend the var of the other
   
-  (define (unify s x y)
+  (org-define (unify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
-    (let ([x (walk s x)] [y (walk s y)])
-      (cond
-       [(eq? x y) (values succeed s)]
+    (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
+      (org-cond
+       [(and (eq? x y) (not (constraint? y))) (values succeed s)]
        [(and (var? x) (var? y))
 	(cond
 	 [(fx< (var-id x) (var-id y)) (extend s x y)]
@@ -52,6 +53,10 @@
 	 [else (extend s y x)])]
        [(var? x) (extend s x y)]
        [(var? y) (extend s y x)]
+       [(constraint? x)
+	(if (constraint? y)
+	    (assert #f)
+	    (simplify-constraint x y-var y))]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
 	    ([(car-extensions s) (unify s (car x) (car y))])
@@ -72,6 +77,15 @@
   
   ;; === CONSTRAINTS ===
 
+  (define (simplify-constraint g v x)
+    (assert (and (constraint? g) (var? v) (not (var? x))))
+    (exclusive-cond
+     [(==? g)
+      (assert (equal? (==-lhs g) v))
+      (== x (==-rhs g))]
+     [(noto? g) (noto (simplify-constraint (noto-goal g) v x))]
+     [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
+  
   (define (state-add-constraint s c vs)
     (assert (and (state? s) (goal? c) (list? vs)))
     (fold-left (lambda (s v)

@@ -38,7 +38,7 @@
     (when (trace-on) (apply printf args)) (apply values (cdr args)))
 
   (define (org-printf-header header)
-    (org-printf "~a ~s~%" (make-string (trace-depth) #\*) header))
+    (org-printf "~a ~a~%" (make-string (trace-depth) #\*) header))
 
   (define (org-printf-item name value)
     (org-printf " - ~a: " name)
@@ -51,7 +51,7 @@
     (syntax-rules ()
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
-	 (org-printf-header 'name)
+	 (org-printf-header `name)
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
 	   (org-printf-header "arguments")
 	   (org-printf-item 'arg arg) ...
@@ -72,11 +72,10 @@
   (define-syntax org-cond
     (syntax-rules (else)
       [(_ (head body ...) ...)
-       (cond
-	[head (org-printf " - cond: ~a~%" 'head) body ...] ...)]
+       (org-cond cond (head body ...) ...)]
       [(_ name (head body ...) ...)
        (cond
-	[head (org-printf " - cond (~a): ~a~%" 'name 'head) body ...] ...)]))
+	[head ((org-lambda name (branch) body ...) 'head)] ...)]))
 
   (define-syntax org-exclusive-cond (identifier-syntax org-cond))
   
