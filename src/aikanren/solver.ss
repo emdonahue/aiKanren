@@ -43,8 +43,34 @@
 	   (conj (get-constraints s (attributed-vars g)) gs)
 	   (remove-constraints s (attributed-vars g))
 	   succeed (conj out g)))))
+
+
   
-  (define (solve-=/= g s ctn out)
+  (define (solve-=/= g s ctn out)   
+    (let ([g (disunify s (==-lhs g) (==-rhs g))])
+      (assert (goal? g))
+      (exclusive-cond
+       [(fail? g) (values fail failure)]
+       [(succeed? g) (solve-constraint ctn s succeed out)]
+       [else
+	(let* ([a-vars (attributed-vars (disj-car g))] ; Disequalities only have one attributed var.
+	       [c (get-constraints s a-vars)] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere. However, these may nevertheless trigger unification on that var
+	       [c (if (may-unify c (car a-vars)) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
+	       [s (if (succeed? c) s (remove-constraints s a-vars))]) ; If we are not applying the constraint, leave it in the store.
+	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
+	    (cond ;TODO check noto after succ/fail
+	     [(noto? g) (values (conj out (conj g g0)) s0)] ; This is not a disjunction, so just modify the state and proceed.
+	     [(succeed? g0) (values (conj g out) s)] ; The head of the disjunction succeeds, so discard it.
+	     ;;TODO let solve constraint handle fail case
+	     [(fail? g0) (if (disj? g) (solve-constraint (disj-cdr g) s ctn out) (values fail failure))] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+	     [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])
+
+	    #;
+	    	  (let-values ([(g^ s) (solve-=/=* (noto g) s ctn)])
+		    (values (conj out (conj (noto g) g^)) s))))])))
+  
+  #;
+  (define (solve-=/= g s ctn out)   
     (let-values ([(g s^) (unify s (==-lhs g) (==-rhs g))]) ;TODO disunification unifier can be small step: we nly need to know 1 =/= succeeds before proceeding with search
       (exclusive-cond
        [(succeed? g) (values fail failure)]
@@ -67,7 +93,8 @@
 	    	  (let-values ([(g^ s) (solve-=/=* (noto g) s ctn)])
 		    (values (conj out (conj (noto g) g^)) s))))])))
 
-  (define (solve-=/=* g s gs)
+  #;
+  (define (solve-=/=* g s gs) ;;TODO remove solve-=/=*
     (assert (and (goal? g) (or (disj? g) (noto? g)) (state? s) (goal? g))) ; -> goal? state-or-failure?
     (let* ([a-vars (attributed-vars (disj-car g))]
 	   [c (get-constraints s a-vars)] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere. However, these may nevertheless trigger unification on that var
