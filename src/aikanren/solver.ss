@@ -133,7 +133,7 @@
     (let ([g (fold-left (lambda (g v)
 			  (if (pconstraint? g)
 			      (let ([walked (walk s v)])
-				(if (eq? v walked) g ((pconstraint-procedure g) v ))) g))
+				(if (eq? v walked) g ((pconstraint-procedure g) v walked))) g))
 		      g (pconstraint-vars g))])
       (solve-constraint ctn (store-constraint s g) succeed (conj out g)))
     #;

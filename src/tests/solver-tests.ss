@@ -32,6 +32,7 @@
     (tassert "substitution constraint-constraint2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
 
     (tassert "substitution pconstraint-ground fail" (run1 (x1) (symbolo x1) (== x1 1)) (void))
+    (tassert "substitution ground-pconstraint fail" (run1 (x1) (== x1 1) (symbolo x1)) (void))
     
     (tmessage)
     (exit)
