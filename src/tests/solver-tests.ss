@@ -22,13 +22,13 @@
     (tassert "disj keep normal goals" (disj* (== 1 1) fail (== 1 1)) (disj (== 1 1) (== 1 1)))
 
     ;; === SUBSTITUTION ===
-    (tassert "substitution constraint fails" (run1 (x1) (=/= x1 1) (== x1 1)) (void))
-    (tassert "substitution constraint succeeds" (run1 (x1) (=/= x1 1) (== x1 2)) 2)
-    (tassert "substitution constraint fails reverse" (run1 (x1) (=/= x1 1) (== 1 x1)) (void))
-    (tassert "substitution constraint succeeds reverse" (run1 (x1) (=/= x1 1) (== 2 x1)) 2)
-    (tassert "substitution constraint transfers free" (run1 (x1 x2) (=/= x1 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
-    (tassert "substitution constraint transfers free reverse" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
-
+    (tassert "substitution constraint-ground fail" (run1 (x1) (=/= x1 1) (== x1 1)) (void))
+    (tassert "substitution constraint-ground succeed" (run1 (x1) (=/= x1 1) (== x1 2)) 2)
+    (tassert "substitution ground-constraint fail" (run1 (x1) (=/= x1 1) (== 1 x1)) (void))
+    (tassert "substitution ground-constraint succeed" (run1 (x1) (=/= x1 1) (== 2 x1)) 2)
+    (tassert "substitution constraint-free" (run1 (x1 x2) (=/= x1 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "substitution constraint-constraint2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
     (tmessage)
     (exit)
     

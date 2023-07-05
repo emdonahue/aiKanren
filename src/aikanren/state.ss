@@ -54,8 +54,8 @@
       (org-cond
        [(goal? x)
 	(if (goal? y)
-	    (org-exclusive-cond
-	     [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend2 (extend2 s x-var y) y-var (conj (simplify-constraint x x-var y) y)))]
+	    (org-exclusive-cond double-constraint
+	     [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend2 (extend2 s x-var y-var) y-var (conj (simplify-constraint x x-var y-var) y)))]
 	     [(var-equal? x y) (values succeed s)]
 	     [else (values succeed (extend2 (extend2 s y-var x) x-var (conj (simplify-constraint y y-var x) x)))])
 	    (unify-constraint s x-var x y-var y)
