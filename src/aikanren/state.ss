@@ -119,7 +119,7 @@
       (assert (equal? (==-lhs g) v))
       (== x (==-rhs g))]
      [(noto? g) (noto (simplify-constraint (noto-goal g) v x))]
-     [(pconstraint? g) ((pconstraint-procedure g) v x)]
+     [(pconstraint? g) (if (var? x) (pconstraint (cons x (remove v (pconstraint-vars g))) (pconstraint-procedure g)) ((pconstraint-procedure g) v x))]
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
   
   (define (state-add-constraint s c vs)
