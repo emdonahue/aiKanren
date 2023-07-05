@@ -27,8 +27,8 @@
     (if (not (var? v))
 	(if (t? v) succeed fail)
 	(pconstraint
-	 v (lambda (s)
-	     (typeo (walk s v) t?)))))
+	 v (lambda (var val)
+	     (typeo val t?)))))
 
 
   (define (symbolo v)
