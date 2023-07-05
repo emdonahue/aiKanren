@@ -131,7 +131,9 @@
   (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
     (assert (pconstraint? g))
     (let ([g (fold-left (lambda (g v)
-			(if (pconstraint? g) ((pconstraint-procedure g) v (walk s v)) g))
+			  (if (pconstraint? g)
+			      (let ([walked (walk s v)])
+				(if (eq? v walked) g ((pconstraint-procedure g) v ))) g))
 		      g (pconstraint-vars g))])
       (solve-constraint ctn (store-constraint s g) succeed (conj out g)))
     #;

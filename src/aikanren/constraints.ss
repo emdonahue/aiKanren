@@ -28,7 +28,6 @@
 	(if (t? v) succeed fail)
 	(pconstraint
 	 v (lambda (var val)
-	     (assert (not (goal? val)))
 	     (typeo val t?)))))
 
 
