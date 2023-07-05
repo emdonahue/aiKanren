@@ -59,7 +59,8 @@
        [(var? y) (extend s y x)]
        [(goal? x)
 	(if (goal? y)
-	    (assert #f)
+	    3
+	    
 	    (values (simplify-constraint x x-var y) (extend2 s x-var y)))] ; TODO When should simplifying a constraint commit more ==?
        [(goal? y) (values (simplify-constraint y y-var x) (extend2 s y-var x))]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify

@@ -27,8 +27,8 @@
 
   (define-syntax matcho-pair ;TODO generalize matcho-pair to multiple pairs, pairs with constant patterns, and other common patterns such as a-list
     ;; Optimization to inline the destructuring of a single generic pair.
-    (syntax-rules ()
-      [(_ ([out-var (p-car . p-cdr)]) body ...)
+    (syntax-rules () ;TODO specialize multiple pair matcho-pair on different modes (ground, free, etc) so we can always instantly destructure whatever is ground. may involve further manipulations of goal order based on mode
+      [(_ ([out-var (p-car . p-cdr)]) body ...) ;TODO can we make a generalized matcho out of matcho-pair on each pair of a pattern?
        (exclusive-cond
 	[(var? out-var)
 	 (make-matcho
