@@ -120,16 +120,25 @@
 		  (if (succeed? lhs) (conj-member (conj-cdr c) e) lhs))]
      [else succeed]))
   
-  (define (solve-guardo g s conjs out)
+  (define (solve-guardo g s conjs out) ;TODO remove guardo
     (let ([v (walk s (guardo-var g))])
-		    (exclusive-cond
-		     [(var? v) (let ([g (guardo v (guardo-procedure g))])
-				 (values g (store-constraint s g)))]
-		     [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
-		     [else (values fail failure)])))
+      (exclusive-cond
+       [(var? v) (let ([g (guardo v (guardo-procedure g))])
+		   (values g (store-constraint s g)))]
+       [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
+       [else (values fail failure)])))
 
-  (define (solve-pconstraint g s ctn out)
-		(let ([g ((pconstraint-procedure g) s)])
+  (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
+    (assert (pconstraint? g))
+    (let ([g (fold-left (lambda (g v)
+			(if (pconstraint? g) ((pconstraint-procedure g) v (walk s v)) g))
+		      g (pconstraint-vars g))])
+      (solve-constraint ctn (store-constraint s g) succeed (conj out g)))
+    #;
+    (let ([v (walk s (car (pconstraint-vars g)))])
+    )
+    #;
+    (let ([g ((pconstraint-procedure g) s)])
 		  (exclusive-cond
 		   [(succeed? g) (values succeed s)]
 		   [(fail? g) (values fail failure)]

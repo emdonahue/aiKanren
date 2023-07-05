@@ -119,6 +119,7 @@
       (assert (equal? (==-lhs g) v))
       (== x (==-rhs g))]
      [(noto? g) (noto (simplify-constraint (noto-goal g) v x))]
+     [(pconstraint? g) ((pconstraint-procedure g) v x)]
      [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
   
   (define (state-add-constraint s c vs)
@@ -137,7 +138,7 @@
   (define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
-    (let ([x (walk s x)] [y (walk s y)])
+    (let ([x (walk s x)] [y (walk s y)]) ;TODO how does disunify play with constraints in substitution?
       (cond
        [(eq? x y) fail]
        [(var? x)
