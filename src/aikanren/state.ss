@@ -55,22 +55,21 @@
        [(goal? x)
 	(if (goal? y)
 	    (org-exclusive-cond double-constraint
-	     [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend2 (extend2 s x-var y-var) y-var (conj (simplify-constraint x x-var y-var) y)))]
+	     [(fx< (var-id x-var) (var-id y-var)) (unify-constraints s x-var x y-var y)]
 	     [(var-equal? x y) (values succeed s)]
-	     [else (values succeed (extend2 (extend2 s y-var x) x-var (conj (simplify-constraint y y-var x) x)))])
-	    (unify-constraint s x-var x y-var y)
-	    )] ; TODO When should simplifying a constraint commit more ==?
+	     [else (unify-constraints s y-var y x-var x)])
+	    (unify-constraint s x-var x y-var y))] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed s)]
        [(goal? y) (unify-constraint s y-var y x-var x)]
        [(var? x)
 	(if (var? y)
 	    (cond
-	     [(fx< (var-id x) (var-id y)) (extend s x y)]
+	     [(fx< (var-id x) (var-id y)) (extend-var s x y)]
 	     [(var-equal? x y)
 	      (values succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	     [else (extend s y x)])
-	    (extend s x y))]
-       [(var? y) (extend s y x)]
+	     [else (extend-var s y x)])
+	    (extend-var s x y))]
+       [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
 	    ([(car-extensions s) (unify s (car x) (car y))])
@@ -79,39 +78,36 @@
 	      (let-values ([(cdr-extensions s) (unify s (cdr x) (cdr y))])
 		(values (conj car-extensions cdr-extensions) s))))] ; TODO make unifier normalize?
        [else (values fail failure)])))
-  
-  (define (extend s x y)
-    ;; Insert a new binding between x and y into the substitution.
-    (values
-     (== x y)
-     (set-state-substitution s
-      (sbral-set-ref
-       (state-substitution s)
-       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound))))
 
-  
-  (define (extend2 s x y) ;TODO merge extend2
+  (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
     (set-state-substitution
      s
      (sbral-set-ref
       (state-substitution s)
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
+  
+  (define (extend-var s x y)
+    ;; Insert a new binding between x and y into the substitution.
+    (values (== x y) (extend s x y)))
 
   (org-define (unify-constraint s x-var x y-var y)
     (assert (and (state? s) (var? x-var) (goal? x) (not (goal? y))))
     (if (var? y)
 	(org-exclusive-cond
-	 [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend2 (extend2 s x-var y) y-var (simplify-constraint x x-var y)))]
+	 [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend (extend s x-var y-var) y-var (simplify-constraint x x-var y-var)))]
 	 [(var-equal? x y) (values succeed s)]
-	 [else (values x (extend2 s y x-var))])
-	(values (simplify-constraint x x-var y) (extend2 s x-var y))))
+	 [else (values x (extend s y x-var))])
+	(values (simplify-constraint x x-var y) (extend s x-var y))))
+
+  (define (unify-constraints s x-var x y-var y)
+    (values succeed (extend (extend s x-var y-var) y-var (conj (simplify-constraint x x-var y-var) y))))
 
   #;
   (define (extend-constraint s x-var x y-var y)
     (assert (and (state? s) (var? x-var) (goal? x) (var? y-var) (var? y)))
     (if (var? y)
-	(values succeed (conj (simplify-constraint x x-var y) (extend2 s x-var y)))
+	(values succeed (conj (simplify-constraint x x-var y) (extend s x-var y)))
 	))
   
   ;; === CONSTRAINTS ===
@@ -128,7 +124,7 @@
   (define (state-add-constraint s c vs)
     (assert (and (state? s) (goal? c) (list? vs)))
     (fold-left (lambda (s v)
-		 (extend2 s v (conj (walk-constraint s v) c))
+		 (extend s v (conj (walk-constraint s v) c))
 		 #;;TODO clean up state add constraint. remove dead code
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
