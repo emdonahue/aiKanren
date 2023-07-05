@@ -21,6 +21,12 @@
     (assert (state? s))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
 
+  (define (walk-constraint s v)
+    (assert (and (state? s) (var? v)))
+    (let-values ([(binding v) (walk-binding (state-substitution s) v)])
+      (assert (or (var? v) (goal? v)))
+      (if (var? v) succeed v)))
+  
   (define (walk-binding s v)
     (assert (sbral? s))
     (if (var? v)
@@ -36,7 +42,7 @@
 
   ;; === UNIFICATION ===
 
-  ;; constraint x var - extend var - handled by var
+  ;; constraint x var - simplify, extend var - handled by var
   
   ;; constraint x constant - simplify var
   ;; constraint x pair - simplify var
@@ -46,8 +52,28 @@
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
+      (org-display x)
+      (org-display y)
       (org-cond
-       [(and (eq? x y) (not (goal? y))) (values succeed s)]
+       [(goal? x)
+	(if (goal? y)
+	    (cond
+	     [(fx< (var-id x-var) (var-id y-var))
+	      (org-display x-var)
+	      (printf "xvar ~s y ~s" x-var y-var)
+	      (org-display y-var)
+	      (values (conj (simplify-constraint x x-var y-var) y) (extend2 s x-var y-var))]
+	     [(var-equal? x-var y-var) (values succeed s)]
+	     [else (nyi 'inverse-double-goal-unify)])
+	    (if (var? y)
+		(cond
+		 [(fx< (var-id x-var) (var-id y-var)) (values (simplify-constraint x x-var y) (extend2 s x-var y))]
+		 [(var-equal? x y) (values succeed s)]
+		 [else (nyi "x constrained y var w lower id")])
+		(values (simplify-constraint x x-var y) (extend2 s x-var y)))
+	    )] ; TODO When should simplifying a constraint commit more ==?
+       [(eq? x y) (values succeed s)]
+       [(goal? y) (values (simplify-constraint y y-var x) (extend2 s y-var x))]
        [(var? x)
 	(if (var? y)
 	    (cond
@@ -57,12 +83,6 @@
 	     [else (extend s y x)])
 	    (extend s x y))]
        [(var? y) (extend s y x)]
-       [(goal? x)
-	(if (goal? y)
-	    3
-	    
-	    (values (simplify-constraint x x-var y) (extend2 s x-var y)))] ; TODO When should simplifying a constraint commit more ==?
-       [(goal? y) (values (simplify-constraint y y-var x) (extend2 s y-var x))]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
 	    ([(car-extensions s) (unify s (car x) (car y))])
@@ -94,7 +114,7 @@
   ;; === CONSTRAINTS ===
 
   (org-define (simplify-constraint g v x)
-    (assert (and (goal? g) (var? v) (not (var? x))))
+    (assert (and (goal? g) (var? v)))
     (exclusive-cond
      [(==? g)
       (assert (equal? (==-lhs g) v))
@@ -105,6 +125,8 @@
   (define (state-add-constraint s c vs)
     (assert (and (state? s) (goal? c) (list? vs)))
     (fold-left (lambda (s v)
+		 (extend2 s v (conj (walk-constraint s v) c))
+		 #;;TODO clean up state add constraint. remove dead code
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
   (define (get-constraints s vs)

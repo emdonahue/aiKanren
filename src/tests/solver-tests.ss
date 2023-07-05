@@ -21,6 +21,16 @@
     (tassert "disj single goals" (disj* (== 1 1)) (== 1 1))
     (tassert "disj keep normal goals" (disj* (== 1 1) fail (== 1 1)) (disj (== 1 1) (== 1 1)))
 
+    ;; === SUBSTITUTION ===
+    (org-trace    (tassert "substitution constraint fails" (run1 (x1) (=/= x1 1) (== x1 1)) (void)))
+    (tassert "substitution constraint succeeds" (run1 (x1) (=/= x1 1) (== x1 2)) 2)
+    (tassert "substitution constraint fails reverse" (run1 (x1) (=/= x1 1) (== 1 x1)) (void))
+    (tassert "substitution constraint succeeds reverse" (run1 (x1) (=/= x1 1) (== 2 x1)) 2)
+    (org-trace    (tassert "substitution constraint transfers free" (run1-states (x1 x2) (=/= x1 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1))))
+
+    (display "SUCCESS\n")
+    (exit)
+    
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
     (tassert "constraint =/=" (run1 (x1) (constrain (=/= x1 1))) (=/= x1 1))
@@ -119,11 +129,5 @@
 	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
-
-    ;; === SUBSTITUTION ===
-    (tassert "substitution constraint fails" (run1 (x1) (== x1 (=/= x1 1)) (== x1 1)) (void))
-    (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== x1 2)) 2)
-    (tassert "substitution constraint fails" (run1 (x1) (== x1 (=/= x1 1)) (== 1 x1)) (void))
-    (tassert "substitution constraint succeeds" (run1 (x1) (== x1 (=/= x1 1)) (== 2 x1)) 2)
     
 ))

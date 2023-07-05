@@ -1,8 +1,11 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
-  (export with-values values-car values->list values-ref org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf)
+  (export with-values values-car values->list values-ref
+	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display
+	  nyi)
   (import (chezscheme))
 
+  ;; === VALUES ===
   (define-syntax with-values
     (syntax-rules ()
       [(_ vals proc) (call-with-values (lambda () vals) proc)]))
@@ -20,6 +23,11 @@
       [(_ vals n) (list-ref (values->list vals) n)]))
 
 
+  (define nyi
+    (case-lambda
+      [() (nyi 'unnamed)]
+      [(name) (assertion-violation name "Not Yet Implemented")]))
+  
   ;; === ORG-TRACE ===
   ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers
 
@@ -37,30 +45,37 @@
   (define (org-printf . args)
     (when (trace-on) (apply printf args)) (apply values (cdr args)))
 
-  (define (org-printf-header header)
+  (define (org-print-header header)
     (org-printf "~a ~a~%" (make-string (trace-depth) #\*) header))
 
-  (define (org-printf-item name value)
+  (define (org-print-item name value)
     (org-printf " - ~a: " name)
     (parameterize ([pretty-initial-indent (+ 3 (string-length (if (string? name) name (symbol->string name))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
     (org-printf "~%"))
+
+  (define-syntax org-display
+    (syntax-rules ()
+      [(_ expr)
+       (let ([val expr])
+	 (when (trace-on) (org-print-item 'expr val))
+	 val)]))
   
   (define-syntax org-lambda
     (syntax-rules ()
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
-	 (org-printf-header `name)
+	 (org-print-header `name)
 	 (parameterize ([trace-depth (fx1+ (trace-depth))])
-	   (org-printf-header "arguments")
-	   (org-printf-item 'arg arg) ...
-		  (org-printf-header "logging")
+	   (org-print-header "arguments")
+	   (org-print-item 'arg arg) ...
+		  (org-print-header "logging")
 	   (let ([return (call-with-values (lambda () body0 body ...) list)])
-	     (org-printf-header "return")
-	     (for-each (lambda (i r) (org-printf-item (number->string i) r)) (enumerate return) return)
+	     (org-print-header "return")
+	     (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
 	     (parameterize ([trace-depth (fx1- (trace-depth))])
-	       (org-printf-header "logging"))
+	       (org-print-header "logging"))
 	     (apply values return))))]))
 
   (define-syntax org-case-lambda
