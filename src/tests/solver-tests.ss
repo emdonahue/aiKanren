@@ -31,7 +31,9 @@
     
     (tassert "substitution constraint-constraint" (run1 (x1) (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
 
-    (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
+(org-trace    (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2)))))
+
+    (exit)
     (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
 
     (tassert "substitution pconstraint-ground fail" (run1 (x1) (symbolo x1) (== x1 1)) (void))

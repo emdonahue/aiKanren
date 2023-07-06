@@ -54,7 +54,7 @@
       (org-cond
        [(goal? x)
 	(if (goal? y)
-	    (org-exclusive-cond double-constraint
+	    (org-exclusive-cond double-constraint-cond
 	     [(fx< (var-id x-var) (var-id y-var)) (unify-constraints s x-var x y-var y)]
 	     [(var-equal? x y) (values succeed succeed s)]
 	     [else (unify-constraints s y-var y x-var x)])
@@ -101,7 +101,8 @@
 	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
 
   (define (unify-constraints s x-var x y-var y)
-    (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y) (extend s x-var y-var)))
+    (assert (and (state? s) (var? x-var) (goal? x) (var? y-var) (goal? y)))
+    (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y) (extend (unbind-constraint s y-var) x-var y-var)))
 
   #;
   (define (extend-constraint s x-var x y-var y)
@@ -135,6 +136,9 @@
   (define (remove-constraints s vs)
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
 
+  (define (unbind-constraint s v) ;TODO rename unbind-constraint -> remove-constraint
+    (extend s v unbound))
+
   (org-define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
@@ -148,7 +152,7 @@
     (cond
      [(goal? x)
       (if (may-unify x x-var)
-	  (values (=/= x-var (if (goal? y) y-var y)) x (extend s x-var x-var))
+	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (nyi 'y-goal-disunify)]
      [(equal? x y) (values fail fail failure)]

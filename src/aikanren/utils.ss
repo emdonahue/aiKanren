@@ -72,7 +72,7 @@
 	  (parameterize ([trace-depth (fx1+ (trace-depth))])
 	    (org-print-header "arguments")
 	    (org-print-item 'arg arg) ...
-	    (org-print-header "logging")
+	    (org-print-header "logging") ;TODO make logging print lazily only if you log something at that trace level
 	    (let ([return (call-with-values (lambda () body0 body ...) list)])
 	      (org-print-header "return")
 	      (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
