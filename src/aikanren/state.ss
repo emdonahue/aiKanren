@@ -95,10 +95,10 @@
     (assert (and (state? s) (var? x-var) (goal? x) (not (goal? y))))
     (if (var? y)
 	(org-exclusive-cond
-	 [(fx< (var-id x-var) (var-id y-var)) (values succeed (extend (extend s x-var y-var) y-var (simplify-constraint x x-var y-var)))]
+	 [(fx< (var-id x-var) (var-id y-var)) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
 	 [(var-equal? x y) (values succeed succeed s)]
-	 [else (values x (extend s y x-var))])
-	(values (simplify-constraint x x-var y) (extend s x-var y))))
+	 [else (values (== y x-var) x (extend s y x-var))])
+	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
 
   (define (unify-constraints s x-var x y-var y)
     (values succeed (extend (extend s x-var y-var) y-var (conj (simplify-constraint x x-var y-var) y))))
