@@ -1,5 +1,5 @@
 (library (negation)
-  (export noto)
+  (export noto =/=)
   (import (chezscheme) (datatypes))
 
   (define (noto g)
@@ -13,4 +13,8 @@
      [(conj? g) (disj (noto (conj-car g)) (noto (conj-cdr g)))]
      [(noto? g) (noto-goal g)]
      [(constraint? g) (constraint (noto (constraint-goal g)))]
-     [else (assertion-violation 'noto "Unrecognized constraint type" g)])))
+     [else (assertion-violation 'noto "Unrecognized constraint type" g)]))
+
+  (define (=/= lhs rhs)
+    (assert (not (or (goal? lhs) (goal? rhs))))
+    (noto (== lhs rhs))))

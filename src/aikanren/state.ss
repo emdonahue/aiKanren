@@ -135,30 +135,46 @@
   (define (remove-constraints s vs)
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
 
-  (define (disunify s x y)
+  (org-define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
-      (assert (and (not (goal? x)) (not (goal? y))))
-      (cond
-       [(eq? x y) fail]
-       [(var? x)
-	(if (var? y)
-	    (cond
-	     [(fx< (var-id x) (var-id y)) (noto (== x y))]
-	     [(var-equal? x y) ;TODO test swapping var-equal? with another fx> check and making it the else case
-	      fail] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	     [else (noto (== y x))])
-	    (noto (== x y)))]
-       [(var? y) (noto (== y x))]
-       [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
-	(let ([lhs (disunify s (car x) (car y))])
+      (if (or (not (var? y-var)) (and (var? x-var) (fx< (var-id x-var) (var-id y-var))))
+	  (disunify-binding s x-var x y-var y)
+	  (disunify-binding s y-var y x-var x))))
+
+  (define (disunify-binding s x-var x y-var y)
+    (cond
+     [(goal? x)
+      (when (or (not (var? y)) (not (goal? y))) (nyi 'non-ground-disunify-with-goal))
+      (if (may-unify x x-var) (nyi 'disunify-goal-may-unif) (values (=/= x-var y) x s))]
+     [(goal? y) (nyi 'y-goal-disunify)]
+     [(equal? x y) (values fail fail failure)]
+     [(var? x)
+      (if (var? y)
 	  (cond
-	   [(succeed? lhs) succeed] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
-	   [(fail? lhs) (disunify s (cdr x) (cdr y))]
-	   [else (disj lhs (noto (== (cdr x) (cdr y))))]))]
-       [else succeed])))
+	   [(fx< (var-id x) (var-id y)) (values (=/= x y) succeed s)]
+	   [(var-equal? x y) ;TODO test swapping var-equal? with another fx> check and making it the else case
+	    (values fail fail failure)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
+	   [else (values (=/= y x) succeed s)])
+	  (values (=/= x y) succeed s))]
+     [(var? y) (values (=/= y x) succeed s)]
+     [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
+      (let-values ([(lhs c) (disunify s (car x) (car y))])
+	(cond
+	 [(succeed? lhs) (values succeed succeed s)] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
+	 [(fail? lhs) (disunify s (cdr x) (cdr y))]
+	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c s)]))]
+     [else (values succeed succeed s)]))
+
+  (define (may-unify g v)
+    ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
+    (exclusive-cond
+     [(==? g) (or (equal? (==-lhs g) v))] ; Existing constraints are already normalized, so only lhs need be checked.
+     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
+     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
+     [else #f]))
   
    ;; === DEBUGGING ===
 

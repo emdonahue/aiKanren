@@ -45,11 +45,20 @@
 	  (solve-constraint c s ctn (conj out g)))))
   
   (org-define (solve-=/= g s ctn out)   
-    (let ([g (disunify s (==-lhs g) (==-rhs g))])
+    (let-values ([(g c s) (disunify s (==-lhs g) (==-rhs g))])
       (exclusive-cond
        [(fail? g) (values fail failure)]
        [(succeed? g) (solve-constraint ctn s succeed out)]
        [else
+	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
+	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
+		(exclusive-cond
+		 [(succeed? g0) (values (conj g out) s)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+		 ;;TODO let solve constraint handle fail case
+		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
+		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])))
+	#;
 	(let* ([a-vars (attributed-vars (disj-car g))] ; Disequalities only have one attributed var.
 	       [c (get-constraints s a-vars)] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere. However, these may nevertheless trigger unification on that var
 	       [c (if (may-unify c (car a-vars)) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
@@ -62,14 +71,6 @@
 		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)]))))])))
-
-  (define (may-unify g v)
-    ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
-    (exclusive-cond
-     [(==? g) (or (equal? (==-lhs g) v))] ; Existing constraints are already normalized, so only lhs need be checked.
-     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
-     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
-     [else #f]))
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g))
