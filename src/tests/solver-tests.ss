@@ -30,17 +30,14 @@
     (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
     
     (tassert "substitution constraint-constraint" (run1 (x1) (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
-
-(org-trace    (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2)))))
-
-    (exit)
+    (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
     (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
 
     (tassert "substitution pconstraint-ground fail" (run1 (x1) (symbolo x1) (== x1 1)) (void))
     (tassert "substitution ground-pconstraint fail" (run1 (x1) (== x1 1) (symbolo x1)) (void))
     (tassert "substitution pconstraint-ground succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
     (tassert "substitution ground-pconstraint succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
-    (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (symbolo x1))
+    (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (lambda (s) (and (pconstraint? s) (equal? (pconstraint-vars s) (list x1)))))
     
     
     (tmessage)

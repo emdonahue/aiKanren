@@ -22,12 +22,12 @@
 	  (total (fx1+ (total)))
 	  (let ([expected expected!]
 		[received received!])
-	    (when (not (equal? expected received))
+	    (when (or (and (procedure? expected) (expected received)) (not (equal? expected received)))
 	      (failed (fx1+ (failed)))
 	      (parameterize ([pretty-initial-indent 10]
 			     [pretty-standard-indent 0])
 		(printf "Failed: ~s~%Expected: " title)
-		(pretty-print expected)
+		(pretty-print (if (procedure? expected) 'expected! expected))
 		(printf "Received: ")
 		(pretty-print received)
 		(printf "~%"))))))])))
