@@ -147,8 +147,9 @@
   (define (disunify-binding s x-var x y-var y)
     (cond
      [(goal? x)
-      (when (or (not (var? y)) (not (goal? y))) (nyi 'non-ground-disunify-with-goal))
-      (if (may-unify x x-var) (nyi 'disunify-goal-may-unif) (values (=/= x-var y) x s))]
+      (if (may-unify x x-var)
+	  (values (=/= x-var (if (goal? y) y-var y)) x (extend s x-var x-var))
+	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (nyi 'y-goal-disunify)]
      [(equal? x y) (values fail fail failure)]
      [(var? x)

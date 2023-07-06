@@ -1,7 +1,7 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
   (export with-values values-car values->list values-ref
-	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display
+	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display org-max-depth
 	  nyi)
   (import (chezscheme))
 
@@ -34,6 +34,7 @@
   ;; TODO look at https://github.com/cisco/ChezScheme/issues/128 for discussion of other tracing options
   
   (define trace-depth (make-parameter 1))
+  (define org-max-depth (make-parameter 0))
   (define trace-on (make-parameter #f))
     
   (define-syntax org-trace
@@ -67,16 +68,17 @@
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
 	 (org-print-header `name)
-	 (parameterize ([trace-depth (fx1+ (trace-depth))])
-	   (org-print-header "arguments")
-	   (org-print-item 'arg arg) ...
-		  (org-print-header "logging")
-	   (let ([return (call-with-values (lambda () body0 body ...) list)])
-	     (org-print-header "return")
-	     (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
-	     (parameterize ([trace-depth (fx1- (trace-depth))])
-	       (org-print-header "logging"))
-	     (apply values return))))]))
+	 (if (fx= (trace-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
+	  (parameterize ([trace-depth (fx1+ (trace-depth))])
+	    (org-print-header "arguments")
+	    (org-print-item 'arg arg) ...
+	    (org-print-header "logging")
+	    (let ([return (call-with-values (lambda () body0 body ...) list)])
+	      (org-print-header "return")
+	      (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
+	      (parameterize ([trace-depth (fx1- (trace-depth))])
+		(org-print-header "logging"))
+	      (apply values return)))))]))
 
   (define-syntax org-case-lambda
     (syntax-rules ()

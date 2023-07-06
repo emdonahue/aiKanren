@@ -81,7 +81,8 @@
 	  (if (var? v)
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
 		(solve-constraint ctn (store-constraint s m) succeed (conj out m)))
-	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out))))) ;TODO just operate on the list for matcho solving
+	      ;;TODO just operate on the list for matcho solving
+	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out)))))
 
   (define (solve-disjunction g s ctn out)
     (let-values ([(g s) (solve-disj g s ctn fail)])
