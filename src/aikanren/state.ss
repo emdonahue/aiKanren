@@ -47,7 +47,7 @@
   ;; constraint x pair - simplify constraint with constant, extend var with constant
   ;; constraint x constraint - extend lesser var with greater, simplify greater constraint with lesser, store conjoint constraints in greater, return success and state with both
   
-  (org-define (unify s x y)
+  (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
@@ -101,7 +101,7 @@
 	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
 
   (define (unify-constraints s x-var x y-var y)
-    (values succeed (extend (extend s x-var y-var) y-var (conj (simplify-constraint x x-var y-var) y))))
+    (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y) (extend s x-var y-var)))
 
   #;
   (define (extend-constraint s x-var x y-var y)
