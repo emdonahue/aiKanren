@@ -1,6 +1,6 @@
 (library (constraints)
   (export =/= booleano presento absento listo finite-domain ==> typeo symbolo)
-  (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho))
+  (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho) (utils))
 
   (define (=/= lhs rhs)
     (noto (== lhs rhs)))
@@ -24,11 +24,12 @@
 
   (define (typeo v t?)
     (assert (procedure? t?))
-    (if (not (var? v))
-	(if (t? v) succeed fail)
-	(pconstraint
-	 v (lambda (var val)
-	     (typeo val t?)))))
+    (exclusive-cond
+     [(var? v) (pconstraint
+		v 'typeo (lambda (var val)
+			   (typeo val t?)))]
+     [(goal? v) (nyi "typeo on goal")]
+     [else (if (t? v) succeed fail)]))
 
 
   (define (symbolo v)
