@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  make-conj conj conj? conj-car conj-cdr conj* conj-fold conj-filter
+	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
