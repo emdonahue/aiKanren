@@ -37,7 +37,7 @@
     (tassert "substitution ground-pconstraint fail" (run1 (x1) (== x1 1) (symbolo x1)) (void))
     (tassert "substitution pconstraint-ground succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
     (tassert "substitution ground-pconstraint succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
-    (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (lambda (s) (and (pconstraint? s) (equal? (pconstraint-vars s) (list x1)))))
+    (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 1)) (and (pconstraint? (conj-lhs c)) (equal? (pconstraint-vars (conj-lhs c)) (list x1))))))
     
     
     (tmessage)

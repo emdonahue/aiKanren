@@ -27,10 +27,14 @@
 			     (typeo val t?)))
 	(if (t? v) succeed fail)))
 
-  (define (simplify-typeo c t?)
+  (trace-define (simplify-typeo c t?)
     (exclusive-cond
      [(conj? c) (conj (simplify-typeo (conj-lhs c) t?) (simplify-typeo (conj-rhs c) t?))]
      [(disj c) (disj (simplify-typeo (disj-lhs c) t?) (simplify-typeo (disj-rhs c) t?))]
+     [(noto? c) (noto (simplify-typeo (noto-goal c) t?))]
+     [(==? c) ; Only encountered inside disj or noto, so can't throw the typeo away on success. Can only fail.
+      (assert (var? (==-lhs c))) ;== already normalized, so lhs is var
+      (if (or (var? (==-rhs c)) (not (t? (==-rhs c)))) c fail)] 
      [else c]))
 
   (define (symbolo v)

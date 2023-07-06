@@ -22,7 +22,8 @@
 	  (total (fx1+ (total)))
 	  (let ([expected expected!]
 		[received received!])
-	    (when (or (and (procedure? expected) (expected received)) (not (equal? expected received)))
+	    (when (and (not (equal? expected received)) (or (not (procedure? expected)) (not (expected received))))
+	      (printf "not exp received: ~s" (not (expected received)))
 	      (failed (fx1+ (failed)))
 	      (parameterize ([pretty-initial-indent 10]
 			     [pretty-standard-indent 0])
