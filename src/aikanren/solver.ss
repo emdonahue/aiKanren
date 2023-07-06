@@ -7,7 +7,7 @@
     (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (solve-constraint g s conjs out)
+  (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
     (exclusive-cond
@@ -33,17 +33,18 @@
 	    (if (fail? g) (values fail failure)
 		(solve-constraint ctn (store-constraint s g) succeed (conj out g)))))))
   
-  (define (solve-== g s ctn out)
+  (org-define (solve-== g s ctn out)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
+    ;; todo can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now?
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (assert (goal? c))
       (if (fail? g) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
   
-  (define (solve-=/= g s ctn out)   
+  (org-define (solve-=/= g s ctn out)   
     (let ([g (disunify s (==-lhs g) (==-rhs g))])
       (exclusive-cond
        [(fail? g) (values fail failure)]

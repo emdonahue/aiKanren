@@ -138,14 +138,16 @@
   (define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
-    (let ([x (walk s x)] [y (walk s y)]) ;TODO how does disunify play with constraints in substitution?
+    (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
+		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
+      (assert (and (not (goal? x)) (not (goal? y))))
       (cond
        [(eq? x y) fail]
        [(var? x)
 	(if (var? y)
 	    (cond
 	     [(fx< (var-id x) (var-id y)) (noto (== x y))]
-	     [(var-equal? x y)
+	     [(var-equal? x y) ;TODO test swapping var-equal? with another fx> check and making it the else case
 	      fail] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
 	     [else (noto (== y x))])
 	    (noto (== x y)))]

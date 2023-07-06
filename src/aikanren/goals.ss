@@ -46,7 +46,7 @@
 		     (values (mplus lhs rhs) p))]
      [else (assertion-violation 'bind "Unrecognized stream type" s)]))
   
-  (define (stream-step s p)
+  (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
     (exclusive-cond
      [(failure? s) (values s p)]
