@@ -22,19 +22,20 @@
   (define (typeo v t?)
     (assert (procedure? t?))
     (if (var? v) (pconstraint
-		  v 'typeo (lambda (var val)
-			     (if (goal? val) (conj (simplify-typeo val t?) (typeo var t?)))
-			     (typeo val t?)))
+		  v 'typeo (org-lambda typeo-sublam (var val)
+				       (if (goal? val) (conj (simplify-typeo val var t?) (typeo var t?))
+					   (typeo val t?))))
 	(if (t? v) succeed fail)))
 
-  (trace-define (simplify-typeo c t?)
-    (exclusive-cond
-     [(conj? c) (conj (simplify-typeo (conj-lhs c) t?) (simplify-typeo (conj-rhs c) t?))]
-     [(disj c) (disj (simplify-typeo (disj-lhs c) t?) (simplify-typeo (disj-rhs c) t?))]
-     [(noto? c) (noto (simplify-typeo (noto-goal c) t?))]
+  (org-define (simplify-typeo c v t?)
+    (org-exclusive-cond
+     [(conj? c) (conj (simplify-typeo (conj-lhs c) v t?) (simplify-typeo (conj-rhs c) v t?))]
+     [(disj? c) (disj (simplify-typeo (disj-lhs c) v t?) (simplify-typeo (disj-rhs c) v t?))]
+     [(noto? c) (noto (simplify-typeo (noto-goal c) v t?))]
      [(==? c) ; Only encountered inside disj or noto, so can't throw the typeo away on success. Can only fail.
       (assert (var? (==-lhs c))) ;== already normalized, so lhs is var
-      (if (or (var? (==-rhs c)) (not (t? (==-rhs c)))) c fail)] 
+      (if (or (not (eq? (==-lhs c) v)) (var? (==-rhs c))) c (if (t? (==-rhs c)) succeed fail))]
+     [(pconstraint? c) (if (eq? (pconstraint-type c) 'typeo) (if (eq? (pconstraint-procedure c) t?) succeed fail) c)]
      [else c]))
 
   (define (symbolo v)
