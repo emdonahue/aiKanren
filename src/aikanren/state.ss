@@ -62,12 +62,12 @@
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (org-cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (extend-simplify-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)^cy
-	    (extend-simplify-constraint s x-var y x))] ; x->y, ^cx(y)
+	(if (goal? y) (extend-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)&cy
+	    (extend-constraint s x-var y x succeed))] ; x->y, ^cx(y)
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (if (var? x)
-		      (extend-simplify-constraint s x y-var succeed y) ; x->y, y->y, ^cy
-		      (extend-simplify-constraint s y-var x y))] ; y->x, ^cy(x)
+		      (extend-constraint s x y-var succeed y) ; x->y, y->y, ^cy
+		      (extend-constraint s y-var x y succeed))] ; y->x, ^cy(x)
        [(var? x) (extend-var s x y)]
        [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
@@ -93,18 +93,11 @@
   
   ;; === CONSTRAINTS ===
 
-  (define extend-simplify-constraint
+  (define (extend-constraint s var val var-c val-c)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
-    (case-lambda
-      [(s var val var-c) (extend-constraint s var val (simplify-constraint var-c var val))]
-      [(s var val var-c val-c) (extend-constraint (unbind-constraint s val) var val (conj (simplify-constraint var-c var val) val-c))]))
-
-  (define (extend-constraint s var val c)
-    ;; Extends var with val in the substitution, and returns the unification made, the constraints that need to be rechecked, and the extended state. 
-    (assert (and (var? var) (goal? c)))
-    (if (fail? c)
-	(values fail fail failure)
-	(values (== var val) c (extend s var val))))
+    (let ([c (simplify-constraint var-c var val)])
+      (if (fail? c) (values fail fail failure)
+	  (values (== var val) (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
   
   (org-define (simplify-constraint g v x)
     (assert (and (goal? g) (var? v)))
