@@ -62,13 +62,14 @@
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (org-cond
        [(goal? x)
-	(if (goal? y)
-	    (values (== x-var y-var)
-		    (conj (simplify-constraint x x-var y-var) y)
-		    (extend (unbind-constraint s y-var) x-var y-var))
-	    (unify-constraint s x-var x y-var y))] ; TODO When should simplifying a constraint commit more ==?
+	(exclusive-cond
+	 [(goal? y) (values (== x-var y-var)
+			    (conj (simplify-constraint x x-var y-var) y)
+			    (extend (unbind-constraint s y-var) x-var y-var))]
+	 [(var? y) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
+	 [else (values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))])] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
-       [(goal? y) (unify-constraint s y-var y x-var x)]
+       [(goal? y) (unify-constraint s y-var y x-var x)(unify-constraint s y-var y x-var x)]
        [(var? x)
 	(if (var? y)
 	    (extend-var s x y)
