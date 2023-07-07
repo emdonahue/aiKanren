@@ -23,10 +23,10 @@
       [(_ vals n) (list-ref (values->list vals) n)]))
 
 
-  (define nyi
-    (case-lambda
-      [() (nyi 'unnamed)]
-      [(name) (assertion-violation name "Not Yet Implemented")]))
+  (define-syntax nyi
+    (syntax-rules ()
+      [(_) (nyi nyi)]
+      [(_ message ...) (assertion-violation (string-append (string-append (symbol->string 'message) " ") ...) "Not Yet Implemented")]))
   
   ;; === ORG-TRACE ===
   ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers

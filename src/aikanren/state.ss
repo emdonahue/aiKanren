@@ -154,7 +154,7 @@
       (if (may-unify x x-var)
 	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
-     [(goal? y) (nyi 'y-goal-disunify)]
+     [(goal? y) (nyi y goal disunify)]
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)

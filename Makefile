@@ -64,8 +64,10 @@ repl: # Boot up a REPL preloaded with aiKanren
 
 doc:
 	sed -i -n '1,/^## Documentation/ p' README.md
+	echo '## Not Yet Implemented' >> README.md
+	grep -nr --exclude=Makefile --exclude=utils.ss -e '(nyi' * | sed -E 's/^([^:]+:[^:]+):.*\(nyi([^)]*)\).*/- \2 (\1)/g' >> README.md
 	echo '## TODO' >> README.md
-	grep -nr 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
+	grep -nr --exclude=Makefile -e 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
 
 test:
 	@TESTSUITE=$$(mktemp); \
