@@ -63,12 +63,12 @@
     (org-cond
        [(goal? x)
 	(exclusive-cond
-	 [(goal? y) (extend-constraint (unbind-constraint s y-var) x-var y-var (conj (simplify-constraint x x-var y-var) y))]
+	 [(goal? y) (extend-constraint s x-var y-var (conj (simplify-constraint x x-var y-var) y))]
 	 [(var? y) (extend-simplify-constraint s x-var y-var x)]
 	 [else (extend-simplify-constraint s x-var y x)])] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (if (var? x)
-		      (extend-constraint (unbind-constraint s y-var) x y-var y)
+		      (extend-constraint s x y-var y)
 		      (extend-simplify-constraint s y-var x y))]
        [(var? x) (extend-var s x y)]
        [(var? y) (extend-var s y x)]
@@ -99,7 +99,7 @@
     (extend-constraint s var val (simplify-constraint c var val)))
 
   (define (extend-constraint s var val c)
-    (values (== var val) c (extend s var val)))
+    (values (== var val) c (extend (if (var? val) (unbind-constraint s val) s) var val)))
   
   (org-define (simplify-constraint g v x)
     (assert (and (goal? g) (var? v)))
