@@ -63,8 +63,7 @@
     (org-cond
        [(goal? x)
 	(exclusive-cond
-	 [(goal? y) (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y)
-			    (extend (unbind-constraint s y-var) x-var y-var))]
+	 [(goal? y) (extend-constraint (unbind-constraint s y-var) x-var y-var (conj (simplify-constraint x x-var y-var) y))]
 	 [(var? y) (extend-simplify-constraint s x-var y-var x)]
 	 [else (extend-simplify-constraint s x-var y x)])] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
