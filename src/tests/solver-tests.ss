@@ -26,6 +26,10 @@
     (tassert "substitution constraint-ground succeed" (run1 (x1) (=/= x1 1) (== x1 2)) 2)
     (tassert "substitution ground-constraint fail" (run1 (x1) (=/= x1 1) (== 1 x1)) (void))
     (tassert "substitution ground-constraint succeed" (run1 (x1) (=/= x1 1) (== 2 x1)) 2)
+    (tassert "substitution constraint-bound fail" (run1 (x1) (== x1 1) (=/= x1 1)) (void))
+    (tassert "substitution constraint-bound succeed" (run1 (x1) (== x1 2) (=/= x1 1)) 2)
+    (tassert "substitution bound-constraint fail" (run1 (x1) (== 1 x1) (=/= x1 1)) (void))
+    (tassert "substitution bound-constraint succeed" (run1 (x1) (== 2 x1) (=/= x1 1)) 2)
     (tassert "substitution constraint-free" (run1 (x1 x2) (=/= x1 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "substitution constraint-free high var" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
@@ -33,9 +37,10 @@
     
     
     (tassert "substitution constraint-constraint" (run1 (x1) (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
-    (tassert "substitution constraint disunify with high var goal" (run1 (x1 x2) (=/= x2 1) (=/= x1 x2)) (list (=/= x1 x2) (=/= x2 1)))
     (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
     (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
+    (tassert "substitution constraint disunify" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) (list (conj (=/= x1 1) (=/= x1 x2)) x2))
+    (tassert "substitution constraint disunify2" (run1 (x1 x2) (=/= x2 1) (=/= x1 x2)) (list (=/= x1 x2) (=/= x2 1)))
 
     (tassert "substitution pconstraint-ground fail" (run1 (x1) (symbolo x1) (== x1 1)) (void))
     (tassert "substitution ground-pconstraint fail" (run1 (x1) (== x1 1) (symbolo x1)) (void))

@@ -154,7 +154,9 @@
       (if (may-unify x x-var)
 	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
-     [(goal? y) (if (var? x) (values (=/= x y-var) succeed s) (nyi))]
+     [(goal? y) (if (var? x)
+		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
+		    (nyi))]
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)
