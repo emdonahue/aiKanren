@@ -121,9 +121,23 @@
       (== x (==-rhs g))]
      [(noto? g) (noto (simplify-constraint (noto-goal g) v x))]
      [(pconstraint? g) (if (var? x) (pconstraint (cons x (remove v (pconstraint-vars g))) (pconstraint-procedure g) (pconstraint-type g)) ((pconstraint-procedure g) v x))]
-     [else (assertion-violation 'simplify-constraint "Unrecognized constraint type" g)]))
+     [else g]))
+
+  (org-define (simplify-disunifications g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
+    ;; The order of each var should be normalized, so it is not necessary to check both directions. Lower ids are lhs.
+    (exclusive-cond
+     [(==? g) (if (eq? var (==-lhs g))
+		  (if (eq? val (==-rhs g))
+		      fail
+		      (if (var? (==-rhs g)) g succeed))
+		  g)]
+     [(noto? g) (if (==? (noto-goal g))
+		    (if (and (eq? val (==-rhs (noto-goal g)))
+			     (eq? val (==-rhs (noto-goal g))))
+			succeed g) g)]
+     [else g]))
   
-  (define (state-add-constraint s c vs)
+  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
     (assert (and (state? s) (goal? c) (list? vs)))
     (fold-left (lambda (s v)
 		 (extend s v (conj (walk-constraint s v) c))
@@ -156,7 +170,12 @@
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
-		    (nyi))]
+		    (let ([c (simplify-disunifications y y-var x)])
+		      (exclusive-cond
+		       [(fail? c) (values fail fail failure)]
+		       [(succeed? c) (values succeed succeed s)]
+		       [(eq? c y) (values (=/= y-var x) succeed s)]
+		       [else (values (=/= y-var x) c (unbind-constraint s y-var))])))]
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)
