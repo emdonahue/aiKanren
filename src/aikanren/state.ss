@@ -97,7 +97,7 @@
 	(org-exclusive-cond
 	 [(fx< (var-id x-var) (var-id y-var)) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
 	 [(var-equal? x y) (values succeed succeed s)]
-	 [else (values (== y x-var) x (extend s y x-var))])
+	 [else (values (== y x-var) x (extend (unbind-constraint s x-var) y x-var))])
 	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
 
   (define (unify-constraints s x-var x y-var y)
@@ -144,17 +144,17 @@
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
-      (if (or (not (var? y-var)) (and (var? x-var) (fx< (var-id x-var) (var-id y-var))))
-	  (disunify-binding s x-var x y-var y)
-	  (disunify-binding s y-var y x-var x))))
+      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	  (disunify-binding s y-var y x-var x)
+	  (disunify-binding s x-var x y-var y))))
 
-  (define (disunify-binding s x-var x y-var y)
+  (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
     (cond
      [(goal? x)
       (if (may-unify x x-var)
 	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
-     [(goal? y) (nyi y goal disunify)]
+     [(goal? y) (if (var? x) (values (=/= x y-var) succeed s) (nyi))]
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)

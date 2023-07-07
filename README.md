@@ -3,7 +3,7 @@ A miniKanren implementation designed to serve as a platform for AI research comb
 
 ## Documentation
 ## Not Yet Implemented
--  'y-goal-disunify (src/aikanren/state.ss:157)
+-  y goal disunify (src/aikanren/state.ss:157)
 ## TODO
 - can we get guarded goal functionality by an == constraint and a schedule that when run unifies the guarded variables thereby triggering the unification? (build/object/aikanren.ss:1)
 - do == and =/= automatically simplify when merged because we run constraints on the state not the substitution when reducing? (build/object/aikanren.ss:2)
