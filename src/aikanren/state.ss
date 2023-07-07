@@ -63,8 +63,7 @@
     (org-cond
        [(goal? x)
 	(exclusive-cond
-	 [(goal? y) (values (== x-var y-var)
-			    (conj (simplify-constraint x x-var y-var) y)
+	 [(goal? y) (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y)
 			    (extend (unbind-constraint s y-var) x-var y-var))]
 	 [(var? y) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
 	 [else (values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))])] ; TODO When should simplifying a constraint commit more ==?
@@ -72,10 +71,7 @@
        [(goal? y) (if (var? x)
 		      (values (== x y-var) y (extend (unbind-constraint s y-var) x y-var))
 		      (values (== y-var x) (simplify-constraint y y-var x) (extend s y-var x)))]
-       [(var? x)
-	(if (var? y)
-	    (extend-var s x y)
-	    (extend-var s x y))]
+       [(var? x) (extend-var s x y)]
        [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
