@@ -51,8 +51,7 @@
     (tassert "substitution pconstraint-constraint" (run1 (x1) (=/= x1 1) (symbolo x1)) (lambda (c) (and (conj? c) (equal? (conj-lhs c) (=/= x1 1)) (and (pconstraint? (conj-rhs c)) (equal? (pconstraint-vars (conj-rhs c)) (list x1))))))
     
     
-    (tmessage)
-    (exit)
+
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
@@ -125,7 +124,7 @@
     (tassert "disunify transfer on free-free down varid" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "disunify fire low varid" (run1 (x1 x2) (=/= x1 x2) (== x2 x1)) (void))
     (tassert "disunify conj" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2))
-	     (list (conj* (=/= x2 2) (=/= x2 1)) (conj* (=/= x2 2) (=/= x2 1))))
+	     (list (conj* (=/= x2 1) (=/= x2 2)) (conj* (=/= x2 1) (=/= x2 2))))
     (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2)) (void))
     (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2)) (void))
     (tassert "disunify constraint cleared after fired"

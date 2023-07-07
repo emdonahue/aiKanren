@@ -1,5 +1,5 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify) ;;TODO double check state exports. remove extend at least
+  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify walk-var) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
@@ -20,6 +20,9 @@
   (define (walk s v)
     (assert (state? s))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
+
+  (define (walk-var s v)
+    (let-values ([(binding v) (walk-binding (state-substitution s) v)]) (if (goal? v) binding v)))
 
   (define (walk-constraint s v)
     (assert (and (state? s) (var? v)))
@@ -171,7 +174,7 @@
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
 		    (let ([c (simplify-disunifications y y-var x)])
-		      (exclusive-cond
+		      (org-exclusive-cond y-goal-x-val
 		       [(fail? c) (values fail fail failure)]
 		       [(succeed? c) (values succeed succeed s)]
 		       [(eq? c y) (values (=/= y-var x) succeed s)]
@@ -179,7 +182,7 @@
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)
-	  (cond
+	  (org-exclusive-cond var-x-var-y
 	   [(fx< (var-id x) (var-id y)) (values (=/= x y) succeed s)]
 	   [(var-equal? x y) ;TODO test swapping var-equal? with another fx> check and making it the else case
 	    (values fail fail failure)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
@@ -187,11 +190,11 @@
 	  (values (=/= x y) succeed s))]
      [(var? y) (values (=/= y x) succeed s)]
      [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
-      (let-values ([(lhs c) (disunify s (car x) (car y))])
-	(cond
+      (let-values ([(lhs c s^) (disunify s (car x) (car y))])
+	(exclusive-cond
 	 [(succeed? lhs) (values succeed succeed s)] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
 	 [(fail? lhs) (disunify s (cdr x) (cdr y))]
-	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c s)]))]
+	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c s^)]))]
      [else (values succeed succeed s)]))
 
   (define (may-unify g v)
