@@ -69,7 +69,9 @@
 	 [(var? y) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
 	 [else (values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))])] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
-       [(goal? y) (unify-constraint s y-var y x-var x)(unify-constraint s y-var y x-var x)]
+       [(goal? y) (if (var? x)
+		      (values (== x y-var) y (extend (unbind-constraint s y-var) x y-var))
+		      (values (== y-var x) (simplify-constraint y y-var x) (extend s y-var x)))]
        [(var? x)
 	(if (var? y)
 	    (extend-var s x y)
@@ -95,21 +97,6 @@
   (define (extend-var s x y)
     ;; Insert a new binding between x and y into the substitution.
     (values (== x y) succeed (extend s x y)))
-
-  (org-define (unify-constraint s x-var x y-var y)
-    (assert (and (state? s) (var? x-var) (goal? x) (not (goal? y))))
-    (if (var? y)
-	(if (fx< (var-id x-var) (var-id y-var))
-	    (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))
-	    (values (== y x-var) x (extend (unbind-constraint s x-var) y x-var)))
-	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
-
-  #;
-  (define (extend-constraint s x-var x y-var y)
-    (assert (and (state? s) (var? x-var) (goal? x) (var? y-var) (var? y)))
-    (if (var? y)
-	(values succeed (conj (simplify-constraint x x-var y) (extend s x-var y)))
-	))
   
   ;; === CONSTRAINTS ===
 
