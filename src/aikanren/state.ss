@@ -61,13 +61,13 @@
 
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (org-cond
-       [(goal? x)
-	(if (goal? y) (extend-simplify-constraint s x-var y-var x y) ; x->y, y->cx(y)^cy
-	    (extend-simplify-constraint s x-var y x))] ; TODO When should simplifying a constraint commit more ==?
+       [(goal? x) ; TODO When should simplifying a constraint commit more ==?
+	(if (goal? y) (extend-simplify-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)^cy
+	    (extend-simplify-constraint s x-var y x))] ; x->y, ^cx(y)
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (if (var? x)
-		      (extend-constraint s x y-var y)
-		      (extend-simplify-constraint s y-var x y))]
+		      (extend-constraint s x y-var y) ; x->y, ^cy
+		      (extend-simplify-constraint s y-var x y))] ; y->x, ^cy(x)
        [(var? x) (extend-var s x y)]
        [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
