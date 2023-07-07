@@ -62,10 +62,8 @@
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (org-cond
        [(goal? x)
-	(exclusive-cond
-	 [(goal? y) (extend-simplify-constraint s x-var y-var x y)] ; x->y, y->cx(y)^cy
-	 [(var? y) (extend-simplify-constraint s x-var y-var x)]
-	 [else (extend-simplify-constraint s x-var y x)])] ; TODO When should simplifying a constraint commit more ==?
+	(if (goal? y) (extend-simplify-constraint s x-var y-var x y) ; x->y, y->cx(y)^cy
+	    (extend-simplify-constraint s x-var y x))] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (if (var? x)
 		      (extend-constraint s x y-var y)
@@ -101,7 +99,7 @@
       [(s var val var-c) (extend-simplify-constraint s var val var-c succeed)]
       [(s var val var-c val-c) (extend-constraint s var val (conj (simplify-constraint var-c var val) val-c))]))
 
-  (trace-define (extend-constraint s var val c)
+  (define (extend-constraint s var val c)
     ;; Extends var with val in the substitution, unbinding val if it is a var (to remove constraints), and returning the unification made, the constraints that need to be rechecked, and the extended state. 
     (assert (and (var? var) (goal? c)))
     (if (fail? c)
