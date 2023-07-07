@@ -15,7 +15,7 @@
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
 	  constraint constraint? constraint-goal set-constraint-goal
 	  goal? ;goal-cond
-	  succeed fail succeed? fail?
+	  succeed fail succeed? fail? trivial-goal?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
@@ -117,6 +117,7 @@
   (define-values (succeed fail) (values (vector 'succeed) (vector 'fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
+  (define (trivial-goal? g) (or (fail? g) (succeed? g)))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
