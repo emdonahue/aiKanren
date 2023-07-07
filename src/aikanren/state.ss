@@ -63,7 +63,7 @@
     (org-cond
        [(goal? x)
 	(exclusive-cond
-	 [(goal? y) (extend-constraint s x-var y-var (conj (simplify-constraint x x-var y-var) y))]
+	 [(goal? y) (extend-simplify-constraint s x-var y-var x y)]
 	 [(var? y) (extend-simplify-constraint s x-var y-var x)]
 	 [else (extend-simplify-constraint s x-var y x)])] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
@@ -95,8 +95,10 @@
   
   ;; === CONSTRAINTS ===
 
-  (define (extend-simplify-constraint s var val c)
-    (extend-constraint s var val (simplify-constraint c var val)))
+  (define extend-simplify-constraint
+    (case-lambda
+      [(s var val c) (extend-simplify-constraint s var val c succeed)]
+      [(s var val c c^) (extend-constraint s var val (conj (simplify-constraint c var val) c^))]))
 
   (define (extend-constraint s var val c)
     (values (== var val) c (extend (if (var? val) (unbind-constraint s val) s) var val)))
