@@ -23,12 +23,15 @@
     (assert (procedure? t?))
     (if (var? v) (pconstraint
 		  v 'typeo (org-lambda typeo-sublam (var val)
-				       (if (goal? val) (conj (simplify-typeo val var t?) (typeo var t?))
+				       (if (goal? val) (simplify-typeo val var t?)
 					   (typeo val t?))))
 	(if (t? v) succeed fail)))
 
-  (org-define (simplify-typeo c v t?)
-    (org-exclusive-cond
+  (define (simplify-typeo c v t?)
+    (let ([t (conj-memp c (lambda (t) (and (pconstraint? t) (eq? 'type (pconstraint-type t)) (eq? v (car (pconstraint-vars t))))))])
+      (if t (if (eq? (pconstraint-procedure c) (pconstraint-procedure t)) succeed fail) (typeo v t?)))
+    #;;TODO have typeo simplify == not simply succeed or fail
+    (exclusive-cond
      [(conj? c) (conj (simplify-typeo (conj-lhs c) v t?) (simplify-typeo (conj-rhs c) v t?))]
      [(disj? c) (disj (simplify-typeo (disj-lhs c) v t?) (simplify-typeo (disj-rhs c) v t?))]
      [(noto? c) (noto (simplify-typeo (noto-goal c) v t?))]

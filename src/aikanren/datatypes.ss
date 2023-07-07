@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  == ==? ==-lhs ==-rhs
 	  fresh?
-	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
+	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
@@ -200,6 +200,11 @@
 	 (conj-filter (conj-lhs c) p)
 	 (conj-filter (conj-rhs c) p))
 	(if (p c) c succeed)))
+
+  (define (conj-memp c p)
+    (if (conj? c)
+	(or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
+	(if (p c) c #f)))
   
   (define (conj-fold p s cs) ;TODO is conj-fold ever used?
     (assert (and (procedure? p) (conj? cs)))
