@@ -53,18 +53,25 @@
   (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
-    (let-values ([(x-var x) (walk-binding (state-substitution s) x)] [(y-var y) (walk-binding (state-substitution s) y)])
-      (org-cond
+    (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
+		 [(y-var y) (walk-binding (state-substitution s) y)])
+      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	  (unify-binding s y-var y x-var x)
+	  (unify-binding s x-var x y-var y))))
+
+  (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
+    (org-cond
        [(goal? x)
 	(if (goal? y)
-	    (if (fx< (var-id x-var) (var-id y-var)) (unify-constraints s x-var x y-var y)
-		(unify-constraints s y-var y x-var x))
+	    (values (== x-var y-var)
+		    (conj (simplify-constraint x x-var y-var) y)
+		    (extend (unbind-constraint s y-var) x-var y-var))
 	    (unify-constraint s x-var x y-var y))] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (unify-constraint s y-var y x-var x)]
        [(var? x)
 	(if (var? y)
-	    (if (fx< (var-id x) (var-id y)) (extend-var s x y) (extend-var s y x))
+	    (extend-var s x y)
 	    (extend-var s x y))]
        [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
@@ -74,8 +81,8 @@
 	      (values fail fail failure)
 	      (let-values ([(g^ c^ s) (unify s (cdr x) (cdr y))])
 		(values (conj g g^) (conj c c^) s))))] ; TODO make unifier normalize?
-       [else (values fail fail failure)])))
-
+       [else (values fail fail failure)]))
+  
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
     (set-state-substitution
@@ -95,10 +102,6 @@
 	    (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))
 	    (values (== y x-var) x (extend (unbind-constraint s x-var) y x-var)))
 	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
-
-  (define (unify-constraints s x-var x y-var y)
-    (assert (and (state? s) (var? x-var) (goal? x) (var? y-var) (goal? y)))
-    (values (== x-var y-var) (conj (simplify-constraint x x-var y-var) y) (extend (unbind-constraint s y-var) x-var y-var)))
 
   #;
   (define (extend-constraint s x-var x y-var y)
