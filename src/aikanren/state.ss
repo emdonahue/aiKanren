@@ -57,20 +57,14 @@
       (org-cond
        [(goal? x)
 	(if (goal? y)
-	    (org-exclusive-cond double-constraint-cond
-	     [(fx< (var-id x-var) (var-id y-var)) (unify-constraints s x-var x y-var y)]
-	     [(var-equal? x y) (values succeed succeed s)]
-	     [else (unify-constraints s y-var y x-var x)])
+	    (if (fx< (var-id x-var) (var-id y-var)) (unify-constraints s x-var x y-var y)
+		(unify-constraints s y-var y x-var x))
 	    (unify-constraint s x-var x y-var y))] ; TODO When should simplifying a constraint commit more ==?
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (unify-constraint s y-var y x-var x)]
        [(var? x)
 	(if (var? y)
-	    (cond
-	     [(fx< (var-id x) (var-id y)) (extend-var s x y)]
-	     [(var-equal? x y)
-	      (values succeed succeed s)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	     [else (extend-var s y x)])
+	    (if (fx< (var-id x) (var-id y)) (extend-var s x y) (extend-var s y x))
 	    (extend-var s x y))]
        [(var? y) (extend-var s y x)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
@@ -97,10 +91,9 @@
   (org-define (unify-constraint s x-var x y-var y)
     (assert (and (state? s) (var? x-var) (goal? x) (not (goal? y))))
     (if (var? y)
-	(org-exclusive-cond
-	 [(fx< (var-id x-var) (var-id y-var)) (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))]
-	 [(var-equal? x y) (values succeed succeed s)]
-	 [else (values (== y x-var) x (extend (unbind-constraint s x-var) y x-var))])
+	(if (fx< (var-id x-var) (var-id y-var))
+	    (values (== x-var y-var) (simplify-constraint x x-var y-var) (extend s x-var y-var))
+	    (values (== y x-var) x (extend (unbind-constraint s x-var) y x-var)))
 	(values (== x-var y) (simplify-constraint x x-var y) (extend s x-var y))))
 
   (define (unify-constraints s x-var x y-var y)
@@ -182,11 +175,7 @@
      [(equal? x y) (values fail fail failure)]
      [(var? x)
       (if (var? y)
-	  (org-exclusive-cond var-x-var-y
-	   [(fx< (var-id x) (var-id y)) (values (=/= x y) succeed s)]
-	   [(var-equal? x y) ;TODO test swapping var-equal? with another fx> check and making it the else case
-	    (values fail fail failure)] ; Usually handled by eq? but for serialized or other dynamically constructed vars, this is a fallback.
-	   [else (values (=/= y x) succeed s)])
+	  (if (fx< (var-id x) (var-id y)) (values (=/= x y) succeed s) (values (=/= y x) succeed s))
 	  (values (=/= x y) succeed s))]
      [(var? y) (values (=/= y x) succeed s)]
      [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify

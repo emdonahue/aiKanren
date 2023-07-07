@@ -3,7 +3,7 @@
   (export simplification-level
 	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
-	  make-var var? var-id var-equal? set-var-id!
+	  make-var var? var-id set-var-id!
 	  stream?
 	  failure failure?
 	  make-bind bind? bind-goal bind-stream
@@ -44,8 +44,6 @@
   
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
-  ;;TODO microbenchmark fxvector for var
-  (define var-equal? equal?) ;TODO get rid of var-equal?
 
   ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
