@@ -45,7 +45,7 @@
 
   ;; === UNIFICATION ===
   
-  (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
+  (define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
@@ -55,7 +55,7 @@
 	  (unify-binding s x-var x y-var y))))
 
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
-    (org-cond
+    (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
 	(if (goal? y) (extend-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)&cy
 	    (extend-constraint s x-var y x succeed))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
@@ -92,7 +92,7 @@
       (state-substitution s)
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
-  (org-define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
+  (define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
     (assert (and (goal? g) (var? v)))
     (exclusive-cond
      [(conj? g) (conj (simplify-unification (conj-lhs g) v x)
@@ -106,7 +106,7 @@
 
   ;; === DISUNIFICATION ===
   
-  (org-define (disunify s x y)
+  (define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
@@ -123,8 +123,10 @@
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
+		    (values (=/= y-var x) succeed s)
+		    #;
 		    (let ([c (simplify-disunification y y-var x)])
-		      (org-exclusive-cond y-goal-x-val
+		      (exclusive-cond y-goal-x-val
 		       [(fail? c) (values fail fail failure)]
 		       [(succeed? c) (values succeed succeed s)]
 		       [(eq? c y) (values (=/= y-var x) succeed s)]
@@ -148,7 +150,7 @@
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
 
-  (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
+  (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort; TODO simplify disunifications
     ;; Simplifies a constraint with the information that var =/= val
     (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?
      [(conj? g) (conj (simplify-disunification (conj-lhs g) var val)

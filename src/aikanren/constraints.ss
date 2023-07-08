@@ -22,7 +22,7 @@
   (define (typeo v t?)
     (assert (procedure? t?))
     (if (var? v) (pconstraint
-		  v 'typeo (org-lambda typeo-sublam (var val)
+		  v 'typeo (lambda (var val)
 				       (if (goal? val) (simplify-typeo val var t?)
 					   (typeo val t?))))
 	(if (t? v) succeed fail)))
