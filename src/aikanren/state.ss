@@ -80,7 +80,7 @@
 
   (define (extend-constraint s var val var-c val-c)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
-    (let ([c (simplify-constraint-unification var-c var val)])
+    (let ([c (simplify-unification var-c var val)])
       (if (fail? c) (values fail fail failure)
 	  (values (== var val) (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
 
@@ -92,15 +92,15 @@
       (state-substitution s)
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
-  (org-define (simplify-constraint-unification g v x) ;TODO simplifiers need more thorough testing
+  (org-define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
     (assert (and (goal? g) (var? v)))
     (exclusive-cond
-     [(conj? g) (conj (simplify-constraint-unification (conj-lhs g) v x)
-		      (simplify-constraint-unification (conj-rhs g) v x))]
-     [(disj? g) (disj (simplify-constraint-unification (disj-lhs g) v x) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
-		      (simplify-constraint-unification (disj-rhs g) v x))]
+     [(conj? g) (conj (simplify-unification (conj-lhs g) v x)
+		      (simplify-unification (conj-rhs g) v x))]
+     [(disj? g) (disj (simplify-unification (disj-lhs g) v x) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
+		      (simplify-unification (disj-rhs g) v x))]
      [(==? g) (if (eq? v (==-lhs g)) (== x (==-rhs g)) g)]
-     [(noto? g) (noto (simplify-constraint-unification (noto-goal g) v x))]
+     [(noto? g) (noto (simplify-unification (noto-goal g) v x))]
      [(pconstraint? g) (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x) g)]
      [else g]))
 
@@ -123,7 +123,7 @@
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
-		    (let ([c (simplify-constraint-disunification y y-var x)])
+		    (let ([c (simplify-disunification y y-var x)])
 		      (org-exclusive-cond y-goal-x-val
 		       [(fail? c) (values fail fail failure)]
 		       [(succeed? c) (values succeed succeed s)]
@@ -148,13 +148,13 @@
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
 
-  (define (simplify-constraint-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
+  (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
     ;; Simplifies a constraint with the information that var =/= val
     (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?
-     [(conj? g) (conj (simplify-constraint-disunification (conj-lhs g) var val)
-		      (simplify-constraint-disunification (conj-rhs g) var val))]
-     [(disj? g) (disj (simplify-constraint-disunification (disj-lhs g) var val) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
-		      (simplify-constraint-disunification (disj-rhs g) var val))]
+     [(conj? g) (conj (simplify-disunification (conj-lhs g) var val)
+		      (simplify-disunification (conj-rhs g) var val))]
+     [(disj? g) (disj (simplify-disunification (disj-lhs g) var val) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
+		      (simplify-disunification (disj-rhs g) var val))]
      [(==? g) (if (eq? var (==-lhs g)) ; If the == is on the same variable as the =/=,
 		  (if (equal? val (==-rhs g)) ; and it has an equal value,
 		      fail ; fail. Otherwise, 
