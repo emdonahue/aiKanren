@@ -8,7 +8,7 @@
    run run* run1 run-states run*-states run1-states ;Run Interface
    fresh conde constrain matcho ;Goal Interface
    succeed fail == conde fresh ;Goals
-   noto =/= booleano presento absento listo finite-domain ==> typeo symbolo ;Constraints
+   noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ;Constraints
    appendo; List
    )
   (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo))
