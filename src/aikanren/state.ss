@@ -92,7 +92,7 @@
       (state-substitution s)
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
-  (org-define (simplify-constraint-unification g v x)
+  (org-define (simplify-constraint-unification g v x) ;TODO simplifiers need more thorough testing
     (assert (and (goal? g) (var? v)))
     (exclusive-cond
      [(conj? g) (conj (simplify-constraint-unification (conj-lhs g) v x)
@@ -151,15 +151,19 @@
   (define (simplify-constraint-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
     ;; Simplifies a constraint with the information that var =/= val
     (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?
+     [(conj? g) (conj (simplify-constraint-disunification (conj-lhs g) var val)
+		      (simplify-constraint-disunification (conj-rhs g) var val))]
+     [(disj? g) (disj (simplify-constraint-disunification (disj-lhs g) var val) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
+		      (simplify-constraint-disunification (disj-rhs g) var val))]
      [(==? g) (if (eq? var (==-lhs g)) ; If the == is on the same variable as the =/=,
-		  (if (eq? val (==-rhs g)) ; and it has an equal value,
+		  (if (equal? val (==-rhs g)) ; and it has an equal value,
 		      fail ; fail. Otherwise, 
 		      (if (or (var? (==-rhs g)) (var? val)) g succeed)) ; succeed if both are ground (since they are not eq?)
 		  g)] ; Ignore constraints on unrelated variables.
      [(noto? g) (if (==? (noto-goal g))
-		    (if (and (eq? val (==-rhs (noto-goal g)))
+		    (if (and (eq? val (==-rhs (noto-goal g))) ; =/= only cancel each other if identical
 			     (eq? val (==-rhs (noto-goal g))))
-			succeed g) g)]
+			succeed g) g)] ; TODO should we simplify pconstraints during disunification
      [else g]))
   
   ;; === CONSTRAINTS ===
