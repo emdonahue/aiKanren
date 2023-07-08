@@ -34,7 +34,7 @@
     (tassert "substitution constraint-free high var" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
     (tassert "substitution free-constraint high var" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
-        
+    
     (tassert "substitution constraint-constraint" (run1 (x1) (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
     (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
     (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
@@ -48,7 +48,7 @@
     (tassert "substitution ground-pconstraint succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
     (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 1)) (and (pconstraint? (conj-lhs c)) (equal? (pconstraint-vars (conj-lhs c)) (list x1))))))
     (tassert "substitution pconstraint-constraint" (run1 (x1) (=/= x1 1) (symbolo x1)) (lambda (c) (and (conj? c) (equal? (conj-lhs c) (=/= x1 1)) (and (pconstraint? (conj-rhs c)) (equal? (pconstraint-vars (conj-rhs c)) (list x1))))))
-    
+
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
     (tassert "constraint =/=" (run1 (x1) (constrain (=/= x1 1))) (=/= x1 1))

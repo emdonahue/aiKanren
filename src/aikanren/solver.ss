@@ -196,7 +196,7 @@
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
-  (define (attributed-vars-disj d vs)
+  (define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
     (if (maybe-==? (disj-car d))
 	(attributed-vars (disj-car d) (attributed-vars (disj-car (disj-cdr d)) vs))
 	(attributed-vars (disj-car d) vs)))

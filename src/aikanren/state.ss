@@ -46,7 +46,7 @@
   ;; === UNIFICATION ===
   
   (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
-    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
+    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)])
@@ -97,7 +97,7 @@
     (exclusive-cond
      [(conj? g) (conj (simplify-constraint-unification (conj-lhs g) v x)
 		      (simplify-constraint-unification (conj-rhs g) v x))]
-     [(disj? g) (disj (simplify-constraint-unification (disj-lhs g) v x)
+     [(disj? g) (disj (simplify-constraint-unification (disj-lhs g) v x) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
 		      (simplify-constraint-unification (disj-rhs g) v x))]
      [(==? g) (if (eq? v (==-lhs g)) (== x (==-rhs g)) g)]
      [(noto? g) (noto (simplify-constraint-unification (noto-goal g) v x))]
@@ -118,24 +118,21 @@
   (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
     (cond
      [(goal? x)
-      (if (may-unify x x-var)
+      (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail.
 	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
 	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
-		    (let ([c (simplify-disunifications y y-var x)])
+		    (let ([c (simplify-constraint-disunification y y-var x)])
 		      (org-exclusive-cond y-goal-x-val
 		       [(fail? c) (values fail fail failure)]
 		       [(succeed? c) (values succeed succeed s)]
 		       [(eq? c y) (values (=/= y-var x) succeed s)]
 		       [else (values (=/= y-var x) c (unbind-constraint s y-var))])))]
-     [(equal? x y) (values fail fail failure)]
-     [(var? x)
-      (if (var? y)
-	  (if (fx< (var-id x) (var-id y)) (values (=/= x y) succeed s) (values (=/= y x) succeed s))
-	  (values (=/= x y) succeed s))]
+     [(eq? x y) (values fail fail failure)]
+     [(var? x) (values (=/= x y) succeed s)]
      [(var? y) (values (=/= y x) succeed s)]
-     [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
+     [(and (pair? x) (pair? y))
       (let-values ([(lhs c s^) (disunify s (car x) (car y))])
 	(exclusive-cond
 	 [(succeed? lhs) (values succeed succeed s)] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
@@ -146,19 +143,19 @@
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
     (exclusive-cond
-     [(==? g) (or (equal? (==-lhs g) v))] ; Existing constraints are already normalized, so only lhs need be checked.
+     [(==? g) (equal? (==-lhs g) v)] ; Existing constraints are already normalized, so only lhs need be checked.
      [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
 
-  (define (simplify-disunifications g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
-    ;; The order of each var should be normalized, so it is not necessary to check both directions. Lower ids are lhs.
-    (exclusive-cond
-     [(==? g) (if (eq? var (==-lhs g))
-		  (if (eq? val (==-rhs g))
-		      fail
-		      (if (var? (==-rhs g)) g succeed))
-		  g)]
+  (define (simplify-constraint-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort
+    ;; Simplifies a constraint with the information that var =/= val
+    (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?
+     [(==? g) (if (eq? var (==-lhs g)) ; If the == is on the same variable as the =/=,
+		  (if (eq? val (==-rhs g)) ; and it has an equal value,
+		      fail ; fail. Otherwise, 
+		      (if (or (var? (==-rhs g)) (var? val)) g succeed)) ; succeed if both are ground (since they are not eq?)
+		  g)] ; Ignore constraints on unrelated variables.
      [(noto? g) (if (==? (noto-goal g))
 		    (if (and (eq? val (==-rhs (noto-goal g)))
 			     (eq? val (==-rhs (noto-goal g))))
