@@ -1,5 +1,5 @@
 (library (listo) ; Relational list library
-  (export appendo)
+  (export appendo assoco)
   (import (chezscheme) (ui) (datatypes) (matcho))
 
   (define (appendo h t ht)
@@ -14,5 +14,7 @@
   (define (assoco obj alist o)
     (matcho ([alist (a-d . t)]) ;TODO merge assoco matchos into single matcho once optimized
 	    (matcho ([a-d (a . d)])
-		    (== obj a))))
+		    (conde
+		      [(== obj a) (== o a-d)]
+		      [(assoco obj t o)]))))
 )
