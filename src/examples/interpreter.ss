@@ -11,5 +11,13 @@
       [(expr env val)
        (conde
 	 [(== `(quote ,val) expr)]
+	 [(numbero expr) (== expr val)]
+	 [(symbolo expr) (lookupo expr env val)]
 	 )]))
+
+  (define (lookupo var env val)
+    (asspo var env
+	   (lambda (v)
+	     (conde
+	       [(== `(val . ,val))]))))
 )

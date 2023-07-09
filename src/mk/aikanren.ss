@@ -9,7 +9,7 @@
    fresh conde constrain matcho ; Goal Interface
    succeed fail == conde fresh ; Goals
    noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
-   appendo assoco ; List
+   appendo assoco asspo ; List
    __ ; Quantification
    )
   (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo))

@@ -1,6 +1,6 @@
 (library (listo) ; Relational list library
-  (export appendo assoco)
-  (import (chezscheme) (ui) (datatypes) (matcho))
+  (export appendo assoco containso asspo)
+  (import (chezscheme) (ui) (datatypes) (matcho) (negation))
 
   (define (appendo h t ht)
     (conde
@@ -11,10 +11,19 @@
 	       (== ht (cons a es))
 	       (appendo d t es))]))
 
-  (define (assoco obj alist o)
-    (matcho ([alist (a-d . t)]) ;TODO merge assoco matchos into single matcho once optimized
+  (define (containso x xs)
+    (matcho ([xs (a . d)])
+	    (conde
+	      [(== x a)]
+	      [(=/= x a) (containso x d)])))
+  
+  (define (assoco x xs o)
+    (asspo x xs (lambda (y) (== o y))))
+
+  (define (asspo x xs proc)
+    (matcho ([xs (a-d . t)]) ;TODO merge asspo matchos into single matcho once optimized
 	    (matcho ([a-d (a . d)])
 		    (conde
-		      [(== obj a) (== o a-d)]
-		      [(assoco obj t o)]))))
+		      [(== x a) (proc d)]
+		      [(=/= x a) (asspo x t proc)]))))
 )

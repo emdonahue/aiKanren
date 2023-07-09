@@ -14,12 +14,18 @@
 
     ;; assoco
     (tassert "assoco 0" (run* (x1) (assoco 3 '((0 . 1) (1 . 2) (2 . 3)) x1)) '())
-    (tassert "assoco 1" (run* (x1) (assoco 1 '((0 . 1) (1 . 2) (2 . 3)) x1)) '((1 . 2)))
-    (tassert "assoco 2" (run* (x1) (assoco 1 '((0 . 1) (1 . 2) (1 . 3)) x1)) '((1 . 2) (1 . 3)))
+    (tassert "assoco 1" (run* (x1) (assoco 1 '((0 . 1) (1 . 2) (2 . 3)) x1)) '(2))
+    (tassert "assoco 2" (run* (x1) (assoco 1 '((0 . 1) (1 . 2) (1 . 3)) x1)) '(2))
     (tassert "assoco constraint 0" (run* (x1) (constrain (assoco 3 '((0 . 1) (1 . 2) (2 . 3)) __))) '())
     (tassert "assoco constraint 1" (run* (x1) (constrain (assoco 1 '((0 . 1) (1 . 2) (2 . 3)) __))) `(,x1))
     (tassert "assoco constraint 2" (run* (x1) (constrain (assoco 1 '((0 . 1) (1 . 2) (1 . 3)) __))) `(,x1))
     (tassert "assoco constraint not 0" (run* (x1) (constrain (noto (assoco 3 '((0 . 1) (1 . 2) (2 . 3)) __)))) `(,x1))
     (tassert "assoco constraint not 1" (run* (x1) (constrain (noto (assoco 1 '((0 . 1) (1 . 2) (2 . 3)) __)))) '())
     (tassert "assoco constraint not 2" (run* (x1) (constrain (noto (assoco 1 '((0 . 1) (1 . 2) (1 . 3)) __)))) '())
+
+
+    ;; asspo
+    (tassert "asspo 0" (run* (x1) (asspo 3 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '())
+    (tassert "asspo 1" (run* (x1) (asspo 1 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '(2))
+    (tassert "asspo 2" (run* (x1) (asspo 1 '((0 . 1) (1 . 2) (1 . 3)) (lambda (x) (== x x1)))) '(2))
     ))
