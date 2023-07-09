@@ -1,10 +1,10 @@
 (library (interpreter-tests)
   (export run-interpreter-tests)
-  (import (chezscheme) (test-runner) (interpreter))
+  (import (chezscheme) (test-runner) (aikanren) (interpreter))
   
   (define (run-interpreter-tests)
     
-    3
+    (tassert "eval quote" (evalo '(quote 42)) 42)
 
     
 ))
