@@ -24,7 +24,8 @@
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
-	  make-noto noto? noto-goal)
+	  make-noto noto? noto-goal
+	  __)
   (import (chezscheme) (sbral))
 
   ;; === RUNTIME PARAMETERS ===
@@ -126,6 +127,7 @@
 
   (define (== x y)
     (cond
+     [(or (eq? x __) (eq? y __)) succeed]
      [(or (var? x) (var? y)) (make-== x y)]
      [(equal? x y) succeed]
      [(and (pair? x) (pair? y)) (make-== x y)]
@@ -244,4 +246,8 @@
     (cond
      [(succeed? d) #t]
      [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
-     [else #f])))
+     [else #f]))
+
+  ;; === QUANTIFICATION ===
+
+  (define __ (vector '__)))
