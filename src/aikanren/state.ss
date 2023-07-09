@@ -93,7 +93,7 @@
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
   (define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
-    (assert (and (goal? g) (var? v)))
+    (assert (and (goal? g) (var? v))) ;TODO separate into conj and disj simplifier. conj can assume all primitive constraints attribute to var. disj simplifier has to check
     (exclusive-cond
      [(conj? g) (conj (simplify-unification (conj-lhs g) v x)
 		      (simplify-unification (conj-rhs g) v x))]
