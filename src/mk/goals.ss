@@ -11,6 +11,9 @@
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		   (values (make-bind g s) p))]
+     [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count?
+		     (lambda () ((exist-procedure g) s p))
+		   run-goal)]
      [(conde? g) (let*-values
 		 ([(lhs p) (run-goal (conde-lhs g) s p)]
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
