@@ -44,9 +44,7 @@
   (define (eval-apply expr env val)
     (matcho ([expr (rator . rands)])
 	    (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
-;		   (evalo rator env closure)
-		   (== val env)
-		   #;
+		   (evalo rator env closure)
 		   (matcho ([closure ('closure ('lambda x* body) env)])
 			   (== val body)
 			   ))))
