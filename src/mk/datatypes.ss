@@ -17,7 +17,7 @@
 	  goal? ;goal-cond
 	  succeed fail succeed? fail? trivial-goal?
 	  == ==? ==-lhs ==-rhs
-	  fresh?
+	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde->disj
@@ -124,6 +124,7 @@
   (define-structure (disj lhs rhs))
   (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
+  (define-structure (exist procedure))
 
   (define (== x y)
     (cond

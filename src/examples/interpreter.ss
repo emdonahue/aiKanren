@@ -15,6 +15,7 @@
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
 	 [(eval-prim expr env val)]
+	 [(eval-apply expr env val)]
 	 )]))
 
   (define (eval-quote expr env val)
@@ -40,9 +41,12 @@
 		[(for-eacho symbolo (lambda (x) (symbolo x)))])))
      (not-in-envo 'lambda env)))
 
-  (define (not-in-envo sym env)
-    (noto (asspo sym env (lambda (v) succeed))))
-
+  (define (eval-apply expr env val)
+    fail
+    #;
+    (matcho ([expr (rator . rands)])
+	    ))
+  
   (define (eval-prim expr env val)
     (conde
       [(eval-boolean expr env val)]
@@ -58,4 +62,7 @@
   (define (eval-and e* env val)
     (conde
       [(== e* '()) (== val #t)]))
+
+  (define (not-in-envo sym env)
+    (noto (asspo sym env (lambda (v) succeed))))
 )

@@ -1,4 +1,4 @@
-(library (ui)
+(library (ui) ;TODO refactor this library into 'vars' and other
   (export run run* run1 run-states run*-states run1-states fresh conde constrain)
   (import (chezscheme) (running) (datatypes))
 
@@ -16,6 +16,16 @@
 	(fresh-vars
 	 (state-varid state) varid (q ...)
 	 (values (conj* g ...) (set-state-varid state varid) p)))]))
+
+ (define-syntax exist
+   (syntax-rules ()
+     [(_ () g0 g ...) (conj* g0 g ...)]
+     [(_ (q ...) g ...)
+      (make-exist
+       (lambda (state p)
+	 (fresh-vars
+	  (state-varid state) varid (q ...)
+	  (values (conj* g ...) (set-state-varid state varid) p))))]))
 
  (define-syntax runner
     (syntax-rules ()
