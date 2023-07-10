@@ -23,5 +23,5 @@
 
     (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
 
-;    (display (run 1 (q) (evalo q '() q)))
+    (display (run 1 (q) (evalo q '() q)))
 ))
