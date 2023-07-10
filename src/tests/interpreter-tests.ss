@@ -6,8 +6,8 @@
     
     (tassert "evalo quote" (evalo '(quote 42)) 42)
     (tassert "evalo number" (evalo 42) 42)
-    (tassert "evalo lookup val" (run1 (o) (evalo 'x '((x . (val . 42))) o)) 42)
-    (tassert "evalo shadow quote" (run1 (o) (evalo '(quote 42) '((quote . (val . 43))) o)) (void))
+    (tassert "evalo lookup val" (evalo 'x '((x . (val . 42)))) 42)
+    (tassert "evalo shadow quote" (evalo '(quote 42) '((quote . (val . 43)))) (void))
 
     
 ))

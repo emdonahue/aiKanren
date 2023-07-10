@@ -6,8 +6,8 @@
   
   (define evalo
     (case-lambda
-      [(expr) (run1 (val) (evalo expr initial-env val))]
-      [(expr val) (evalo expr initial-env val)]
+      [(expr) (evalo expr initial-env)]
+      [(expr env) (run1 (val) (evalo expr env val))]
       [(expr env val)
        (conde
 	 [(== `(quote ,val) expr)
