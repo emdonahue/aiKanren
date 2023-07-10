@@ -10,12 +10,15 @@
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (conde
-	 [(== `(quote ,val) expr)]
+	 [(== `(quote ,val) expr)
+	  (absento 'closure val)
+	  (absento 'prim val)
+	  (not-in-envo 'quote env)]
 	 [(numbero expr) (== expr val)]
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
 	 )]))
-
+  
   (define (lookupo var env val)
     (asspo var env
 	   (lambda (v)
@@ -29,4 +32,7 @@
 	     (conde
 	       [(symbolo args)]
 	       [succeed]))))
+
+  (define (not-in-envo sym env)
+    (noto (asspo sym env (lambda (v) succeed))))
 )

@@ -32,7 +32,7 @@
   (define (assoco x xs o)
     (asspo x xs (lambda (y) (== o y))))
 
-  (define (asspo x xs proc)
+  (define (asspo x xs proc) ; TODO does asspo need an extra argument to succeed if none found? eg disjoin with final goal?
     (matcho ([xs (a-d . t)]) ;TODO merge asspo matchos into single matcho once optimized
 	    (matcho ([a-d (a . d)])
 		    (conde
