@@ -24,6 +24,7 @@
 	      [(=/= x a) (containso x d)])))
 
   (define (for-eacho proc xs)
+    (assert (procedure? proc))
     (disj (== xs '())
 	  (matcho ([xs (x . xs)])
 		  (proc x)

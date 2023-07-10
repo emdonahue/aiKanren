@@ -1,5 +1,5 @@
-;; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables ""
-(library (matcho)
+;; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
+(library (matcho) ;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
   (export matcho matcho-pair)
   (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
   

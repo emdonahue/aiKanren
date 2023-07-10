@@ -38,14 +38,20 @@
 	     (constrain
 	      (conde
 		[(symbolo args)]
-		[(for-eacho symbolo (lambda (x) (symbolo x)))])))
+		[(for-eacho (lambda (x) (symbolo x)) args)])))
      (not-in-envo 'lambda env)))
 
   (define (eval-apply expr env val)
     fail
     #;
     (matcho ([expr (rator . rands)])
-	    ))
+	    (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
+;		   (evalo rator env closure)
+		   (== val env)
+		   #;
+		   (matcho ([closure ('closure ('lambda x* body) env)])
+			   (== val body)
+			   ))))
   
   (define (eval-prim expr env val)
     (conde
