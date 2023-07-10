@@ -26,12 +26,14 @@
 	       [(== v `(val . ,val))]))))
 
   (define (eval-lambda expr env val)
-    (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
-	    (== `(closure (lambda ,args ,body) ,env) val)
-	    (constrain
-	     (conde
-	       [(symbolo args)]
-	       [(for-eacho symbolo (lambda (x) (symbolo x)))]))))
+    (fresh ()
+     (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
+	     (== `(closure (lambda ,args ,body) ,env) val)
+	     (constrain
+	      (conde
+		[(symbolo args)]
+		[(for-eacho symbolo (lambda (x) (symbolo x)))])))
+     (not-in-envo 'lambda env)))
 
   (define (not-in-envo sym env)
     (noto (asspo sym env (lambda (v) succeed))))
