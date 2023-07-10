@@ -11,5 +11,6 @@
     (tassert "evalo lookup val" (evalo 'x '((x . (val . 42)))) 42)
     (tassert "evalo shadow quote" (evalo '(quote 42) '((quote . (val . 43)))) (void))
     (tassert "evalo lambda" (evalo '(lambda x x) '((x . (val . 42)))) '(closure (lambda x x) ((x . (val . 42)))))
-    
+
+    (tassert "evalo and" (evalo '(and)) #t)
 ))

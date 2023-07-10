@@ -46,14 +46,16 @@
   (define (eval-prim expr env val)
     (conde
       [(eval-boolean expr env val)]
-     ; [(eval-and expr env val)]
-      ))
+      [(matcho ([expr (and . e*)])
+	       (not-in-envo 'and env)
+	       (eval-and e* env val))]))
 
   (define (eval-boolean expr env val)
     (conde
       [(== #t expr) (== #t val)]
       [(== #f expr) (== #f val)]))
 
-  (define (eval-and expr env val)
-    3)
+  (define (eval-and e* env val)
+    (conde
+      [(== e* '()) (== val #t)]))
 )
