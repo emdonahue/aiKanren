@@ -18,4 +18,6 @@
 ;    (tassert "evalo and" (evalo '(and)) #t)
     
     (tassert "evalo apply" (evalo '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
+
+;    (display (run 1 (q) (evalo q '() q)))
 ))

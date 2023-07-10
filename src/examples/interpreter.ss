@@ -21,8 +21,8 @@
   (define (eval-quote expr env val)
     (fresh ()
       (== `(quote ,val) expr)
-      (absento 'closure val)
-      (absento 'prim val)
+;      (absento 'closure val)
+;      (absento 'prim val)
       (not-in-envo 'quote env)))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
@@ -42,13 +42,22 @@
      (not-in-envo 'lambda env)))
 
   (define (eval-apply expr env val)
-    (matcho ([expr (rator . rands)])
-	    (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
-		   (evalo rator env closure)
-		   (matcho ([closure ('closure ('lambda params body) env)])
-			   (extend-env params rands env env (lambda (env^) (evalo body env^ val)))
+    (matcho
+     ([expr (rator . rands)])
+     (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
+	    (evalo rator env closure)
+	    (matcho
+	     ([closure ('closure ('lambda params body) env)])
+	     (conde
+	       [(symbolo params)
+		(exist (arg)
+		       (eval-listo rands env arg)
+		       (evalo body `((,params . (val . ,arg)) . ,env) val))]
+	       [(pairo params)
+		(extend-env params rands env env
+			    (lambda (env^) (evalo body env^ val)))]
 			   
-			   ))))
+	       )))))
   
   (define (eval-prim expr env val)
     (conde
