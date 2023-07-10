@@ -33,5 +33,5 @@
     (tassert "for-eacho empty" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
     (tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1))
     (tassert "for-eacho succeed 2" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
-
+    (tassert "for-eacho fail" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))
     ))
