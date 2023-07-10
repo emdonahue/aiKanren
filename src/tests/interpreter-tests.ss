@@ -16,12 +16,16 @@
     (tassert "evalo lambda multi arg" (evalo '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)) . ,initial-env)))
 
 ;    (tassert "evalo and" (evalo '(and)) #t)
-    
-    (tassert "evalo apply" (evalo '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
+
+    (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
+    (tassert "evalo apply var" (evalo '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
 
     (tassert "evalo apply variadic" (evalo '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
 
     (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
 
-    (display (run 1 (q) (evalo q '() q)))
+    (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
+
+;    (tassert "evalo quine" (evalo '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))) 1)
+;    (display (run 1 (q) (evalo q '() q)))
 ))

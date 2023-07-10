@@ -17,7 +17,7 @@
   
   (define evalo
     (case-lambda
-      [(expr) (evalo expr initial-env)]
+      [(expr) (evalo expr '())]
       [(expr env) (run1 (val) (evalo expr (append env initial-env) val))]
       [(expr env val)
        (conde
@@ -58,17 +58,15 @@
      (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
 	    (evalo rator env closure)
 	    (matcho
-	     ([closure ('closure ('lambda params body) env)])
+	     ([closure ('closure ('lambda params body) env^)])
 	     (conde
 	       [(symbolo params)
 		(exist (arg)
 		       (eval-listo rands env arg)
-		       (evalo body `((,params . (val . ,arg)) . ,env) val))]
+		       (evalo body `((,params . (val . ,arg)) . ,env^) val))]
 	       [(pairo params)
 		(extend-env params rands env env
-			    (lambda (env^) (evalo body env^ val)))]
-			   
-	       )))))
+			    (lambda (env^) (evalo body env^ val)))])))))
   
   (define (eval-prim expr env val)
     (conde
