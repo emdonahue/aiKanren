@@ -1,15 +1,9 @@
 (library (constraints)
-  (export booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo)
+  (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo)
   (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho) (utils))
   
   (define (booleano v)
     (disj (== v #t) (== v #f)))
-
-  (define (listo l)
-    (disj
-     (== l '())
-     (matcho ([l (a . d)])
-	     (listo d))))
 
   (define (finite-domain v ds)
     (assert (list? ds))

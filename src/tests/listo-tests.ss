@@ -28,4 +28,10 @@
     (tassert "asspo 0" (run* (x1) (asspo 3 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '())
     (tassert "asspo 1" (run* (x1) (asspo 1 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '(2))
     (tassert "asspo 2" (run* (x1) (asspo 1 '((0 . 1) (1 . 2) (1 . 3)) (lambda (x) (== x x1)))) '(2))
+
+    ;; for-eacho
+    (tassert "for-eacho empty" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
+    (tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1))
+    (tassert "for-eacho succeed 2" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
+
     ))

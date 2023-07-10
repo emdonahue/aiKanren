@@ -55,6 +55,7 @@
 	  (unify-binding s x-var x y-var y))))
 
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
+    (assert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
 	(if (goal? y) (extend-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)&cy
