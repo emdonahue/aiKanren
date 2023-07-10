@@ -42,8 +42,6 @@
      (not-in-envo 'lambda env)))
 
   (define (eval-apply expr env val)
-    fail
-    #;
     (matcho ([expr (rator . rands)])
 	    (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
 ;		   (evalo rator env closure)
