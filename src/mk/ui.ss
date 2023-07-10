@@ -1,5 +1,5 @@
 (library (ui) ;TODO refactor this library into 'vars' and other
-  (export run run* run1 run-states run*-states run1-states fresh conde constrain)
+  (export run run* run1 run-states run*-states run1-states fresh exist conde constrain)
   (import (chezscheme) (running) (datatypes))
 
   (define-syntax conde ;TODO make conde expand syntactically
