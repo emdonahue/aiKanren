@@ -12,7 +12,7 @@
      [(conde? g) (conj (noto (conde-lhs g)) (noto (conde-rhs g)))]
      [(conj? g) (disj (noto (conj-car g)) (noto (conj-cdr g)))]
      [(noto? g) (noto-goal g)]
-     [(constraint? g) (constraint (noto (constraint-goal g)))]
+     [(constraint? g) (noto (constraint-goal g))]
      [else (assertion-violation 'noto "Unrecognized constraint type" g)]))
 
   (define (=/= lhs rhs)

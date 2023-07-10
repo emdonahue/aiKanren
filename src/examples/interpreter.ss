@@ -19,8 +19,8 @@
 	 [(eval-lambda expr env val)]
 	 )]))
   
-  (define (lookupo var env val)
-    (asspo var env
+  (define (lookupo var env val) ;TODO can lookup be a constraint?
+    (asspo var env 
 	   (lambda (v)
 	     (conde
 	       [(== v `(val . ,val))]))))
@@ -31,7 +31,7 @@
 	    (constrain
 	     (conde
 	       [(symbolo args)]
-	       [succeed]))))
+	       [(for-eacho symbolo (lambda (x) (symbolo x)))]))))
 
   (define (not-in-envo sym env)
     (noto (asspo sym env (lambda (v) succeed))))
