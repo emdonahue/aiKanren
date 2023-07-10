@@ -1,4 +1,5 @@
 ;; Utilities for working with multiple value returns
+;;TODO create an assert macro that produces nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
 (library (utils)
   (export with-values values-car values->list values-ref
 	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display org-max-depth
