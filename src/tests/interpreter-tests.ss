@@ -12,14 +12,16 @@
 
     (tassert "evalo lookup val" (evalo 'x '((x . (val . 42)))) 42)
     
-    (tassert "evalo lambda single arg" (evalo '(lambda x x) '((x . (val . 42)))) '(closure (lambda x x) ((x . (val . 42)))))
-    (tassert "evalo lambda multi arg" (evalo '(lambda (x) x) '((x . (val . 42)))) '(closure (lambda (x) x) ((x . (val . 42)))))
+    (tassert "evalo lambda single arg" (evalo '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)) . ,initial-env)))
+    (tassert "evalo lambda multi arg" (evalo '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)) . ,initial-env)))
 
 ;    (tassert "evalo and" (evalo '(and)) #t)
     
     (tassert "evalo apply" (evalo '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
 
     (tassert "evalo apply variadic" (evalo '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
+
+    (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
 
 ;    (display (run 1 (q) (evalo q '() q)))
 ))

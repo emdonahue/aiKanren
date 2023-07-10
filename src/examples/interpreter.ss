@@ -1,13 +1,24 @@
 (library (interpreter) ; Ported from https://github.com/michaelballantyne/faster-minikanren/blob/master/full-interp.scm
-  (export evalo)
+  (export evalo initial-env)
   (import (chezscheme) (aikanren))
 
-  (define initial-env '())
+  (define empty-env '())
+  (define initial-env `((list . (val . (closure (lambda x x) ,empty-env)))
+
+			. ,empty-env))
+  #;
+  (			(not . (val . (prim . not)))
+			(equal? . (val . (prim . equal?)))
+			(symbol? . (val . (prim . symbol?)))
+			(cons . (val . (prim . cons)))
+			(null? . (val . (prim . null?)))
+			(car . (val . (prim . car)))
+			(cdr . (val . (prim . cdr))))
   
   (define evalo
     (case-lambda
       [(expr) (evalo expr initial-env)]
-      [(expr env) (run1 (val) (evalo expr env val))]
+      [(expr env) (run1 (val) (evalo expr (append env initial-env) val))]
       [(expr env val)
        (conde
 	 [(eval-quote expr env val)]
