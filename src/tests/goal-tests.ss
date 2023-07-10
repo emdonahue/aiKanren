@@ -45,5 +45,5 @@
     (tassert "bind mplus" (run* (x1 x2) (== x2 3) (conde [(fresh (x3) (== x1 1))] [(fresh (x3) (== x1 2))])) '((1 3) (2 3))))
 
   (tassert "exist no vars" (run1 (x1) (exist () (== x1 1))) 1)
-  
+  (tassert "exist var" (run1 (x1) (exist (x2) (== x1 x2))) x2)
   )
