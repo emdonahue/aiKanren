@@ -9,5 +9,6 @@
 
     (tassert "miniwalk empty" (mini-walk '() x1) x1)
     (tassert "miniwalk bound-ground var" (mini-walk `((,x1 . 1)) x1) 1)
+    (tassert "mini unify failure" (mini-unify '() '(1 . 2) '(2 . 2)) failure)
     
 ))
