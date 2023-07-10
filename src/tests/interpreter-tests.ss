@@ -26,6 +26,7 @@
 
     (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
 
-;    (tassert "evalo quine" (evalo '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))) 1)
+    (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
+      (tassert "evalo quine" (evalo q) q))
 ;    (display (run 1 (q) (evalo q '() q)))
 ))
