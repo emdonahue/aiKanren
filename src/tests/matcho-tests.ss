@@ -5,6 +5,7 @@
   (define (run-matcho-tests)
     (define x1 (make-var 1))
     (define x2 (make-var 2))
+    (define x3 (make-var 3))
 
     ;; Basic pattern matching
     (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho ([m (a 1)])))) (void))
@@ -38,6 +39,9 @@
     ;; Negated matcho
     (tassert "match noto pattern fail" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (2 . y)]) succeed))) '(1 . 2))
     (tassert "match noto pattern succeed" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) (void))
-    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)) )
+    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
+    (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (y . 2)]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
+    (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (y . 2)]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
+    (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho ([x1 (y . z)]) (conde [(== y 1)] [(== z 2)])))) `((,(=/= x2 1) . ,(=/= x3 2)) ,(=/= x2 1) ,(=/= x3 2)))
 
     ))
