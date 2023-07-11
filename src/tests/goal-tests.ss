@@ -17,6 +17,7 @@
     (tassert "run unify free-ground" (run 1 (q) (== q 1)) '(1))
     (tassert "run unify free-ground take all" (run 2 (q) (== q 1)) '(1))
     (tassert "run conj no-ops" (run 1 (q) (== 2 2) (== q q) (== q 1) (== 2 2)) '(1))
+
     (tassert "run conj two bindings" (run 1 (q r) (== q 1) (== r 2)) '((1 2)))
     (tassert "run disj 2 empty states" (run* () (conde [(== 1 1)] [(== 2 2)])) '(() ()))
     (tassert "run disj 3 empty states" (run* () (conde [(== 1 1)] [(== 2 2)] [(== 3 3)])) '(() () ()))
@@ -47,4 +48,9 @@
 
     (tassert "exist no vars" (run1 (x1) (exist () (== x1 1))) 1)
     (tassert "exist var" (run1 (x1) (exist (x2) (== x1 x2))) x2)
+
+    (tassert "occurs check lhs" (run1 (x1) (== x1 (cons x1 2))) (void))
+    (tassert "occurs check rhs" (run1 (x1) (== x1 (cons 1 x1))) (void))
+    ;(tassert "reify cyclic" (run1 (x1) (== x1 (cons x1 x1))) (cons x1 x1))
+    
     ))

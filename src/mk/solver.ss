@@ -41,8 +41,21 @@
     ;; todo can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now? may have to do with analyzing which ones have disjunctions that are still normalized even after updates with current unifications
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (assert (goal? c))
-      (if (fail? g) (values fail failure)
+      (if (or (fail? g) (occurs-check* g)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
+
+  (org-define (occurs-check* g) ; TODO add a non occurs check =!= or ==!
+    (cert (or (conj? g) (==? g) (succeed? g)))
+    (exclusive-cond
+     [(conj? g) (and (occurs-check* (conj-lhs g)) (occurs-check* (conj-rhs g)))]
+     [(succeed? g) #f]
+     [else (occurs-check (==-lhs g) (==-rhs g))]))
+
+  (org-define (occurs-check v term)
+    (exclusive-cond
+     [(eq? v term) #t]
+     [(pair? term) (or (occurs-check v (car term)) (occurs-check v (cdr term)))]
+     [else #f]))
   
   (define (solve-=/= g s ctn out)   
     (let-values ([(g c s) (disunify s (==-lhs g) (==-rhs g))])

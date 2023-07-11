@@ -2,6 +2,7 @@
 ;;TODO create an assert macro that produces nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
 (library (utils)
   (export with-values values-car values->list values-ref
+	  cert
 	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display org-max-depth
 	  nyi)
   (import (chezscheme))
@@ -28,6 +29,11 @@
     (syntax-rules ()
       [(_) (nyi nyi)]
       [(_ message ...) (assertion-violation (string-append (string-append (symbol->string 'message) " ") ...) "Not Yet Implemented")]))
+
+  ;; === ASSERTIONS ===
+  (define-syntax cert
+    (syntax-rules ()
+      [(_ assertion ...) (assert (and assertion ...))]))
   
   ;; === ORG-TRACE ===
   ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers

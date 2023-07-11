@@ -20,8 +20,4 @@
     (tassert "state unify cars" (walk (values-ref (unify empty-state (cons x1 1) (cons 2 1)) 2) x1) 2)
     (tassert "state unify cars fail" (values-ref (unify empty-state (cons 1 x1) (cons 2 1)) 2) failure)
     (tassert "state unify cdrs" (walk (values-ref (unify empty-state (cons 1 x1) (cons 1 2)) 2) x1) 2)
-    (tassert "state unify cdrs fail" (values-ref (unify empty-state (cons x1 2) (cons 2 1)) 2) failure)
-
-    (tassert "state occurs check" (run1 (x1) (== x1 (cons x1 x1))) (void))
-    (tassert "state reify cyclic" (run1 (x1) (== x1 (cons x1 x1))) (cons x1 x1))
-    ))
+    (tassert "state unify cdrs fail" (values-ref (unify empty-state (cons x1 2) (cons 2 1)) 2) failure)))
