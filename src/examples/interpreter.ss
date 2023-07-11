@@ -1,5 +1,5 @@
 (library (interpreter) ; Ported from https://github.com/michaelballantyne/faster-minikanren/blob/master/full-interp.scm
-  (export evalo initial-env)
+  (export evalo initial-env evalo-env)
   (import (chezscheme) (aikanren))
 
   (define empty-env '())
@@ -17,18 +17,21 @@
   
   (define evalo
     (case-lambda
-      [(expr) (evalo expr '())]
-      [(expr env) (run1 (val) (evalo expr (append env initial-env) val))]
+      [(expr) (run1 (val) (evalo expr val))]
+      [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (conde
 	 [(eval-quote expr env val)]
 	 [(numbero expr) (== expr val)]
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
-;	 [(eval-prim expr env val)]
-	 [(eval-apply expr env val)]
-	 )]))
+	 ;;	 [(eval-prim expr env val)]
+	 [(eval-apply expr env val)])]))
 
+  (define (evalo-env expr env)
+    ;; Forward direction evalo of expr in env not containing initial-env.
+    (run1 (val) (evalo expr env val)))
+  
   (define (eval-quote expr env val)
     (fresh ()
       (== `(quote ,val) expr)
