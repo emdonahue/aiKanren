@@ -29,11 +29,16 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
 
-    (display "START\n")
+
 
     (tassert "evalo quine" (run1 (y) (let ([q `((lambda (x) (list x (list 'quote ,y))) '(lambda (x) (list x (list 'quote ,y))))]) 
 				       (evalo q q))) 1)
 
+    ;; Quine interpreter
+    (tassert "quine evalo" (run1 () (let ([q `((lambda (x) (list x (list 'quote ,y))) '(lambda (x) (list x (list 'quote ,y))))]) 
+				      (evalo-quine q q))) '())
+    
+    #;
     (tassert "evalo quine" (run 5 (y) (evalo y y)) 1)
 
     

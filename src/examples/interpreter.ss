@@ -22,10 +22,10 @@
       [(expr env val)
        (conde
 	 [(eval-quote expr env val)]
-	 ;[(numbero expr) (== expr val)]
+	 [(numbero expr) (== expr val)]
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
-	 ;;	 [(eval-prim expr env val)]
+	 [(eval-prim expr env val)]
 	 [(eval-apply expr env val)])]))
 
   (define (evalo-env expr env)
@@ -35,7 +35,7 @@
   (define (eval-quote expr env val)
     (fresh ()
       (== `(quote ,val) expr)
-;      (absento 'closure val)
+      (absento 'closure val)
 ;      (absento 'prim val)
       (not-in-envo 'quote env)))
   

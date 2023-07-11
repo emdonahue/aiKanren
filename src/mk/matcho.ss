@@ -48,7 +48,7 @@
 		 #f
 		 (let ([p-car (make-var (state-varid state))]
 		       [p-cdr (make-var (fx1+ (state-varid state)))])
-		   (conj* body ...))
+		   (conj* (== out-var (cons p-car p-cdr)) body ...))
 		 (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
 		 package)]
 	       [else (values #t fail failure package)]))))]
