@@ -35,7 +35,7 @@
       (not-in-envo 'lambda env)))
 
   (define (eval-list expr env val)
-    (matcho ([expr (list . es)])
+    (matcho ([expr ('list . es)])
 	    (eval-proper-list es env val)
 	    (absento 'closure es)
 	    (not-in-envo 'list env)))
@@ -51,32 +51,19 @@
   (define (eval-apply expr env val)
     (matcho
      ([expr (rator . rands)])
-     (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
-	    (evalo rator env closure)
-	    (matcho
-	     ([closure ('closure ('lambda params body) env^)])
-	     (conde
-	       #;
-	       [(symbolo params)
-		(exist (arg)
-		       (eval-listo rands env arg)
-		       (evalo body `((,params . (val . ,arg)) . ,env^) val))]
-	       [(pairo params)
-		(extend-env params rands env env
-			    (lambda (env^) (evalo body env^ val)))])))))
+     (matcho ([rands (rand)]) ;TODO merge optimized matchos
+	     (exist (closure)
+		    (evalo rator env closure)
+		    (matcho
+		     ([closure ('closure param body env^)])
+		     (symbolo param)
+		     (exist (arg)
+			    (evalo rand env arg)			    
+			    (evalo body `((,param . ,arg) . ,env^) val)))))))
 
   (define (not-in-envo sym env)
     (assert (symbol? sym))
     (noto (asspo sym env (lambda (v) succeed))))
-
-  (define (extend-env params rands env env^ ctn)
-    (conde
-      [(== params '()) (== rands '()) (ctn env^)]
-      [(matcho ([params (p . ps)]
-		[rands (r . rs)])
-	       (exist (arg)
-		      (evalo r env arg)
-		      (extend-env ps rs env `((,p . (val . ,arg)) . ,env^) ctn)))]))
   
   (define (eval-listo expr env val)
     (conde

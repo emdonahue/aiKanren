@@ -15,10 +15,10 @@
     (tassert "evalo-quine lambda" (evalo-env '(lambda (x) x) '((x . 42))) `(closure x x ((x . 42))))
 
 
-    (tassert "evalo-quine apply lambda" (evalo '((lambda (x) x) 42)) 42)
-    (tassert "evalo-quine apply var" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
+    (tassert "evalo-quine apply lambda" (evalo '((lambda (x) x) (quote 42))) 42)
+    (tassert "evalo-quine apply var" (evalo-env '(x '42) `((x . ,(evalo '(lambda (x) x))))) 42)
 
-    (tassert "evalo-quine lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
+    (tassert "evalo-quine lambda list" (evalo '((lambda (x) (list x)) '42)) '(42))
 
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
