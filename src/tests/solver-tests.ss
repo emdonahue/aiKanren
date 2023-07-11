@@ -51,6 +51,7 @@
     (tassert "substitution pconstraint-constraint" (run1 (x1) (=/= x1 1) (symbolo x1)) (lambda (c) (and (conj? c) (equal? (conj-lhs c) (=/= x1 1)) (and (pconstraint? (conj-rhs c)) (equal? (pconstraint-vars (conj-rhs c)) (list x1))))))
 
     (tassert "eq? variables must not unify when constrained" (run1 (x1) (=/= x1 1) (== x1 x1)) (=/= x1 1))
+    (tassert "eq? variables must not disunify when constrained" (run1 (x1) (=/= x1 1) (=/= x1 x1)) (void))
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)

@@ -50,16 +50,15 @@
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)])
-      (if (eq? x-var y-var) (values succeed succeed s)
-       (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
-	   (unify-binding s y-var y x-var x)
-	   (unify-binding s x-var x y-var y)))))
+      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	  (unify-binding s y-var y x-var x)
+	  (unify-binding s x-var x y-var y))))
 
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (assert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (extend-constraint s x-var y-var x y) ; x->y, y->y, ^cx(y)&cy
+	(if (goal? y) (if (eq? x-var y-var) (values succeed succeed s) (extend-constraint s x-var y-var x y)) ; x->y, y->y, ^cx(y)&cy
 	    (extend-constraint s x-var y x succeed))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
        [(eq? x y) (values succeed succeed s)]
        [(goal? y) (if (var? x)
@@ -121,9 +120,10 @@
   (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
     (cond
      [(goal? x)
-      (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail.
-	  (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
-	  (values (=/= x-var (if (goal? y) y-var y)) succeed s))]
+      (if (eq? x-var y-var) (values fail fail failure)
+	  (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail.
+	   (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
+	   (values (=/= x-var (if (goal? y) y-var y)) succeed s)))]
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
 		    (values (=/= y-var x) succeed s)
