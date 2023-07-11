@@ -42,14 +42,14 @@
   (define (lookupo var env val) ;TODO can lookup be a constraint?
     (asspo var env 
 	   (lambda (v)
-	     (printf "lookup~%")
+	     ;(printf "lookup~%")
 	     (conde
 	       [(== v `(val . ,val))]))))
 
   (define (eval-lambda expr env val)
     (fresh ()
       (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
-	      (printfo "eval lambda~%")
+	      ;(printfo "eval lambda~%")
 	      (== `(closure (lambda ,args ,body) ,env) val)
 	      (constrain
 	       (conde
@@ -97,7 +97,7 @@
       [(== params '()) (== rands '()) (ctn env^)]
       [(matcho ([params (p . ps)]
 		[rands (r . rs)])
-	       (printfo "extend env~%")
+	       ;(printfo "extend env~%")
 	       (exist (arg)
 		      (evalo r env arg)
 		      (extend-env ps rs env `((,p . (val . ,arg)) . ,env^) ctn)))]))
@@ -107,7 +107,7 @@
       [(== expr '()) (== val '())]
       [(matcho ([expr (e . es)]
 		[val (v . vs)])
-	       (printfo "eval listo~%")
+	       ;(printfo "eval listo~%")
 	       (evalo e env v)
 	       (eval-listo es env vs))]))
 )

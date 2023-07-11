@@ -1,6 +1,6 @@
 (library (interpreter-tests)
   (export run-interpreter-tests)
-  (import (chezscheme) (test-runner) (aikanren) (interpreter))
+  (import (chezscheme) (test-runner) (aikanren) (interpreter) (utils))
   
   (define (run-interpreter-tests)
     
@@ -30,9 +30,9 @@
       (tassert "evalo quine" (evalo q) q))
 
     (display "START\n")
-    #;
-    (tassert "evalo quine" (run1 (y) (let ([q `((lambda (x) (list x (list 'quote ,y))) '(lambda (x) (list x (list 'quote ,y))))]) ;
-    (evalo q q))) 1)
+#;
+(org-trace    (tassert "evalo quine" (run1 (y) (let ([q `((lambda (x) (list x (list 'quote ,y))) '(lambda (x) (list x (list 'quote ,y))))]) 
+					(evalo q q))) 1))
 
     
     ;;(display (run 1 (q) (evalo q '() q)))
