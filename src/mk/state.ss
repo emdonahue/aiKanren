@@ -50,9 +50,10 @@
     (assert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)])
-      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
-	  (unify-binding s y-var y x-var x)
-	  (unify-binding s x-var x y-var y))))
+      (if (eq? x-var y-var) (values succeed succeed s)
+       (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	   (unify-binding s y-var y x-var x)
+	   (unify-binding s x-var x y-var y)))))
 
   (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (assert (not (or (goal? x-var) (goal? y-var))))
@@ -87,6 +88,7 @@
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
+    (assert (not (eq? x y)))
     (set-state-substitution
      s
      (sbral-set-ref
@@ -190,4 +192,5 @@
    ;; === DEBUGGING ===
 
   (define (print-substitution s)
+    (assert (state? s))
     (map (lambda (p) (cons (make-var (fx- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))

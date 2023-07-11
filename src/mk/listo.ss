@@ -1,6 +1,6 @@
 (library (listo) ; Relational list library
   (export appendo assoco containso asspo listo for-eacho)
-  (import (chezscheme) (ui) (datatypes) (matcho) (negation))
+  (import (chezscheme) (ui) (datatypes) (matcho) (negation) (debugging))
 
   (define (listo l)
     (disj
@@ -27,6 +27,7 @@
     (assert (procedure? proc))
     (disj (== xs '())
 	  (matcho ([xs (x . xs)])
+		  (printfo "for-eacho~%")
 		  (proc x)
 		  (for-eacho proc xs))))
   
@@ -34,8 +35,11 @@
     (asspo x xs (lambda (y) (== o y))))
 
   (define (asspo x xs proc) ; TODO does asspo need an extra argument to succeed if none found? eg disjoin with final goal?
+    (printf "aspo1~%")
     (matcho ([xs (a-d . t)]) ;TODO merge asspo matchos into single matcho once optimized
+	    (printfo "asspo2~%")
 	    (matcho ([a-d (a . d)])
+		    (printfo "asspo~%")
 		    (conde
 		      [(== x a) (proc d)]
 		      [(=/= x a) (asspo x t proc)]))))
