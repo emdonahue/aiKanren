@@ -38,5 +38,6 @@
     ;; Negated matcho
     (tassert "match noto pattern fail" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (2 . y)]) succeed))) '(1 . 2))
     (tassert "match noto pattern succeed" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) (void))
+    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)) )
 
     ))
