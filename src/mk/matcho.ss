@@ -36,15 +36,22 @@
 	  '()
 	  (lambda (state package grounding)
 	    (let ([out-var (if (null? grounding) (walk-var state out-var) (car grounding))])
-	      (if (not (or (var? out-var) (pair? out-var))) ; Check that the walked term is in fact a pair.
-		  (values #t fail failure package)
-		  (values
-		   (not (var? out-var))
-		   (let ([p-car (if (var? out-var) (make-var (state-varid state)) (car out-var))]
-			 [p-cdr (if (var? out-var) (make-var (fx1+ (state-varid state))) (cdr out-var))])
-		     (conj* body ...))
-		   (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
-		   package)))))]
+	      (exclusive-cond
+	       [(pair? out-var)
+		(values #t
+			(let ([p-car (car out-var)]
+			      [p-cdr (cdr out-var)])
+			  (conj* body ...))
+			state package)]
+	       [(var? out-var)
+		(values
+		 #f
+		 (let ([p-car (make-var (state-varid state))]
+		       [p-cdr (make-var (fx1+ (state-varid state)))])
+		   (conj* body ...))
+		 (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
+		 package)]
+	       [else (values #t fail failure package)]))))]
 	[(pair? out-var) ; If the term is ground, just destructure it and continue.
 	 (let ([p-car (car out-var)]
 	       [p-cdr (cdr out-var)])

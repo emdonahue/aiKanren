@@ -18,7 +18,8 @@
     (tassert "match pair extend" (run1 (x1) (let ([m (cons 1 x1)]) (matcho ([m (a . 2)])))) 2)
     (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho ([m (a . 'two)]) (== a x1)))) '(one two))
     (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
-    (tassert "match duplicate vars" (run1 (x1) (let ([m '(1 2)] [n (list x1 2)]) (matcho ([m (a 2)] [n (a 2)])))) 1)    
+    (tassert "match duplicate vars" (run1 (x1) (let ([m '(1 2)] [n (list x1 2)]) (matcho ([m (a 2)] [n (a 2)])))) 1)
+    (tassert "match optimized pair unifies cons" (run1 (x1) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
 
     ;; Eagerly run matcho until we exhaust ground information
     (tassert "match eager" (run* (x1) (conde [(let ([m (list 1 2)]) (matcho ([m (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
