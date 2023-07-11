@@ -65,7 +65,6 @@
 	    (matcho
 	     ([closure ('closure ('lambda params body) env^)])
 	     (conde
-	       #;
 	       [(symbolo params)
 		(exist (arg)
 		       (eval-listo rands env arg)
