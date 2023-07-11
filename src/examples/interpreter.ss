@@ -22,7 +22,7 @@
       [(expr env val)
        (conde
 	 [(eval-quote expr env val)]
-	 [(numbero expr) (== expr val)]
+	 ;[(numbero expr) (== expr val)]
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
 	 ;;	 [(eval-prim expr env val)]
