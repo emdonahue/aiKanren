@@ -11,7 +11,7 @@
 	 [(eval-quote expr env val)]
 	 [(symbolo expr) (lookupo expr env val)]
 	 [(eval-lambda expr env val)]
-;	 [(eval-listo expr env val)]
+	 [(eval-list expr env val)]
 	 [(eval-apply expr env val)])]))
 
   (define (evalo-env expr env)
@@ -26,11 +26,7 @@
       (not-in-envo 'quote env)))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
-    (asspo var env 
-	   (lambda (v)
-	     ;(printf "lookup~%")
-	     (conde
-	       [(== v `(val . ,val))]))))
+    (assoco var env val))
 
   (define (eval-lambda expr env val)
     (fresh ()
@@ -43,6 +39,20 @@
 		 [(for-eacho (lambda (x) (symbolo x)) args)])))
       (not-in-envo 'lambda env)))
 
+  (define (eval-list expr env val)
+    (matcho ([expr (list . es)])
+	    (eval-proper-list es env val)
+	    (absento 'closure es)
+	    (not-in-envo 'list env)))
+
+  (define (eval-proper-list expr env val)
+    (conde
+      [(== expr '()) (== val '())]
+      [(matcho ([expr (e . es)]
+		[val (v . vs)])
+	       (evalo e env v)
+	       (eval-proper-list es env vs))]))
+  
   (define (eval-apply expr env val)
     (matcho
      ([expr (rator . rands)])
@@ -59,24 +69,9 @@
 	       [(pairo params)
 		(extend-env params rands env env
 			    (lambda (env^) (evalo body env^ val)))])))))
-  
-  (define (eval-prim expr env val)
-    (conde
-      [(eval-boolean expr env val)]
-      [(matcho ([expr (and . e*)])
-	       (not-in-envo 'and env)
-	       (eval-and e* env val))]))
-
-  (define (eval-boolean expr env val)
-    (conde
-      [(== #t expr) (== #t val)]
-      [(== #f expr) (== #f val)]))
-
-  (define (eval-and e* env val)
-    (conde
-      [(== e* '()) (== val #t)]))
 
   (define (not-in-envo sym env)
+    (assert (symbol? sym))
     (noto (asspo sym env (lambda (v) succeed))))
 
   (define (extend-env params rands env env^ ctn)
@@ -84,7 +79,6 @@
       [(== params '()) (== rands '()) (ctn env^)]
       [(matcho ([params (p . ps)]
 		[rands (r . rs)])
-	       ;(printfo "extend env~%")
 	       (exist (arg)
 		      (evalo r env arg)
 		      (extend-env ps rs env `((,p . (val . ,arg)) . ,env^) ctn)))]))
@@ -94,7 +88,6 @@
       [(== expr '()) (== val '())]
       [(matcho ([expr (e . es)]
 		[val (v . vs)])
-	       ;(printfo "eval listo~%")
 	       (evalo e env v)
 	       (eval-listo es env vs))]))
 )

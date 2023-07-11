@@ -27,7 +27,6 @@
     (assert (procedure? proc))
     (disj (== xs '())
 	  (matcho ([xs (x . xs)])
-		  ;(printfo "for-eacho~%")
 		  (proc x)
 		  (for-eacho proc xs))))
   
@@ -36,9 +35,7 @@
 
   (define (asspo x xs proc) ; TODO does asspo need an extra argument to succeed if none found? eg disjoin with final goal?
     (matcho ([xs (a-d . t)]) ;TODO merge asspo matchos into single matcho once optimized
-	    ;(printfo "asspo2~%")
 	    (matcho ([a-d (a . d)])
-		    ;(printfo "asspo~%")
 		    (conde
 		      [(== x a) (proc d)]
 		      [(=/= x a) (asspo x t proc)]))))
