@@ -22,7 +22,6 @@
     (fresh ()
       (== `(quote ,val) expr)
       (absento 'closure val)
-;      (absento 'prim val)
       (not-in-envo 'quote env)))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
@@ -30,13 +29,9 @@
 
   (define (eval-lambda expr env val)
     (fresh ()
-      (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
-	      ;(printfo "eval lambda~%")
-	      (== `(closure (lambda ,args ,body) ,env) val)
-	      (constrain
-	       (conde
-		 [(symbolo args)]
-		 [(for-eacho (lambda (x) (symbolo x)) args)])))
+      (matcho ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
+	      (== `(closure ,arg ,body ,env) val)
+	      (symbolo arg))
       (not-in-envo 'lambda env)))
 
   (define (eval-list expr env val)
