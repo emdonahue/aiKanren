@@ -1,16 +1,17 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
   (export run-goal stream-step) ; TODO trim exports
-  (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver)) 
+  (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils)) 
 
-  (define (run-goal g s p)
+  (org-define (run-goal g s p)
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
     (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		   (values (make-bind g s) p))]
+		   (if (fail? g) (values failure p)
+		       (values (make-bind g s) p)))]
      [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count?
 		     (lambda () ((exist-procedure g) s p))
 		   run-goal)]
@@ -18,10 +19,11 @@
 		 ([(lhs p) (run-goal (conde-lhs g) s p)]
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
-     [(matcho? g) (let-values ([(structurally-recursive? g s p) (expand-matcho g s p)])
+     [(matcho? g) (let-values ([(structurally-recursive? g s p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
 		    (if structurally-recursive? ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s p) ; so continue running aggressively on this branch.
-			(values (make-bind g s) p)))] ; Otherwise suspend like a normal fresh.
+			(if (fail? g) (values failure p)
+			    (values (make-bind g s) p))))] ; Otherwise suspend like a normal fresh.
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)

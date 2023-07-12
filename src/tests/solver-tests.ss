@@ -21,6 +21,9 @@
     (tassert "disj single goals" (disj* (== 1 1)) (== 1 1))
     (tassert "disj keep normal goals" (disj* (== 1 1) fail (== 1 1)) (disj (== 1 1) (== 1 1)))
 
+    ;; === OCCURS CHECK ===
+;    (tassert )
+    
     ;; === SUBSTITUTION ===
     (tassert "substitution constraint-ground fail" (run1 (x1) (=/= x1 1) (== x1 1)) (void))
     (tassert "substitution constraint-ground succeed" (run1 (x1) (=/= x1 1) (== x1 2)) 2)

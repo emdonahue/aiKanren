@@ -1,5 +1,4 @@
 ;; Utilities for working with multiple value returns
-;;TODO create an assert macro that produces nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
 (library (utils)
   (export with-values values-car values->list values-ref
 	  cert
@@ -31,8 +30,8 @@
       [(_ message ...) (assertion-violation (string-append (string-append (symbol->string 'message) " ") ...) "Not Yet Implemented")]))
 
   ;; === ASSERTIONS ===
-  (define-syntax cert
-    (syntax-rules ()
+  (define-syntax cert ;TODO have cert test conditions individually and print the failing condition
+    (syntax-rules () ;;TODO update cert to produce nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
       [(_ assertion ...) (assert (and assertion ...))]))
   
   ;; === ORG-TRACE ===
@@ -58,7 +57,7 @@
 
   (define (org-print-item name value)
     (org-printf " - ~a: " name)
-    (parameterize ([pretty-initial-indent (+ 3 (string-length (if (string? name) name (symbol->string name))))]
+    (parameterize ([pretty-initial-indent (+ 4 (string-length (if (string? name) name (symbol->string name))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
     (org-printf "~%"))
