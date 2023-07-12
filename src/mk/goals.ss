@@ -3,7 +3,7 @@
   (export run-goal stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils)) 
 
-  (org-define (run-goal g s p)
+  (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
     (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
     (exclusive-cond
@@ -22,6 +22,7 @@
 		    (if structurally-recursive? ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
+     [(debug-goal? g) (run-goal (debug-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)

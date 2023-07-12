@@ -24,6 +24,7 @@
 		   (solve-constraint g s conjs out))]
      [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
+     [(debug-goal? g) (run-constraint (debug-goal-goal g) s)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)
