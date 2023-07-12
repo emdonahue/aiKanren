@@ -23,7 +23,7 @@
       (tassert "evalo-quine quine" (evalo q) q))
 
 ;    (org-trace (display (run 1 (q) (evalo q q))))
-;(display (run 1 (q) (evalo q q)))
+(display (run 1 (q) (evalo q q)))
 
 
 
