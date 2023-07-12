@@ -50,7 +50,7 @@
 	 body ...)]))
 
   (define (org-printf . args)
-    (when (trace-on) (apply printf args)) (apply values (cdr args)))
+    (when (trace-on) (apply printf args)))
 
   (define (org-print-header header)
     (org-printf "~a ~a~%" (make-string (trace-depth) #\*) header))

@@ -2,7 +2,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 					
   (export matcho matcho-pair)
-  (import (chezscheme) (datatypes) (mini-substitution) (ui) (state))
+  (import (chezscheme) (datatypes) (mini-substitution) (ui) (state) (utils))
   
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
@@ -11,6 +11,8 @@
        (let* ([out-var (if (null? grounding) (walk-var state out-var) (car grounding))] ;TODO integrate constraint substitutions with matcho
 	      [grounding (if (null? grounding) grounding (cdr grounding))]
 	      [substitution (mini-unify substitution (build-pattern pattern) out-var)])
+	 (org-printf "build-substitution~%")
+	 (org-display out-var grounding substitution)
 	 (if (failure? substitution)
 	     (values #f fail failure package)
 	     (begin body ...)))]
@@ -86,6 +88,8 @@
 	    (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
 	    '()
 	    (lambda (state package grounding)
+	      (org-printf "matcho lambda~%")
+	      (org-display state grounding)
 	      (let ([substitution '()]
 		    [grounding (reverse grounding)]
 		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.

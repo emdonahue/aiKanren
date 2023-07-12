@@ -33,7 +33,7 @@
     (tassert "for-eacho empty" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
     (display "flag\n")
     (org-trace
-     (tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1)))
+     (tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (org-printf "for-eacho succeed 1 test~%") (org-display x) (== x 1)) x1) (== x1 '(1))) '(1)))
 	    (display "flag\n")
     (tassert "for-eacho succeed 2" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
     (tassert "for-eacho fail" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))

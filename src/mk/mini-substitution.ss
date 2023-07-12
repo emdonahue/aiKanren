@@ -1,7 +1,7 @@
 					;TODO remove mini-substitution
 (library (mini-substitution)
   (export mini-walk mini-unify mini-reify)
-  (import (chezscheme) (datatypes))
+  (import (chezscheme) (datatypes) (utils))
 
 
   (define (mini-walk s v)
@@ -20,7 +20,7 @@
 	(if (eq? v v^) v (mini-reify s v^)))]
      [else v]))
 
-  (define (mini-unify s x y)
+  (org-define (mini-unify s x y)
     (assert (list? s))
     (let ([x (mini-walk s x)] [y (mini-walk s y)])
       (cond

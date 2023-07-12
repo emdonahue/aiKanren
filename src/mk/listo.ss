@@ -1,6 +1,6 @@
 (library (listo) ; Relational list library
   (export appendo assoco containso asspo listo for-eacho)
-  (import (chezscheme) (ui) (datatypes) (matcho) (negation) (debugging))
+  (import (chezscheme) (ui) (datatypes) (matcho) (negation) (debugging) (utils))
 
   (define (listo l)
     (disj
@@ -26,9 +26,9 @@
   (define (for-eacho proc xs)
     (assert (procedure? proc))
     (disj (== xs '())
-	  (matcho ([xs (x . xs)])
+	  (matcho ([xs (x . xs^)]) ;TODO test for-eacho with xs^ shadowing xs once matcho identifiers are fixed
 		  (proc x)
-		  (for-eacho proc xs))))
+		  (for-eacho proc xs^))))
   
   (define (assoco x xs o)
     (asspo x xs (lambda (y) (== o y))))
