@@ -1,5 +1,5 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify instantiate-var walk state-add-constraint print-substitution get-constraints remove-constraints unify disunify walk-var) ;;TODO double check state exports. remove extend at least
+  (export reify instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
@@ -191,10 +191,4 @@
     (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
 
   (define (unbind-constraint s v) ;TODO rename unbind-constraint -> remove-constraint
-    (extend s v unbound))
-  
-   ;; === DEBUGGING ===
-
-  (define (print-substitution s)
-    (assert (state? s))
-    (map (lambda (p) (cons (make-var (fx- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))
+    (extend s v unbound)))

@@ -2,7 +2,7 @@
 (library (utils)
   (export with-values values-car values->list values-ref
 	  cert
-	  org-define org-lambda org-case-lambda org-trace org-cond org-exclusive-cond org-printf org-display org-max-depth
+	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth
 	  nyi)
   (import (chezscheme))
 
@@ -49,6 +49,12 @@
        (parameterize ([trace-on #t])
 	 body ...)]))
 
+  (define-syntax org-untrace
+    (syntax-rules ()
+      [(_ body ...)
+       (parameterize ([trace-on #f])
+	 body ...)]))
+
   (define (org-printf . args)
     (when (trace-on) (apply printf args)))
 
@@ -57,7 +63,7 @@
 
   (define (org-print-item name value)
     (org-printf " - ~a: " name)
-    (parameterize ([pretty-initial-indent (+ 4 (string-length (if (string? name) name (symbol->string name))))]
+    (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write '(test value) port) (get-output-string port)))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
     (org-printf "~%"))
