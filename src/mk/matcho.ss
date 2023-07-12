@@ -82,7 +82,7 @@
       [(_ ([out-var (p-car . p-cdr)]) body ...)
        (and (identifier? #'p-car) (identifier? #'p-cdr))
        #'(matcho-pair ([out-var (p-car . p-cdr)]) body ...)]
-      [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars
+      [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars and cyclic pattern vars (since out-vars are bound beneath in-vars, so the shadowing will go the wrong way)
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(normalize-matcho
 	    (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 

@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 .PHONY: default clean profile bench repl rebench doc test debug
 
-SRC = $(wildcard src/aikanren/*.ss)
-PRE = $(SRC:src/aikanren/%=build/preprocessed/%)
-PRO = $(SRC:src/aikanren/%=build/profiled/%)
+SRC = $(wildcard src/mk/*.ss)
+PRE = $(SRC:src/mk/%=build/preprocessed/%)
+PRO = $(SRC:src/mk/%=build/profiled/%)
 OBJ = $(PRE:build/preprocessed/%.ss=build/object/%.so)
 OBJSRC = $(OBJ:.so=.ss)
 
@@ -17,7 +17,7 @@ lib/aikanren.wpo lib/aikanren.so &: $(OBJ)
 	mkdir -p lib
 	echo '(generate-wpo-files #t) (compile-whole-library "build/object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/object --compile-imported-libraries --optimize-level 3
 
-build/preprocessed/%.ss: src/aikanren/%.ss
+build/preprocessed/%.ss: src/mk/%.ss
 # Strip out the assertions and generate new source files as a preprocessing step. Assertions are assumed to be on their own lines.
 	mkdir -p build/preprocessed
 	sed '/(assert /d' $< > $@
@@ -59,7 +59,7 @@ repl: # Boot up a REPL preloaded with aiKanren
 	REPLBOOT=$$(mktemp); \
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
-	scheme --libdirs src/aikanren "$$REPLBOOT"
+	scheme --libdirs src/mk "$$REPLBOOT"
 
 
 doc:
