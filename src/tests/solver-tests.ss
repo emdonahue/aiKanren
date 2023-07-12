@@ -131,7 +131,7 @@
     (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2)) (void))
     (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2)) (void))
     (tassert "disunify constraint cleared after fired"
-	     (constraint-store-constraints (state-constraints (run1-states (x1) (=/= x1 1) (== x1 2)))) '())
+	     (constraint-store-constraints (state-constraints (run1-state (x1) (=/= x1 1) (== x1 2)))) '())
 
     
 

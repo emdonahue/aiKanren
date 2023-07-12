@@ -53,6 +53,8 @@
 
     (tassert "occurs check lhs" (run1 (x1) (== x1 (cons x1 2))) (void))
     (tassert "occurs check rhs" (run1 (x1) (== x1 (cons 1 x1))) (void))
-    ;(tassert "reify cyclic" (run1 (x1) (== x1 (cons x1 x1))) (cons x1 x1))
+    ;;(tassert "reify cyclic" (run1 (x1) (== x1 (cons x1 x1))) (cons x1 x1)) ;TODO test reify cyclic once unsound unification implemented
+
+    ;;(tassert "trivial fresh does not extend substitution" (state-varid (run1-state (x1) (== x1 1) (fresh (x2) (== x1 1)))) 2)
     
     ))

@@ -14,23 +14,23 @@
     (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
 
     ;; === VARID ===
-    (let ([s (run1-states (x1) (constrain (== x1 1)))])
+    (let ([s (run1-state (x1) (constrain (== x1 1)))])
       (tassert "constraint == store" (reify s x1) 1)
       (tassert "constraint == vid" (state-varid s) 2))
     #;
-    (let ([s (run1-states (x1) (constrain (fresh (x2) (== x1 1))))]) ;
+    (let ([s (run1-state (x1) (constrain (fresh (x2) (== x1 1))))]) ;
     (tassert "constraint frash == store" (reify s x1) 1) ;
     (tassert "constraint fresh == vid" (state-varid s) 3))
-    (let ([s (run1-states (x1 x2) (constrain (== x1 1) (== x2 2)))])
+    (let ([s (run1-state (x1 x2) (constrain (== x1 1) (== x2 2)))])
       (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
       (tassert "constraint conj == vid" (state-varid s) 3))
-    (let ([s (run1-states (x1) (constrain fail (== x1 1)))])
+    (let ([s (run1-state (x1) (constrain fail (== x1 1)))])
       (tassert "constraint bind fail" s failure))
     #;
-    (let ([s (run1-states (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
+    (let ([s (run1-state (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
     (tassert "constraint bind store" (reify s x1) 1) ;
     (tassert "constraint bind vid" (state-varid s) 2))
-    (let ([s (run1-states (x1) (constrain (conde [succeed] [succeed])))])
+    (let ([s (run1-state (x1) (constrain (conde [succeed] [succeed])))])
       (tassert "constraint disj succeed store" (reify s x1) x1)
       (tassert "constraint disj succeed vid" (state-varid s) 2))
 
@@ -45,7 +45,7 @@
 
 
     #;
-    (let ([s (run1-states (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))]) ;
+    (let ([s (run1-state (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))]) ;
     (tassert "constraint conj disj store" (reify s x1) x1) ;
     (tassert "constraint conj disj vid" (state-varid s) 2))
 
@@ -196,7 +196,7 @@
 					;(display (run1 (x1) (=/= x1 #t) (booleano x1)))
 					;(display (run1 (x1) (booleano x1) (=/= x1 #t)))
     ;;(display "START\n\n")
-    ;;(display (run1-states (x1) (constrain (=/= x1 1) (disj* (== x1 1) (== x1 2)) )))
+    ;;(display (run1-state (x1) (constrain (=/= x1 1) (disj* (== x1 1) (== x1 2)) )))
 
 
 

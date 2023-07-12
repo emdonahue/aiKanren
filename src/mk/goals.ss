@@ -9,8 +9,8 @@
     (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
-     [(fresh? g) (let-values ([(g s p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		   (suspend g s p))]
+     [(fresh? g) (let-values ([(g s^ p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
+		   (suspend g s^ p s))]
      [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count?
 		     (lambda () ((exist-procedure g) s p))
 		   run-goal)]
@@ -18,10 +18,10 @@
 		 ([(lhs p) (run-goal (conde-lhs g) s p)]
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
-     [(matcho? g) (let-values ([(structurally-recursive? g s p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
+     [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
 		    (if structurally-recursive? ; If any vars are non-free, there is structurally recursive information to exploit, 
-			(run-goal g s p) ; so continue running aggressively on this branch.
-			(suspend g s p)))] ; Otherwise suspend like a normal fresh.
+			(run-goal g s^ p) ; so continue running aggressively on this branch.
+			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)
@@ -49,12 +49,13 @@
 		     (values (mplus lhs rhs) p))]
      [else (assertion-violation 'bind "Unrecognized stream type" s)]))
 
-  (define (suspend g s p)
-    (cert (goal? g) (state-or-failure? s) (package? p))
+  (define (suspend g s^ p s)
+    ;;TODO make trivially succeeding freshes return just s to discard unneeded fresh ids
+    (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
     (exclusive-cond
      [(fail? g) (values failure p)]
-     [(succeed? g) (values s p)]
-     [else (values (make-bind g s) p)]))
+     [(succeed? g) (values s^ p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them.
+     [else (values (make-bind g s^) p)]))
   
   (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
     (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
