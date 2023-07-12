@@ -6,7 +6,7 @@
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
-	      (org-display (print-substitution s) (print-reification s))
+;	      (org-display (print-substitution s) (print-reification s))
     (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]

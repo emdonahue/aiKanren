@@ -63,7 +63,7 @@
 
   (define (org-print-item name value)
     (org-printf " - ~a: " name)
-    (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write '(test value) port) (get-output-string port)))))]
+    (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write 'name port) (get-output-string port)))))]
 		   [pretty-standard-indent 0])
       (when (trace-on) (pretty-print value)))
     (org-printf "~%"))

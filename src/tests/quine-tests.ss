@@ -3,7 +3,6 @@
   (import (chezscheme) (test-runner) (aikanren) (quine) (utils))
   
   (define (run-quine-tests)
-    (display "quine")
     (tassert "evalo-quine quote" (evalo '(quote 42)) 42)
     (tassert "evalo-quine shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
 
@@ -23,7 +22,7 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
 
-    (org-trace (display (run 1 (q) (evalo q q))))
+;    (org-trace (display (run 1 (q) (evalo q q))))
 ;(display (run 1 (q) (evalo q q)))
 
 

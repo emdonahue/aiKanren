@@ -42,21 +42,24 @@
     ;; todo can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now? may have to do with analyzing which ones have disjunctions that are still normalized even after updates with current unifications
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (assert (goal? c))
-      (if (or (fail? g) (occurs-check* g)) (values fail failure)
+      (if (or (fail? g) (occurs-check* g s)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
 
-  (org-define (occurs-check* g) ; TODO add a non occurs check =!= or ==!
+  (org-define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
     (cert (or (conj? g) (==? g) (succeed? g)))
     (exclusive-cond
-     [(conj? g) (and (occurs-check* (conj-lhs g)) (occurs-check* (conj-rhs g)))]
+     [(conj? g) (and (occurs-check* (conj-lhs g) s) (occurs-check* (conj-rhs g) s))]
      [(succeed? g) #f]
-     [else (occurs-check (==-lhs g) (==-rhs g))]))
+     [else (occurs-check s (==-lhs g) (==-rhs g))]))
 
-  (org-define (occurs-check v term)
-    (exclusive-cond
-     [(eq? v term) #t]
-     [(pair? term) (or (occurs-check v (car term)) (occurs-check v (cdr term)))]
-     [else #f]))
+  (org-define (occurs-check s v term)
+	      (cert (state? s) (var? v))
+	      (exclusive-cond
+	       [(eq? v term) #t]
+	       [(pair? term) ; term is already walked by normalized ==s
+		(or (eq? v (car term)) (eq? v (cdr term))
+		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
+	       [else #f]))
   
   (define (solve-=/= g s ctn out)   
     (let-values ([(g c s) (disunify s (==-lhs g) (==-rhs g))])

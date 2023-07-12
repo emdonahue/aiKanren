@@ -16,6 +16,6 @@
 
   (define (print-reification s)
     (assert (state? s))
-    (org-untrace (map (lambda (var-val) (cons (car var-val) (reify s (cadr var-val)))) (print-substitution s))))
+    (org-untrace (map (lambda (var-val) (list (car var-val) (reify s (cadr var-val)))) (print-substitution s))))
   
 )
