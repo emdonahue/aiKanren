@@ -6,7 +6,7 @@
     (define x1 (make-var 1))
     (define x2 (make-var 2))
     (define x3 (make-var 3))
-
+(display "matcho")
     ;; Basic pattern matching
     (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho ([m (a 1)])))) (void))
     (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho ([m (a 1)])))) '())

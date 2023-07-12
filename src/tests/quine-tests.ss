@@ -3,7 +3,7 @@
   (import (chezscheme) (test-runner) (aikanren) (quine) (utils))
   
   (define (run-quine-tests)
-    
+    (display "quine")
     (tassert "evalo-quine quote" (evalo '(quote 42)) 42)
     (tassert "evalo-quine shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
 

@@ -64,10 +64,11 @@
 
   (define-syntax org-display
     (syntax-rules ()
-      [(_ expr)
-       (let ([val expr])
-	 (when (trace-on) (org-print-item 'expr val))
-	 val)]))
+      [(_ expr ...)
+       (begin
+	(let ([val expr])
+	  (when (trace-on) (org-print-item 'expr val))
+	  val) ...)]))
   
   (define-syntax org-lambda
     (syntax-rules ()

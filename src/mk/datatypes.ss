@@ -27,7 +27,7 @@
 	  make-noto noto? noto-goal
 	  __
 	  debug-goal debug-goal? debug-goal-goal)
-  (import (chezscheme) (sbral))
+  (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
   (define simplification-level (make-parameter 2))
@@ -138,8 +138,11 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
 
   (define-structure (matcho out-vars in-vars goal))
-  (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
+  (org-define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
+
+  (org-define (expand-matcho g s p)
+    ((matcho-goal g) s p (matcho-in-vars g)))
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g) (exist? g) (debug-goal? g)))
@@ -157,9 +160,6 @@
      [(fail? x) y]
      [(fail? y) x]
      [else (make-conde x y)]))
-
-  (define (expand-matcho g s p)
-    ((matcho-goal g) s p (matcho-in-vars g)))
 
   (define-structure (debug-goal name goal))
   (define debug-goal make-debug-goal)

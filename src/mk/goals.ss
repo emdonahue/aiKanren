@@ -19,7 +19,9 @@
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
      [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
-		    (if structurally-recursive? ; If any vars are non-free, there is structurally recursive information to exploit, 
+		    (suspend g s^ p s)
+		    #;
+		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
      [(debug-goal? g) (run-goal (debug-goal-goal g) s p)]
@@ -50,12 +52,11 @@
 		     (values (mplus lhs rhs) p))]
      [else (assertion-violation 'bind "Unrecognized stream type" s)]))
 
-  (define (suspend g s^ p s)
-    ;;TODO make trivially succeeding freshes return just s to discard unneeded fresh ids
+  (org-define (suspend g s^ p s)
     (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
     (exclusive-cond
      [(fail? g) (values failure p)]
-     [(succeed? g) (values s^ p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them.
+     [(succeed? g) (values s p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them.
      [else (values (make-bind g s^) p)]))
   
   (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
