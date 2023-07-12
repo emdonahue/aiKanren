@@ -87,16 +87,16 @@
 		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)]))))])))
 
   (define (solve-matcho g s ctn out)
-    (if (null? (matcho-out-vars g))
+    (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
 	  (solve-constraint g s ctn out))
 	(let ([v (walk s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
 	  ;(printf "walked ~s to ~s~%" (car (matcho-out-vars g)) v)
-	  (if (var? v)
-	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))])
-		(solve-constraint ctn (store-constraint s m) succeed (conj out m)))
+	  (if (var? v) ; If first out-var is free,
+	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho. 
+		(solve-constraint ctn (store-constraint s m) succeed (conj out m))) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
-	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g)) s ctn out)))))
+	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
   (define (solve-disjunction g s ctn out)
     (let-values ([(g s) (solve-disj g s ctn fail)])

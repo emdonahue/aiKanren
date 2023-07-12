@@ -138,7 +138,9 @@
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
 
   (define-structure (matcho out-vars in-vars goal))
+  
   (org-define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
+	      (assert (not (and (null? out) (null? in))))
     (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
 
   (org-define (expand-matcho g s p)

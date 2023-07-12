@@ -1,6 +1,6 @@
 (library (listo-tests)
   (export run-listo-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes))
+  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils))
   
   (define (run-listo-tests)
     (define x1 (make-var 1))
@@ -31,8 +31,9 @@
 
     ;; for-eacho
     (tassert "for-eacho empty" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
-        (display "flag\n")
-	(tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1))
+    (display "flag\n")
+    (org-trace
+     (tassert "for-eacho succeed 1" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1)))
 	    (display "flag\n")
     (tassert "for-eacho succeed 2" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
     (tassert "for-eacho fail" (run1 (x1) (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))

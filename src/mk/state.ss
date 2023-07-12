@@ -34,7 +34,7 @@
       (if (var? v) succeed v)))
   
   (org-define (walk-binding s v)
-    (assert (sbral? s))
+    (cert (sbral? s) (not (and (var? v) (zero? (var-id v)))))
     (if (var? v)
 	(let ([walked (sbral-ref
 		       s
