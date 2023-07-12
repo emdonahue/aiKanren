@@ -4,10 +4,10 @@
   (export sbral? sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty? sbral->alist)
   (import (chezscheme))
 
-  (define-structure (sbral tree length rest))
-  (define-structure (sbral-tree root size left right))
+  (define-structure (sbral length tree rest))
+  (define-structure (sbral-tree size root left right))
 
-  (define sbral-empty (make-sbral (make-sbral-tree 'empty 0 'empty 'empty) 0 '())) ; TODO put the 0 somewhere else so sbral is more aesthetic when printed
+  (define sbral-empty (make-sbral 0 (make-sbral-tree 0 'empty 'empty 'empty) '())) ; TODO put the 0 somewhere else so sbral is more aesthetic when printed
 
   (define (sbral-empty? s) (eq? s sbral-empty))
   
@@ -16,12 +16,12 @@
     (if (fx= (sbral-tree-length s) (sbral-tree-length (sbral-rest s)))
 	(let* ([rest (sbral-rest s)]
 	       [tlen (fx1+ (fx+ (sbral-tree-length s) (sbral-tree-length rest)))])
-	  (make-sbral
-	   (make-sbral-tree e tlen (sbral-tree s) (sbral-tree rest))
+	  (make-sbral	   
 	   (fx+ tlen (sbral-length (sbral-rest rest)))
+	   (make-sbral-tree tlen e (sbral-tree s) (sbral-tree rest))
 	   (sbral-rest rest)))
 	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
-	(make-sbral e (fx1+ (sbral-length s)) s)))
+	(make-sbral (fx1+ (sbral-length s)) e s)))
 
   (define (sbral-ref s n default)    
     (cond
@@ -38,8 +38,8 @@
 
   (define (_sbral-set-ref s n elt)
     (if (fx< n (sbral-tree-length s))
-	(make-sbral (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-length s) (sbral-rest s))
-	(make-sbral (sbral-tree s) (sbral-length s) (_sbral-set-ref (sbral-rest s) (fx- n (sbral-tree-length s)) elt))))
+	(make-sbral (sbral-length s) (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-rest s))
+	(make-sbral (sbral-length s) (sbral-tree s) (_sbral-set-ref (sbral-rest s) (fx- n (sbral-tree-length s)) elt))))
 
   (define (sbral-tree-length s)
     ;; sbral->number; Length of the initial tree of sbral s.
@@ -58,11 +58,11 @@
     (cond
      [(fx= 0 n) (sbral-tree-set-value t elt)]
      [(fx< n (fxquotient (fx1+ (sbral-tree-size t)) 2))
-      (make-sbral-tree (sbral-tree-root t) (sbral-tree-size t)
+      (make-sbral-tree (sbral-tree-size t) (sbral-tree-root t)
 		       (sbral-tree-set-ref (sbral-tree-left t) (fx1- n) elt)
 		       (sbral-tree-right t))]
      [else
-      (make-sbral-tree (sbral-tree-root t) (sbral-tree-size t) (sbral-tree-left t)
+      (make-sbral-tree (sbral-tree-size t) (sbral-tree-root t) (sbral-tree-left t)
 		       (sbral-tree-set-ref (sbral-tree-right t) (fx- n (fxquotient (fx1+ (sbral-tree-size t)) 2)) elt))]))
 
   (define (sbral-tree-value t)
@@ -70,7 +70,7 @@
   
   (define (sbral-tree-set-value t elt)
     (if (sbral-tree? t)
-	(make-sbral-tree elt (sbral-tree-size t) (sbral-tree-left t) (sbral-tree-right t))
+	(make-sbral-tree (sbral-tree-size t) elt (sbral-tree-left t) (sbral-tree-right t))
 	elt))
 
   (define (sbral->alist s)
