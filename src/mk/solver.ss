@@ -15,7 +15,7 @@
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(noto? g) (solve-noto (noto-goal g) s conjs out)]
-     [(disj? g) (solve-disjunction g s conjs out)]
+     [(disj? g) (solve-disj g s conjs out)]
      [(conde? g) (solve-constraint (conde->disj g) s conjs out)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
@@ -74,6 +74,7 @@
 		 ;;TODO let solve constraint handle fail case
 		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
+		 ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
 		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])))
 	#;
 	(let* ([a-vars (attributed-vars (disj-car g))] ; Disequalities only have one attributed var.
@@ -101,11 +102,11 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
-  (define (solve-disjunction g s ctn out)
-    (let-values ([(g s) (solve-disj g s ctn fail)])
+  (define (solve-disj g s ctn out)
+    (let-values ([(g s) (solve-disj* g s ctn fail)])
 	 (values (conj out g) s)))
   
-  (define (solve-disj g s ctn ==s) ;TODO delete extracted == from disj clauses
+  (define (solve-disj* g s ctn ==s) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (exclusive-cond
      [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
@@ -113,10 +114,10 @@
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
 	     (exclusive-cond
 	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	      [(fail? g0) (solve-disj (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
+	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
 	      [(disj? g0) (values (disj g0 (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
-	       (let-values ([(g s^) (solve-disj (disj-cdr g) s ctn (diff-== ==s g0))])
+	       (let-values ([(g s^) (solve-disj* (disj-cdr g) s ctn (diff-== ==s g0))])
 		 (exclusive-cond
 		  [(fail? g) (values g0 s0)]
 		  [(succeed? g) (values succeed s)]
@@ -163,7 +164,7 @@
 		   [(fail? g) (values fail failure)]
 		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
   
-  (define (store-disjunctions g s)
+  (org-define (store-disjunctions g s)
     (assert (and (goal? g) (or (fail? g) (not (failure? s)))))
     ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (exclusive-cond
@@ -192,7 +193,7 @@
   
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (case-lambda
+    (org-case-lambda attributed-vars ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (attributed-vars g '())]
       [(g vs)
        ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
@@ -213,12 +214,12 @@
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
-  (define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
+  (org-define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
     (if (maybe-==? (disj-car d))
 	(attributed-vars (disj-car d) (attributed-vars (disj-car (disj-cdr d)) vs))
 	(attributed-vars (disj-car d) vs)))
 
-    (define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
+    (org-define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
     ;; True if a goal might imply a extension of the substitution.
     (assert (not (or (succeed? g) (fail? g))))
     (exclusive-cond

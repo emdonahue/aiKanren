@@ -56,6 +56,7 @@
     ;; === ATTRIBUTED VARIABLES ===
 
     (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= `(,x1 . ,x2) '(1 . 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
+    (tassert "disj of disequalities attribute only to first var" (run1 (x1 x2) (disj (=/= x1 1) (=/= x2 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
