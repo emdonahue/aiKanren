@@ -52,12 +52,12 @@
      [(succeed? g) #f]
      [else (occurs-check s (==-lhs g) (==-rhs g))]))
 
-  (org-define (occurs-check s v term)
+  (org-define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
 	      (cert (state? s) (var? v))
 	      (exclusive-cond
-	       [(eq? v term) #t]
-	       [(pair? term) ; term is already walked by normalized ==s
-		(or (eq? v (car term)) (eq? v (cdr term))
+	       [(eq? v term) #t] ; term is already walked by normalized ==s
+	       [(pair? term)
+		(or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
 		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
 	       [else #f]))
   
@@ -171,7 +171,7 @@
      [(disj? g) (store-constraint s g)]
      [else s]))
 
-  (define (store-constraint s g)
+  (org-define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
     (assert (and (state? s) (goal? g) (not (conde? g)))) ; -> state?
     (exclusive-cond
@@ -218,11 +218,12 @@
 	(attributed-vars (disj-car d) (attributed-vars (disj-car (disj-cdr d)) vs))
 	(attributed-vars (disj-car d) vs)))
 
-    (define (maybe-==? g)
+    (define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
     ;; True if a goal might imply a extension of the substitution.
-    (assert (not (or (succeed? g) (fail? g) (disj? g))))
+    (assert (not (or (succeed? g) (fail? g))))
     (exclusive-cond
      [(conj? g) (or (maybe-==? (conj-car g)) (maybe-==? (conj-cdr g)))]
+     [(disj? g) (or (maybe-==? (disj-car g)) (maybe-==? (disj-cdr g)))]
      [(noto? g) #f]
      [(constraint? g) (maybe-==? (constraint-goal g))]
      [else #t])))

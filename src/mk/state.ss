@@ -30,6 +30,7 @@
   (org-define (walk-constraint s v)
     (assert (and (state? s) (var? v)))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)])
+      (when (not (or (var? v) (goal? v))) (org-display binding v))
       (assert (or (var? v) (goal? v)))
       (if (var? v) succeed v)))
   

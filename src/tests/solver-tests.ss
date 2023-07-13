@@ -21,9 +21,6 @@
     (tassert "disj single goals" (disj* (== 1 1)) (== 1 1))
     (tassert "disj keep normal goals" (disj* (== 1 1) fail (== 1 1)) (disj (== 1 1) (== 1 1)))
 
-    ;; === OCCURS CHECK ===
-;    (tassert )
-    
     ;; === SUBSTITUTION ===
     (tassert "substitution constraint-ground fail" (run1 (x1) (=/= x1 1) (== x1 1)) (void))
     (tassert "substitution constraint-ground succeed" (run1 (x1) (=/= x1 1) (== x1 2)) 2)
@@ -55,6 +52,10 @@
 
     (tassert "eq? variables must not unify when constrained" (run1 (x1) (=/= x1 1) (== x1 x1)) (=/= x1 1))
     (tassert "eq? variables must not disunify when constrained" (run1 (x1) (=/= x1 1) (=/= x1 x1)) (void))
+
+    ;; === ATTRIBUTED VARIABLES ===
+
+    (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= `(,x1 . ,x2) '(1 . 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
@@ -133,8 +134,6 @@
     (tassert "disunify constraint cleared after fired"
 	     (constraint-store-constraints (state-constraints (run1-state (x1) (=/= x1 1) (== x1 2)))) '())
 
-    
-
     ;; === EQUALITY ===
     
     (tassert "==-c ground-self" (run1 (x1) (constrain (== 1 1))) x1)
@@ -155,6 +154,4 @@
     (tassert "==-c | ==-c simplifies bound"
 	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
-	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
-    
-))
+	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))))
