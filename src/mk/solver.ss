@@ -103,29 +103,37 @@
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
   (define (solve-disj g s ctn out)
-    (let-values ([(g s) (solve-disj* g s ctn fail)])
+    (let-values ([(head-disj g s) (solve-disj* g s ctn fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
 	 (values (conj out g) s)))
   
   (define (solve-disj* g s ctn ==s) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
     (exclusive-cond
-     [(fail? g) (values fail failure)] ; No more disjuncts to analyze.
-     [(succeed? ==s) (values (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
+     [(fail? g) (values 42 fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
+     [(succeed? ==s) (values 42 (conj g ctn) s)] ; No unifications made in all branches. Suspend early.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
 	     (exclusive-cond
-	      [(succeed? g0) (values succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+	      [(succeed? g0) (values 42 succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
-	      [(disj? g0) (values (disj g0 (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
+	      [(disj? g0) (values 42 (disj g0 (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible.
 	      [else
-	       (let-values ([(g s^) (solve-disj* (disj-cdr g) s ctn (diff-== ==s g0))])
+	       (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn (diff-== ==s g0))])
 		 (exclusive-cond
-		  [(fail? g) (values g0 s0)]
-		  [(succeed? g) (values succeed s)]
-		  [else (values (make-disj g0 g) s)]))]))]))
+		  [(fail? g) (values 42 g0 s0)]
+		  [(succeed? g) (values 42 succeed s)]
+		  [else (values 42 (make-disj g0 g) s)]))]))]))
+#;
+(let ([==s (diff-== ==s g0)])
+		      (if (succeed? ==s )
+		       (let-values ([(g s^) (solve-disj* (disj-cdr g) s ctn ==s)])
+			 (exclusive-cond
+			  [(fail? g) (values g0 s0)]
+			  [(succeed? g) (values succeed s)]
+			  [else (values (make-disj g0 g) s)]))))
   
   (define (diff-== ==s g) ;TODO make diff-== just a list. no need to dedup because we are dredging normalized output
     (cond ; TODO succeed should probably skip any computations in diff-==
-     [(fail? ==s) (conj-filter g ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s.
+     [(fail? ==s) (conj-filter g ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s. TODO instead of filtering out ==s in disj, subgoals should return them automatically as a starting point.
      [(fail? g) ==s] ; A failed goal has no bearing on the ==s common to succeeding goals.
      [(==? ==s) (if (fail? g) ==s (conj-member g ==s))]
      [(conj? ==s) (conj (diff-== (conj-car ==s) g) (diff-== (conj-cdr ==s) g))]

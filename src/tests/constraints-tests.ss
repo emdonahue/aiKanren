@@ -268,6 +268,11 @@
     (tassert "presento fuzz fail bound" (run1 (x1) (== x1 7) (presento 1 (cons (list 2 3 4 5 x1) 6))) (void))
     (tassert "presento fuzz fail fired" (run1 (x1) (presento 1 (cons (list 2 3 4 5 x1 ) 6)) (== x1 7)) (void))
 
+    
+    #;;TODO test that recursive disjunctions containing unifications dont run forever looking for a case that doesn't involve == when attributing/solving disjunctions
+    (tassert "presento free" (run1 (x1 x2) (presento x1 x2)) (lambda (a) (and (car a))))
+    #;
+    (tassert "presento free reverse" (run1 (x1 x2) (presento x2 x1)) 1)
 
     (tassert "guard fails" (run1 (x1) (== x1 1) (guardo x1 stale)) (void))
     (tassert "guard succeeds" (run1 (x1) (== x1 '(1 . 2)) (guardo x1 (lambda (a b) succeed))) '(1 . 2))
