@@ -104,8 +104,8 @@
 
   (define (solve-disj g s ctn out)
     (let-values ([(head-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
-;      (cert (goal? head-disj))
-      (values (conj out g) s)))
+      (cert (goal? head-disj))
+      (values (conj out (disj head-disj g)) s)))
   
   (define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
@@ -115,18 +115,19 @@
 	     (exclusive-cond
 	      [(succeed? g0) (values succeed succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
-	      [(disj? g0) (values 42 (disj g0 (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
+	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
+	      [(disj? g0) (values (disj-car g0) (disj (disj-cdr g0) (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
 	      [else
 	       (let ([==s (diff-== ==s g0)])
 		 (if (succeed? ==s)
 		     (if (disj? g)
-			 (values 42 (disj g0 (conj (disj-cdr g) ctn)) s)
-			 (values 42 g0 s0))
+			 (values (disj-car g0) (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
+			 (values g0 fail s0))
 		  (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)])
 		    (exclusive-cond
-		     [(fail? g) (values fail g0 s0)]
+		     [(and (fail? g) (fail? head-disj)) (values fail g0 s0)]
 		     [(succeed? g) (values succeed succeed s)]
-		     [else (values head-disj (make-disj g0 g) s)]))))]))]))
+		     [else (values head-disj (disj g0 g) s)]))))]))]))
 #;
 (let ([==s (diff-== ==s g0)])
 		      (if (succeed? ==s )
