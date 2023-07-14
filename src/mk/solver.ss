@@ -219,11 +219,11 @@
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
   (define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
-    (if (maybe-==? (disj-car d))
-	(let*-values ([(lhs lhs-unifies) (attributed-vars (disj-car (disj-cdr d)) vs)]
-		      [(rhs rhs-unifies) (attributed-vars (disj-car d) lhs)])
-		     (values rhs (or lhs-unifies rhs-unifies)))
-	(attributed-vars (disj-car d) vs)))
+    (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car d) vs)])
+      (if lhs-unifies
+	  (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr d)) lhs)])
+	    (values rhs #t))
+	  (values lhs #f))))
 
     (org-define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
     ;; True if a goal might imply a extension of the substitution.
