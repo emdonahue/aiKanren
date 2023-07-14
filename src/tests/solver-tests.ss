@@ -74,17 +74,21 @@
     (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2) (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2))))
 	     (list (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))
 		   (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))))
+    
 
     ;; Multi variable with negation
     #;
     (tassert "attribute x1:x1=1=>x2=2" (run1 (x1 x2) (disj (=/= x1 1) (== x2 2)))
     (list (disj (=/= x1 1) (== x1 2)) x2))
-
+    
     (tassert "attribute x1:x1=1=>x2=2, x3:x3~3=>x2=2, x2:x2~2=>x3=3" (run1 (x1 x2 x3) (disj (conj (=/= x1 1) (== x3 3)) (== x2 2)))
 	     (list (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))
 		   (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))
 		   (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))))
-    
+
+    ;; Multi variable with fresh
+    (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho [(x1 (a . d))]) (== x2 2)))
+	     (lambda (a) (and (disj? (car a)) (matcho? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? (car a) (cadr a)))))
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
