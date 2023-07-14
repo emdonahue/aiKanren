@@ -28,16 +28,17 @@
      [(debug-goal? g) (run-goal (debug-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
 
-  (org-define (run-goal-dfs g s p n depth answers ctn)
+  (org-define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
     (cond
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons s answers) p)
 		       (run-goal-dfs ctn s p n depth answers succeed))]
      [(fail? g) (values n '() p)]
      [(zero? depth) (values n answers p)]
-     [(conj? g) (run-goal-dfs (conj-car g) s p n depth answers (conj (conj-cdr g) ctn))]
-     [(disj? g) (let-values ([(answers p) (run-goal-dfs (disj-lhs g) s p n (fx1- depth) answers ctn)])
-		  (nyi))]
+     [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
+     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
+		   (if (zero? num-remaining) (values 0 answers p)
+		       (run-goal-dfs (conde-rhs g) s p num-remaining (fx1- depth) answers ctn)))]
      [(matcho? g) (nyi)]
      [(exist? g) (nyi)]
      [(fresh? g) (nyi)]
@@ -55,7 +56,7 @@
      [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
-  (define (bind g s p)
+  (define (bind g s p) ;TODO consider making bind cps
     ;; Applies g to all states in s.
     (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
     (exclusive-cond

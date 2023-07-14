@@ -194,7 +194,7 @@
   (define (conj* . conjs)
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   
-  (define (conj-car c)
+  (define (conj-car c) ;TODO remove conj-car
     (assert (conj? c))
     (conj-lhs c))
   

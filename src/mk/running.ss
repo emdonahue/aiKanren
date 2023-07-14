@@ -40,4 +40,4 @@
   (org-define (runner-dfs q g s n depth)
     (map (lambda (s) (reify s q))
 	 (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
-	   (list-head answers (fx- n (max 0 ans-remaining)))))))
+	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining)))))))))
