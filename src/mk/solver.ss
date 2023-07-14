@@ -195,29 +195,34 @@
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
-      [(g) (let-values ([(vs) (attributed-vars g '())]) vs)]
+      [(g) (let-values ([(vs unifies) (attributed-vars g '())]) vs)]
       [(g vs)
        ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
        (assert (goal? g))
        (exclusive-cond
-	[(succeed? g) vs]
+	[(succeed? g) (values vs #f)]
 	[(disj? g) (attributed-vars-disj g vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
-	[(conj? g) (attributed-vars (conj-car g) (attributed-vars (conj-cdr g) vs))]
-	[(noto? g) (attributed-vars (noto-goal g) vs)]
+	[(conj? g) (let*-values ([(lhs lhs-unifies) (attributed-vars (conj-cdr g) vs)]
+				[(rhs rhs-unifies) (attributed-vars (conj-car g) lhs)])
+		     (values rhs (or lhs-unifies rhs-unifies)))]
+	[(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs)])
+		     (values vars #f))]
 	[(==? g)
 	 (assert (var? (==-lhs g)))
-	 (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+	 (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
 	[(matcho? g)
-	 (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs))]
+	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) #f)]
 	[(pconstraint? g)
-	 (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs)]
-	[(guardo? g) (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs))]
+	 (values (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs) #f)] ;TODO convert filter to fold when adding pconstraint vars to attr vars
+	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) #f)]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
-  (org-define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
+  (define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
     (if (maybe-==? (disj-car d))
-	(attributed-vars (disj-car d) (attributed-vars (disj-car (disj-cdr d)) vs))
+	(let*-values ([(lhs lhs-unifies) (attributed-vars (disj-car (disj-cdr d)) vs)]
+		      [(rhs rhs-unifies) (attributed-vars (disj-car d) lhs)])
+		     (values rhs (or lhs-unifies rhs-unifies)))
 	(attributed-vars (disj-car d) vs)))
 
     (org-define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
