@@ -1,6 +1,6 @@
 (library (running)
-  (export runner-next runner-step runner-take)
-  (import (chezscheme) (runner) (goals) (failure) (state) (datatypes))
+  (export runner-next runner-step runner-take runner-dfs)
+  (import (chezscheme) (goals) (failure) (state) (datatypes))
 
   (define (runner-null? r)
     (assert (runner? r))
@@ -35,4 +35,7 @@
     (assert (runner? r))
     (if (zero? n) '()
 	(let-values ([(reified state r) (runner-next r)])
-	  (if (failure? state) '() (cons (cons reified state) (runner-take (fx1- n) r)))))))
+	  (if (failure? state) '() (cons (cons reified state) (runner-take (fx1- n) r))))))
+
+  (define (runner-dfs q g s n depth)
+    (map (lambda (s) (reify s q)) (run-goal-dfs g s empty-package n depth))))

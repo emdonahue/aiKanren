@@ -1,5 +1,5 @@
 (library (dfs-tests)
-  (export run-dfs)
+  (export run-dfs-tests)
   (import (chezscheme) (test-runner) (aikanren))
 
   (define (run-dfs-tests)

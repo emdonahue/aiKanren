@@ -78,7 +78,7 @@
        [(_ n depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
-	 (map (lambda (s) (reify s q)) (run-goal-dfs (conj* g ...) (set-state-varid empty-state varid) empty-package n depth)))]))
+	 (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]))
 
    (define-syntax run1-dfs
      (syntax-rules ()
