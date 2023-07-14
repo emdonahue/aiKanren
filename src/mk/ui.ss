@@ -75,10 +75,16 @@
 
    (define-syntax run-dfs
      (syntax-rules ()
+       [(_ n depth () g ...)
+	(runner-dfs '() (conj* g ...) (set-state-varid empty-state varid) n depth)]
        [(_ n depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
-	 (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]))
+	 (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]
+       [(_ n depth (q ...) g ...)
+	(fresh-vars
+	 (state-varid empty-state) varid (q ...)
+	 (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
 
    (define-syntax run1-dfs
      (syntax-rules ()
