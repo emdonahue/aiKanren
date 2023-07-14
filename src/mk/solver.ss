@@ -192,7 +192,7 @@
 	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
 	  (disj rest (disj-car ds)))))
   
-  (define attributed-vars
+  (define attributed-vars ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (let-values ([(vs unifies) (attributed-vars g '())]) vs)]
@@ -201,7 +201,11 @@
        (assert (goal? g))
        (exclusive-cond
 	[(succeed? g) (values vs #f)]
-	[(disj? g) (attributed-vars-disj g vs)] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
+	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs)])
+		     (if lhs-unifies
+			 (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr g)) lhs)])
+			   (values rhs #t))
+			 (values lhs #f)))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
 	[(conj? g) (let*-values ([(lhs lhs-unifies) (attributed-vars (conj-cdr g) vs)]
 				[(rhs rhs-unifies) (attributed-vars (conj-car g) lhs)])
 		     (values rhs (or lhs-unifies rhs-unifies)))]
@@ -216,22 +220,4 @@
 	 (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) #f)]
 	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) #f)]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
-	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
-
-  (define (attributed-vars-disj d vs)
-    (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car d) vs)])
-      (if lhs-unifies
-	  (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr d)) lhs)])
-	    (values rhs #t))
-	  (values lhs #f))))
-
-    (org-define (maybe-==? g) ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
-    ;; True if a goal might imply a extension of the substitution.
-    (assert (not (or (succeed? g) (fail? g))))
-    (exclusive-cond
-     [(conj? g) (or (maybe-==? (conj-car g)) (maybe-==? (conj-cdr g)))]
-     [(disj? g) (or (maybe-==? (disj-car g)) (maybe-==? (disj-cdr g)))]
-     [(==? g) #t]
-     [(noto? g) #f]
-     [(constraint? g) (maybe-==? (constraint-goal g))]
-     [else #t])))
+	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
