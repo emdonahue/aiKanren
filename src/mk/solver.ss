@@ -202,12 +202,11 @@
 	[(succeed? g) (values vs unifies)]
 	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)])
 		     (if lhs-unifies ; Disjunct 2 normalized iff 1 contains no ==
-			 (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr g)) lhs #t)])
-			   (values rhs #t))
+			 (attributed-vars (disj-car (disj-cdr g)) lhs #t)
 			 (values lhs unifies)))] 
-	[(conj? g) (let*-values ([(lhs lhs-unifies) (attributed-vars (conj-cdr g) vs unifies)]
-				[(rhs rhs-unifies) (attributed-vars (conj-car g) lhs lhs-unifies)])
-		     (values rhs (or unifies lhs-unifies rhs-unifies)))]
+	[(conj? g) (call-with-values
+		       (lambda () (attributed-vars (conj-cdr g) vs unifies))
+		     (lambda (vs unifies) (attributed-vars (conj-car g) vs unifies)))]
 	[(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
 		     (values vars unifies))]
 	[(==? g)
