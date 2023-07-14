@@ -22,8 +22,9 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
 
-;    (org-trace (display (run 1 (q) (evalo q q))))
-;(org-trace(display (run 1 (q) (evalo q q))))
+					;    (org-trace (display (run 1 (q) (evalo q q))))
+    ;(display (run 1 (q) (evalo q q)))
+;(org-trace (display (run 1 (q) (evalo q q))))
 
 
 

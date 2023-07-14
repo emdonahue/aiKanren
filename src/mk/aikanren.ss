@@ -5,7 +5,7 @@
 ;;TODO test whether optimize level works for whole library
 (library (aikanren)
   (export
-   run run* run1 run-states run*-states run1-state ; Run Interface
+   run run* run1 run-states run*-states run1-state run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs ; Run Interface
    fresh exist conde constrain matcho ; Goal Interface
    succeed fail == conde fresh ; Goals
    noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints

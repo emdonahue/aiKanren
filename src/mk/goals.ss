@@ -1,6 +1,6 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
-  (export run-goal stream-step) ; TODO trim exports
+  (export run-goal run-goal-dfs stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh
@@ -27,6 +27,9 @@
 			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
      [(debug-goal? g) (run-goal (debug-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
+
+  (define (run-goal-dfs g s p n depth)
+    3)
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search

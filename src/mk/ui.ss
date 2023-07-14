@@ -1,6 +1,9 @@
 (library (ui) ;TODO refactor this library into 'vars' and other
-  (export run run* run1 run-states run*-states run1-state fresh exist conde constrain)
-  (import (chezscheme) (running) (datatypes))
+  (export run run* run1
+	  run-states run*-states run1-state
+	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
+	  fresh exist conde constrain)
+  (import (chezscheme) (running) (datatypes) (state))
 
   (define-syntax conde ;TODO make conde expand syntactically
     (syntax-rules ()
@@ -42,23 +45,23 @@
   
   (define-syntax run
     (syntax-rules ()
-      ((_ n (q ...) g ...)
-       (map car (runner-take n (runner (q ...) g ...))))))
+      [(_ n (q ...) g ...)
+       (map car (runner-take n (runner (q ...) g ...)))]))
 
   (define-syntax run*
     (syntax-rules ()
-      ((_ (q ...) g ...) (run -1 (q ...) g ...))))
+      [(_ (q ...) g ...) (run -1 (q ...) g ...)]))
   
    (define-syntax run1
     (syntax-rules ()
-      ((_ (q ...) g ...)
+      [(_ (q ...) g ...)
        (let ([ans (run 1 (q ...) g ...)])
-	 (if (null? ans) (void) (car ans))))))
+	 (if (null? ans) (void) (car ans)))]))
 
    (define-syntax run-states
     (syntax-rules ()
-      ((_ n (q ...) g ...)
-       (map cdr (runner-take n (runner (q ...) g ...))))))
+      [(_ n (q ...) g ...)
+       (map cdr (runner-take n (runner (q ...) g ...)))]))
 
    (define-syntax run*-states
     (syntax-rules ()
@@ -69,6 +72,29 @@
       ((_ (q ...) g ...)
        (let ([ans (run-states 1 (q ...) g ...)])
 	 (if (null? ans) failure (car ans))))))
+
+   (define-syntax run-dfs
+     (syntax-rules ()
+       [(_ n depth (q) g ...)
+	(fresh-vars
+	 (state-varid empty-state) varid (q)
+	 (map (lambda (s) (reify s q)) (run-goal-dfs (conj* g ...) (set-state-varid empty-state varid) empty-package n depth)))]))
+
+   (define-syntax run1-dfs
+     (syntax-rules ()
+       [(_ depth (q ...) g ...) (run-dfs 1 depth (q ...) g ...)]))
+
+   (define-syntax run1*-dfs
+     (syntax-rules ()
+       [(_ (q ...) g ...) (run1-dfs -1 (q ...) g ...)]))
+
+   (define-syntax run*-dfs
+     (syntax-rules ()
+       [(_ depth (q ...) g ...) (run-dfs -1 depth (q ...) g ...)]))
+
+   (define-syntax run**-dfs
+     (syntax-rules ()
+       [(_ (q ...) g ...) (run*-dfs -1 (q ...) g ...)]))
 
    (define-syntax constrain
      (syntax-rules ()
