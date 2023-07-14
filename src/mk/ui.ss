@@ -82,7 +82,9 @@
 
    (define-syntax run1-dfs
      (syntax-rules ()
-       [(_ depth (q ...) g ...) (run-dfs 1 depth (q ...) g ...)]))
+       [(_ depth (q ...) g ...)
+	(let ([answers (run-dfs 1 depth (q ...) g ...)])
+	  (if (null? answers) (void) (car answers)))]))
 
    (define-syntax run1*-dfs
      (syntax-rules ()

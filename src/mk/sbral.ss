@@ -29,7 +29,7 @@
      [(fx< n (sbral-tree-length s)) (sbral-tree-ref (sbral-tree s) n)]
      [else (sbral-ref (sbral-rest s) (fx- n (sbral-tree-length s)) default)]))
   
-  (define (sbral-set-ref s n elt default)
+  (define (sbral-set-ref s n elt default) ; TODO create special purpose upsert fns in sbral that let us set and conjoin a new constraint in one operation
     (assert (and (sbral? s) (fx< n (sbral-length s))))
     (cond
      [(fx< n -1) (sbral-set-ref (sbral-cons default s) (fx1+ n) elt default)] ; Pack empty indices with default.

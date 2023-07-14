@@ -3,7 +3,7 @@
   (export run-goal run-goal-dfs stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
-  (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh
+  (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
 ;	      (org-display (print-substitution s) (print-reification s))
@@ -28,8 +28,18 @@
      [(debug-goal? g) (run-goal (debug-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
 
-  (define (run-goal-dfs g s p n depth)
-    3)
+  (org-define (run-goal-dfs g s p n depth answers ctn)
+    (cond
+     [(succeed? g) (if (succeed? ctn) (values (cons s answers) p)
+		       (run-goal-dfs ctn s p n depth answers succeed))]
+     [(fail? g) (values failure p)]
+     [(zero? depth) (values answers p)]
+     [(conj? g) (run-goal-dfs (conj-car g) s p n (fx1- depth) answers (conj (conj-cdr g) ctn))]
+     [(disj? g) (nyi)]
+     [(matcho? g) (nyi)]
+     [(exist? g) (nyi)]
+     [(fresh? g) (nyi)]
+     [else (run-goal-dfs ctn (run-constraint g s) p n (fx1- depth) answers succeed)]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
