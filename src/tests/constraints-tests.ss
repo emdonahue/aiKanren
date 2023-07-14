@@ -61,7 +61,7 @@
     (tassert "booleano ground t" (run1 () (booleano #t)) '())
     (tassert "booleano ground f" (run1 () (booleano #f)) '())
     (tassert "booleano ground undecidable" (run1 () (booleano 'undecidable)) (void))
-    (tassert "booleano free t" (run1 (x1) (booleano x1)) (booleano x1))
+    (tassert "booleano free t" (run1 (x1) (booleano x1)) (disj (== x1 #f) (== x1 #t)))
 
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
@@ -106,7 +106,7 @@
     (tassert "finite domain ground succeed 3" (run1 () (finite-domain 3 '(1 2 3))) '())
     (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
 
-    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (== x1 1) (disj (== x1 2) (== x1 3))))
+    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (== x1 2) (disj (== x1 1) (== x1 3))))
 
     (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
     (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))
@@ -116,8 +116,8 @@
 
     ;; === IMPLIES ===
 
-    (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (== x2 2) (=/= x1 1)) 2))
-    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (conj* (disj* (== x2 2) (=/= x1 1)) (=/= x1 1)) 3))
+    (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (=/= x1 1) (== x2 2)) 2))
+    (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (disj* (=/= x1 1) (== x2 2)) 3))
     #;
     (#(conj
     (#(disj (#(conj (#(noto #(== #(var 1) 1))
@@ -204,15 +204,10 @@
 
     ;; === PRESENTO ===
 
-    (let* ([c (presento 1 x1)]
-	   [s (run1 (x1) c)])
-      ;; #(disj (#(== #(var 1) 1) #<procedure at constraints.ss:509>))
-      (tassert "presento unbound term succeed" (run1 (x1) c (== x1 1)) 1)
-      (tassert "presento unbound term fail" (run1 (x1) c (== x1 2)) (void))
-      (tassert "presento unbound term"
-	       s
-	       (disj* (== x1 1)		; car is not 1
-		      (disj-car (disj-cdr s)))))
+    ;; #(disj (#(== #(var 1) 1) #<procedure at constraints.ss:509>))
+    (tassert "presento unbound term succeed" (run1 (x1) (presento 1 x1) (== x1 1)) 1)
+    (tassert "presento unbound term fail" (run1 (x1) (presento 1 x1) (== x1 2)) (void))
+    (tassert "presento unbound term" (run1 (x1) (presento 1 x1)) (lambda (a) (and (disj? a) (matcho? (disj-lhs a)) (equal? (disj-rhs a) (== x1 1)))))
     #;
     (let* ([c (presento (cons x1 2) 1)]	; ; ;
     [s (run1 (x1) c )])			; ; ;

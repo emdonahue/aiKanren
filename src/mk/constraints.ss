@@ -9,9 +9,9 @@
     (assert (list? ds))
     (apply disj* (map (lambda (d) (== v d)) ds)))
 
-  (define (==> antecedent consequent)
+  (define (==> antecedent consequent) ;TODO try ==> as =/=|== in case =/= might be more efficient for attribution/
     (assert (and (goal? antecedent) (goal? consequent)))
-    (disj consequent (noto antecedent)))
+    (disj (noto antecedent) consequent))
 
   (define (typeo v t?)
     (assert (procedure? t?))

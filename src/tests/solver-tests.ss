@@ -57,6 +57,34 @@
 
     (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= `(,x1 . ,x2) '(1 . 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
     (tassert "disj of disequalities attribute only to first var" (run1 (x1 x2) (disj (=/= x1 1) (=/= x2 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
+
+
+    ;; Single variable
+    (tassert "attribute x1=1=>x1=/=x1=>fail" (run1 (x1) (disj (=/= x1 1) (== x1 2))) (disj (=/= x1 1) (== x1 2))) ; TODO can we simplify disjunctions of == and =/= of the same var? technically should be simplified to x1 =/= 1
+    (tassert "attribute to negation if second and promote" (run1 (x1) (disj (== x1 1) (=/= x1 1))) (disj (=/= x1 1) (== x1 1)))
+    (tassert "attribute ~1=>2,~2=>1" (run1 (x1) (disj (== x1 1) (== x1 2))) (disj (== x1 2) (== x1 1)))
+
+    ;; Multi variable
+    (tassert "attribute ~x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (== x2 2)))
+	     (list (disj (== x2 2) (== x1 1)) (disj (== x2 2) (== x1 1)))) 
+    (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2))))
+	     (list (disj (== x1 1) (conj (== x1 1) (== x2 2))) (disj (== x1 1) (conj (== x1 1) (== x2 2)))))
+    (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2))))
+	     (list (disj (== x1 1) (conj (== x1 1) (== x2 2))) (disj (== x1 1) (conj (== x1 1) (== x2 2)))))
+    (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2) (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2))))
+	     (list (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))
+		   (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))))
+
+    ;; Multi variable with negation
+    #;
+    (tassert "attribute x1:x1=1=>x2=2" (run1 (x1 x2) (disj (=/= x1 1) (== x2 2)))
+    (list (disj (=/= x1 1) (== x1 2)) x2))
+
+    (tassert "attribute x1:x1=1=>x2=2, x3:x3~3=>x2=2, x2:x2~2=>x3=3" (run1 (x1 x2 x3) (disj (conj (=/= x1 1) (== x3 3)) (== x2 2)))
+	     (list (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))
+		   (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))
+		   (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))))
+    
     
     ;; === SOLVER ===
     (tassert "constraint ==" (run1 (x1) (constrain (== x1 1))) 1)
@@ -67,7 +95,7 @@
     (tassert "constraint =/= ==|==" (run1 (x1) (constrain (=/= x1 1)) (constrain (conde [(== x1 1)] [(== x1 2)]))) 2)
     (tassert "constraint ==|== =/=" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)])) (constrain (=/= x1 1))) 2)
     (tassert "constraint &" (run1 (x1 x2) (== x1 1) (=/= x2 2)) (list 1 (=/= x2 2)))
-    (tassert "constraint |" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2))))) (disj* (== x1 1) (== x1 2)))
+    (tassert "constraint |" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2))))) (disj* (== x1 2) (== x1 1)))
     (tassert "constraint == fail|==" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x1 2)) ((== x2 2))))) '(1 2))
     (tassert "constraint == succeed|==" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x1 1)) ((== x2 2))))) (list 1 x2))
     (tassert "constraint == ==|fail" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 2))))) '(1 2))
@@ -76,8 +104,8 @@
     (tassert "constraint == ==|==|=="
 	     (run1 (x1 x2 x3) (constrain (== x3 1))
 		   (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3)))))
-	     (list (disj (== x1 1) (disj (== x2 1) (== x1 x3)))
-		   (disj (== x1 1) (disj (== x2 1) (== x1 x3))) 1))
+	     (list (disj (== x2 1) (disj (== x1 1) (== x1 x3)))
+		   (disj (== x2 1) (disj (== x1 1) (== x1 x3))) 1))
     (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) ; =/= dont need to simplify, so just apply the == and move on
@@ -85,7 +113,7 @@
 					    (constrain (== x2 1)))
 	     (list (disj* (=/= x1 1) (=/= x2 1)) 1)) 
     (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4)))))
-	     (list (disj (== x1 1) (disj (== x2 1) (== x3 x4))) (disj (== x1 1) (disj (== x2 1) (== x3 x4))) x3 1))
+	     (list (disj (== x2 1) (disj (== x1 1) (== x3 x4))) (disj (== x2 1) (disj (== x1 1) (== x3 x4))) x3 1))
     (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
     (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (constraint (disj* (=/= x1 1) (=/= x1 1))) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
@@ -150,8 +178,8 @@
     (tassert "==-c & ==-c no conflict" (run1 (x1) (constrain (conj* (== x1 1) (== x1 1)))) 1)
     (tassert "==-c x =/=-c conflict" (run1 (x1) (=/= x1 1) (constrain (== x1 1))) (void))
     (tassert "==-c x =/=-c no conflict" (run1 (x1) (=/= x1 2) (constrain (== x1 1))) 1)
-    (tassert "==-c | ==-c" (run1 (x1) (constrain (disj* (== x1 1) (== x1 2)))) (disj* (== x1 1) (== x1 2)))
-    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constrain (disj* (== x1 1) (== x2 2)))) (list (disj* (== x1 1) (== x2 2)) (disj* (== x1 1) (== x2 2))))
+    (tassert "==-c | ==-c" (run1 (x1) (constrain (disj* (== x1 1) (== x1 2)))) (disj* (== x1 2) (== x1 1)))
+    (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constrain (disj* (== x1 1) (== x2 2)))) (list (disj* (== x2 2) (== x1 1)) (disj* (== x2 2) (== x1 1))))
     (tassert "==-c | ==-c simplifies bound"
 	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"

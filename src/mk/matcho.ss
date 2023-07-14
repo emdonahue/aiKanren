@@ -66,7 +66,7 @@
 
     (define extract-vars
       ;; Extracts unique logic variable identifiers from the aggregate patterns.
-      (case-lambda
+      (case-lambda ;TODO if matcho out-vars do not appear in the body, is there is no need to apply occurs-check constraints?
 	[(pattern) (extract-vars pattern '())]
 	[(pattern vs)
 	 (if (pair? pattern) (extract-vars (car pattern) (extract-vars (cdr pattern) vs))

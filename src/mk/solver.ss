@@ -75,27 +75,14 @@
 		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 		 ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])))
-	#;
-	(let* ([a-vars (attributed-vars (disj-car g))] ; Disequalities only have one attributed var.
-	       [c (get-constraints s a-vars)] ;TODO =/= may not need to fire all the constraints conjoined to a given attributed var. maybe only grab a subset with == in them somewhere. However, these may nevertheless trigger unification on that var
-	       [c (if (may-unify c (car a-vars)) c succeed)] ; If c has no == that may fail when applied to this =/=, do not bother to apply it.
-	       [s (if (succeed? c) s (remove-constraints s a-vars))]) ; If we are not applying the constraint, leave it in the store.
-	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
-	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
-		(exclusive-cond
-		 [(succeed? g0) (values (conj g out) s)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
-		 ;;TODO let solve constraint handle fail case
-		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
-		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)]))))])))
+		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])))])))
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
 	  (solve-constraint g s ctn out)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
 	(let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
-	  ;(printf "walked ~s to ~s~%" (car (matcho-out-vars g)) v)
+	  ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
 	  (if (var? v) ; If first out-var is free,
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho. 
 		(solve-constraint ctn (store-constraint s m) succeed (conj out m))) ; Otherwise, keep looking for a free var.
@@ -107,12 +94,12 @@
       (cert (goal? head-disj))
       (values (conj out (disj head-disj g)) s)))
   
-  (define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
+  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
     (assert (and (goal? g) (state? s) (goal? ctn)))
-    (exclusive-cond
+    (org-exclusive-cond base-case-cond
      [(fail? g) (values fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
-	     (exclusive-cond
+	     (org-exclusive-cond disj-head-cond
 	      [(succeed? g0) (values succeed succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
@@ -124,7 +111,7 @@
 			 (values (disj-car g0) (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
 			 (values g0 fail s0))
 		  (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)])
-		    (exclusive-cond
+		    (org-exclusive-cond disj-tail-cond
 		     [(and (fail? g) (fail? head-disj)) (values fail g0 s0)]
 		     [(succeed? g) (values succeed succeed s)]
 		     [else (values head-disj (disj g0 g) s)]))))]))]))

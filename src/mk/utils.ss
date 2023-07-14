@@ -2,6 +2,7 @@
 (library (utils)
   (export with-values values-car values->list values-ref
 	  cert
+	  comment
 	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth
 	  nyi)
   (import (chezscheme))
@@ -33,6 +34,11 @@
   (define-syntax cert ;TODO have cert test conditions individually and print the failing condition
     (syntax-rules () ;;TODO update cert to produce nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
       [(_ assertion ...) (assert (and assertion ...))]))
+
+  ;; === COMMENTING ===
+  (define-syntax comment
+    (syntax-rules ()
+      [(_ comments ...) (void)]))
   
   ;; === ORG-TRACE ===
   ;; Operates like trace-* but prints Emacs org-mode file in which nested calls are collapsible headers
