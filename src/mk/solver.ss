@@ -195,29 +195,28 @@
   (define attributed-vars ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
-      [(g) (let-values ([(vs unifies) (attributed-vars g '())]) vs)]
-      [(g vs)
-       ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
+      [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
+      [(g vs unifies)
        (assert (goal? g))
        (exclusive-cond
-	[(succeed? g) (values vs #f)]
-	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs)])
-		     (if lhs-unifies
-			 (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr g)) lhs)])
+	[(succeed? g) (values vs unifies)]
+	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)])
+		     (if lhs-unifies ; Disjunct 2 normalized iff 1 contains no ==
+			 (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr g)) lhs #t)])
 			   (values rhs #t))
-			 (values lhs #f)))] ; Attributed vars are all free vars, except in the case of disj, in which case it is the free vars of any one constraint TODO if we are checking 2 disjuncts, do we need both attr vars?
-	[(conj? g) (let*-values ([(lhs lhs-unifies) (attributed-vars (conj-cdr g) vs)]
-				[(rhs rhs-unifies) (attributed-vars (conj-car g) lhs)])
-		     (values rhs (or lhs-unifies rhs-unifies)))]
-	[(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs)])
-		     (values vars #f))]
+			 (values lhs unifies)))] 
+	[(conj? g) (let*-values ([(lhs lhs-unifies) (attributed-vars (conj-cdr g) vs unifies)]
+				[(rhs rhs-unifies) (attributed-vars (conj-car g) lhs lhs-unifies)])
+		     (values rhs (or unifies lhs-unifies rhs-unifies)))]
+	[(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
+		     (values vars unifies))]
 	[(==? g)
 	 (assert (var? (==-lhs g)))
 	 (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
 	[(matcho? g)
-	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) #f)]
+	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
 	[(pconstraint? g)
-	 (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) #f)]
-	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) #f)]
-	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
+	 (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
+	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) unifies)]
+	[(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
