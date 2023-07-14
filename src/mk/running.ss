@@ -39,5 +39,5 @@
 
   (org-define (runner-dfs q g s n depth)
     (map (lambda (s) (reify s q))
-	 (let-values ([(answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
-	   (list-head answers (min (length answers) n))))))
+	 (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
+	   (list-head answers (fx- n (max 0 ans-remaining)))))))

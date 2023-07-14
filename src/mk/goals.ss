@@ -30,16 +30,18 @@
 
   (org-define (run-goal-dfs g s p n depth answers ctn)
     (cond
-     [(succeed? g) (if (succeed? ctn) (values (cons s answers) p)
+     [(succeed? g) (if (succeed? ctn)
+		       (values (fx1- n) (cons s answers) p)
 		       (run-goal-dfs ctn s p n depth answers succeed))]
-     [(fail? g) (values failure p)]
-     [(zero? depth) (values answers p)]
-     [(conj? g) (run-goal-dfs (conj-car g) s p n (fx1- depth) answers (conj (conj-cdr g) ctn))]
-     [(disj? g) (nyi)]
+     [(fail? g) (values n '() p)]
+     [(zero? depth) (values n answers p)]
+     [(conj? g) (run-goal-dfs (conj-car g) s p n depth answers (conj (conj-cdr g) ctn))]
+     [(disj? g) (let-values ([(answers p) (run-goal-dfs (disj-lhs g) s p n (fx1- depth) answers ctn)])
+		  (nyi))]
      [(matcho? g) (nyi)]
      [(exist? g) (nyi)]
      [(fresh? g) (nyi)]
-     [else (run-goal-dfs ctn (run-constraint g s) p n (fx1- depth) answers succeed)]))
+     [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
