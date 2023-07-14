@@ -77,9 +77,8 @@
     
 
     ;; Multi variable with negation
-    #;
     (tassert "attribute x1:x1=1=>x2=2" (run1 (x1 x2) (disj (=/= x1 1) (== x2 2)))
-    (list (disj (=/= x1 1) (== x1 2)) x2))
+	     (list (disj (=/= x1 1) (== x2 2)) x2))
     
     (tassert "attribute x1:x1=1=>x2=2, x3:x3~3=>x2=2, x2:x2~2=>x3=3" (run1 (x1 x2 x3) (disj (conj (=/= x1 1) (== x3 3)) (== x2 2)))
 	     (list (disj (== x2 2) (conj (=/= x1 1) (== x3 3)))

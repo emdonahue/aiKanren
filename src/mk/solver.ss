@@ -194,8 +194,8 @@
   
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (org-case-lambda attributed-vars ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
-      [(g) (attributed-vars g '())]
+    (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
+      [(g) (let-values ([(vs) (attributed-vars g '())]) vs)]
       [(g vs)
        ;; TODO optimize which disj constraint we pick for attribution to minimize free vars
        (assert (goal? g))
@@ -226,6 +226,7 @@
     (exclusive-cond
      [(conj? g) (or (maybe-==? (conj-car g)) (maybe-==? (conj-cdr g)))]
      [(disj? g) (or (maybe-==? (disj-car g)) (maybe-==? (disj-cdr g)))]
+     [(==? g) #t]
      [(noto? g) #f]
      [(constraint? g) (maybe-==? (constraint-goal g))]
      [else #t])))
