@@ -213,12 +213,12 @@
 	[(matcho? g)
 	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) #f)]
 	[(pconstraint? g)
-	 (values (append (filter (lambda (v) (not (memq v vs))) (pconstraint-vars g)) vs) #f)] ;TODO convert filter to fold when adding pconstraint vars to attr vars
+	 (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) #f)]
 	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) #f)]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
-  (define (attributed-vars-disj d vs) ;TODO do we need to check as many disjuncts as have shared ==s?
+  (define (attributed-vars-disj d vs)
     (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car d) vs)])
       (if lhs-unifies
 	  (let-values ([(rhs rhs-unifies) (attributed-vars (disj-car (disj-cdr d)) lhs)])
