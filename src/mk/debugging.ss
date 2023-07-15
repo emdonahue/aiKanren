@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo noopo
 	  print-substitution print-reification
-	  goal-trace goal-untrace run-trace-goal)
+	  trace-goals run-trace-goal)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -24,8 +24,8 @@
 
   ;; === TRACING ===
 
-  (define-syntax goal-trace (identifier-syntax org-trace))
-  (define-syntax goal-untrace (identifier-syntax org-untrace))
+  (define-syntax trace-goals (identifier-syntax org-trace))
+  
   (define (run-trace-goal g return-labels ctn)
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))])

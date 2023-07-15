@@ -30,10 +30,10 @@
 
   (org-define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
     (cond
+     [(failure? s) (values n '() p)]
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons s answers) p)
 		       (run-goal-dfs ctn s p n depth answers succeed))]
-     [(failure? s) (values n '() p)]
      [(zero? depth) (values n answers p)]
      [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
      [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
