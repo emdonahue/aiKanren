@@ -50,13 +50,13 @@
   
   (define (sbral-tree-ref t n)
     (cond
-     [(fx= 0 n) (sbral-tree-value t)]
+     [(zero? n) (sbral-tree-value t)]
      [(fx< n (fxquotient (fx1+ (sbral-tree-size t)) 2)) (sbral-tree-ref (sbral-tree-left t) (fx1- n))]
      [else (sbral-tree-ref (sbral-tree-right t) (fx- n (fxquotient (fx1+ (sbral-tree-size t)) 2)))]))
 
   (define (sbral-tree-set-ref t n elt)
     (cond
-     [(fx= 0 n) (sbral-tree-set-value t elt)]
+     [(zero? n) (sbral-tree-set-value t elt)]
      [(fx< n (fxquotient (fx1+ (sbral-tree-size t)) 2))
       (make-sbral-tree (sbral-tree-size t) (sbral-tree-root t)
 		       (sbral-tree-set-ref (sbral-tree-left t) (fx1- n) elt)

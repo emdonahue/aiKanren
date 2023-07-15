@@ -164,14 +164,12 @@
      [else (make-conde x y)]))
 
   (define-structure (trace-goal name source goal))
-  (define-syntax trace-goal
+  (define-syntax trace-goal ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
     (syntax-rules ()
       [(_ name goals ...)
        (make-trace-goal 'name '(goals ...) (conj* goals ...))]))
   
   ;; CONJ
-
-
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
     (assert (and (goal? lhs) (goal? rhs)))
     (cond

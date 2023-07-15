@@ -105,7 +105,7 @@
 		    (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
 		     state (fold-left
 			    (lambda (id v)
-			      (if (and (var? v) (fx= 0 (var-id v))) 
+			      (if (and (var? v) (zero? (var-id v))) 
 				  (begin (set-var-id! v id) (fx1+ id)) id))
 			    (state-varid state) (list in-var ...)))
 		    package)))))))])))

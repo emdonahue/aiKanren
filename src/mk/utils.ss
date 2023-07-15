@@ -33,7 +33,7 @@
   ;; === ASSERTIONS ===
   (define-syntax cert ;TODO have cert test conditions individually and print the failing condition
     (syntax-rules () ;;TODO update cert to produce nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
-      [(_ assertion ...) (assert (and assertion ...))]))
+      [(_ assertion ...) (when (zero? (optimize-level)) (assert assertion) ...)]))
 
   ;; === COMMENTING ===
   (define-syntax comment
