@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo noopo
 	  print-substitution print-reification
-	  goal-trace goal-untrace)
+	  goal-trace goal-untrace run-trace-goal)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -26,5 +26,18 @@
 
   (define-syntax goal-trace (identifier-syntax org-trace))
   (define-syntax goal-untrace (identifier-syntax org-untrace))
-  
-)
+  (define (run-trace-goal g return-labels ctn)
+    (org-print-header (trace-goal-name g))
+    (parameterize ([org-depth (fx1+ (org-depth))])
+      (org-print-header "source")
+      (for-each org-print-item (trace-goal-source g))
+      (org-print-header "simplified")
+      (org-print-item (trace-goal-goal g))
+      (let ([ans (call-with-values ctn list)])
+	(org-print-header "answers")
+	(for-each (lambda (n v)
+		    (org-print-item n v))
+		  return-labels
+		  ans)
+	(apply values ans))))
+  )

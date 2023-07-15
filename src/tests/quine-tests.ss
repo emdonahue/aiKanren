@@ -1,6 +1,6 @@
 (library (quine-tests)
   (export run-quine-tests)
-  (import (chezscheme) (test-runner) (aikanren) (quine) (utils))
+  (import (chezscheme) (test-runner) (aikanren) (quine) (utils) (debugging))
   
   (define (run-quine-tests)
     (tassert "evalo-quine quote" (evalo '(quote 42)) 42)
@@ -23,10 +23,20 @@
       (tassert "evalo-quine quine" (evalo q) q))
 
 					;    (org-trace (display (run 1 (q) (evalo q q))))
-    ;(display (run 1 (q) (evalo q q)))
+;    (display (run 1 (q) (evalo q q)))
 ;(org-trace (display (run 1 (q) (evalo q q))))
 
+    #;
+    (display    (run 1 (q) (let* ([q^ q]
+				  [quine (list q^ (list 'quote q^))])
+    (evalo quine quine))))
 
+
+(goal-trace    (display    (run1-dfs 20 (q) (let* ([q^ q]
+					 [quine (list q^ (list 'quote q^))])
+				    (evalo quine quine)))))
+    
+;    (goal-trace (run-dfs 1 5es0 (q) (evalo q '() q)))
 
     
     #;

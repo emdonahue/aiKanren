@@ -26,7 +26,7 @@
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal
 	  __
-	  trace-goal trace-goal? trace-goal-goal)
+	  trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===

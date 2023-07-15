@@ -1,6 +1,6 @@
 (library (solver) ; Constraint solving
   (export run-constraint)
-  (import (chezscheme) (state) (negation) (datatypes) (utils))
+  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging))
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
@@ -24,7 +24,7 @@
 		   (solve-constraint g s conjs out))]
      [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
-     [(trace-goal? g) (run-constraint (trace-goal-goal g) s)]
+     [(trace-goal? g) (run-trace-goal g '(state) (lambda () (run-constraint (trace-goal-goal g) s))) ]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)

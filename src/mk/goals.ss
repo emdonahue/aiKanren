@@ -25,7 +25,7 @@
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)]
+     [(trace-goal? g) (run-trace-goal g '(stream package) (lambda () (run-goal (trace-goal-goal g) s p)))]
      [else (values (run-constraint g s) p)]))
 
   (org-define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
@@ -33,7 +33,7 @@
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons s answers) p)
 		       (run-goal-dfs ctn s p n depth answers succeed))]
-     [(fail? g) (values n '() p)]
+     [(failure? s) (values n '() p)]
      [(zero? depth) (values n answers p)]
      [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
      [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
@@ -45,7 +45,7 @@
 		   (run-goal-dfs g s p n depth answers ctn))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (run-goal-dfs g s p n depth answers ctn))]
-     [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
+     [(trace-goal? g) (run-trace-goal g '(answers-remaining answers package) (lambda () (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)))]
      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
   
   (define (mplus lhs rhs)
@@ -60,9 +60,9 @@
      [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
-  (define (bind g s p) ;TODO consider making bind cps
+  (org-define (bind g s p) ;TODO consider making bind cps
     ;; Applies g to all states in s.
-    (assert (and (goal? g) (stream? s) (package? p))) ; -> goal? stream? package?
+    (cert (goal? g) (stream? s) (package? p)) ; -> goal? stream? package?
     (exclusive-cond
      [(failure? s) (values failure p)]
      [(state? s) (run-goal g s p)]

@@ -3,7 +3,7 @@
   (export with-values values-car values->list values-ref
 	  cert
 	  comment
-	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth
+	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth
 	  nyi)
   (import (chezscheme))
 
@@ -45,9 +45,10 @@
 
   ;; TODO look at https://github.com/cisco/ChezScheme/issues/128 for discussion of other tracing options
   
-  (define trace-depth (make-parameter 1))
+  (define org-depth (make-parameter 1))
   (define org-max-depth (make-parameter 0))
   (define trace-on (make-parameter #f))
+  (define is-logging (make-parameter #f))
     
   (define-syntax org-trace
     (syntax-rules ()
@@ -61,25 +62,37 @@
        (parameterize ([trace-on #f])
 	 body ...)]))
 
-  (define (org-printf . args)
-    (when (trace-on) (apply printf args)))
-
   (define (org-print-header header)
-    (org-printf "~a ~a~%" (make-string (trace-depth) #\*) header))
+    (when (trace-on)
+      (is-logging #f)
+      (printf "~a ~a~%" (make-string (org-depth) #\*) header)))
 
-  (define (org-print-item name value)
-    (org-printf " - ~a: " name)
-    (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write 'name port) (get-output-string port)))))]
-		   [pretty-standard-indent 0])
-      (when (trace-on) (pretty-print value)))
-    (org-printf "~%"))
+  (define org-print-item
+    (case-lambda
+      [(value)
+       (when (trace-on)
+	 (pretty-print value))]
+      [(name value)
+       (when (trace-on)
+	 (printf " - ~a: " name)
+	 (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write 'name port) (get-output-string port)))))]
+			[pretty-standard-indent 0])
+	   (pretty-print value))
+	 (printf "~%"))]))
 
+  (define (org-printf . args)
+    (when (trace-on)
+      (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
+      (apply printf args)))
+  
   (define-syntax org-display
     (syntax-rules ()
       [(_ expr ...)
        (begin
 	(let ([val expr])
-	  (when (trace-on) (org-print-item 'expr val))
+	  (when (trace-on)
+	    (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
+	    (org-print-item 'expr val))
 	  val) ...)]))
   
   (define-syntax org-lambda
@@ -87,16 +100,13 @@
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
 	 (org-print-header `name)
-	 (if (fx= (trace-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
-	  (parameterize ([trace-depth (fx1+ (trace-depth))])
+	 (if (fx= (org-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
+	  (parameterize ([org-depth (fx1+ (org-depth))])
 	    (org-print-header "arguments")
 	    (org-print-item 'arg arg) ...
-	    (org-print-header "logging") ;TODO make logging print lazily only if you log something at that trace level
 	    (let ([return (call-with-values (lambda () body0 body ...) list)])
 	      (org-print-header "return")
 	      (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
-	      (parameterize ([trace-depth (fx1- (trace-depth))])
-		(org-print-header "logging"))
 	      (apply values return)))))]))
 
   (define-syntax org-case-lambda
