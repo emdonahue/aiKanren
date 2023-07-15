@@ -31,7 +31,7 @@
 				  [quine (list q^ (list 'quote q^))])
     (evalo quine quine))))
 
-
+#;
 (goal-trace    (display    (run1-dfs 20 (q) (let* ([q^ q]
 					 [quine (list q^ (list 'quote q^))])
 				    (evalo quine quine)))))

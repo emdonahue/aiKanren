@@ -4,12 +4,12 @@
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
-    (assert (and (goal? g) (state-or-failure? s))) ; -> state-or-failure?
+    (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
   (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
-    (assert (and (goal? g) (state-or-failure? s) (goal? conjs))) ; -> goal? state-or-failure?
+    (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
     (exclusive-cond
      [(fail? g) (values fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
@@ -41,7 +41,7 @@
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
     ;; todo can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now? may have to do with analyzing which ones have disjunctions that are still normalized even after updates with current unifications
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
-      (assert (goal? c))
+      (cert (goal? c))
       (if (or (fail? g) (occurs-check* g s)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
 
@@ -95,7 +95,7 @@
       (values (conj out (disj head-disj g)) s)))
   
   (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
-    (assert (and (goal? g) (state? s) (goal? ctn)))
+    (cert (goal? g) (state? s) (goal? ctn))
     (org-exclusive-cond base-case-cond
      [(fail? g) (values fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
@@ -148,7 +148,7 @@
        [else (values fail failure)])))
 
   (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
-    (assert (pconstraint? g))
+    (cert (pconstraint? g))
     (let ([g (fold-left (lambda (g v)
 			  (if (pconstraint? g)
 			      (let ([walked (walk s v)])
@@ -166,7 +166,7 @@
 		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
   
   (org-define (store-disjunctions g s)
-    (assert (and (goal? g) (or (fail? g) (not (failure? s)))))
+    (cert (goal? g) (or (fail? g) (not (failure? s))))
     ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (exclusive-cond
      [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
@@ -175,7 +175,7 @@
 
   (org-define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (assert (and (state? s) (goal? g) (not (conde? g)))) ; -> state?
+    (cert (state? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
      [(succeed? g) s]
      [(fail? g) failure]
@@ -197,7 +197,7 @@
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
       [(g vs unifies)
-       (assert (goal? g))
+       (cert (goal? g))
        (exclusive-cond
 	[(succeed? g) (values vs unifies)]
 	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)])
@@ -210,7 +210,7 @@
 	[(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
 		     (values vars unifies))]
 	[(==? g)
-	 (assert (var? (==-lhs g)))
+	 (cert (var? (==-lhs g)))
 	 (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
 	[(matcho? g)
 	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]

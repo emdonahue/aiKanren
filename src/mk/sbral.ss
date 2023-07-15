@@ -2,7 +2,7 @@
 (library (sbral)
   ;; Skew Binary Random Access List
   (export sbral? sbral-empty sbral-cons sbral-length sbral-ref sbral-set-ref sbral-empty? sbral->alist)
-  (import (chezscheme))
+  (import (chezscheme) (utils))
 
   (define-structure (sbral length tree rest))
   (define-structure (sbral-tree size root left right))
@@ -30,7 +30,7 @@
      [else (sbral-ref (sbral-rest s) (fx- n (sbral-tree-length s)) default)]))
   
   (define (sbral-set-ref s n elt default) ; TODO create special purpose upsert fns in sbral that let us set and conjoin a new constraint in one operation
-    (assert (and (sbral? s) (fx< n (sbral-length s))))
+    (cert (sbral? s) (fx< n (sbral-length s)))
     (cond
      [(fx< n -1) (sbral-set-ref (sbral-cons default s) (fx1+ n) elt default)] ; Pack empty indices with default.
      [(fx= n -1) (sbral-cons elt s)]

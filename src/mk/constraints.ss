@@ -6,15 +6,15 @@
     (disj (== v #t) (== v #f)))
 
   (define (finite-domain v ds)
-    (assert (list? ds))
+    (cert (list? ds))
     (apply disj* (map (lambda (d) (== v d)) ds)))
 
   (define (==> antecedent consequent) ;TODO try ==> as =/=|== in case =/= might be more efficient for attribution/
-    (assert (and (goal? antecedent) (goal? consequent)))
+    (cert (goal? antecedent) (goal? consequent))
     (disj (noto antecedent) consequent))
 
   (define (typeo v t?)
-    (assert (procedure? t?))
+    (cert (procedure? t?))
     (if (var? v) (pconstraint
 		  v 'typeo (lambda (var val)
 				       (if (goal? val) (simplify-typeo val var t?)
@@ -30,7 +30,7 @@
      [(disj? c) (disj (simplify-typeo (disj-lhs c) v t?) (simplify-typeo (disj-rhs c) v t?))]
      [(noto? c) (noto (simplify-typeo (noto-goal c) v t?))]
      [(==? c) ; Only encountered inside disj or noto, so can't throw the typeo away on success. Can only fail.
-      (assert (var? (==-lhs c))) ;== already normalized, so lhs is var
+      (cert (var? (==-lhs c))) ;== already normalized, so lhs is var
       (if (or (not (eq? (==-lhs c) v)) (var? (==-rhs c))) c (if (t? (==-rhs c)) succeed fail))]
      [(pconstraint? c) (if (eq? (pconstraint-type c) 'typeo) (if (eq? (pconstraint-procedure c) t?) succeed fail) c)]
      [else c]))

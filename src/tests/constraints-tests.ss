@@ -11,7 +11,7 @@
     (define x2 (make-var 2))
     (define x3 (make-var 3))
     (define x4 (make-var 4))
-    (define stale (lambda (s p) (assert #f))) ; Fresh that should never be expanded
+    (define stale (lambda (s p) (cert #f))) ; Fresh that should never be expanded
 
     ;; === VARID ===
     (let ([s (run1-state (x1) (constrain (== x1 1)))])

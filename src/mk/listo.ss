@@ -24,7 +24,7 @@
 	      [(=/= x a) (containso x d)])))
 
   (define (for-eacho proc xs)
-    (assert (procedure? proc))
+    (cert (procedure? proc))
     (disj (== xs '())
 	  (matcho ([xs (x . xs^)]) ;TODO test for-eacho with xs^ shadowing xs once matcho identifiers are fixed
 		  (proc x)

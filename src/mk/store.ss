@@ -3,39 +3,39 @@
 ;;TODO if we have a central constraint lookup with pointers, some constraints will simplify in place and so we can add them back with the same pointer without updating other pointers, while some will generate new constraints that need to be assigned to new pointers. we can perhaps diff the new and old constraints and only add to new pointers
 (library (store) ; Constraint store
   (export get-constraint add-constraint remove-constraint reify-constraint)
-  (import (chezscheme) (datatypes))
+  (import (chezscheme) (datatypes) (utils))
 
   (define (get-constraint s v)
-    (assert (and (constraint-store? s) (var? v)))
+    (cert (constraint-store? s) (var? v))
     (let  ([b (get-constraint-binding s v)])
       (if b (cdr b) succeed)))
 
   (define (add-constraint s v c)
-    (assert (and (constraint-store? s) (var? v) (goal? c)))
+    (cert (constraint-store? s) (var? v) (goal? c))
     (let ([b (get-constraint-binding s v)])
       (if b (update-constraint s b (conj (cdr b) c))
 	  (insert-constraint s v c))))
 
   (define (get-constraint-binding s v)
     ;; Since we are working with an a-list, we can cheat and work directly on the pairs rather than abstracting the store entirely in terms of variable key and constraint value.
-    (assert (and (constraint-store? s) (var? v)))
+    (cert (constraint-store? s) (var? v))
     (assoc v (constraint-store-constraints s)))
 
   (define (insert-constraint s v c)
-    (assert (and (constraint-store? s) (var? v) (goal? c)))
+    (cert (constraint-store? s) (var? v) (goal? c))
     (make-constraint-store (cons (cons v c) (constraint-store-constraints s))))
 
   (define (update-constraint s v c)
-    (assert (and (constraint-store? s) (pair? v) (var? (car v)) (goal? c)))
+    (cert (constraint-store? s) (pair? v) (var? (car v)) (goal? c))
     (make-constraint-store (cons (cons (car v) c) (remq v (constraint-store-constraints s)))))
 
   (define (remove-constraint s v)
-    (assert (and (constraint-store? s) (var? v)))
+    (cert (constraint-store? s) (var? v))
     (make-constraint-store (remq (assoc v (constraint-store-constraints s)) (constraint-store-constraints s))))
 
   (define (reify-constraint s v)
-    (assert (constraint-store? s))
-    (assert (constraint-store? s))
+    (cert (constraint-store? s))
+    (cert (constraint-store? s))
     (if (not (var? v)) v
 	(let ([c (get-constraint s v)])
 	  (if (succeed? c) v c)))))

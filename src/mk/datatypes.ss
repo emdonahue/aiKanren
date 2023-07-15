@@ -36,7 +36,7 @@
   (define-structure (runner stream query package))
   
   (define (set-runner-stream r s)
-    (assert (and (runner? r) (not (runner? s))))
+    (cert (runner? r) (not (runner? s)))
     (let ([r (vector-copy r)])
       (set-runner-stream! r s) r))
 
@@ -55,13 +55,13 @@
   (define (constraint g)
     (if (or (fail? g) (succeed? g)) g (make-constraint g)))
   (define (set-constraint-goal c g)
-    (assert (and (constraint? c) (goal? g)))
+    (cert (constraint? c) (goal? g))
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
   
   (define-structure (pconstraint vars type procedure))
   (define (pconstraint vars type procedure)
-    (assert (and (or (var? vars) (list? vars)) (procedure? procedure)))
+    (cert (or (var? vars) (list? vars)) (procedure? procedure))
     (make-pconstraint (if (list? vars) vars (list vars)) type procedure))
   
   (define-structure (guardo var procedure))
@@ -80,19 +80,19 @@
 	  (set-state-substitution! s substitution) s) substitution))
 
   (define (set-state-constraints s c)
-    (assert (and (state? s) (constraint-store? c)))
+    (cert (state? s) (constraint-store? c))
     (if (not (failure? c))
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
 
   (define (increment-varid s)
-    (assert (state? s))
+    (cert (state? s))
     (let ([s (vector-copy s)])
       (set-state-varid! s (fx1+ (state-varid s))) s))
 
   (define (set-state-varid s v)
     ;;TODO remove set-state-varid
-    (assert (and (state? s) (number? v) (fx<= (state-varid s) v)))
+    (cert (state? s) (number? v) (fx<= (state-varid s) v))
     (if (fx= (state-varid s) v) s
 	(let ([s (vector-copy s)])
 	  (set-state-varid! s v) s)))
@@ -140,7 +140,7 @@
   (define-structure (matcho out-vars in-vars goal))
   
   (org-define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
-	      (assert (not (and (null? out) (null? in))))
+	      (cert (not (and (null? out) (null? in))))
     (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
 
   (org-define (expand-matcho g s p)
@@ -171,7 +171,7 @@
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
-    (assert (and (goal? lhs) (goal? rhs)))
+    (cert (goal? lhs) (goal? rhs))
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]
      [(succeed? rhs) lhs]
@@ -196,11 +196,11 @@
     (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
   
   (define (conj-car c) ;TODO remove conj-car
-    (assert (conj? c))
+    (cert (conj? c))
     (conj-lhs c))
   
   (define (conj-cdr c)
-    (assert (conj? c))
+    (cert (conj? c))
     (conj-rhs c))
 
   (define (conj-filter c p)
@@ -216,7 +216,7 @@
 	(if (p c) c #f)))
   
   (define (conj-fold p s cs) ;TODO is conj-fold ever used?
-    (assert (and (procedure? p) (conj? cs)))
+    (cert (procedure? p) (conj? cs))
     (let ([lhs (if (conj? (conj-lhs cs))
 		   (conj-fold p s (conj-lhs cs))
 		   (p s (conj-lhs cs)))])
@@ -226,7 +226,7 @@
 
   ;; DISJ
   (define (disj lhs rhs)
-    (assert (and (goal? lhs) (goal? rhs)))
+    (cert (goal? lhs) (goal? rhs))
     (cond
      [(or (succeed? lhs) (succeed? rhs)) succeed]
      [(fail? rhs) lhs]

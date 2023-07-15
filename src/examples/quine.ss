@@ -69,7 +69,7 @@
 			     (evalo body `((,param . ,arg) . ,env^) val))))))))
 
   (define (not-in-envo sym env)
-    (assert (symbol? sym))    
+    (cert (symbol? sym))    
     (trace-goal not-in-envo (noto (asspo sym env (lambda (v) succeed)))))
   
   (define (eval-listo expr env val)

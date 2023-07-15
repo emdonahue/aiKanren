@@ -21,17 +21,17 @@
 	[else v])]))
 
   (org-define (walk s v)
-    (assert (state? s))
+    (cert (state? s))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
 
   (org-define (walk-var s v)
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) (if (goal? v) binding v)))
 
   (org-define (walk-constraint s v)
-    (assert (and (state? s) (var? v)))
+    (cert (state? s) (var? v))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)])
       (when (not (or (var? v) (goal? v))) (org-display binding v))
-      (assert (or (var? v) (goal? v)))
+      (cert (or (var? v) (goal? v)))
       (if (var? v) succeed v)))
   
   (org-define (walk-binding s v)
@@ -52,7 +52,7 @@
   
   (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
-	      (assert (state? s)) ; -> substitution? goal?
+	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)])
       (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
@@ -60,7 +60,7 @@
 	  (unify-binding s x-var x y-var y))))
 
   (org-define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
-    (assert (not (or (goal? x-var) (goal? y-var))))
+    (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
 	(if (goal? y) (if (eq? x-var y-var) (values succeed succeed s) (extend-constraint s x-var y-var x y)) ; x->y, y->y, ^cx(y)&cy
@@ -92,7 +92,7 @@
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
-    (assert (not (eq? x y)))
+    (cert (not (eq? x y)))
     (set-state-substitution
      s
      (sbral-set-ref
@@ -100,7 +100,7 @@
       (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
   (define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
-    (assert (and (goal? g) (var? v))) ;TODO separate into conj and disj simplifier. conj can assume all primitive constraints attribute to var. disj simplifier has to check
+    (cert (goal? g) (var? v)) ;TODO separate into conj and disj simplifier. conj can assume all primitive constraints attribute to var. disj simplifier has to check
     (exclusive-cond
      [(conj? g) (conj (simplify-unification (conj-lhs g) v x)
 		      (simplify-unification (conj-rhs g) v x))]
@@ -115,7 +115,7 @@
   
   (org-define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
-	      (assert (state? s)) ; -> substitution? goal?
+	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
       (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
@@ -179,7 +179,7 @@
   ;; === CONSTRAINTS ===
   
   (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
-    (assert (and (state? s) (goal? c) (list? vs)))
+    (cert (state? s) (goal? c) (list? vs))
     (fold-left (lambda (s v)
 		 (extend s v (conj (walk-constraint s v) c))
 		 #;;TODO clean up state add constraint. remove dead code

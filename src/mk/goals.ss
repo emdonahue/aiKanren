@@ -5,7 +5,7 @@
 
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
-	      (assert (and (goal? g) (state-or-failure? s) (package? p))) ; -> stream? package?
+	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
 ;	      (org-display (print-substitution s) (print-reification s))
     (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
@@ -50,7 +50,7 @@
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
-    (assert (and (stream? lhs) (stream? rhs))) ; ->stream? package?
+    (cert (stream? lhs) (stream? rhs)) ; ->stream? package?
     (cond
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
@@ -81,7 +81,7 @@
      [else (values (make-bind g s^) p)]))
   
   (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
-    (assert (and (stream? s) (package? p))) ; -> goal? stream? package?
+    (cert (stream? s) (package? p)) ; -> goal? stream? package?
     (exclusive-cond
      [(failure? s) (values s p)]
      [(state? s) (values s p)]
