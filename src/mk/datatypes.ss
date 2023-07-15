@@ -26,7 +26,7 @@
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal
 	  __
-	  debug-goal debug-goal? debug-goal-goal)
+	  trace-goal trace-goal? trace-goal-goal)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
@@ -147,7 +147,7 @@
     ((matcho-goal g) s p (matcho-in-vars g)))
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g) (exist? g) (debug-goal? g)))
+    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g) (exist? g) (trace-goal? g)))
 
   #;
   (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed
@@ -163,8 +163,11 @@
      [(fail? y) x]
      [else (make-conde x y)]))
 
-  (define-structure (debug-goal name goal))
-  (define debug-goal make-debug-goal)
+  (define-structure (trace-goal name source goal))
+  (define-syntax trace-goal
+    (syntax-rules ()
+      [(_ name goals ...)
+       (make-trace-goal 'name '(goals ...) (conj* goals ...))]))
   
   ;; CONJ
 

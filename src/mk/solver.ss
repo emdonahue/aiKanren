@@ -24,7 +24,7 @@
 		   (solve-constraint g s conjs out))]
      [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
-     [(debug-goal? g) (run-constraint (debug-goal-goal g) s)]
+     [(trace-goal? g) (run-constraint (trace-goal-goal g) s)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)
@@ -192,7 +192,7 @@
 	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
 	  (disj rest (disj-car ds)))))
   
-  (define attributed-vars ;TODO thread debug-goal through other critical infrastructure so its semantically transparent
+  (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]

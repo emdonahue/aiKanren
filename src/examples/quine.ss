@@ -25,10 +25,10 @@
       (not-in-envo 'quote env)))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
-    (debug-goal 'lookupo (assoco var env val)))
+    (trace-goal 'lookupo (assoco var env val)))
 
   (define (eval-lambda expr env val)
-    (debug-goal 'eval-lambda
+    (trace-goal 'eval-lambda
      (fresh ()
        (matcho ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
 	       (== `(closure ,arg ,body ,env) val)
@@ -36,14 +36,14 @@
        (not-in-envo 'lambda env))))
 
   (define (eval-list expr env val)
-    (debug-goal 'eval-list
+    (trace-goal 'eval-list
 		(matcho ([expr ('list . es)])
 			(eval-proper-list es env val)
 			(absento 'closure es)
 			(not-in-envo 'list env))))
 
   (define (eval-proper-list expr env val)
-    (debug-goal 'eval-proper-list
+    (trace-goal 'eval-proper-list
      (conde
        [(== expr '()) (== val '())]
        [(matcho ([expr (e . es)]
@@ -53,7 +53,7 @@
 		(eval-proper-list es env vs))])))
   
   (define (eval-apply expr env val)
-    (debug-goal 'eval-apply
+    (trace-goal 'eval-apply
      (matcho
       ([expr (rator . rands)])
       (matcho ([rands (rand)])		;TODO merge optimized matchos
@@ -68,10 +68,10 @@
 
   (define (not-in-envo sym env)
     (assert (symbol? sym))    
-    (debug-goal 'not-in-envo (noto (asspo sym env (lambda (v) succeed)))))
+    (trace-goal 'not-in-envo (noto (asspo sym env (lambda (v) succeed)))))
   
   (define (eval-listo expr env val)
-    (debug-goal 'eval-listo
+    (trace-goal 'eval-listo
      (conde
        [(== expr '()) (== val '())]
        [(matcho ([expr (e . es)]

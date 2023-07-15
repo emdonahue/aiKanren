@@ -11,7 +11,7 @@
    noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
    appendo assoco asspo for-eacho ; List
    __ ; Quantification
-   printfo noopo debug-goal ; Debugging
+   printfo noopo trace-goal ; Debugging
    )
   (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging))
 

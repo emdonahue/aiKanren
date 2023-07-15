@@ -8,8 +8,6 @@
   (define (noopo . args)
     succeed)
 
-     ;; === DEBUGGING ===
-
   (define (print-substitution s)
     (assert (state? s))
     (org-untrace (map (lambda (p) (list (make-var (fx- (sbral-length (state-substitution s)) (car p))) (cdr p))) (sbral->alist (state-substitution s)))))
