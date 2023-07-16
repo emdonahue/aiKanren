@@ -1,5 +1,5 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var) ;;TODO double check state exports. remove extend at least
+  (export reify reify-var instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
@@ -20,21 +20,32 @@
 	    (if (var? w) w (reify s w (cons v vs)))))]
 	[else v])]))
 
-  (org-define (walk s v)
+  (define reify-var
+    (case-lambda
+      [(s v) (reify-var s v '())]
+      [(s v vs) 
+       (cond
+	[(pair? v) (cons (reify-var s (car v) vs) (reify-var s (cdr v) vs))]
+	[(var? v)
+	 (if (memq v vs) v
+	  (let ([w (walk-var s v)])
+	    (if (var? w) w (reify-var s w (cons v vs)))))]
+	[else v])]))
+
+  (define (walk s v)
     (cert (state? s))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
 
-  (org-define (walk-var s v)
+  (define (walk-var s v)
     (let-values ([(binding v) (walk-binding (state-substitution s) v)]) (if (goal? v) binding v)))
 
-  (org-define (walk-constraint s v)
+  (define (walk-constraint s v)
     (cert (state? s) (var? v))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)])
-      (when (not (or (var? v) (goal? v))) (org-display binding v))
       (cert (or (var? v) (goal? v)))
       (if (var? v) succeed v)))
   
-  (org-define (walk-binding s v)
+  (define (walk-binding s v)
     (cert (sbral? s) (not (and (var? v) (zero? (var-id v)))))
     (if (var? v)
 	(let ([walked (sbral-ref
@@ -42,7 +53,7 @@
 		       (fx- (sbral-length s) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
 		       unbound)])
 	  ;(printf "walked ~s ~s ~%" v walked)
-	  (org-exclusive-cond
+	  (exclusive-cond
 	   [(unbound? walked) (values v v)]
 	   [(var? walked) (walk-binding s walked)]
 	   [else (values v walked)]))
@@ -50,7 +61,7 @@
 
   ;; === UNIFICATION ===
   
-  (org-define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
+  (define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
 	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
@@ -59,7 +70,7 @@
 	  (unify-binding s y-var y x-var x)
 	  (unify-binding s x-var x y-var y))))
 
-  (org-define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
+  (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
@@ -113,7 +124,7 @@
 
   ;; === DISUNIFICATION ===
   
-  (org-define (disunify s x y)
+  (define (disunify s x y)
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
 	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
@@ -122,7 +133,7 @@
 	  (disunify-binding s y-var y x-var x)
 	  (disunify-binding s x-var x y-var y))))
 
-  (org-define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
+  (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
     (cond
      [(goal? x)
       (if (eq? x-var y-var) (values fail fail failure)

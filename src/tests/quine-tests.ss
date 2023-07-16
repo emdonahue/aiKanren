@@ -35,9 +35,25 @@
     (display    (run1 (q) (let* ([q^ `(lambda (x) ,q)]
 					[quine (list q^ (list 'quote q^))])
 				   (evalo quine quine))))
-    
-    (trace-goals (run-dfs 1 10 (q) (evalo q '() q)))
 
+
+    (trace-goals
+     (parameterize ([trace-goal-path
+		     '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo
+ evalo-rand evalo eval-quote not-in-envo evalo-body evalo
+ eval-list eval-proper-list evalo lookupo lookupo-r
+ eval-proper-list evalo eval-list eval-proper-list evalo
+ eval-quote not-in-envo eval-proper-list evalo lookupo
+ lookupo-r eval-proper-list not-in-envo)
+
+		     
+		     ])
+		   (run-dfs 1 28 (q) (evalo q '() q))))
+
+    #;
+    (parameterize ([trace-goal-path '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo evalo-rand evalo)])
+      (display (run-dfs 1 25 (q) (evalo q '() q))))
+    
     
     #;
     (tassert "evalo-quine quine" (run 5 (y) (evalo y y)) 1)

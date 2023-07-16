@@ -7,7 +7,7 @@
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (org-define (solve-constraint g s conjs out)
+  (define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
     (exclusive-cond
@@ -24,7 +24,7 @@
 		   (solve-constraint g s conjs out))]
      [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
-     [(trace-goal? g) (run-trace-goal g s '(state) (lambda (g s) (run-constraint (trace-goal-goal g) s))) ]
+     [(trace-goal? g) (run-trace-goal g s '(state) (lambda (g s) (run-constraint g s))) ]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)
@@ -45,14 +45,14 @@
       (if (or (fail? g) (occurs-check* g s)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
 
-  (org-define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
+  (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
     (cert (or (conj? g) (==? g) (succeed? g)))
     (exclusive-cond
      [(conj? g) (and (occurs-check* (conj-lhs g) s) (occurs-check* (conj-rhs g) s))]
      [(succeed? g) #f]
      [else (occurs-check s (==-lhs g) (==-rhs g))]))
 
-  (org-define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
+  (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
 	      (cert (state? s) (var? v))
 	      (exclusive-cond
 	       [(eq? v term) #t] ; term is already walked by normalized ==s
@@ -94,12 +94,12 @@
       (cert (goal? head-disj))
       (values (conj out (disj head-disj g)) s)))
   
-  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
+  (define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
     (cert (goal? g) (state? s) (goal? ctn))
-    (org-exclusive-cond base-case-cond
+    (exclusive-cond
      [(fail? g) (values fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
-	     (org-exclusive-cond disj-head-cond
+	     (exclusive-cond
 	      [(succeed? g0) (values succeed succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
@@ -111,7 +111,7 @@
 			 (values (disj-car g0) (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
 			 (values g0 fail s0))
 		  (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)])
-		    (org-exclusive-cond disj-tail-cond
+		    (exclusive-cond
 		     [(and (fail? g) (fail? head-disj)) (values fail g0 s0)]
 		     [(succeed? g) (values succeed succeed s)]
 		     [else (values head-disj (disj g0 g) s)]))))]))]))
@@ -165,7 +165,7 @@
 		   [(fail? g) (values fail failure)]
 		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
   
-  (org-define (store-disjunctions g s)
+  (define (store-disjunctions g s)
     (cert (goal? g) (or (fail? g) (not (failure? s))))
     ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (exclusive-cond
@@ -173,7 +173,7 @@
      [(disj? g) (store-constraint s g)]
      [else s]))
 
-  (org-define (store-constraint s g)
+  (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
     (cert (state? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
