@@ -12,5 +12,5 @@
     (tassert "dfs exist" (run1*-dfs (x1) (exist (x2) (== x1 x2) (== x2 1))) 1)
     (tassert "dfs fresh" (run1*-dfs (x1) (fresh (x2) (== x1 x2) (== x2 1))) 1)
     (tassert "dfs matcho" (run1*-dfs (x1) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
-    (tassert "dfs fail if depth reached" (run*-dfs 3 (x1) (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])) '(2))
+    (tassert "dfs fail if constraint fails" (run**-dfs (x1) (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])) '(2))
 ))

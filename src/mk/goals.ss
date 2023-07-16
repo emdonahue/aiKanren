@@ -25,10 +25,10 @@
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-     [(trace-goal? g) (run-trace-goal g '(stream package) (lambda () (run-goal (trace-goal-goal g) s p)))]
+     [(trace-goal? g) (run-trace-goal g s '(stream package) (lambda (g s) (run-goal (trace-goal-goal g) s p)))]
      [else (values (run-constraint g s) p)]))
 
-  (org-define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
+  (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
     (cond
      [(failure? s) (values n '() p)]
      [(succeed? g) (if (succeed? ctn)
@@ -45,7 +45,7 @@
 		   (run-goal-dfs g s p n depth answers ctn))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (run-goal-dfs g s p n depth answers ctn))]
-     [(trace-goal? g) (run-trace-goal g '(answers-remaining answers package) (lambda () (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)))]
+     [(trace-goal? g) (run-trace-goal g s '(answers-remaining answers package) (lambda (g s) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)))]
      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
   
   (define (mplus lhs rhs)

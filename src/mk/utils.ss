@@ -3,7 +3,7 @@
   (export with-values values-car values->list values-ref
 	  cert
 	  comment
-	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth
+	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing
 	  nyi)
   (import (chezscheme))
 
@@ -47,33 +47,33 @@
   
   (define org-depth (make-parameter 1))
   (define org-max-depth (make-parameter 0))
-  (define trace-on (make-parameter #f))
+  (define org-tracing (make-parameter #f))
   (define is-logging (make-parameter #f))
     
   (define-syntax org-trace
     (syntax-rules ()
       [(_ body ...)
-       (parameterize ([trace-on #t])
+       (parameterize ([org-tracing #t])
 	 body ...)]))
 
   (define-syntax org-untrace
     (syntax-rules ()
       [(_ body ...)
-       (parameterize ([trace-on #f])
+       (parameterize ([org-tracing #f])
 	 body ...)]))
 
   (define (org-print-header header)
-    (when (trace-on)
+    (when (org-tracing)
       (is-logging #f)
       (printf "~a ~a~%" (make-string (org-depth) #\*) header)))
 
   (define org-print-item
     (case-lambda
       [(value)
-       (when (trace-on)
+       (when (org-tracing)
 	 (pretty-print value))]
       [(name value)
-       (when (trace-on)
+       (when (org-tracing)
 	 (printf " - ~a: " name)
 	 (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write 'name port) (get-output-string port)))))]
 			[pretty-standard-indent 0])
@@ -81,7 +81,7 @@
 	 (printf "~%"))]))
 
   (define (org-printf . args)
-    (when (trace-on)
+    (when (org-tracing)
       (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
       (apply printf args)))
   
@@ -90,7 +90,7 @@
       [(_ expr ...)
        (begin
 	(let ([val expr])
-	  (when (trace-on)
+	  (when (org-tracing)
 	    (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
 	    (org-print-item 'expr val))
 	  val) ...)]))

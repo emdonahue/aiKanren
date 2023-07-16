@@ -60,13 +60,13 @@
       ([expr (rator . rands)])
       (matcho ([rands (rand)])		;TODO merge optimized matchos
 	      (fresh (closure)
-		     (evalo rator env closure)
+		     (trace-goal eval-rator (evalo rator env closure))
 		     (matcho
 		      ([closure ('closure param body env^)])
 		      (symbolo param)
 		      (fresh (arg)
-			     (evalo rand env arg)			    
-			     (evalo body `((,param . ,arg) . ,env^) val))))))))
+			     (trace-goal evalo-rand (evalo rand env arg))			    
+			     (trace-goal evalo-body (evalo body `((,param . ,arg) . ,env^) val)))))))))
 
   (define (not-in-envo sym env)
     (cert (symbol? sym))    

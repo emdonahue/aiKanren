@@ -32,11 +32,11 @@
     (evalo quine quine))))
 
 #;
-(trace-goals    (display    (run1-dfs 20 (q) (let* ([q^ q]
-					 [quine (list q^ (list 'quote q^))])
-				    (evalo quine quine)))))
+    (display    (run1 (q) (let* ([q^ `(lambda (x) ,q)]
+					[quine (list q^ (list 'quote q^))])
+				   (evalo quine quine))))
     
-;    (trace-goals (run-dfs 1 5es0 (q) (evalo q '() q)))
+    (trace-goals (run-dfs 1 10 (q) (evalo q '() q)))
 
     
     #;

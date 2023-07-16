@@ -3,7 +3,7 @@
   (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
 
   (define unbound (vector 'unbound)) ; Internal placeholder for unbound variables in the substitution.
-  (define (unbound? v) (eq? unbound v))
+  (define (unbound? v) (eq? unbound v)) ;TODO replace unbound with success as null element in state
 
   ;; === VARIABLES ===
   

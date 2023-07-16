@@ -24,7 +24,7 @@
 		   (solve-constraint g s conjs out))]
      [(matcho? g) (solve-matcho g s conjs out)]
      [(pconstraint? g) (solve-pconstraint g s conjs out)]
-     [(trace-goal? g) (run-trace-goal g '(state) (lambda () (run-constraint (trace-goal-goal g) s))) ]
+     [(trace-goal? g) (run-trace-goal g s '(state) (lambda (g s) (run-constraint (trace-goal-goal g) s))) ]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
   (define (solve-noto g s ctn out)

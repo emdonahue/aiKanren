@@ -20,7 +20,7 @@
 	(if (eq? v v^) v (mini-reify s v^)))]
      [else v]))
 
-  (org-define (mini-unify s x y)
+  (define (mini-unify s x y)
     (cert (list? s))
     (let ([x (mini-walk s x)] [y (mini-walk s y)])
       (cond
