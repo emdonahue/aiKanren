@@ -37,7 +37,12 @@
 	(let-values ([(reified state r) (runner-next r)])
 	  (if (failure? state) '() (cons (cons reified state) (runner-take (fx1- n) r))))))
 
-  (org-define (runner-dfs q g s n depth)
+  (define (runner-dfs q g s n depth)
     (map (lambda (s) (reify s q))
 	 (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
-	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining)))))))))
+	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
+
+  (org-define (trace-runner q g s depth)
+    (map (lambda (s) (reify s q))
+	 (let-values ([(ans-remaining answers p) (trace-run-goal g s empty-package depth)])
+	   answers))))

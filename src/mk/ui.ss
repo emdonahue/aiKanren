@@ -104,6 +104,19 @@
      (syntax-rules ()
        [(_ (q ...) g ...) (run*-dfs -1 (q ...) g ...)]))
 
+   (define-syntax trace-run
+     (syntax-rules ()
+       [(_ n depth () g ...)
+	(runner-trace '() (conj* g ...) (set-state-varid empty-state varid) n depth)]
+       [(_ n depth (q) g ...)
+	(fresh-vars
+	 (state-varid empty-state) varid (q)
+	 (runner-trace q (conj* g ...) (set-state-varid empty-state varid) n depth))]
+       [(_ n depth (q ...) g ...)
+	(fresh-vars
+	 (state-varid empty-state) varid (q ...)
+	 (runner-trace (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
+
    (define-syntax constrain
      (syntax-rules ()
        [(_ g ...) (constraint (conj* g ...))]))

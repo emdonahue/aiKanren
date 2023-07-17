@@ -1,6 +1,6 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
-  (export run-goal run-goal-dfs stream-step) ; TODO trim exports
+  (export run-goal run-goal-dfs trace-run-goal stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
@@ -24,8 +24,8 @@
 		    #;
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
-			(suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-     [(trace-goal? g) (run-trace-goal g s '(stream package) (lambda (g s) (run-goal g s p)))]
+		    (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
+     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
 
   (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
@@ -45,8 +45,52 @@
 		   (run-goal-dfs g s p n depth answers ctn))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (run-goal-dfs g s p n depth answers ctn))]
-     [(trace-goal? g) (run-trace-goal g s '(answers-remaining answers package) (lambda (g s) (run-goal-dfs g s p n depth answers ctn)))]
+     [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
+
+  (define (trace-run-goal g s p depth)
+    (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
+    (cond
+     [(failure? s) (values '() p)]
+     [(succeed? g) (values (list s) p)]
+     [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
+     [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
+		  (values (remp failure? (map (lambda (s) (trace-run-goal (conj-rhs g) s empty-package depth)) answers)) empty-package))] ;TODO thread package through trace-run-goal
+     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
+			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
+		   (values (append lhs rhs) p))]
+     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+		    (trace-run-goal g s p depth))]
+     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
+		   (trace-run-goal g s p depth))]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (trace-run-goal g s p depth))]
+     [(trace-goal? g) (run-trace-goal g s p depth)]
+     [else (values (run-constraint g s) p depth)]))
+
+  (define (run-trace-goal g s p depth)
+    (org-print-header (trace-goal-name g))
+    (parameterize ([org-depth (fx1+ (org-depth))])
+      (when (org-tracing)
+	;(org-print-header " <path>")
+	;(org-print-item (reverse (trace-path)))
+	(org-print-header " <source>")
+	(for-each org-print-item (trace-goal-source g))
+	(org-print-header " <simplified>")
+	(org-print-item (trace-goal-goal g))
+	#;
+	(let ([substitution (walk-substitution s)])
+	(org-print-header " <substitution>")
+	(org-print-item (print-substitution substitution))
+	(org-print-header " <constraints>")
+	(org-print-item (print-store substitution))
+	(org-print-header " <reification>")
+	(org-print-item (print-reification substitution)))
+	)
+      (let-values ([(answers p) (trace-run-goal g s p depth)])
+	(org-print-header " <answers>")
+	(org-print-item answers)
+	(values answers p))))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search

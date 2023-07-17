@@ -36,7 +36,7 @@
 					[quine (list q^ (list 'quote q^))])
 				   (evalo quine quine))))
 
-
+#;
     (trace-goals
      (parameterize ([trace-goal-path
 		     '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo
