@@ -103,7 +103,7 @@
 		   (trace-run-goal g s p depth))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (trace-run-goal g s p depth))]
-     [(trace-goal? g) (run-trace-goal g s p depth)]
+     [(trace-goal? g) (run-trace-goal g s depth (lambda (g s) (trace-run-goal g s p depth)))]
      [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
 
   (define (trace-bind g answers p depth)
@@ -112,30 +112,6 @@
 	(let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
 		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
 	  (values (append ans0 ans^) p))))
-
-  (define (run-trace-goal g s p depth)
-    (org-print-header (trace-goal-name g))
-    (parameterize ([org-depth (fx1+ (org-depth))])
-      (when (org-tracing)
-	;(org-print-header " <path>")
-	;(org-print-item (reverse (trace-path)))
-	(org-print-header " <source>")
-	(for-each org-print-item (trace-goal-source g))
-	(org-print-header " <simplified>")
-	(org-print-item (trace-goal-goal g))
-	#;
-	(let ([substitution (walk-substitution s)])
-	(org-print-header " <substitution>")
-	(org-print-item (print-substitution substitution))
-	(org-print-header " <constraints>")
-	(org-print-item (print-store substitution))
-	(org-print-header " <reification>")
-	(org-print-item (print-reification substitution)))
-	)
-      (let-values ([(answers p) (trace-run-goal (trace-goal-goal g) s p depth)])
-	(org-print-header " <answers>")
-	(org-print-item answers)
-	(values answers p))))
   
   ;; === STREAMS ===
   

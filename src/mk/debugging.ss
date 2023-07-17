@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo displayo noopo
 	  print-substitution print-reification
-	  trace-goals trace-goal-path)
+	  trace-goal-path print-trace-body trace-query run-trace-goal)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -30,10 +30,43 @@
 
   ;; === TRACING ===
 
-  (define trace-path (make-parameter '())) ; Path taken so far through trace goals
+  (define trace-path (make-parameter '(()))) ; Path taken so far through trace goals
   (define trace-goal-path (make-parameter '())) ; Prefix that trace-path must follow. Paths off prefix fail. Used to constrain search for debugging.
+  (define trace-query (make-parameter '()))
+
+  (define (trace-path-cons name path)
+    (if (or (null? path) (not (pair? (car path)))) (cons name path)
+	(cons (trace-path-cons name (car path)) (cdr path))))
+
+  (define (run-trace-goal g s depth ctn)
+    (org-print-header (trace-goal-name g))
+    (parameterize ([org-depth (fx1+ (org-depth))]
+		   [trace-path (trace-path)])
+      (print-trace-body g s)
+      (let-values ([(answers p) (ctn (trace-goal-goal g) s)])
+	(org-print-header " <answers>")
+	(org-print-item answers)
+	(values answers p))))
   
-  (define-syntax trace-goals (identifier-syntax org-trace))
+  (define (print-trace-body g s)
+    (when (org-tracing)
+	(org-print-header " <path>")
+	(org-print-item (trace-path))
+	(org-print-header " <source>")
+	(for-each org-print-item (trace-goal-source g))
+	(org-print-header " <simplified>")
+	(org-print-item (trace-goal-goal g))
+	(org-print-header " <query>")
+	(org-print-item (reify-var s (trace-query)))
+	#;
+	(let ([substitution (walk-substitution s)])
+	(org-print-header " <substitution>")
+	(org-print-item (print-substitution substitution))
+	(org-print-header " <constraints>")
+	(org-print-item (print-store substitution))
+	(org-print-header " <reification>")
+	(org-print-item (print-reification substitution)))
+	))
 
   (define (walk-substitution s)
     (cert (state? s))

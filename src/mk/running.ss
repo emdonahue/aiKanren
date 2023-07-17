@@ -1,6 +1,6 @@
 (library (running)
   (export runner-next runner-step runner-take runner-dfs trace-runner)
-  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils))
+  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (debugging))
 
   (define (runner-null? r)
     (cert (runner? r))
@@ -44,4 +44,7 @@
 
   (define (trace-runner q g s depth)
     (map (lambda (s) (reify s q))
-	 (let-values ([(answers p) (trace-run-goal g s empty-package depth)]) answers))))
+	 (let-values ([(answers p)
+		       (org-trace
+			(parameterize ([trace-query q])
+			 (trace-run-goal g s empty-package depth)))]) answers))))

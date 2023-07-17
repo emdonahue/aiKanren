@@ -111,11 +111,11 @@
        [(_ depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
-	 (trace-runner q (org-trace (conj* g ...)) (set-state-varid empty-state varid) depth))]
+	 (trace-runner q (conj* g ...) (set-state-varid empty-state varid) depth))]
        [(_ depth (q ...) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q ...)
-	 (trace-runner (list q ...) (org-trace (conj* g ...)) (set-state-varid empty-state varid) depth))]))
+	 (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth))]))
 
    (define-syntax constrain
      (syntax-rules ()
