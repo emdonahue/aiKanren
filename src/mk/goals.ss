@@ -55,7 +55,7 @@
      [(succeed? g) (values (list s) p)]
      [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
      [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
-		  (values (remp failure? (map (lambda (s) (trace-run-goal (conj-rhs g) s empty-package depth)) answers)) empty-package))] ;TODO thread package through trace-run-goal
+		  (trace-bind (conj-rhs g) s depth answers p))]
      [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
 			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
 		   (values (append lhs rhs) p))]
@@ -66,7 +66,13 @@
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (trace-run-goal g s p depth))]
      [(trace-goal? g) (run-trace-goal g s p depth)]
-     [else (values (run-constraint g s) p depth)]))
+     [else (values (list (run-constraint g s)) p)]))
+
+  (define (trace-bind g s depth answers p)
+    (if (null? answers) (values '() p)
+	(let*-values ([(ans p) (trace-run-goal g s p depth)]
+		      [(answers p) (trace-bind g s depth (cdr answers) p)])
+	  (values (append ans answers) p))))
 
   (define (run-trace-goal g s p depth)
     (org-print-header (trace-goal-name g))
@@ -87,7 +93,7 @@
 	(org-print-header " <reification>")
 	(org-print-item (print-reification substitution)))
 	)
-      (let-values ([(answers p) (trace-run-goal g s p depth)])
+      (let-values ([(answers p) (trace-run-goal (trace-goal-goal g) s p depth)])
 	(org-print-header " <answers>")
 	(org-print-item answers)
 	(values answers p))))

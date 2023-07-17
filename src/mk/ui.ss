@@ -2,7 +2,8 @@
   (export run run* run1
 	  run-states run*-states run1-state
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
-	  fresh exist conde constrain)
+	  fresh exist conde constrain
+	  trace-run)
   (import (chezscheme) (running) (datatypes) (state))
 
   (define-syntax conde ;TODO make conde expand syntactically
@@ -106,16 +107,15 @@
 
    (define-syntax trace-run
      (syntax-rules ()
-       [(_ n depth () g ...)
-	(runner-trace '() (conj* g ...) (set-state-varid empty-state varid) n depth)]
-       [(_ n depth (q) g ...)
+       [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
+       [(_ depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
-	 (runner-trace q (conj* g ...) (set-state-varid empty-state varid) n depth))]
-       [(_ n depth (q ...) g ...)
+	 (trace-runner q (conj* g ...) (set-state-varid empty-state varid) depth))]
+       [(_ depth (q ...) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q ...)
-	 (runner-trace (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
+	 (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth))]))
 
    (define-syntax constrain
      (syntax-rules ()

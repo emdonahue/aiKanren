@@ -1,5 +1,5 @@
 (library (running)
-  (export runner-next runner-step runner-take runner-dfs)
+  (export runner-next runner-step runner-take runner-dfs trace-runner)
   (import (chezscheme) (goals) (failure) (state) (datatypes) (utils))
 
   (define (runner-null? r)
@@ -42,7 +42,7 @@
 	 (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
 	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
 
-  (org-define (trace-runner q g s depth)
+  (define (trace-runner q g s depth)
     (map (lambda (s) (reify s q))
-	 (let-values ([(ans-remaining answers p) (trace-run-goal g s empty-package depth)])
+	 (let-values ([(answers p) (trace-run-goal g s empty-package depth)])
 	   answers))))
