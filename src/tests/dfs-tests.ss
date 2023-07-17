@@ -22,5 +22,5 @@
     (tassert "trace exist" (trace-run (x1) (org-untrace (exist (x2) (== x1 x2) (== x2 1)))) '(1))
     (tassert "trace fresh" (trace-run (x1) (org-untrace  (fresh (x2) (== x1 x2) (== x2 1)))) '(1))
     (tassert "trace matcho" (trace-run (x1) (org-untrace (matcho ([x1 (a . d)]) (== a 1) (== d 2)))) '((1 . 2)))
-    (tassert "trace fail if constraint fails" (trace-run (x1) (org-untrace (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)]))) '((2)))
+    (tassert "trace fail if constraint fails" (trace-run (x1) (org-untrace (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)]))) '(2))
 ))

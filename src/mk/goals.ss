@@ -66,7 +66,7 @@
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (trace-run-goal g s p depth))]
      [(trace-goal? g) (run-trace-goal g s p depth)]
-     [else (values (list (run-constraint g s)) p)]))
+     [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
 
   (org-define (trace-bind g answers p depth)
 		(cert (goal? g) (list? answers) (number? depth) (package? p))
