@@ -16,7 +16,7 @@
 
     (tassert "trace ==" (trace-run (x1) (org-untrace (== x1 1))) '(1))
     (tassert "trace == & ==" (trace-run (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2)))) '((1 2)))
-    (tassert "trace == & == depth 1" (trace-run 1 (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2)))) '((1 2)))
+    (tassert "trace == & == depth 1" (trace-run 1 (x1 x2) (== x1 1) (== x2 2)) '((1 2)))
     (tassert "trace == | ==" (trace-run (x1) (org-untrace (conde [(== x1 1)] [(== x1 2)]))) '(1 2))
     (tassert "trace (|) | (|) depth 2" (trace-run 2 (x1) (org-untrace (conde [(conde [(== x1 1)] [(== x1 2)])] [(== x1 2)]))) '(2))
     (tassert "trace exist" (trace-run (x1) (org-untrace (exist (x2) (== x1 x2) (== x2 1)))) '(1))

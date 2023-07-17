@@ -3,6 +3,8 @@
   (export run-goal run-goal-dfs trace-run-goal stream-step) ; TODO trim exports
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
+  ;; === INTERLEAVING INTERPRETER ===
+  
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
@@ -27,77 +29,6 @@
 		    (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
      [(trace-goal? g) (run-goal (trace-goal-goal g) s p)]
      [else (values (run-constraint g s) p)]))
-
-  (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
-    (cond
-     [(failure? s) (values n '() p)]
-     [(succeed? g) (if (succeed? ctn)
-		       (values (fx1- n) (cons s answers) p)
-		       (run-goal-dfs ctn s p n depth answers succeed))]
-     [(zero? depth) (values n answers p)]
-     [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
-     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
-		   (if (zero? num-remaining) (values 0 answers p)
-		       (run-goal-dfs (conde-rhs g) s p num-remaining (fx1- depth) answers ctn)))]
-     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-		    (run-goal-dfs g s p n depth answers ctn))]
-     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-		   (run-goal-dfs g s p n depth answers ctn))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (run-goal-dfs g s p n depth answers ctn))]
-     [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
-     [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
-
-  (org-define (trace-run-goal g s p depth)
-    (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
-    (cond
-     [(failure? s) (values '() p)]
-     [(succeed? g) (values (list s) p)]
-     [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
-     [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
-		  (trace-bind (conj-rhs g) answers p depth))]
-     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
-			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
-		   (values (append lhs rhs) p))]
-     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-		    (trace-run-goal g s p depth))]
-     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-		   (trace-run-goal g s p depth))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (trace-run-goal g s p depth))]
-     [(trace-goal? g) (run-trace-goal g s p depth)]
-     [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
-
-  (org-define (trace-bind g answers p depth)
-		(cert (goal? g) (list? answers) (number? depth) (package? p))
-    (if (null? answers) (values '() p)
-	(let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
-		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
-	  (values (append ans0 ans^) p))))
-
-  (define (run-trace-goal g s p depth)
-    (org-print-header (trace-goal-name g))
-    (parameterize ([org-depth (fx1+ (org-depth))])
-      (when (org-tracing)
-	;(org-print-header " <path>")
-	;(org-print-item (reverse (trace-path)))
-	(org-print-header " <source>")
-	(for-each org-print-item (trace-goal-source g))
-	(org-print-header " <simplified>")
-	(org-print-item (trace-goal-goal g))
-	#;
-	(let ([substitution (walk-substitution s)])
-	(org-print-header " <substitution>")
-	(org-print-item (print-substitution substitution))
-	(org-print-header " <constraints>")
-	(org-print-item (print-store substitution))
-	(org-print-header " <reification>")
-	(org-print-item (print-reification substitution)))
-	)
-      (let-values ([(answers p) (trace-run-goal (trace-goal-goal g) s p depth)])
-	(org-print-header " <answers>")
-	(org-print-item answers)
-	(values answers p))))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
@@ -130,6 +61,83 @@
      [(fail? g) (values failure p)]
      [(succeed? g) (values s p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them.
      [else (values (make-bind g s^) p)]))
+
+  ;; === DEPTH FIRST INTERPRETER ===
+
+    (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
+    (cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
+     [(failure? s) (values n '() p)]
+     [(succeed? g) (if (succeed? ctn)
+		       (values (fx1- n) (cons s answers) p)
+		       (run-goal-dfs ctn s p n depth answers succeed))]
+     [(zero? depth) (values n answers p)]
+     [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
+     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
+		   (if (zero? num-remaining) (values 0 answers p)
+		       (run-goal-dfs (conde-rhs g) s p num-remaining (fx1- depth) answers ctn)))]
+     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+		    (run-goal-dfs g s p n depth answers ctn))]
+     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
+		   (run-goal-dfs g s p n depth answers ctn))]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (run-goal-dfs g s p n depth answers ctn))]
+     [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
+     [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
+  
+  ;; === TRACING INTERPRETER ===
+
+    (define (trace-run-goal g s p depth)
+    (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
+    (cond
+     [(failure? s) (values '() p)]
+     [(succeed? g) (values (list s) p)]
+     [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
+     [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
+		  (trace-bind (conj-rhs g) answers p depth))]
+     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
+			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
+		   (values (append lhs rhs) p))]
+     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+		    (trace-run-goal g s p depth))]
+     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
+		   (trace-run-goal g s p depth))]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (trace-run-goal g s p depth))]
+     [(trace-goal? g) (run-trace-goal g s p depth)]
+     [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
+
+  (define (trace-bind g answers p depth)
+		(cert (goal? g) (list? answers) (number? depth) (package? p))
+    (if (null? answers) (values '() p)
+	(let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
+		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
+	  (values (append ans0 ans^) p))))
+
+  (define (run-trace-goal g s p depth)
+    (org-print-header (trace-goal-name g))
+    (parameterize ([org-depth (fx1+ (org-depth))])
+      (when (org-tracing)
+	;(org-print-header " <path>")
+	;(org-print-item (reverse (trace-path)))
+	(org-print-header " <source>")
+	(for-each org-print-item (trace-goal-source g))
+	(org-print-header " <simplified>")
+	(org-print-item (trace-goal-goal g))
+	#;
+	(let ([substitution (walk-substitution s)])
+	(org-print-header " <substitution>")
+	(org-print-item (print-substitution substitution))
+	(org-print-header " <constraints>")
+	(org-print-item (print-store substitution))
+	(org-print-header " <reification>")
+	(org-print-item (print-reification substitution)))
+	)
+      (let-values ([(answers p) (trace-run-goal (trace-goal-goal g) s p depth)])
+	(org-print-header " <answers>")
+	(org-print-item answers)
+	(values answers p))))
+  
+  ;; === STREAMS ===
   
   (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
     (cert (stream? s) (package? p)) ; -> goal? stream? package?
