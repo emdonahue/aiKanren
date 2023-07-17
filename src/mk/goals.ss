@@ -48,14 +48,14 @@
      [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
 
-  (define (trace-run-goal g s p depth)
+  (org-define (trace-run-goal g s p depth)
     (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
     (cond
      [(failure? s) (values '() p)]
      [(succeed? g) (values (list s) p)]
      [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
      [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
-		  (trace-bind (conj-rhs g) s depth answers p))]
+		  (trace-bind (conj-rhs g) answers p depth))]
      [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
 			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
 		   (values (append lhs rhs) p))]
@@ -68,11 +68,12 @@
      [(trace-goal? g) (run-trace-goal g s p depth)]
      [else (values (list (run-constraint g s)) p)]))
 
-  (define (trace-bind g s depth answers p)
+  (org-define (trace-bind g answers p depth)
+		(cert (goal? g) (list? answers) (number? depth) (package? p))
     (if (null? answers) (values '() p)
-	(let*-values ([(ans p) (trace-run-goal g s p depth)]
-		      [(answers p) (trace-bind g s depth (cdr answers) p)])
-	  (values (append ans answers) p))))
+	(let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
+		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
+	  (values (append ans0 ans^) p))))
 
   (define (run-trace-goal g s p depth)
     (org-print-header (trace-goal-name g))
