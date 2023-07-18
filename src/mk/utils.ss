@@ -75,7 +75,7 @@
       [(name value)
        (when (org-tracing)
 	 (printf " - ~a: " name)
-	 (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-port (open-output-string) (lambda (port) (write 'name port) (get-output-string port)))))]
+	 (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-string-output-port (lambda (port) (write 'name port)))))]
 			[pretty-standard-indent 0])
 	   (pretty-print value))
 	 (printf "~%"))]))
