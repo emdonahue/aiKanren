@@ -94,8 +94,8 @@
      [(zero? depth) (print-depth-limit) (values '() p)]
      [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
 		  (trace-bind (conj-rhs g) answers p depth))]
-     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
-			       [(rhs p) (trace-run-goal (conde-rhs g) s p (fx1- depth))])
+     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-car g) s p (fx1- depth))]
+			       [(rhs p) (trace-run-goal (conde-cdr g) s p depth)])
 		   (values (append lhs rhs) p))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
 		    (trace-run-goal g s p depth))]
