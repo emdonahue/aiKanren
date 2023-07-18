@@ -94,8 +94,8 @@
      [(zero? depth) (print-depth-limit) (values '() '() p)]
      [(conj? g) (let-values ([(paths answers p) (trace-run-goal (conj-lhs g) s p depth)])
 		  (trace-bind (conj-rhs g) answers p depth))]
-     [(conde? g) (let*-values ([(l-paths lhs p) (trace-run-goal (conde-car g) s p (fx1- depth))]
-			       [(r-paths rhs p) (trace-run-goal (conde-cdr g) s p depth)])
+     [(conde? g) (let*-values ([(l-paths lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)))]
+			       [(r-paths rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)))])
 		   (values '() (append lhs rhs) p))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
 		    (trace-run-goal g s p depth))]
