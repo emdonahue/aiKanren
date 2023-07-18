@@ -20,13 +20,13 @@
 	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
-	  conde conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
+	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal
 	  __
-	  trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal)
+	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
@@ -168,12 +168,6 @@
 	  (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
 	fail))
   
-  (define-syntax conde ;TODO make conde expand syntactically
-    (syntax-rules ()
-      [(_ (g ...)) (conj* g ...)]
-      [(_ c0 c ...)
-       (conde-disj (conde c0) (conde c ...))]))
-  
   (define (conde-disj x y)
     ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
     (cond
@@ -182,10 +176,6 @@
      [else (make-conde x y)]))
 
   (define-structure (trace-goal name source goal))
-  (define-syntax trace-goal ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
-    (syntax-rules ()
-      [(_ name goals ...)
-       (make-trace-goal 'name '(goals ...) (conj* goals ...))]))
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
@@ -243,7 +233,7 @@
 	  (p lhs (conj-rhs cs)))))
 
   ;; DISJ
-  (define (disj lhs rhs)
+  (define (disj lhs rhs) ;TODO convert constructor fns to constructed params of structure  
     (cert (goal? lhs) (goal? rhs))
     (cond
      [(or (succeed? lhs) (succeed? rhs)) succeed]

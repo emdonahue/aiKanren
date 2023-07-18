@@ -1,6 +1,6 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
-  (export run-goal run-goal-dfs trace-run-goal stream-step trace-conde)
+  (export run-goal run-goal-dfs trace-run-goal stream-step)
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   ;; === INTERLEAVING INTERPRETER ===
@@ -105,11 +105,6 @@
 		   (trace-run-goal g s p depth))]
      [(trace-goal? g) (run-trace-goal g s depth (lambda (g s) (trace-run-goal g s p depth)))]
      [else (values '() (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
-
-    (define-syntax trace-conde
-      (syntax-rules ()
-	[(_ (name g ...) ...)
-	 (conde ((lambda (s p) (printf "trace-conde: ~s~%" 'name) (trace-run-goal (conj* g ...) s p))) ...)]))
     
     (define (trace-bind g answers p depth)
       (cert (goal? g) (list? answers) (number? depth) (package? p))

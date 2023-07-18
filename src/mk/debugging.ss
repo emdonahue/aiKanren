@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo displayo noopo
 	  print-substitution print-reification
-	  trace-goal-path trace-query run-trace-goal print-depth-limit)
+	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -32,8 +32,21 @@
 
   (define trace-path (make-parameter '(()))) ; Path taken so far through trace goals
   (define trace-goal-path (make-parameter '())) ; Prefix that trace-path must follow. Paths off prefix fail. Used to constrain search for debugging.
-  (define trace-query (make-parameter '()))
+  (define trace-query (make-parameter #f))
 
+  (define-syntax trace-goal ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
+    (syntax-rules ()
+      [(_ name goals ...)
+       (make-trace-goal 'name '(goals ...) (conj* goals ...))]))
+  
+  (define-syntax trace-conde
+    (syntax-rules ()
+      [(_ (name g ...))
+       (if (trace-query)
+	   (trace-goal name g ...)
+	   (conj* g ...))]
+      [(_ (c0 c ...)) (conde-disj (trace-conde c0) (trace-conde c ...))]))
+  
   (define (trace-path-cons name path)
     (if (or (null? path) (not (pair? (car path))))
 	(cons name path)

@@ -2,7 +2,7 @@
   (export run run* run1
 	  run-states run*-states run1-state
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
-	  fresh exist constrain
+	  fresh exist constrain conde
 	  trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils))
   
@@ -15,6 +15,12 @@
 	 (state-varid state) varid (q ...)
 	 (values (conj* g ...) (set-state-varid state varid) p)))]))
 
+ (define-syntax conde ;TODO make conde do fail checks syntactically
+   (syntax-rules ()
+     [(_ (g ...)) (conj* g ...)]
+     [(_ c0 c ...)
+      (conde-disj (conde c0) (conde c ...))]))
+ 
  (define-syntax exist
    (syntax-rules ()
      [(_ () g0 g ...) (conj* g0 g ...)]
