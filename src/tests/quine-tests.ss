@@ -50,7 +50,7 @@
 		     ])
 		   (run-dfs 1 28 (q) (evalo q '() q))))
 
-    (trace-run 2 (q) (evalo q q))
+;    (trace-run 2 (q) (evalo q q))
 
 					;    (evalo (eval-apply (eval-rator lookupo) (eval-rand)))
 

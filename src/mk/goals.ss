@@ -86,6 +86,10 @@
   
   ;; === TRACING INTERPRETER ===
 
+    ;;need to confirm that prefix of complete path is same as prefix of current goal
+    ;;need to build full paths for each answer - can be built top down from sub paths returned by subgoals
+    ;;need to be able to print path prefix at any time - issue is we dont know how many right conjuncts a goal will have
+    
     (define (trace-run-goal g s p depth)
     (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
     (cond
