@@ -259,7 +259,7 @@
 	(disj-car (disj-lhs g))
 	g))
 
-  (define (disj-cdr g)
+  (define (disj-cdr g) ;TODO microbenchmark disj cdr that looks ahead instead of using base case to check for non disj
     (if (disj? g)
 	(disj (disj-cdr (disj-lhs g)) (disj-rhs g))
 	fail))
