@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo displayo noopo
 	  print-substitution print-reification
-	  trace-goal-path print-trace-body trace-query run-trace-goal)
+	  trace-goal-path trace-query run-trace-goal print-depth-limit)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -35,13 +35,14 @@
   (define trace-query (make-parameter '()))
 
   (define (trace-path-cons name path)
-    (if (or (null? path) (not (pair? (car path)))) (cons name path)
+    (if (or (null? path) (not (pair? (car path))))
+	(cons name path)
 	(cons (trace-path-cons name (car path)) (cdr path))))
 
   (define (run-trace-goal g s depth ctn)
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))]
-		   [trace-path (trace-path)])
+		   [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
       (print-trace-body g s)
       (let-values ([(answers p) (ctn (trace-goal-goal g) s)])
 	(org-print-header " <answers>")
@@ -67,6 +68,9 @@
 	(org-print-header " <reification>")
 	(org-print-item (print-reification substitution)))
 	))
+
+  (define (print-depth-limit)
+    (org-print-header " <depth limit reached>"))
 
   (define (walk-substitution s)
     (cert (state? s))

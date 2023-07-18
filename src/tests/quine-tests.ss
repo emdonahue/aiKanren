@@ -50,7 +50,9 @@
 		     ])
 		   (run-dfs 1 28 (q) (evalo q '() q))))
 
-;    (trace-run 5 (q) (evalo q '() q))
+;    (trace-run 5 (q) (evalo q q))
+
+;    (evalo (eval-apply (eval-rator lookupo) (eval-rand)))
     
     #;
     (parameterize ([trace-goal-path '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo evalo-rand evalo)])

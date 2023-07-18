@@ -1,6 +1,6 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
-  (export run-goal run-goal-dfs trace-run-goal stream-step) ; TODO trim exports
+  (export run-goal run-goal-dfs trace-run-goal stream-step trace-conde)
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   ;; === INTERLEAVING INTERPRETER ===
@@ -27,7 +27,7 @@
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 		    (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)]
+     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)] 
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)
@@ -91,7 +91,7 @@
     (cond
      [(failure? s) (values '() p)]
      [(succeed? g) (values (list s) p)]
-     [(zero? depth) (org-print-header " <depth limit reached>") (values '() p)]
+     [(zero? depth) (print-depth-limit) (values '() p)]
      [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
 		  (trace-bind (conj-rhs g) answers p depth))]
      [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (fx1- depth))]
@@ -106,23 +106,28 @@
      [(trace-goal? g) (run-trace-goal g s depth (lambda (g s) (trace-run-goal g s p depth)))]
      [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
 
-  (define (trace-bind g answers p depth)
-		(cert (goal? g) (list? answers) (number? depth) (package? p))
-    (if (null? answers) (values '() p)
-	(let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
-		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
-	  (values (append ans0 ans^) p))))
-  
-  ;; === STREAMS ===
-  
-  (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
-    (cert (stream? s) (package? p)) ; -> goal? stream? package?
-    (exclusive-cond
-     [(failure? s) (values s p)]
-     [(state? s) (values s p)]
-     [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
-		  (bind (bind-goal s) s^ p))]
-     [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
-		   (values (mplus (mplus-rhs s) lhs) p))]
-     [(answers? s) (values (answers-cdr s) p)]
-     [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))) 
+    (define-syntax trace-conde
+      (syntax-rules ()
+	[(_ (name g ...) ...)
+	 (conde ((lambda (s p) (printf "trace-conde: ~s~%" 'name) (conj* g ...))) ...)]))
+    
+    (define (trace-bind g answers p depth)
+      (cert (goal? g) (list? answers) (number? depth) (package? p))
+      (if (null? answers) (values '() p)
+	  (let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
+			[(ans^ p) (trace-bind g (cdr answers) p depth)])
+	    (values (append ans0 ans^) p))))
+    
+    ;; === STREAMS ===
+    
+    (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
+      (cert (stream? s) (package? p)) ; -> goal? stream? package?
+      (exclusive-cond
+       [(failure? s) (values s p)]
+       [(state? s) (values s p)]
+       [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
+		    (bind (bind-goal s) s^ p))]
+       [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
+		     (values (mplus (mplus-rhs s) lhs) p))]
+       [(answers? s) (values (answers-cdr s) p)]
+       [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))) 
