@@ -52,7 +52,9 @@
 
 ;    (trace-run 5 (q) (evalo q q))
 
-;    (evalo (eval-apply (eval-rator lookupo) (eval-rand)))
+					;    (evalo (eval-apply (eval-rator lookupo) (eval-rand)))
+
+;    (trace-run (x1) (trace-conde [(== x1 1)] [(== x1 2)]))
     
     #;
     (parameterize ([trace-goal-path '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo evalo-rand evalo)])

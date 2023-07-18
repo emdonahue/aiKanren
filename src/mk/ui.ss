@@ -2,15 +2,9 @@
   (export run run* run1
 	  run-states run*-states run1-state
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
-	  fresh exist conde constrain
+	  fresh exist constrain
 	  trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils))
-
-  (define-syntax conde ;TODO make conde expand syntactically
-    (syntax-rules ()
-      [(_ (g ...)) (conj* g ...)]
-      [(_ c0 c ...)
-       (conde-disj (conde c0) (conde c ...))]))
   
  (define-syntax fresh ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
    (syntax-rules ()

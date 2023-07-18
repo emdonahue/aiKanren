@@ -72,9 +72,9 @@
 		       (run-goal-dfs ctn s p n depth answers succeed))]
      [(zero? depth) (values n answers p)]
      [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
-     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n (fx1- depth) answers ctn)])
-		   (if (zero? num-remaining) (values 0 answers p)
-		       (run-goal-dfs (conde-rhs g) s p num-remaining (fx1- depth) answers ctn)))]
+     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-car g) s p n (fx1- depth) answers ctn)])
+		   (if (zero? num-remaining) (values num-remaining answers p)
+		       (run-goal-dfs (conde-cdr g) s p num-remaining depth answers ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
 		    (run-goal-dfs g s p n depth answers ctn))]
      [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
@@ -109,7 +109,7 @@
     (define-syntax trace-conde
       (syntax-rules ()
 	[(_ (name g ...) ...)
-	 (conde ((lambda (s p) (printf "trace-conde: ~s~%" 'name) (conj* g ...))) ...)]))
+	 (conde ((lambda (s p) (printf "trace-conde: ~s~%" 'name) (trace-run-goal (conj* g ...) s p))) ...)]))
     
     (define (trace-bind g answers p depth)
       (cert (goal? g) (list? answers) (number? depth) (package? p))

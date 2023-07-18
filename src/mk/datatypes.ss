@@ -20,7 +20,7 @@
 	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
-	  conde-disj conde? conde-lhs conde-rhs conde->disj
+	  conde conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
@@ -123,7 +123,6 @@
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
-  (define-structure (conde lhs rhs))
   (define-structure (noto goal)) ; Negated goal
   (define-structure (exist procedure))
 
@@ -156,6 +155,25 @@
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
 	 clauses ...)]))
 
+  (define-structure (conde lhs rhs))
+
+  (define (conde-car g)
+    (if (conde? g)
+	(conde-car (conde-lhs g))
+	g))
+
+  (define (conde-cdr g)
+    (if (conde? g)
+	(let ([lhs (conde-cdr (conde-lhs g))])
+	  (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
+	fail))
+  
+  (define-syntax conde ;TODO make conde expand syntactically
+    (syntax-rules ()
+      [(_ (g ...)) (conj* g ...)]
+      [(_ c0 c ...)
+       (conde-disj (conde c0) (conde c ...))]))
+  
   (define (conde-disj x y)
     ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
     (cond
