@@ -89,22 +89,22 @@
     (define (trace-run-goal g s p depth)
     (cert (goal? g) (state-or-failure? s) (package? p) (number? depth))
     (cond
-     [(failure? s) (values '() p)]
-     [(succeed? g) (values (list s) p)]
-     [(zero? depth) (print-depth-limit) (values '() p)]
-     [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth)])
+     [(failure? s) (values '() '() p)]
+     [(succeed? g) (values '() (list s) p)]
+     [(zero? depth) (print-depth-limit) (values '() '() p)]
+     [(conj? g) (let-values ([(paths answers p) (trace-run-goal (conj-lhs g) s p depth)])
 		  (trace-bind (conj-rhs g) answers p depth))]
-     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-car g) s p (fx1- depth))]
-			       [(rhs p) (trace-run-goal (conde-cdr g) s p depth)])
-		   (values (append lhs rhs) p))]
-     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+     [(conde? g) (let*-values ([(l-paths lhs p) (trace-run-goal (conde-car g) s p (fx1- depth))]
+			       [(r-paths rhs p) (trace-run-goal (conde-cdr g) s p depth)])
+		   (values '() (append lhs rhs) p))]
+     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
 		    (trace-run-goal g s p depth))]
      [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
 		   (trace-run-goal g s p depth))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (trace-run-goal g s p depth))]
      [(trace-goal? g) (run-trace-goal g s depth (lambda (g s) (trace-run-goal g s p depth)))]
-     [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
+     [else (values '() (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
 
     (define-syntax trace-conde
       (syntax-rules ()
@@ -113,10 +113,10 @@
     
     (define (trace-bind g answers p depth)
       (cert (goal? g) (list? answers) (number? depth) (package? p))
-      (if (null? answers) (values '() p)
-	  (let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth)]
-			[(ans^ p) (trace-bind g (cdr answers) p depth)])
-	    (values (append ans0 ans^) p))))
+      (if (null? answers) (values '() '() p)
+	  (let*-values ([(paths0 ans0 p) (trace-run-goal g (car answers) p depth)]
+			[(paths^ ans^ p) (trace-bind g (cdr answers) p depth)])
+	    (values '() (append ans0 ans^) p))))
     
     ;; === STREAMS ===
     

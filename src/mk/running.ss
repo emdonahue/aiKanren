@@ -44,7 +44,7 @@
 
   (define (trace-runner q g s depth)
     (map (lambda (s) (reify s q))
-	 (let-values ([(answers p)
+	 (let-values ([(paths answers p)
 		       (org-trace
 			(parameterize ([trace-query q])
 			 (trace-run-goal g s empty-package depth)))]) answers))))
