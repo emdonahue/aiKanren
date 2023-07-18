@@ -42,10 +42,8 @@
   (define-syntax trace-conde
     (syntax-rules ()
       [(_ (name g ...))
-       (if (trace-query)
-	   (trace-goal name g ...)
-	   (conj* g ...))]
-      [(_ (c0 c ...)) (conde-disj (trace-conde c0) (trace-conde c ...))]))
+       (trace-goal name g ...)]
+      [(_ c0 c ...) (conde-disj (trace-conde c0) (trace-conde c ...))]))
   
   (define (trace-path-cons name path)
     (if (or (null? path) (not (pair? (car path))))
@@ -57,10 +55,10 @@
     (parameterize ([org-depth (fx1+ (org-depth))]
 		   [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
       (print-trace-body g s)
-      (let-values ([(answers p) (ctn (trace-goal-goal g) s)])
+      (let-values ([(paths answers p) (ctn (trace-goal-goal g) s)])
 	(org-print-header " <answers>")
 	(org-print-item answers)
-	(values answers p))))
+	(values (map (lambda (p) (cons (trace-goal-name g) p)) paths) answers p))))
   
   (define (print-trace-body g s)
     (when (org-tracing)

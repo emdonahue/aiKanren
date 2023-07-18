@@ -1,6 +1,6 @@
 (library (all-tests)
   (export run-all-tests)
-  (import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goals-tests) (quine-tests) (interpreter-tests) (dfs-tests))
+  (import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goals-tests) (quine-tests) (interpreter-tests) (dfs-tests) (tracing-tests))
 
   (define (run-all-tests)
     
@@ -14,6 +14,7 @@
     (run-dfs-tests)
     (run-constraints-tests)
     (run-listo-tests)
+    (run-tracing-tests)
     (run-quine-tests)
     (run-interpreter-tests)
 

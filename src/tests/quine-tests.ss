@@ -54,7 +54,8 @@
 
 					;    (evalo (eval-apply (eval-rator lookupo) (eval-rand)))
 
-;    (trace-run (x1) (trace-conde [(== x1 1)] [(== x1 2)]))
+;    (display    (trace-run (x1) (trace-conde [path1 (== x1 1)] [path2 (== x1 2)])))
+;(org-trace    (display (expand '(trace-conde [path1 (== x1 1)] [path2 (== x1 2)]))))
     
     #;
     (parameterize ([trace-goal-path '(evalo eval-apply eval-rator evalo eval-lambda not-in-envo evalo-rand evalo)])
