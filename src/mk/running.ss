@@ -43,8 +43,8 @@
 	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
 
   (define (trace-runner q g s depth)
-    (map (lambda (s) (reify s q))
-	 (let-values ([(paths answers p)
-		       (org-trace
-			(parameterize ([trace-query q])
-			 (trace-run-goal g s empty-package depth)))]) answers))))
+    (let-values ([(paths answers p)
+		  (org-trace
+		   (parameterize ([trace-query q])
+		     (trace-run-goal g s empty-package depth)))])
+      (map (lambda (path s) (list (reify s q) path s)) answers answers))))
