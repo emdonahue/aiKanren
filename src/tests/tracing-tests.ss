@@ -15,7 +15,7 @@
     (tassert "proof constraint"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (cadar (trace-run (x1) (trace-goal x1=1 (== x1 1))))) '((x1=1)))
-    (tassert "proof conde"
+    (tassert "proof trace-conde"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])))) '(((x1=1)) ((x1=2))))
     (tassert "proof conj"
@@ -31,11 +31,13 @@
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1) (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)])))) '(((x1=1)) ()))
 
-    (tassert "prove constraint succeed"
+    (tassert "theorem constraint head succeed"
 	     (parameterize ([current-output-port (open-output-string)])
-	       (cadar (trace-run (x1) (prooveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
-    (tassert "prove constraint fail"
+	       (cadar (trace-run (x1) (proveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
+    (tassert "theorem constraint head fail"
 	     (parameterize ([current-output-port (open-output-string)])
-	       (trace-run (x1) (prooveo ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())
-    
-))
+	       (trace-run (x1) (proveo ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())    
+    (tassert "theorem trace-conde"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (map cadr (trace-run (x1) (proveo ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)]))))) '(((x1=2))))
+    ))

@@ -104,6 +104,9 @@
 
   (define (theorem-contradiction theorem term)
     (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (eq? theorem term))))
+
+  (define (subtheorem theorem)
+    (if (pair? (car theorem)) (subtheorem (cons (car theorem) (cdr theorem))) (cdr theorem)))
   
   (define (walk-substitution s)
     (cert (state? s))

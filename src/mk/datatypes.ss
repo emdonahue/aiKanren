@@ -27,7 +27,7 @@
 	  make-noto noto? noto-goal
 	  __
 	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal
-	  prooveo proof-goal? proof-goal-goal proof-goal-proof)
+	  proveo proof-goal? proof-goal-goal proof-goal-proof)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
@@ -178,7 +178,7 @@
 
   (define-structure (trace-goal name source goal)) ;TODO consider renaming trace-goal -> traceo or proveo -> prove
   (define-structure (proof-goal proof goal))
-  (define-syntax prooveo
+  (define-syntax proveo
     (syntax-rules ()
       [(_ proof g ...)
        (make-proof-goal 'proof (conj* g ...))]))
