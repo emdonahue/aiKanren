@@ -106,6 +106,7 @@
 	   [(fresh? g) (let-values ([(g s p) (g s p)])
 			 (trace-run-goal g s p depth proof))]
 	   [(trace-goal? g) (run-trace-goal g s depth proof (lambda (g s proof) (trace-run-goal g s p depth proof)))]
+	   [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof)]
 	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
     
     (define (trace-bind g answers p depth)

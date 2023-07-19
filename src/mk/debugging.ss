@@ -85,7 +85,7 @@
 
   (define (print-depth-limit)
     (org-print-header " <depth limit reached>"))
-
+  
   (define (open-subproof proof name)
     (if (null? (car proof)) (cons (list '() name) (cdr proof))
 	(cons (open-subproof (car proof) name) (cdr proof))))
