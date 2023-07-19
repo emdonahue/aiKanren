@@ -48,4 +48,4 @@
 		   (parameterize ([trace-query q])
 		     (trace-run-goal g s empty-package depth '(()))))])
       (cert (list? answers))
-      (map (lambda (s) (list (reify s q) s)) answers))))
+      (map (lambda (proof-s) (list (reify (cdr proof-s) q) (car proof-s) (cdr proof-s))) answers))))

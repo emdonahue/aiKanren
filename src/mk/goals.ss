@@ -95,7 +95,7 @@
       (if (zero? depth) (begin (print-depth-limit) (values '() p))
 	  (exclusive-cond
 	   [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof)])
-			(trace-bind (conj-rhs g) answers p depth proof))]
+			(trace-bind (conj-rhs g) answers p depth))]
 	   [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)) proof)]
 				     [(rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)) proof)])
 			 (values (append lhs rhs) p))]
@@ -106,14 +106,14 @@
 	   [(fresh? g) (let-values ([(g s p) (g s p)])
 			 (trace-run-goal g s p depth proof))]
 	   [(trace-goal? g) (run-trace-goal g s depth proof (lambda (g s proof) (trace-run-goal g s p depth proof)))]
-	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)])))
+	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
     
-    (define (trace-bind g answers p depth proof)
+    (define (trace-bind g answers p depth)
 		  (cert (goal? g) (list? answers) (package? p) (number? depth))
       (cert (goal? g) (list? answers) (number? depth) (package? p))
       (if (null? answers) (values '() p)
-	  (let*-values ([(ans0 p) (trace-run-goal g (car answers) p depth proof)]
-			[(ans^ p) (trace-bind g (cdr answers) p depth proof)])
+	  (let*-values ([(ans0 p) (trace-run-goal g (cdar answers) p depth (caar answers))]
+			[(ans^ p) (trace-bind g (cdr answers) p depth)])
 	    (values (append ans0 ans^) p))))
     
     ;; === STREAMS ===
