@@ -176,7 +176,7 @@
      [(fail? y) x]
      [else (make-conde x y)]))
 
-  (define-structure (trace-goal name source goal))
+  (define-structure (trace-goal name source goal)) ;TODO consider renaming trace-goal -> traceo or proveo -> prove
   (define-structure (proof-goal proof goal))
   (define-syntax prooveo
     (syntax-rules ()
