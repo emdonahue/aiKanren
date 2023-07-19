@@ -1,7 +1,7 @@
 (library (debugging)
   (export printfo displayo noopo
 	  print-substitution print-reification
-	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde)
+	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde close-proof)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -60,13 +60,18 @@
        (let-values ([(answers p) (ctn (trace-goal-goal g) s proof)])
 	 (org-print-header " <answers>")
 	 (org-print-item answers)
-	 (printf "answers ~s~%" answers)
-	 (values answers p)))))
+	 (values (map (lambda (a) (cons (close-subproof (car a)) (cdr a))) answers) p)))))
 
   (define (open-subproof proof name)
     (if (null? (car proof)) (cons (list '() name) (cdr proof))
 	(cons (open-subproof (car proof) name) (cdr proof))))
 
+  (define (close-subproof proof)
+    (if (null? (caar proof)) (cons '() (cdar proof))
+	(cons (close-subproof (car proof)) (cdr proof))))
+
+  (define close-proof cdr)
+  
   (define (print-proof proof)
     (if (pair? proof) (reverse (map print-proof proof)) proof))
   
