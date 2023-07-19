@@ -23,7 +23,7 @@
 	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
 	(make-sbral (fx1+ (sbral-length s)) e s)))
 
-  (define (sbral-ref s n default)    
+  (define (sbral-ref s n default) ;TODO can sbral reference walk back up the list on the return from the recursion and rerecurse into nodes it visits along the way because early vars will always point to later vars?
     (cond
      [(or (fx< n 0) (fx<= (sbral-length s) n)) default]
      [(fx< n (sbral-tree-length s)) (sbral-tree-ref (sbral-tree s) n)]

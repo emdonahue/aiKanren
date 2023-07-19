@@ -91,23 +91,22 @@
     ;;need to be able to print path prefix at any time - issue is we dont know how many right conjuncts a goal will have
     
     (define (trace-run-goal g s p depth proof)
-    (cert (goal? g) (state? s) (package? p) (number? depth))
-    (cond
-     [(succeed? g) (values (list (cons '() s)) p)]
-     [(zero? depth) (print-depth-limit) (values '() p)]
-     [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof)])
-		  (trace-bind (conj-rhs g) answers p depth proof))]
-     [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)) proof)]
-			       [(rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)) proof)])
-		   (values (append lhs rhs) p))]
-     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
-		    (trace-run-goal g s p depth proof))]
-     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-		   (trace-run-goal g s p depth proof))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (trace-run-goal g s p depth proof))]
-     [(trace-goal? g) (run-trace-goal g s depth proof (lambda (g s proof) (trace-run-goal g s p depth proof)))]
-     [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)]))
+      (cert (goal? g) (state? s) (package? p) (number? depth))
+      (if (zero? depth) (begin (print-depth-limit) (values '() p))
+	  (exclusive-cond
+	   [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof)])
+			(trace-bind (conj-rhs g) answers p depth proof))]
+	   [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)) proof)]
+				     [(rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)) proof)])
+			 (values (append lhs rhs) p))]
+	   [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
+			  (trace-run-goal g s p depth proof))]
+	   [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
+			 (trace-run-goal g s p depth proof))]
+	   [(fresh? g) (let-values ([(g s p) (g s p)])
+			 (trace-run-goal g s p depth proof))]
+	   [(trace-goal? g) (run-trace-goal g s depth proof (lambda (g s proof) (trace-run-goal g s p depth proof)))]
+	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list s))) p)])))
     
     (define (trace-bind g answers p depth proof)
 		  (cert (goal? g) (list? answers) (package? p) (number? depth))
