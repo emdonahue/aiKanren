@@ -55,10 +55,11 @@
     (parameterize ([org-depth (fx1+ (org-depth))]
 		   [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
       (print-trace-body g s)
-      (let-values ([(paths answers p) (ctn (trace-goal-goal g) s)])
+      (let-values ([(answers p) (ctn (trace-goal-goal g) s)])
 	(org-print-header " <answers>")
 	(org-print-item answers)
-	(values (map (lambda (p) (cons (trace-goal-name g) p)) paths) answers p))))
+	(printf "answers ~s~%" answers)
+	(values answers p))))
   
   (define (print-trace-body g s)
     (when (org-tracing)
