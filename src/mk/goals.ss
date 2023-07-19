@@ -105,7 +105,7 @@
 			 (trace-run-goal g s p depth proof theorem))]
 	   [(fresh? g) (let-values ([(g s p) (g s p)])
 			 (trace-run-goal g s p depth proof theorem))]
-	   [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof) (trace-run-goal g s p depth proof theorem)))] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
+	   [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof theorem) (trace-run-goal g s p depth proof theorem)))] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
 	   [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
     

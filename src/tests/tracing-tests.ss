@@ -37,7 +37,16 @@
     (tassert "theorem constraint head fail"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (trace-run (x1) (proveo ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())    
-    (tassert "theorem trace-conde"
+    (tassert "theorem trace-conde select branch"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1) (proveo ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)]))))) '(((x1=2))))
+    (tassert "theorem trace-conde nested select branch"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (map cadr (trace-run (x1 x2)
+				    (proveo ((x1=2 (x2=2)))
+					    (trace-conde [x1=1 (== x1 1)]
+							 [x1=2 (== x1 2)
+							       (trace-conde
+								[x2=1 (== x2 1)]
+								[x2=2 (== x2 2)])]))))) '(((x1=2 (x2=2)))))
     ))
