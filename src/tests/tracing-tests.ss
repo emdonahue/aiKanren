@@ -1,0 +1,39 @@
+(library (tracing-tests)
+  (export run-tracing-tests)
+  (import (chezscheme) (test-runner) (aikanren) (utils) (debugging) (datatypes))
+
+  (define (run-tracing-tests)
+    (tassert "trace ==" (map car (trace-run (x1) (org-untrace (== x1 1)))) '(1))
+    (tassert "trace == & ==" (map car (trace-run (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2))))) '((1 2)))
+    (tassert "trace == & == depth 1" (map car (trace-run 1 (x1 x2) (== x1 1) (== x2 2))) '((1 2)))
+    (tassert "trace == | ==" (map car (trace-run (x1) (org-untrace (conde [(== x1 1)] [(== x1 2)])))) '(1 2))
+    (tassert "trace exist" (map car (trace-run (x1) (org-untrace (exist (x2) (== x1 x2) (== x2 1))))) '(1))
+    (tassert "trace fresh" (map car (trace-run (x1) (org-untrace  (fresh (x2) (== x1 x2) (== x2 1))))) '(1))
+    (tassert "trace matcho" (map car (trace-run (x1) (org-untrace (matcho ([x1 (a . d)]) (== a 1) (== d 2))))) '((1 . 2)))
+    (tassert "trace fail if constraint fails" (map car (trace-run (x1) (org-untrace (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])))) '(2))    
+
+    (tassert "proof constraint"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (cadar (trace-run (x1) (trace-goal x1=1 (== x1 1))))) '((x1=1)))
+    (tassert "proof conde"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (map cadr (trace-run (x1) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])))) '(((x1=1)) ((x1=2))))
+    (tassert "proof conj"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (cadar (trace-run (x1 x2) (trace-goal x1=1 (== x1 1)) (trace-goal x2=2 (== x2 2))))) '((x1=1) (x2=2)))
+    (tassert "proof conj lhs"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (cadar (trace-run (x1 x2) (trace-goal x1=1 (== x1 1)) (== x2 2)))) '((x1=1)))
+    (tassert "proof conj rhs"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (cadar (trace-run (x1 x2) (== x1 1) (trace-goal x2=2 (== x2 2))))) '((x2=2)))
+    (tassert "proof conde"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (map cadr (trace-run (x1) (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)])))) '(((x1=1)) ()))
+
+    #;
+    (tassert "prove constraint"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (cadar (trace-run (x1) (prooveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
+    
+))
