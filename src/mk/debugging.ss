@@ -1,7 +1,8 @@
 (library (debugging)
   (export printfo displayo noopo
 	  print-substitution print-reification
-	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde close-proof)
+	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde
+	  close-proof print-proof)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -90,7 +91,7 @@
 	(cons (open-subproof (car proof) name) (cdr proof))))
 
   (define (close-subproof proof)
-    (if (null? (caar proof)) (cons '() (cdar proof))
+    (if (null? (caar proof)) (cons* '() (cdar proof) (cdr proof))
 	(cons (close-subproof (car proof)) (cdr proof))))
 
   (define close-proof cdr)
