@@ -65,11 +65,14 @@
   (define (open-subproof proof name)
     (if (null? (car proof)) (cons (list '() name) (cdr proof))
 	(cons (open-subproof (car proof) name) (cdr proof))))
+
+  (define (print-proof proof)
+    (if (pair? proof) (reverse (map print-proof proof)) proof))
   
   (define (print-trace-body g s proof)
     (when (org-tracing)
-	(org-print-header " <path>")
-	(org-print-item proof)
+	(org-print-header " <proof>")
+	(org-print-item (print-proof proof))
 	(org-print-header " <source>")
 	(for-each org-print-item (trace-goal-source g))
 	(org-print-header " <simplified>")
