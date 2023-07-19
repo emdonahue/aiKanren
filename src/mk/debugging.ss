@@ -61,19 +61,6 @@
 	 (org-print-header " <answers>")
 	 (org-print-item answers)
 	 (values (map (lambda (a) (cons (close-subproof (car a)) (cdr a))) answers) p)))))
-
-  (define (open-subproof proof name)
-    (if (null? (car proof)) (cons (list '() name) (cdr proof))
-	(cons (open-subproof (car proof) name) (cdr proof))))
-
-  (define (close-subproof proof)
-    (if (null? (caar proof)) (cons '() (cdar proof))
-	(cons (close-subproof (car proof)) (cdr proof))))
-
-  (define close-proof cdr)
-  
-  (define (print-proof proof)
-    (if (pair? proof) (reverse (map print-proof proof)) proof))
   
   (define (print-trace-body g s proof)
     (when (org-tracing)
@@ -97,6 +84,19 @@
 
   (define (print-depth-limit)
     (org-print-header " <depth limit reached>"))
+
+  (define (open-subproof proof name)
+    (if (null? (car proof)) (cons (list '() name) (cdr proof))
+	(cons (open-subproof (car proof) name) (cdr proof))))
+
+  (define (close-subproof proof)
+    (if (null? (caar proof)) (cons '() (cdar proof))
+	(cons (close-subproof (car proof)) (cdr proof))))
+
+  (define close-proof cdr)
+  
+  (define (print-proof proof)
+    (if (pair? proof) (reverse (map print-proof proof)) proof))
 
   (define (walk-substitution s)
     (cert (state? s))
