@@ -51,7 +51,7 @@
 	(cons name path)
 	(cons (trace-path-cons name (car path)) (cdr path))))
 
-  (define (run-trace-goal g s depth proof ctn)
+  (define (run-trace-goal g s depth proof theorem ctn)
     (cert (goal? g) (state? s))
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))]
