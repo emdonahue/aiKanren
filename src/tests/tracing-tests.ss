@@ -31,9 +31,11 @@
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1) (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)])))) '(((x1=1)) ()))
 
-    #;
-    (tassert "prove constraint"
+    (tassert "prove constraint succeed"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (cadar (trace-run (x1) (prooveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
+    (tassert "prove constraint fail"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (trace-run (x1) (prooveo ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())
     
 ))

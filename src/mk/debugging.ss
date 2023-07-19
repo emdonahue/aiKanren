@@ -53,15 +53,18 @@
 
   (define (run-trace-goal g s depth proof theorem ctn)
     (cert (goal? g) (state? s))
-    (org-print-header (trace-goal-name g))
-    (parameterize ([org-depth (fx1+ (org-depth))]
-		   [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
-      (let ([proof (open-subproof proof (trace-goal-name g))])
-       (print-trace-body g s proof)
-       (let-values ([(answers p) (ctn (trace-goal-goal g) s proof)])
-	 (org-print-header " <answers>")
-	 (org-print-item answers)
-	 (values (map (lambda (a) (cons (close-subproof (car a)) (cdr a))) answers) p)))))
+    (if (and theorem (theorem-contradiction theorem (trace-goal-name g)))
+	(ctn fail s proof)
+	(begin
+	  (org-print-header (trace-goal-name g))
+	  (parameterize ([org-depth (fx1+ (org-depth))]
+			 [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
+	    (let ([proof (open-subproof proof (trace-goal-name g))])
+	      (print-trace-body g s proof)
+	      (let-values ([(answers p) (ctn (trace-goal-goal g) s proof)])
+		(org-print-header " <answers>")
+		(org-print-item answers)
+		(values (map (lambda (a) (cons (close-subproof (car a)) (cdr a))) answers) p)))))))
   
   (define (print-trace-body g s proof)
     (when (org-tracing)
@@ -99,6 +102,9 @@
   (define (print-proof proof)
     (if (pair? proof) (reverse (map print-proof proof)) proof))
 
+  (define (theorem-contradiction theorem term)
+    (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (eq? theorem term))))
+  
   (define (walk-substitution s)
     (cert (state? s))
     (org-untrace (map (lambda (v) (walk s v)) (reverse (sbral->list (state-substitution s)))))))

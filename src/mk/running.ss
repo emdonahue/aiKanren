@@ -46,6 +46,6 @@
     (let-values ([(answers p)
 		  (org-trace
 		   (parameterize ([trace-query q])
-		     (trace-run-goal g s empty-package depth '(()) '())))])
+		     (trace-run-goal g s empty-package depth '(()) #f)))])
       (cert (list? answers))
       (map (lambda (proof-s) (list (reify (cdr proof-s) q) (print-proof (close-proof (car proof-s))) (cdr proof-s))) answers))))

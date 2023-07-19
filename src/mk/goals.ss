@@ -27,7 +27,7 @@
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 		    (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)] 
+     [(trace-goal? g) (run-goal (trace-goal-goal g) s p)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)
@@ -105,8 +105,8 @@
 			 (trace-run-goal g s p depth proof theorem))]
 	   [(fresh? g) (let-values ([(g s p) (g s p)])
 			 (trace-run-goal g s p depth proof theorem))]
-	   [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof) (trace-run-goal g s p depth proof theorem)))]
-	   [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof theorem)]
+	   [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof) (trace-run-goal g s p depth proof theorem)))] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
+	   [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
     
     (define (trace-bind g answers p depth theorem)
