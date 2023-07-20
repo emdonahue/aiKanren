@@ -23,7 +23,7 @@
   ;; === INTERPRETER ===
   
   (define (trace-run-goal g s p depth proof theorem)
-    (cert (goal? g) (state? s) (package? p) (number? depth))
+    (cert (goal? g) (state-or-failure? s) (or (fail? g) (not (failure? s))) (package? p) (number? depth))
     (if (zero? depth) (begin (print-depth-limit) (values  '() p))
 	(exclusive-cond
 	 [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof theorem)])
@@ -39,7 +39,8 @@
 		       (trace-run-goal g s p depth proof theorem))]
 	 [(trace-goal? g) (run-trace-goal g s p depth proof theorem)]
 	 [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
-	 [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (make-trace-answer theorem proof s)))) p)])))
+	 [else (let ([s (run-constraint g s)])
+		 (values (if (failure? s) '() (list (make-trace-answer theorem proof s))) p))])))
   
   (define (trace-bind g answers p depth)
     (cert (goal? g) (list? answers) (package? p) (number? depth))
