@@ -28,15 +28,15 @@
 	(exclusive-cond
 	 [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof theorem)])
 		      (trace-bind (conj-rhs g) answers p depth))]
-	 [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)) proof theorem)]
-				   [(rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)) proof theorem)])
+	 [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p depth proof theorem)]
+				   [(rhs p) (trace-run-goal (conde-rhs g) s p depth proof theorem)])
 		       (values (append lhs rhs) p))]
 	 [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;TODO DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
-			(trace-run-goal g s p depth proof theorem))]
+			(trace-run-goal g s p (fx1- depth) proof theorem))]
 	 [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
 		       (trace-run-goal g s p depth proof theorem))]
 	 [(fresh? g) (let-values ([(g s p) (g s p)])
-		       (trace-run-goal g s p depth proof theorem))]
+		       (trace-run-goal g s p (fx1- depth) proof theorem))]
 	 [(trace-goal? g) (run-trace-goal g s p depth proof theorem)]
 	 [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	 [else (let ([s (run-constraint g s)])
