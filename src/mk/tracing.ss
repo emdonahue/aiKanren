@@ -1,6 +1,6 @@
 (library (tracing)
   (export trace-query run-trace-goal trace-run-goal print-depth-limit trace-goal trace-conde
-	  close-proof
+	  open-proof close-proof
 	  trace-answer-proof trace-answer-state
 	  trace-dfs)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
@@ -131,6 +131,11 @@
   
   (define cursor '__)
   (define (cursor? c) (eq? c cursor))
+
+  (define open-proof '(__))
+  
+  (define (close-proof proof)
+    (reverse-proof (cdr proof)))
   
   (define (open-subproof proof name)
     (if (cursor? (car proof)) (cons (list cursor name) (cdr proof))
@@ -139,9 +144,6 @@
   (define (close-subproof proof)
     (if (cursor? (caar proof)) (cons* cursor (cdar proof) (cdr proof))
 	(cons (close-subproof (car proof)) (cdr proof))))
-
-  (define (close-proof proof)
-    (reverse-proof (cdr proof)))
   
   (define (reverse-proof proof)
     (if (pair? proof) (reverse (map reverse-proof proof)) proof))
