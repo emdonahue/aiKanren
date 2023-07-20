@@ -2,7 +2,7 @@
   (export printfo displayo noopo
 	  print-substitution print-reification
 	  trace-goal-path trace-query run-trace-goal print-depth-limit trace-goal trace-conde
-	  close-proof print-proof)
+	  close-proof)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
@@ -69,7 +69,7 @@
   (define (print-trace-body g s proof)
     (when (org-tracing)
 	(org-print-header " <proof>")
-	(org-print-item (print-proof proof))
+	(org-print-item (reverse-proof proof))
 	(org-print-header " <source>")
 	(for-each org-print-item (trace-goal-source g))
 	(org-print-header " <simplified>")
@@ -100,10 +100,11 @@
     (if (cursor? (caar proof)) (cons* cursor (cdar proof) (cdr proof))
 	(cons (close-subproof (car proof)) (cdr proof))))
 
-  (define close-proof cdr)
+  (define (close-proof proof)
+    (reverse-proof (cdr proof)))
   
-  (define (print-proof proof)
-    (if (pair? proof) (reverse (map print-proof proof)) proof))
+  (define (reverse-proof proof)
+    (if (pair? proof) (reverse (map reverse-proof proof)) proof))
 
   (define (theorem-contradiction theorem term)
     (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (or (eq? theorem cursor) (eq? theorem term)))))
