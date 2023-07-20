@@ -39,7 +39,7 @@
 		       (trace-run-goal g s p depth proof theorem))]
 	 [(fresh? g) (let-values ([(g s p) (g s p)])
 		       (trace-run-goal g s p depth proof theorem))]
-	 [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof theorem) (trace-run-goal g s p depth proof theorem)))] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
+	 [(trace-goal? g) (run-trace-goal g s p depth proof theorem)] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
 	 [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	 [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
   
@@ -58,17 +58,18 @@
 
   ;; === PRINTING ===
   
-  (define (run-trace-goal g s depth proof theorem ctn)
+  (define (run-trace-goal g s p depth proof theorem)
     (cert (goal? g) (state? s))
     (if (and theorem (theorem-contradiction theorem (trace-goal-name g)))
-	(ctn fail s proof theorem)
+	(trace-run-goal fail s p depth proof theorem)
 	(begin
 	  (org-print-header (trace-goal-name g))
 	  (parameterize ([org-depth (fx1+ (org-depth))]
 			 [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
 	    (let ([proof (open-subproof proof (trace-goal-name g))])
 	      (print-trace-body g s proof)
-	      (let-values ([(answers p) (ctn (trace-goal-goal g) s proof (and theorem (subtheorem theorem)))])
+	      (let-values ([(answers p)
+			    (trace-run-goal (trace-goal-goal g) s p depth proof (and theorem (subtheorem theorem)))])
 		(org-print-header " <answers>")
 		(org-print-item answers)
 		(values (map (lambda (a) (cons (close-subproof (car a)) (cdr a))) answers) p)))))))
