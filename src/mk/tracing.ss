@@ -56,7 +56,7 @@
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
-		       (values (fx1- n) (cons s answers) p)
+		       (begin (printf "PROOF ~s~%" proof) (values (fx1- n) (cons s answers) p))
 		       (trace-dfs ctn s p n depth answers proof succeed))]
      [(zero? depth) (values n answers p)]
      [(conj? g) (trace-dfs (conj-lhs g) s p n depth answers proof (conj (conj-rhs g) ctn))]
@@ -70,14 +70,14 @@
      [(fresh? g) (let-values ([(g s p) (g s p)])
 		   (trace-dfs g s p n (fx1- depth) answers proof ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof ctn)]
-     [(untrace-goal? g) (trace-dfs (untrace-goal-goal g) s p n depth answers proof ctn)]
+     [(untrace-goal? g) (trace-dfs (untrace-goal-goal g) s p n depth answers (close-subproof proof) ctn)]
      [(proof-goal? g) (nyi)]
      [else (trace-dfs ctn (run-constraint g s) p n depth answers proof succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof ctn)
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))])
-      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers proof ctn)])
+      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) (make-untrace-goal ctn))])
 	(org-print-header " <answers>")
 	(org-print-item answers)
 	(values ans-remaining answers p))))
