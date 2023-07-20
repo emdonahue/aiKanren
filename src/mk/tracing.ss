@@ -50,31 +50,34 @@
 		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
 	  (values (append ans0 ans^) p))))
 
-  (define (trace-dfs g s p n depth answers ctn)
+  (define-structure (untrace-goal goal))
+  
+  (define (trace-dfs g s p n depth answers proof ctn)
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons s answers) p)
-		       (trace-dfs ctn s p n depth answers succeed))]
+		       (trace-dfs ctn s p n depth answers proof succeed))]
      [(zero? depth) (values n answers p)]
-     [(conj? g) (trace-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
-     [(conde? g) (let-values ([(num-remaining answers p) (trace-dfs (conde-lhs g) s p n depth answers ctn)])
+     [(conj? g) (trace-dfs (conj-lhs g) s p n depth answers proof (conj (conj-rhs g) ctn))]
+     [(conde? g) (let-values ([(num-remaining answers p) (trace-dfs (conde-lhs g) s p n depth answers proof ctn)])
 		   (if (zero? num-remaining) (values num-remaining answers p)
-		       (trace-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
+		       (trace-dfs (conde-rhs g) s p num-remaining depth answers proof ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-		    (trace-dfs g s p n (fx1- depth) answers ctn))]
+		    (trace-dfs g s p n (fx1- depth) answers proof ctn))]
      [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-		   (trace-dfs g s p n depth answers ctn))]
+		   (trace-dfs g s p n depth answers proof ctn))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (trace-dfs g s p n (fx1- depth) answers ctn))]
-     [(trace-goal? g) (cps-trace-goal g s p n depth answers ctn)]
+		   (trace-dfs g s p n (fx1- depth) answers proof ctn))]
+     [(trace-goal? g) (cps-trace-goal g s p n depth answers proof ctn)]
+     [(untrace-goal? g) (trace-dfs (untrace-goal-goal g) s p n depth answers proof ctn)]
      [(proof-goal? g) (nyi)]
-     [else (trace-dfs ctn (run-constraint g s) p n depth answers succeed)]))
+     [else (trace-dfs ctn (run-constraint g s) p n depth answers proof succeed)]))
 
-  (define (cps-trace-goal g s p n depth answers ctn)
+  (define (cps-trace-goal g s p n depth answers proof ctn)
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))])
-      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers ctn)])
+      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers proof ctn)])
 	(org-print-header " <answers>")
 	(org-print-item answers)
 	(values ans-remaining answers p))))
