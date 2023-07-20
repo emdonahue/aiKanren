@@ -1,7 +1,8 @@
 (library (tracing)
   (export trace-query run-trace-goal trace-run-goal print-depth-limit trace-goal trace-conde
 	  close-proof
-	  trace-answer-proof trace-answer-state)
+	  trace-answer-proof trace-answer-state
+	  trace-dfs)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
 
   (define trace-query (make-parameter #f))
@@ -48,6 +49,35 @@
 	(let*-values ([(ans0 p) (trace-run-goal g (trace-answer-state (car answers)) p depth (trace-answer-proof (car answers)) (trace-answer-theorem (car answers)))]
 		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
 	  (values (append ans0 ans^) p))))
+
+  (define (trace-dfs g s p n depth answers ctn)
+    (cond
+     [(failure? s) (values n answers p)]
+     [(succeed? g) (if (succeed? ctn)
+		       (values (fx1- n) (cons s answers) p)
+		       (trace-dfs ctn s p n depth answers succeed))]
+     [(zero? depth) (values n answers p)]
+     [(conj? g) (trace-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
+     [(conde? g) (let-values ([(num-remaining answers p) (trace-dfs (conde-lhs g) s p n depth answers ctn)])
+		   (if (zero? num-remaining) (values num-remaining answers p)
+		       (trace-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
+     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+		    (trace-dfs g s p n (fx1- depth) answers ctn))]
+     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
+		   (trace-dfs g s p n depth answers ctn))]
+     [(fresh? g) (let-values ([(g s p) (g s p)])
+		   (trace-dfs g s p n (fx1- depth) answers ctn))]
+     [(trace-goal? g) (cps-trace-goal g s p n depth answers ctn)]
+     [(proof-goal? g) (nyi)]
+     [else (trace-dfs ctn (run-constraint g s) p n depth answers succeed)]))
+
+  (define (cps-trace-goal g s p n depth answers ctn)
+    (org-print-header (trace-goal-name g))
+    (parameterize ([org-depth (fx1+ (org-depth))])
+      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers ctn)])
+	(org-print-header " <answers>")
+	(org-print-item answers)
+	(values ans-remaining answers p))))
 
   ;; === PRINTING ===
   

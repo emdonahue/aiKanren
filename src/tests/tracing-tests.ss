@@ -1,7 +1,10 @@
 (library (tracing-tests)
   (export run-tracing-tests)
-  (import (chezscheme) (test-runner) (aikanren) (utils) (debugging) (datatypes))
+  (import (chezscheme) (test-runner) (aikanren) (utils) (debugging) (datatypes) (tracing))
 
+  (define x1 (make-var 1))
+  (define x2 (make-var 2))
+  
   (define (run-tracing-tests)
     (tassert "trace ==" (map car (trace-run (x1) (org-untrace (== x1 1)))) '(1))
     (tassert "trace == & ==" (map car (trace-run (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2))))) '((1 2)))
@@ -90,4 +93,10 @@
 					[x3=1 (== x3 1)]
 					[x3=2 (== x3 2)])])])))))
 	     '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))
+
+
+    (display (values->list (trace-dfs
+			    (conj (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
+				  (trace-conde [x2=1 (== x2 1)] [x2=2 (== x2 2)]))
+			    empty-state empty-package -1 -1 '() succeed)))
     ))
