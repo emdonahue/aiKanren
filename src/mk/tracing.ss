@@ -1,8 +1,7 @@
 (library (tracing)
-  (export trace-query run-trace-goal trace-run-goal print-depth-limit trace-goal trace-conde
+  (export trace-query trace-run-goal print-depth-limit trace-goal trace-conde
 	  open-proof close-proof
-	  trace-answer-proof trace-answer-state
-	  trace-dfs)
+	  trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
 
   (define trace-query (make-parameter #f))
@@ -23,7 +22,7 @@
 
   ;; === INTERPRETER ===
 
-  
+#;  
   (define (trace-run-goal g s p depth proof theorem)
     (cert (goal? g) (state-or-failure? s) (or (fail? g) (not (failure? s))) (package? p) (number? depth))
     (if (zero? depth) (begin (print-depth-limit) (values  '() p))
@@ -43,7 +42,7 @@
 	 [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	 [else (let ([s (run-constraint g s)])
 		 (values (if (failure? s) '() (list (make-trace-answer theorem proof s))) p))])))
-  
+  #;
   (define (trace-bind g answers p depth)
     (cert (goal? g) (list? answers) (package? p) (number? depth))
     (if (null? answers) (values '() p)
@@ -53,38 +52,38 @@
 
   (define-structure (untrace-goal goal))
   
-  (define (trace-dfs g s p n depth answers proof theorem ctn)
+  (define (trace-run-goal g s p n depth answers proof theorem ctn)
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons s answers) p)
-		       (trace-dfs ctn s p n depth answers proof theorem succeed))]
+		       (trace-run-goal ctn s p n depth answers proof theorem succeed))]
      [(zero? depth) (values n answers p)]
-     [(conj? g) (trace-dfs (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
-     [(conde? g) (let-values ([(num-remaining answers p) (trace-dfs (conde-lhs g) s p n depth answers proof theorem ctn)])
+     [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
+     [(conde? g) (let-values ([(num-remaining answers p) (trace-run-goal (conde-lhs g) s p n depth answers proof theorem ctn)])
 		   (if (zero? num-remaining) (values num-remaining answers p)
-		       (trace-dfs (conde-rhs g) s p num-remaining depth answers proof theorem ctn)))]
+		       (trace-run-goal (conde-rhs g) s p num-remaining depth answers proof theorem ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-		    (trace-dfs g s p n (fx1- depth) answers proof theorem ctn))]
+		    (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-		   (trace-dfs g s p n depth answers proof theorem ctn))]
+		   (trace-run-goal g s p n depth answers proof theorem ctn))]
      [(fresh? g) (let-values ([(g s p) (g s p)])
-		   (trace-dfs g s p n (fx1- depth) answers proof theorem ctn))]
+		   (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
-     [(untrace-goal? g) (trace-dfs (untrace-goal-goal g) s p n depth answers (close-subproof proof) theorem ctn)]
+     [(untrace-goal? g) (trace-run-goal (untrace-goal-goal g) s p n depth answers (close-subproof proof) theorem ctn)]
      [(proof-goal? g) (nyi)]
-     [else (trace-dfs ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
+     [else (trace-run-goal ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof theorem ctn)
     (org-print-header (trace-goal-name g))
     (parameterize ([org-depth (fx1+ (org-depth))])
-      (let*-values ([(ans-remaining answers p) (trace-dfs (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) theorem (make-untrace-goal ctn))])
+      (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) theorem (make-untrace-goal ctn))])
 	(org-print-header " <answers>")
 	(org-print-item answers)
 	(values ans-remaining answers p))))
 
   ;; === PRINTING ===
-  
+#;  
   (define (run-trace-goal g s p depth proof theorem)
     (cert (goal? g) (state? s))
     (if (theorem-contradiction theorem (trace-goal-name g))
@@ -132,7 +131,7 @@
   (define cursor '__)
   (define (cursor? c) (eq? c cursor))
 
-  (define open-proof '(__))
+  (define open-proof (list cursor))
   
   (define (close-proof proof)
     (reverse-proof (cdr proof)))
