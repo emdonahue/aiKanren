@@ -58,7 +58,14 @@
 						     (trace-conde
 						      [x2=1 (== x2 1)]
 						      [x2=2 (== x2 2)])])))) '())
-    (tassert "theorem trace-conde shallow partial theorem succeed"
+#;
+    (tassert "theorem trace-conde theorem too deep fail"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (trace-run (x1 x2)
+			  (proveo ((x1=2 (x2=2)))
+				  (trace-conde [x1=1 (== x1 1)]
+					       [x1=2 (== x1 2)])))) '())
+    (tassert "theorem trace-conde theorem prefix succeeds"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1 x2)
 				    (proveo ((x1=2 __))
@@ -67,7 +74,7 @@
 							       (trace-conde
 								[x2=1 (== x2 1)]
 								[x2=2 (== x2 2)])]))))) '(((x1=2 (x2=1))) ((x1=2 (x2=2)))))
-    (tassert "theorem trace-conde shallow partial theorem succeed"
+    (tassert "theorem trace-conde theorem prefix leaves wildcard on deep recursion"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map
 		cadr

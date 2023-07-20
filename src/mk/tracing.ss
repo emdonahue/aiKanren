@@ -1,12 +1,9 @@
 (library (tracing)
-  (export trace-goal-path trace-query run-trace-goal trace-run-goal print-depth-limit trace-goal trace-conde
+  (export trace-query run-trace-goal trace-run-goal print-depth-limit trace-goal trace-conde
 	  close-proof)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
 
   ;; === PARAMETERS ===
-  
-  (define trace-path (make-parameter '(()))) ; Path taken so far through trace goals
-  (define trace-goal-path (make-parameter '())) ; Prefix that trace-path must follow. Paths off prefix fail. Used to constrain search for debugging.
   (define trace-query (make-parameter #f))
 
   ;; === INTERFACE ===
@@ -39,7 +36,7 @@
 		       (trace-run-goal g s p depth proof theorem))]
 	 [(fresh? g) (let-values ([(g s p) (g s p)])
 		       (trace-run-goal g s p depth proof theorem))]
-	 [(trace-goal? g) (run-trace-goal g s p depth proof theorem)] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
+	 [(trace-goal? g) (run-trace-goal g s p depth proof theorem)]
 	 [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
 	 [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
   
@@ -50,11 +47,6 @@
 	(let*-values ([(ans0 p) (trace-run-goal g (cdar answers) p depth (caar answers) theorem)]
 		      [(ans^ p) (trace-bind g (cdr answers) p depth theorem)])
 	  (values (append ans0 ans^) p))))
-  
-  (define (trace-path-cons name path)
-    (if (or (null? path) (not (pair? (car path))))
-	(cons name path)
-	(cons (trace-path-cons name (car path)) (cdr path))))
 
   ;; === PRINTING ===
   
@@ -64,8 +56,7 @@
 	(trace-run-goal fail s p depth proof theorem)
 	(begin
 	  (org-print-header (trace-goal-name g))
-	  (parameterize ([org-depth (fx1+ (org-depth))]
-			 [trace-path (trace-path-cons (trace-goal-name g) (trace-path))])
+	  (parameterize ([org-depth (fx1+ (org-depth))])
 	    (let ([proof (open-subproof proof (trace-goal-name g))])
 	      (print-trace-body g s proof)
 	      (let-values ([(answers p)
