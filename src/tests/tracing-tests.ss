@@ -58,7 +58,6 @@
 						     (trace-conde
 						      [x2=1 (== x2 1)]
 						      [x2=2 (== x2 2)])])))) '())
-#;
     (tassert "theorem trace-conde theorem too deep fail"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (trace-run (x1 x2)

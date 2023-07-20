@@ -59,8 +59,8 @@
 	  (parameterize ([org-depth (fx1+ (org-depth))])
 	    (let ([proof (open-subproof proof (trace-goal-name g))])
 	      (print-trace-body g s proof)
-	      (let-values ([(answers p)
-			    (trace-run-goal (trace-goal-goal g) s p depth proof (subtheorem theorem))])
+	      (let*-values ([(answers p) (trace-run-goal (trace-goal-goal g) s p depth proof (subtheorem theorem))]
+			    [(answers) (remp (lambda (a) (theorem-contradiction (trace-answer-theorem a) '())) answers)])
 		(org-print-header " <answers>")
 		(org-print-item answers)
 		(values (map (lambda (a)
