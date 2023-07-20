@@ -1,6 +1,6 @@
 (library (running)
   (export runner-next runner-step runner-take runner-dfs trace-runner)
-  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (debugging))
+  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (tracing))
 
   (define (runner-null? r)
     (cert (runner? r))

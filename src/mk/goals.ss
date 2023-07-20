@@ -1,6 +1,6 @@
 ;;TODO replace assert #f with useful error messages
 (library (goals)
-  (export run-goal run-goal-dfs trace-run-goal stream-step)
+  (export run-goal run-goal-dfs stream-step)
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   ;; === INTERLEAVING INTERPRETER ===
@@ -83,39 +83,6 @@
 		   (run-goal-dfs g s p n depth answers ctn))]
      [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
-  
-  ;; === TRACING INTERPRETER ===
-
-    ;;need to confirm that prefix of complete path is same as prefix of current goal
-    ;;need to build full paths for each answer - can be built top down from sub paths returned by subgoals
-    ;;need to be able to print path prefix at any time - issue is we dont know how many right conjuncts a goal will have
-    
-    (define (trace-run-goal g s p depth proof theorem)
-      (cert (goal? g) (state? s) (package? p) (number? depth))
-      (if (zero? depth) (begin (print-depth-limit) (values '() p))
-	  (exclusive-cond
-	   [(conj? g) (let-values ([(answers p) (trace-run-goal (conj-lhs g) s p depth proof theorem)])
-			(trace-bind (conj-rhs g) answers p depth theorem))]
-	   [(conde? g) (let*-values ([(lhs p) (trace-run-goal (conde-lhs g) s p (if (conde? (conde-lhs g)) depth (fx1- depth)) proof theorem)]
-				     [(rhs p) (trace-run-goal (conde-rhs g) s p (if (conde? (conde-rhs g)) depth (fx1- depth)) proof theorem)])
-			 (values (append lhs rhs) p))]
-	   [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)]) ;DRY the matcho/exist/fresh calls to common calling interface. maybe use => cond interface
-			  (trace-run-goal g s p depth proof theorem))]
-	   [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-			 (trace-run-goal g s p depth proof theorem))]
-	   [(fresh? g) (let-values ([(g s p) (g s p)])
-			 (trace-run-goal g s p depth proof theorem))]
-	   [(trace-goal? g) (run-trace-goal g s depth proof theorem (lambda (g s proof theorem) (trace-run-goal g s p depth proof theorem)))] ;TODO consider moving tracing interpreter entirely to debugging and cutting out the lambda ctn
-	   [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p depth proof (proof-goal-proof g))]
-	   [else (values (let ([s (run-constraint g s)]) (if (failure? s) '() (list (cons proof s)))) p)])))
-    
-    (define (trace-bind g answers p depth theorem)
-		  (cert (goal? g) (list? answers) (package? p) (number? depth))
-      (cert (goal? g) (list? answers) (number? depth) (package? p))
-      (if (null? answers) (values '() p)
-	  (let*-values ([(ans0 p) (trace-run-goal g (cdar answers) p depth (caar answers) theorem)]
-			[(ans^ p) (trace-bind g (cdr answers) p depth theorem)])
-	    (values (append ans0 ans^) p))))
     
     ;; === STREAMS ===
     

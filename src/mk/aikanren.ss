@@ -13,7 +13,7 @@
    __ ; Quantification
    printfo displayo noopo trace-goal trace-run trace-conde proveo ; Debugging
    )
-  (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals))
+  (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing))
 
 
 )
