@@ -46,6 +46,6 @@
     (let-values ([(num-remaining answers p)
 		  (org-trace
 		   (parameterize ([trace-query q])
-		     (trace-run-goal g s empty-package -1 depth '() open-proof open-proof)))])
+		     (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed)))])
       (cert (list? answers))
       (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) answers))))

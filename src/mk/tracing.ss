@@ -56,7 +56,7 @@
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
-		       (values (fx1- n) (cons s answers) p)
+		       (values (fx1- n) (cons (make-trace-answer theorem proof s) answers) p)
 		       (trace-run-goal ctn s p n depth answers proof theorem succeed))]
      [(zero? depth) (values n answers p)]
      [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
