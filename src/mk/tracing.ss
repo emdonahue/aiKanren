@@ -52,7 +52,7 @@
   
   (define (run-trace-goal g s p depth proof theorem)
     (cert (goal? g) (state? s))
-    (if (and theorem (theorem-contradiction theorem (trace-goal-name g)))
+    (if (theorem-contradiction theorem (trace-goal-name g))
 	(trace-run-goal fail s p depth proof theorem)
 	(begin
 	  (org-print-header (trace-goal-name g))
@@ -60,7 +60,7 @@
 	    (let ([proof (open-subproof proof (trace-goal-name g))])
 	      (print-trace-body g s proof)
 	      (let-values ([(answers p)
-			    (trace-run-goal (trace-goal-goal g) s p depth proof (and theorem (subtheorem theorem)))])
+			    (trace-run-goal (trace-goal-goal g) s p depth proof (subtheorem theorem))])
 		(org-print-header " <answers>")
 		(org-print-item answers)
 		(values (map (lambda (a)
