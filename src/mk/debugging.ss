@@ -106,7 +106,7 @@
     (if (pair? proof) (reverse (map print-proof proof)) proof))
 
   (define (theorem-contradiction theorem term)
-    (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (eq? theorem term))))
+    (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (or (eq? theorem cursor) (eq? theorem term)))))
 
   (define (subtheorem theorem)
     (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem)) (cdr theorem)))
