@@ -23,7 +23,7 @@
   ;; === INTERPRETER ===
 
 #;  
-  (define (trace-run-goal g s p depth proof theorem)
+  (define (trace-run-goal g s p depth proof theorem) ;TODO make all goals accept a list of states so that we can print only the code as written and the input and output states without having to multiplex the code points for the tracing interpreter
     (cert (goal? g) (state-or-failure? s) (or (fail? g) (not (failure? s))) (package? p) (number? depth))
     (if (zero? depth) (begin (print-depth-limit) (values  '() p))
 	(exclusive-cond
@@ -50,7 +50,6 @@
 		      [(ans^ p) (trace-bind g (cdr answers) p depth)])
 	  (values (append ans0 ans^) p))))
 
-  (define-structure (untrace-goal goal))
   
   (define (trace-run-goal g s p n depth answers proof theorem ctn)
     (cond
@@ -71,16 +70,19 @@
 		   (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
      [(untrace-goal? g) (trace-run-goal (untrace-goal-goal g) s p n depth answers (close-subproof proof) theorem ctn)]
-     [(proof-goal? g) (nyi)]
+     [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p n depth answers proof (proof-goal-proof g) ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof theorem ctn)
-    (org-print-header (trace-goal-name g))
-    (parameterize ([org-depth (fx1+ (org-depth))])
-      (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) theorem (make-untrace-goal ctn))])
-	(org-print-header " <answers>")
-	(org-print-item answers)
-	(values ans-remaining answers p))))
+    (if (theorem-contradiction theorem (trace-goal-name g))
+	(trace-run-goal fail s p n depth answers proof theorem ctn)
+	(begin
+	  (org-print-header (trace-goal-name g))
+	  (parameterize ([org-depth (fx1+ (org-depth))])
+	    (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) theorem (make-untrace-goal ctn))])
+	      (org-print-header " <answers>")
+	      (org-print-item answers)
+	      (values ans-remaining answers p))))))
 
   ;; === PRINTING ===
 #;  
