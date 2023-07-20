@@ -67,4 +67,21 @@
 							       (trace-conde
 								[x2=1 (== x2 1)]
 								[x2=2 (== x2 2)])]))))) '(((x1=2 (x2=1))) ((x1=2 (x2=2)))))
+    (tassert "theorem trace-conde shallow partial theorem succeed"
+	     (parameterize ([current-output-port (open-output-string)])
+	       (map
+		cadr
+		(trace-run
+		 (x1 x2 x3)
+		 (proveo ((x1=2 __))
+			 (trace-conde
+			  [x1=1 (== x1 1)]
+			  [x1=2 (== x1 2)
+				(trace-conde
+				 [x2=1 (== x2 1)]
+				 [x2=2 (== x2 2)
+				       (trace-conde
+					[x3=1 (== x3 1)]
+					[x3=2 (== x3 2)])])])))))
+	     '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))
     ))

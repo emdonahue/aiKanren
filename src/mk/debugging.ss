@@ -109,7 +109,8 @@
     (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (or (eq? theorem cursor) (eq? theorem term)))))
 
   (define (subtheorem theorem)
-    (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem)) (cdr theorem)))
+    (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
+	(if (cursor? (car theorem)) theorem (cdr theorem))))
   
   (define (walk-substitution s)
     (cert (state? s))
