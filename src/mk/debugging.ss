@@ -88,13 +88,16 @@
 
   (define (print-depth-limit)
     (org-print-header " <depth limit reached>"))
+
+  (define cursor '__)
+  (define (cursor? c) (eq? c cursor))
   
   (define (open-subproof proof name)
-    (if (null? (car proof)) (cons (list '() name) (cdr proof))
+    (if (cursor? (car proof)) (cons (list cursor name) (cdr proof))
 	(cons (open-subproof (car proof) name) (cdr proof))))
 
   (define (close-subproof proof)
-    (if (null? (caar proof)) (cons* '() (cdar proof) (cdr proof))
+    (if (cursor? (caar proof)) (cons* cursor (cdar proof) (cdr proof))
 	(cons (close-subproof (car proof)) (cdr proof))))
 
   (define close-proof cdr)
