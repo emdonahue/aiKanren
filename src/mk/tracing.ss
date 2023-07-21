@@ -51,13 +51,13 @@
 	  (values (append ans0 ans^) p))))
 
   
-  (define (trace-run-goal g s p n depth answers proof theorem ctn)
+  (define (trace-run-goal g s p n depth answers proof theorem ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter 
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons (make-trace-answer theorem proof s) answers) p)
 		       (trace-run-goal ctn s p n depth answers proof theorem succeed))]
-     [(zero? depth) (values n answers p)]
+     [(zero? depth) (print-depth-limit) (values n answers p)]
      [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
      [(conde? g) (let-values ([(num-remaining answers p) (trace-run-goal (conde-lhs g) s p n depth answers proof theorem ctn)])
 		   (if (zero? num-remaining) (values num-remaining answers p)
@@ -77,16 +77,22 @@
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof theorem ctn)
-    (if (theorem-contradiction theorem (trace-goal-name g))
-	(trace-run-goal fail s p n depth answers proof theorem ctn)
-	(begin
-	  (org-print-header (trace-goal-name g))
-	  (parameterize ([org-depth (fx1+ (org-depth))])
-	    (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) (subtheorem theorem) (make-untrace-goal ctn))])
-	      (org-print-header " <answers>")
-	      (org-print-item answers)
-	      (values ans-remaining answers p))))))
+    (let ([proof (open-subproof proof (trace-goal-name g))])
+     (if (theorem-contradiction theorem (trace-goal-name g))
+	 (trace-run-goal fail s p n depth answers proof theorem ctn)
+	 (begin
+	   (unless (theorem-trivial? theorem) (org-print-header (trace-goal-name g)))	   
+	   (parameterize ([org-depth (fx1+ (org-depth))])	     
+	     (unless (theorem-trivial? theorem) (print-trace-body g s proof))
+	     (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers proof (subtheorem theorem) (make-untrace-goal ctn))])
+	       (unless (theorem-trivial? theorem)
+		 (org-print-header " <answers>")
+		 (org-print-item answers))
+	       (values ans-remaining answers p)))))))
 
+;(not (theorem-trivial? theorem)) ; Do not print trace while constrained by a theorem to a single path, so that the trace starts at the unknown region.
+;	(trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) (subtheorem theorem) (make-untrace-goal ctn))
+  
   ;; === PRINTING ===
 #;  
   (define (run-trace-goal g s p depth proof theorem)
@@ -157,4 +163,6 @@
 
   (define (subtheorem theorem)
     (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
-	(if (cursor? (car theorem)) theorem (cdr theorem)))))
+	(if (cursor? (car theorem)) theorem (cdr theorem))))
+
+  (define (theorem-trivial? theorem) (equal? theorem open-proof)))
