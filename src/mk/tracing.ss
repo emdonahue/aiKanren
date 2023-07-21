@@ -81,11 +81,11 @@
      (if (theorem-contradiction theorem (trace-goal-name g))
 	 (trace-run-goal fail s p n depth answers proof theorem ctn)
 	 (begin
-	   (unless (theorem-trivial? theorem) (org-print-header (trace-goal-name g)))	   
+	   (when (theorem-trivial? theorem) (org-print-header (trace-goal-name g)))	   
 	   (parameterize ([org-depth (fx1+ (org-depth))])	     
-	     (unless (theorem-trivial? theorem) (print-trace-body g s proof))
+	     (when (theorem-trivial? theorem) (print-trace-body g s proof))
 	     (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers proof (subtheorem theorem) (make-untrace-goal ctn))])
-	       (unless (theorem-trivial? theorem)
+	       (when (theorem-trivial? theorem)
 		 (org-print-header " <answers>")
 		 (org-print-item answers))
 	       (values ans-remaining answers p)))))))
@@ -165,4 +165,4 @@
     (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
 	(if (cursor? (car theorem)) theorem (cdr theorem))))
 
-  (define (theorem-trivial? theorem) (equal? theorem open-proof)))
+  (define (theorem-trivial? theorem) (or #t (equal? theorem open-proof))))

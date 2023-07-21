@@ -27,7 +27,19 @@
     (pretty-print (cadar (let ([quine '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (trace-run (q) (== q quine) (evalo q q)))))
 
-    (trace-run 15 (q) (proveo ((evalo
+    #;
+    (trace-run 10 (q) (proveo ((evalo
+			       (eval-apply
+				(eval-rator
+				 (evalo
+				  (eval-apply
+				   (eval-rator (evalo (eval-lambda (not-in-envo))))
+				   (evalo-rand (evalo (eval-quote (not-in-envo))))
+				   (evalo-body (evalo (eval-list __)))))))))
+			     (evalo q q)))
+
+    #;
+(proveo ((evalo
 				(eval-apply
 				 (eval-rator (evalo (eval-lambda (not-in-envo))))
 				 (evalo-rand (evalo (eval-quote (not-in-envo))))
@@ -35,7 +47,7 @@
 				  (evalo
 				   (eval-list
 				    (eval-proper-list (evalo (lookupo (lookupo-r __))))))))))
-			    (evalo q q)))
+			    (evalo q q))
 
     #;
     (trace-run (x1 x2) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
