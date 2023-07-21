@@ -72,23 +72,23 @@
      [(untrace-goal? g)
       (if (theorem-contradiction theorem '())
 	  (trace-run-goal fail s p n depth answers proof theorem ctn)
-	  (trace-run-goal (untrace-goal-goal g) s p n depth answers (close-subproof proof) theorem ctn))]
+	  (trace-run-goal (untrace-goal-goal g) s p n depth answers (close-subproof proof) (subtheorem theorem) ctn))]
      [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p n depth answers proof (proof-goal-proof g) ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof theorem ctn)
-    (let ([proof (open-subproof proof (trace-goal-name g))])
-     (if (theorem-contradiction theorem (trace-goal-name g))
-	 (trace-run-goal fail s p n depth answers proof theorem ctn)
-	 (begin
-	   (when (theorem-trivial? theorem) (org-print-header (trace-goal-name g)))	   
-	   (parameterize ([org-depth (fx1+ (org-depth))])	     
-	     (when (theorem-trivial? theorem) (print-trace-body g s proof))
-	     (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers proof (subtheorem theorem) (make-untrace-goal ctn))])
-	       (when (theorem-trivial? theorem)
-		 (org-print-header " <answers>")
-		 (org-print-item answers))
-	       (values ans-remaining answers p)))))))
+    (if (theorem-contradiction theorem (trace-goal-name g))
+	(trace-run-goal fail s p n depth answers proof theorem ctn)
+	(begin
+	  (when (theorem-trivial? theorem) (org-print-header (trace-goal-name g)))	   
+	  (parameterize ([org-depth (fx1+ (org-depth))])
+	    (let ([proof (open-subproof proof (trace-goal-name g))])
+	      (when (theorem-trivial? theorem) (print-trace-body g s proof))
+	      (let*-values ([(ans-remaining answers p) (trace-run-goal (trace-goal-goal g) s p n depth answers proof (subtheorem theorem) (make-untrace-goal ctn))])
+		(when (theorem-trivial? theorem)
+		  (org-print-header " <answers>")
+		  (org-print-item answers))
+		(values ans-remaining answers p)))))))
 
 ;(not (theorem-trivial? theorem)) ; Do not print trace while constrained by a theorem to a single path, so that the trace starts at the unknown region.
 ;	(trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) (subtheorem theorem) (make-untrace-goal ctn))
