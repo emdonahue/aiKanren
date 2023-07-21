@@ -27,8 +27,8 @@
     (pretty-print (cadar (let ([quine '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (trace-run (q) (== q quine) (evalo q q)))))
 
-    #;
-    (trace-run 10 (q) (proveo ((evalo
+#;
+    (trace-run 15 (q) (proveo ((evalo
 			       (eval-apply
 				(eval-rator
 				 (evalo
