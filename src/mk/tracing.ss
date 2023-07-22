@@ -2,7 +2,7 @@
   (export trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goal-print
 	  open-proof close-proof
 	  trace-answer-proof trace-answer-state)
-  (import (chezscheme) (datatypes) (solver) (utils) (state))
+  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f))
   (define trace-proof-goals (make-parameter #t))
@@ -131,6 +131,11 @@
 	(org-print-item (trace-goal-goal g))
 	(org-print-header " <query>")
 	(org-print-item (reify-var s (trace-query)))
+	(org-print-header " <constraints>")
+	(let ([substitution (walk-substitution s)])
+	  (for-each (lambda (b) (org-print-item (car b) (cdr b)))
+		    (filter (lambda (b) (goal? (cdr b)))
+			    (map (lambda (i c) (cons (fx1+ i) c)) (enumerate substitution) substitution))))
 	#;
 	(let ([substitution (walk-substitution s)])
 	(org-print-header " <substitution>")
