@@ -1,5 +1,5 @@
 (library (tracing)
-  (export trace-query trace-run-goal print-depth-limit trace-goal trace-conde
+  (export trace-query trace-run-goal trace-goal trace-conde
 	  open-proof close-proof
 	  trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
@@ -57,7 +57,7 @@
      [(succeed? g) (if (succeed? ctn)
 		       (values (fx1- n) (cons (make-trace-answer theorem proof s) answers) p)
 		       (trace-run-goal ctn s p n depth answers proof theorem succeed))]
-     [(zero? depth) (print-depth-limit) (values n answers p)]
+     [(zero? depth) (print-depth-limit theorem) (values n answers p)]
      [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
      [(conde? g) (let-values ([(num-remaining answers p) (trace-run-goal (conde-lhs g) s p n depth answers proof theorem ctn)])
 		   (if (zero? num-remaining) (values num-remaining answers p)
@@ -83,8 +83,8 @@
 	      [proof (open-subproof proof (trace-goal-name g))]
 	      [subtheorem (subtheorem theorem)]
 	      [ctn (make-untrace-goal ctn)])
-	  (if (theorem-trivial? theorem)
-	      (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)
+	  (printf "theorem: ~s~%~%" theorem)
+	  (if (tracing? theorem)
 	      (begin
 		(org-print-header (trace-goal-name g))	   
 		(parameterize ([org-depth (fx1+ (org-depth))])
@@ -93,7 +93,8 @@
 		    (when (theorem-trivial? theorem)
 		      (org-print-header " <answers>")
 		      (org-print-item answers))
-		    (values ans-remaining answers p))))))))
+		    (values ans-remaining answers p))))
+	      (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)))))
 
 ;(not (theorem-trivial? theorem)) ; Do not print trace while constrained by a theorem to a single path, so that the trace starts at the unknown region.
 ;	(trace-run-goal (trace-goal-goal g) s p n depth answers (open-subproof proof (trace-goal-name g)) (subtheorem theorem) (make-untrace-goal ctn))
@@ -139,8 +140,8 @@
 	(org-print-item (print-reification substitution)))
 	))
 
-  (define (print-depth-limit)
-    (org-print-header " <depth limit reached>"))
+  (define (print-depth-limit theorem)
+    (when (tracing? theorem) (org-print-header " <depth limit reached>")))
 
   ;; === PROOFS ===
   
@@ -168,6 +169,9 @@
 
   (define (subtheorem theorem)
     (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
-	(if (cursor? (car theorem)) theorem (cdr theorem))))
+        (if (cursor? (car theorem)) theorem (cdr theorem))))
+
+  (define (tracing? theorem)
+    (theorem-trivial? theorem))
 
   (define (theorem-trivial? theorem) (equal? theorem open-proof)))

@@ -33,7 +33,7 @@
     (tassert "proof conde"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (map cadr (trace-run (x1) (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)])))) '(((x1=1)) ()))
-
+    
     (tassert "theorem constraint head succeed"
 	     (parameterize ([current-output-port (open-output-string)])
 	       (cadar (trace-run (x1) (proveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))

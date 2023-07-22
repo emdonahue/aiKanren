@@ -50,7 +50,7 @@
        [(== expr '()) (== val '())]
        [(matcho ([expr (e . es)]
 		 [val (v . vs)])
-		(noopo (org-display expr val))
+;		(noopo (org-display expr val))
 		(evalo e env v)
 		(eval-proper-list es env vs))])))
   

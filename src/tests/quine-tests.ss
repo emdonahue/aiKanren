@@ -28,7 +28,7 @@
     (trace-run (q) (== q quine) (evalo q q)))))
 
 #;
-    (trace-run 15 (q) (proveo ((evalo
+    (trace-run 25 (q) (proveo ((evalo
 			       (eval-apply
 				(eval-rator
 				 (evalo
