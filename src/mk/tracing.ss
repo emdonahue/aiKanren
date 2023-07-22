@@ -175,4 +175,5 @@
   (define (tracing? theorem)
     (theorem-trivial? theorem))
 
-  (define (theorem-trivial? theorem) (equal? theorem open-proof)))
+  (define (theorem-trivial? theorem)
+    (if (pair? theorem) (theorem-trivial? (car theorem)) (cursor? theorem))))
