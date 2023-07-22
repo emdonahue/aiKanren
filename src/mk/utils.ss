@@ -128,6 +128,3 @@
   (define-syntax org-define
     (syntax-rules ()
       [(_ (var . idspec) body ...) (define var (org-lambda var idspec body ...))])))
-
-
-

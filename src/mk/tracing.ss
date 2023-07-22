@@ -1,10 +1,12 @@
 (library (tracing)
-  (export trace-query trace-run-goal trace-goal trace-conde
+  (export trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goal-print
 	  open-proof close-proof
 	  trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state))
 
   (define trace-query (make-parameter #f))
+  (define trace-proof-goals (make-parameter #t))
+  (define trace-goal-print (make-parameter #t))
   (define-structure (trace-answer theorem proof state))
 
   ;; === INTERFACE ===
@@ -51,7 +53,7 @@
 	  (values (append ans0 ans^) p))))
 
   
-  (define (trace-run-goal g s p n depth answers proof theorem ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter 
+  (define (trace-run-goal g s p n depth answers proof theorem ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
@@ -83,12 +85,11 @@
 	      [proof (open-subproof proof (trace-goal-name g))]
 	      [subtheorem (subtheorem theorem)]
 	      [ctn (make-untrace-goal ctn)])
-	  (printf "theorem: ~s~%~%" theorem)
 	  (if (tracing? theorem)
 	      (begin
 		(org-print-header (trace-goal-name g))	   
 		(parameterize ([org-depth (fx1+ (org-depth))])
-		  (when (theorem-trivial? theorem) (print-trace-body g s proof))
+		  (when (tracing? theorem) (print-trace-body g s proof))
 		  (let*-values ([(ans-remaining answers p) (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)])
 		    (when (theorem-trivial? theorem)
 		      (org-print-header " <answers>")
@@ -173,7 +174,7 @@
 	    (if (cursor? (car theorem)) cursor (cdr theorem))) theorem))
 
   (define (tracing? theorem)
-    (theorem-trivial? theorem))
+    (or (trace-proof-goals) (theorem-trivial? theorem)))
 
   (define (theorem-trivial? theorem)
     (if (pair? theorem) (theorem-trivial? (car theorem)) (cursor? theorem))))

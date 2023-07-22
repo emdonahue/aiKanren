@@ -3,6 +3,7 @@
   (import (chezscheme) (test-runner) (aikanren) (quine) (utils) (debugging))
   
   (define (run-quine-tests)
+
     (tassert "evalo-quine quote" (evalo '(quote 42)) 42)
     (tassert "evalo-quine shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
 
@@ -23,20 +24,33 @@
       (tassert "evalo-quine quine" (evalo q) q))
 
     ;;prints quine proof
-    #;
+  #;
     (pretty-print (cadar (let ([quine '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (trace-run (q) (== q quine) (evalo q q)))))
-
-#;
-    (trace-run 25 (q) (proveo ((evalo
-			       (eval-apply
-				(eval-rator
+    (trace-goal-print #f)
+    (parameterize ([trace-goal-print #t]
+		   [trace-proof-goals #f])
+ (trace-run  (q) (proveo ((evalo
+			   (eval-apply
+			    (eval-rator (evalo (eval-lambda (not-in-envo))))
+			    (evalo-rand (evalo (eval-quote (not-in-envo))))
+			    (evalo-body
+			     (evalo
+			      (eval-list
+			       (eval-proper-list
+				(evalo (lookupo (lookupo-r)))
+				(eval-proper-list
 				 (evalo
-				  (eval-apply
-				   (eval-rator (evalo (eval-lambda (not-in-envo))))
-				   (evalo-rand (evalo (eval-quote (not-in-envo))))
-				   (evalo-body (evalo (eval-list __)))))))))
-			     (evalo q q)))
+				  (eval-list
+				   (eval-proper-list
+				    (evalo (eval-quote (not-in-envo)))
+				    (eval-proper-list
+				     (evalo (lookupo (lookupo-r)))
+				     (eval-proper-list)))
+				   (not-in-envo)))
+				 (eval-proper-list)))
+			       (not-in-envo)))))))
+			 (evalo q q))))
 
     #;
 (proveo ((evalo
