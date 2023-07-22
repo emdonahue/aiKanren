@@ -168,8 +168,9 @@
     (if (pair? theorem) (theorem-contradiction (car theorem) term) (not (or (eq? theorem cursor) (eq? theorem term)))))
 
   (define (subtheorem theorem)
-    (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
-        (if (cursor? (car theorem)) theorem (cdr theorem))))
+    (if (pair? theorem)
+	(if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
+	    (if (cursor? (car theorem)) cursor (cdr theorem))) theorem))
 
   (define (tracing? theorem)
     (theorem-trivial? theorem))
