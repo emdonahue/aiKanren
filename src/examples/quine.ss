@@ -27,19 +27,19 @@
        (not-in-envo 'quote env))))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
-    (trace-goal lookupo-r (assoco var env val)))
+    (trace-goal lookupo-r (displayo env) (assoco var env val)))
 
   (define (eval-lambda expr env val)
     (trace-goal eval-lambda
      (fresh ()
-       (matcho ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
+       (matcho eval-lambda ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
 	       (== `(closure ,arg ,body ,env) val)
 	       (symbolo arg))
        (not-in-envo 'lambda env))))
 
   (define (eval-list expr env val)
     (trace-goal eval-list
-		(matcho ([expr ('list . es)])
+		(matcho eval-list ([expr ('list . es)])
 			(eval-proper-list es env val)
 			(absento 'closure es)
 			(not-in-envo 'list env))))
@@ -48,7 +48,7 @@
     (trace-goal eval-proper-list
      (conde
        [(== expr '()) (== val '())]
-       [(matcho ([expr (e . es)]
+       [(matcho eval-proper-list ([expr (e . es)]
 		 [val (v . vs)])
 ;		(noopo (org-display expr val))
 		(evalo e env v)
@@ -56,12 +56,12 @@
   
   (define (eval-apply expr env val)
     (trace-goal eval-apply
-     (matcho
+     (matcho eval-rator
       ([expr (rator . rands)])
-      (matcho ([rands (rand)])		;TODO merge optimized matchos
+      (matcho eval-rands ([rands (rand)])		;TODO merge optimized matchos
 	      (fresh (closure)
 		     (trace-goal eval-rator (evalo rator env closure))
-		     (matcho
+		     (matcho eval-closure
 		      ([closure ('closure param body env^)])
 		      (symbolo param)
 		      (fresh (arg)
@@ -76,7 +76,7 @@
     (trace-goal eval-listo
      (conde
        [(== expr '()) (== val '())]
-       [(matcho ([expr (e . es)]
+       [(matcho eval-listo ([expr (e . es)]
 		 [val (v . vs)])
 		(evalo e env v)
 		(eval-listo es env vs))])))

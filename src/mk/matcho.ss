@@ -81,30 +81,32 @@
       [(_ ([out-var (p-car . p-cdr)]) body ...)
        (and (identifier? #'p-car) (identifier? #'p-cdr))
        #'(matcho-pair ([out-var (p-car . p-cdr)]) body ...)]
-      [(_ ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars and cyclic pattern vars (since out-vars are bound beneath in-vars, so the shadowing will go the wrong way)
+      [(_ ([out-var (p-car . p-cdr)] ...) body ...)
+       #'(matcho matcho ([out-var (p-car . p-cdr)] ...) body ...)]
+      [(_ label ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars and cyclic pattern vars (since out-vars are bound beneath in-vars, so the shadowing will go the wrong way)
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
 	 #`(normalize-matcho
 	    (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
 	    '()
-	    (lambda (state package grounding)
-	      (let ([substitution '()]
-		    [grounding (reverse grounding)]
-		    [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
-		(build-substitution
-		 state package substitution grounding
-		 ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
-		 (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
-		   (values
-		    (or (not (var? out-var)) ...) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
-		    (conj*
-		      (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
-		      body ...)
-		    (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
-		     state (fold-left
-			    (lambda (id v)
-			      (if (and (var? v) (zero? (var-id v))) 
-				  (begin (set-var-id! v id) (fx1+ id)) id))
-			    (state-varid state) (list in-var ...)))
-		    package)))))))])))
+	    (let ([label (lambda (state package grounding)
+			   (let ([substitution '()]
+				 [grounding (reverse grounding)]
+				 [in-var (make-var 0)] ...) ; Create blank dummy variables for each identifier.
+			     (build-substitution
+			      state package substitution grounding
+			      ((out-var (p-car . p-cdr)) ...) ; Unify each external destructured variable with its pattern in a new empty substitution.
+			      (let ([in-var (mini-reify substitution in-var)] ...) ; Reify each fresh variable in the substitution to see if it is already bound by the pattern match with a ground term in the destructured external variable.
+				(values
+				 (or (not (var? out-var)) ...) ; If one out-var is ground/bound, consider this relation structurally recursive and keep expanding it in the goal interpreter.
+				 (conj*
+				  (== out-var (mini-reify substitution out-var)) ... ; Generate unifications of each external variable with its reified pattern, which has extracted all possible ground information from both the external variable and the pattern itself due to the double reification.
+				  body ...)
+				 (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
+				  state (fold-left
+					 (lambda (id v)
+					   (if (and (var? v) (zero? (var-id v))) 
+					       (begin (set-var-id! v id) (fx1+ id)) id))
+					 (state-varid state) (list in-var ...)))
+				 package)))))]) label)))])))
 
 

@@ -14,8 +14,10 @@
       [(_ expr ...)
        (noopo (org-display expr ...))]))
 
-  (define (noopo . args)
-    succeed)
+  (define-syntax noopo
+    (syntax-rules ()
+      [(_ body ...)
+       (let ([noopo (lambda (s p) body ... (values succeed s p))]) noopo)]))
 
   ;; === PRETTY PRINTING ===
   

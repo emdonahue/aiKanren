@@ -92,7 +92,7 @@
   (define (presento present term)
     (disj
      (== term present)
-     (matcho ([term (a . d)])
+     (matcho presento ([term (a . d)])
 	     (disj
 	      (presento present a)
 	      (presento present d)))))
@@ -102,6 +102,6 @@
       (=/= term absent)
       (disj
        (noto (pairo term))
-       (matcho ([term (a . d)])
+       (matcho absento ([term (a . d)])
 	       (absento absent a)
 	       (absento absent d))))))

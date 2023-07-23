@@ -140,7 +140,7 @@
   (define-structure (matcho out-vars in-vars goal))
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
-	      (cert (not (and (null? out) (null? in))))
+    (cert (not (and (null? out) (null? in))))
     (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
 
   (define (expand-matcho g s p)
