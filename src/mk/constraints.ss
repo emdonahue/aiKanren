@@ -15,8 +15,7 @@
   
   (define (typeo v t?)
     (cert (procedure? t?))
-    (if (var? v) (pconstraint
-		  v type-c t?)
+    (if (var? v) (pconstraint (list v) type-c t?)
 	(if (t? v) succeed fail)))
 
   (define (type-c var val t?)

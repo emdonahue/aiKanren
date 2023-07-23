@@ -62,8 +62,8 @@
   
   (define-structure (pconstraint vars procedure data))
   (define (pconstraint vars procedure data)
-    (cert (or (var? vars) (list? vars)) (procedure? procedure))
-    (make-pconstraint (if (list? vars) vars (list vars)) procedure data))
+    (cert (list? vars) (procedure? procedure))
+    (make-pconstraint vars procedure data))
   
   (define-structure (guardo var procedure))
   (define guardo make-guardo)
