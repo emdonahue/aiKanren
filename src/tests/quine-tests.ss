@@ -23,8 +23,11 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
 
+    #;
     (parameterize ([trace-goal-print #t])
-    (trace-run 7 (q) (evalo q q)))
+    (trace-run 10 (q) (proveo ((evalo
+			   (eval-apply
+			    (eval-rator (evalo __))))) (evalo q q))))
     
     ;;prints quine proof
   #;

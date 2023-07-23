@@ -131,11 +131,12 @@
 	(org-print-item (trace-goal-goal g))
 	(org-print-header " <query>")
 	(org-print-item (reify-var s (trace-query)))
-	(org-print-header " <constraints>")
-	(let ([substitution (walk-substitution s)])
-	  (for-each (lambda (b) (org-print-item (car b) (cdr b)))
-		    (filter (lambda (b) (goal? (cdr b)))
-			    (map (lambda (i c) (cons (fx1+ i) c)) (enumerate substitution) substitution))))
+	(let* ([substitution (walk-substitution s)]
+	      [constraints (filter (lambda (b) (goal? (cdr b)))
+			    (map (lambda (i c) (cons (fx1+ i) c)) (enumerate substitution) substitution))])
+	  (unless (null? constraints)
+	    (org-print-header " <constraints>")
+	    (for-each (lambda (b) (org-print-item (car b) (cdr b))) constraints)))
 	#;
 	(let ([substitution (walk-substitution s)])
 	(org-print-header " <substitution>")

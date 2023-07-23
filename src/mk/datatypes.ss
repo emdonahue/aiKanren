@@ -21,7 +21,7 @@
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
-	  pconstraint? pconstraint pconstraint-vars pconstraint-procedure pconstraint-type
+	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal
@@ -60,10 +60,10 @@
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
   
-  (define-structure (pconstraint vars type procedure))
-  (define (pconstraint vars type procedure)
+  (define-structure (pconstraint vars procedure data))
+  (define (pconstraint vars procedure data)
     (cert (or (var? vars) (list? vars)) (procedure? procedure))
-    (make-pconstraint (if (list? vars) vars (list vars)) type procedure))
+    (make-pconstraint (if (list? vars) vars (list vars)) procedure data))
   
   (define-structure (guardo var procedure))
   (define guardo make-guardo)

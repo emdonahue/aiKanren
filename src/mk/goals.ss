@@ -6,6 +6,7 @@
   ;; === INTERLEAVING INTERPRETER ===
   
   (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
+	      ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
 ;	      (org-display (print-substitution s) (print-reification s))
@@ -13,7 +14,7 @@
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
      [(fresh? g) (let-values ([(g s^ p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		   (suspend g s^ p s))]
+		   (suspend g s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
      [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count?
 		     (lambda () ((exist-procedure g) s p))
 		   run-goal)]
@@ -64,7 +65,8 @@
 
   ;; === DEPTH FIRST INTERPRETER ===
 
-    (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
+  (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. may require converting everything to cps. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
+    ;;TODO if we put run-goal-dfs in a parameter the tracing system will have a callback fn and we can trace without modifying the dfs
     (cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)

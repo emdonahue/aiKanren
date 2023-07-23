@@ -46,6 +46,7 @@
 	  (solve-constraint c s ctn (conj out g)))))
 
   (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
+    ;; TODO can we pack eigen checks onto occurs check and get them for free?
     (cert (or (conj? g) (==? g) (succeed? g)))
     (exclusive-cond
      [(conj? g) (and (occurs-check* (conj-lhs g) s) (occurs-check* (conj-rhs g) s))]
@@ -152,7 +153,7 @@
     (let ([g (fold-left (lambda (g v)
 			  (if (pconstraint? g)
 			      (let ([walked (walk s v)])
-				(if (eq? v walked) g ((pconstraint-procedure g) v walked))) g))
+				(if (eq? v walked) g ((pconstraint-procedure g) v walked (pconstraint-data g)))) g))
 		      g (pconstraint-vars g))])
       (solve-constraint ctn (store-constraint s g) succeed (conj out g)))
     #;

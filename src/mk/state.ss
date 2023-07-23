@@ -119,7 +119,7 @@
 		      (simplify-unification (disj-rhs g) v x))]
      [(==? g) (if (eq? v (==-lhs g)) (== x (==-rhs g)) g)]
      [(noto? g) (noto (simplify-unification (noto-goal g) v x))]
-     [(pconstraint? g) (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x) g)]
+     [(pconstraint? g) (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)]
      [else g]))
 
   ;; === DISUNIFICATION ===
