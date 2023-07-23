@@ -5,7 +5,7 @@
 
   ;; === INTERLEAVING INTERPRETER ===
   
-  (org-define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
+  (define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
 	      ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
@@ -43,7 +43,7 @@
      [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
-  (org-define (bind g s p) ;TODO consider making bind cps
+  (define (bind g s p) ;TODO consider making bind cps
     ;; Applies g to all states in s.
     (cert (goal? g) (stream? s) (package? p)) ; -> goal? stream? package?
     (exclusive-cond
@@ -56,7 +56,7 @@
 		     (values (mplus lhs rhs) p))]
      [else (assertion-violation 'bind "Unrecognized stream type" s)]))
 
-  (org-define (suspend g s^ p s)
+  (define (suspend g s^ p s)
     (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
     (exclusive-cond
      [(fail? g) (values failure p)]

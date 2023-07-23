@@ -13,18 +13,21 @@
     (cert (goal? antecedent) (goal? consequent))
     (disj (noto antecedent) consequent))
   
-  (define (typeo v t?)
-    (cert (procedure? t?))
-    (if (var? v) (pconstraint (list v) type-c t?)
-	(if (t? v) succeed fail)))
-
-  (define (type-c var val t?)
-    (if (goal? val) (simplify-typeo val var t?)
-	(typeo val t?)))
+  (define typeo
+    (case-lambda
+      [(v t?) ; User-facing constraint constructor
+	(cert (procedure? t?))
+	(if (var? v) (pconstraint (list v) typeo t?) (if (t? v) succeed fail))]
+      [(var val t?) ; Internal constraint application interface
+       (if (goal? val) (simplify-typeo val var t?) (typeo val t?))]))
 
   (define (simplify-typeo c v t?)
-    (let ([t (conj-memp c (lambda (t) (and (pconstraint? t) (eq? type-c (pconstraint-procedure t)) (eq? v (car (pconstraint-vars t))))))])
-      (if t (if (eq? (pconstraint-data c) (pconstraint-data t)) succeed fail) (typeo v t?)))
+    (cert (goal? c) (var? v))
+    (let ([t (conj-memp c (lambda (t)
+			    (and (pconstraint? t)
+				 (eq? typeo (pconstraint-procedure t))
+				 (eq? v (car (pconstraint-vars t))))))])
+      (if t (if (eq? t? (pconstraint-data t)) succeed fail) (typeo v t?)))
     #;;TODO have typeo simplify == not simply succeed or fail
     (exclusive-cond
      [(conj? c) (conj (simplify-typeo (conj-lhs c) v t?) (simplify-typeo (conj-rhs c) v t?))]
