@@ -145,7 +145,12 @@
 	   (values (=/= x-var (if (goal? y) y-var y)) succeed s)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
-		    (values (=/= y-var x) succeed s) ; Only when x is ground does y take priority.
+		    (values (=/= y-var x) succeed s)
+		    #;
+		    (let-values ([(abort? simplified? c) (solve-disunification y y-var x)]) ; Only when x is ground does y take priority.
+		      (exclusive-cond
+		       []
+		       [else (values (=/= y-var x) succeed s)])) 
 		    #;
 		    (let ([c (simplify-disunification y y-var x)])
 		      (exclusive-cond y-goal-x-val
@@ -173,7 +178,14 @@
      [else #f]))
 
   (define (solve-disunification g var val)
-    g)
+    (exclusive-cond
+     [(noto? g)
+      (if (==? (noto-goal g))
+	  (if (and (eq? val (==-rhs (noto-goal g))) ; =/= only cancel each other if identical
+		   (eq? val (==-rhs (noto-goal g))))
+	      (values #t #f succeed)
+	      (values #f #f g))
+	  (values #f #f g))]))
   
   (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort; TODO simplify disunifications
     ;; Simplifies a constraint with the information that var =/= val
