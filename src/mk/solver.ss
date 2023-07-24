@@ -75,7 +75,7 @@
 				 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 				 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 				 ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-				 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s^)]))))))
+				 [else (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)]))))))
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
