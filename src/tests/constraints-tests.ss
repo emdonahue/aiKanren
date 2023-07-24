@@ -152,8 +152,7 @@
     (tassert "symbolo-symbolo succeed" (run1 (x1) (symbolo x1) (symbolo x1)) (symbolo x1))
     (tassert "symbolo-numbero fail" (run1 (x1) (symbolo x1) (numbero x1)) (void))
 
-    (org-trace
-     (tassert "pconstraints fully walk attr vars" (run1 (x1 x2) (== x1 x2) (symbolo x1) (symbolo x1)) (list (symbolo x2) (symbolo x2))))
+    (tassert "pconstraints fully walk attr vars" (run1 (x1 x2) (== x1 x2) (symbolo x1) (symbolo x1)) (list (symbolo x2) (symbolo x2)))
     
     ;; === PLUSO ===
 

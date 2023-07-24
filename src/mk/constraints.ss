@@ -14,7 +14,7 @@
     (disj (noto antecedent) consequent))
   
   (define typeo
-    (org-case-lambda
+    (org-case-lambda typeo
       [(v t?) ; User-facing constraint constructor
 	(cert (procedure? t?))
 	(if (var? v) (pconstraint (list v) typeo t?) (if (t? v) succeed fail))]
@@ -22,7 +22,7 @@
       [(var var^ c t?) ; Internal interface for constraints
        (simplify-typeo c var^ t?)]))
 
-  (define (simplify-typeo c v t?)
+  (org-define (simplify-typeo c v t?)
     (cert (goal? c) (var? v))
     (let ([t (conj-memp c (lambda (t)
 			    (and (pconstraint? t)

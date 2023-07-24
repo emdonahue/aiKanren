@@ -150,7 +150,7 @@
 
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
-    (org-case-lambda pcon ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
+    (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
       [(g s ctn out) (solve-pconstraint g s ctn out '())]
       [(g s ctn out vs)
        (if (not (pconstraint? g)) (solve-constraint g s ctn out)
@@ -158,11 +158,11 @@
 	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj out g)) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (cond
-		    [(eq? var^ val) (solve-pconstraint g s ctn out (cons var (cons var^ vs)))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
-		    [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
-						    s ctn out (cons var^ (cons var vs)))]
-		    [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
-					     s ctn out (cons var^ vs))])))))]))
+			 [(eq? var val) (solve-pconstraint g s ctn out (cons var vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+			 [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
+							 s ctn out (cons var^ (cons var vs)))]
+			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
+						  s ctn out (cons var^ vs))])))))]))
   
 #;
   (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
