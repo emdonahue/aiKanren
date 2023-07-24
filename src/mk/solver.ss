@@ -158,9 +158,9 @@
 	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj out g)) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (cond
-			 [(eq? var val) (solve-pconstraint g s ctn out (cons var vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+			 [(eq? var val) (solve-pconstraint g s ctn out (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
-							 s ctn out (cons var^ (cons var vs)))]
+							 s ctn out (cons var^ vs))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn out (cons var^ vs))])))))]))
   
