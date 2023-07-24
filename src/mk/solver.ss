@@ -68,7 +68,7 @@
       (org-display g)
       (exclusive-cond
        [(fail? g) (values fail failure)]
-       [(succeed? g) (solve-constraint ctn s^ succeed out)]
+       [(succeed? g) (solve-constraint ctn s succeed out)] ; Only succeeds with two ground terms so store unmodified.
        [else
 	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s^ (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
 	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 

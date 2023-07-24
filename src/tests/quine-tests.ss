@@ -35,7 +35,7 @@
     (trace-run (q) (== q quine) (evalo q q)))))
 
 #;
-    (parameterize ([trace-goals #t]
+    (parameterize ([trace-goals #f]
 		   [trace-proof-goals #t])
 (display (trace-run (q) (prove ((evalo
 			      (eval-apply
