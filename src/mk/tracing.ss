@@ -1,12 +1,12 @@
 (library (tracing)
-  (export trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goal-print
+  (export trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
 	  open-proof close-proof
 	  trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f))
   (define trace-proof-goals (make-parameter #t))
-  (define trace-goal-print (make-parameter #t))
+  (define trace-goals (make-parameter #t))
   (define-structure (trace-answer theorem proof state))
 
   ;; === INTERFACE ===

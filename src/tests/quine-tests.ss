@@ -25,7 +25,7 @@
 
     #;
     (parameterize ([trace-goal-print #t])
-    (trace-run 10 (q) (proveo ((evalo
+    (trace-run 10 (q) (prove ((evalo
 			   (eval-apply
 			    (eval-rator (evalo __))))) (evalo q q))))
     
@@ -34,30 +34,30 @@
     (pretty-print (cadar (let ([quine '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (trace-run (q) (== q quine) (evalo q q)))))
 
-    #;
-    (parameterize ([trace-goal-print #t]
+#;
+    (parameterize ([trace-goals #t]
 		   [trace-proof-goals #t])
- (trace-run 17 (q) (proveo ((evalo
-			   (eval-apply
-			    (eval-rator (evalo (eval-lambda (not-in-envo))))
-			    (evalo-rand (evalo (eval-quote (not-in-envo))))
-			    (evalo-body
-			     (evalo
-			      (eval-list
-			       (eval-proper-list
-				(evalo (lookupo (lookupo-r)))
-				(eval-proper-list
-				 (evalo
-				  (eval-list
+(display (trace-run (q) (prove ((evalo
+			      (eval-apply
+			       (eval-rator (evalo (eval-lambda (not-in-envo))))
+			       (evalo-rand (evalo (eval-quote (not-in-envo))))
+			       (evalo-body
+				(evalo
+				 (eval-list
+				  (eval-proper-list
+				   (evalo (lookupo (lookupo-r)))
 				   (eval-proper-list
-				    (evalo (eval-quote (not-in-envo)))
-				    (eval-proper-list
-				     (evalo (lookupo (lookupo-r)))
-				     (eval-proper-list)))
-				   (not-in-envo)))
-				 (eval-proper-list)))
-			       (not-in-envo)))))))
-			   (evalo q q))))
+				    (evalo
+				     (eval-list
+				      (eval-proper-list
+				       (evalo (eval-quote (not-in-envo)))
+				       (eval-proper-list
+					(evalo (lookupo (lookupo-r)))
+					(eval-proper-list)))
+				      (not-in-envo)))
+				    (eval-proper-list)))
+				  (not-in-envo)))))))
+			    (evalo q q)))))
 
     #;
 ((evalo
@@ -82,7 +82,7 @@
            (not-in-envo)))))))
 
     #;
-(proveo ((evalo
+(prove ((evalo
 				(eval-apply
 				 (eval-rator (evalo (eval-lambda (not-in-envo))))
 				 (evalo-rand (evalo (eval-quote (not-in-envo))))
@@ -140,5 +140,5 @@
     (tassert "evalo-quine quine" (run 5 (y) (evalo y y)) 1)
 
     
-    ;;(display (run 1 (q) (evalo q '() q)))
+    ;(display (run 1 (q) (evalo q '() q)))
     ))

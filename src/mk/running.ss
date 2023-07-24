@@ -44,7 +44,7 @@
 
   (define (trace-runner q g s depth)
     (let-values ([(num-remaining answers p)
-		  (parameterize ([org-tracing (trace-goal-print)]
+		  (parameterize ([org-tracing (trace-goals)]
 				 [trace-query q])
 		    (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])
       (cert (list? answers))

@@ -6,7 +6,7 @@
   (define x2 (make-var 2))
   
   (define (run-tracing-tests)
-    (parameterize ([trace-goal-print #f])
+    (parameterize ([trace-goals #f])
       (tassert "trace ==" (map car (trace-run (x1) (org-untrace (== x1 1)))) '(1))
       (tassert "trace == & ==" (map car (trace-run (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2))))) '((1 2)))
       (tassert "trace == & == depth 1" (map car (trace-run 1 (x1 x2) (== x1 1) (== x2 2))) '((1 2)))
@@ -37,22 +37,22 @@
       
       (tassert "theorem constraint head succeed"
 	       (parameterize ([current-output-port (open-output-string)])
-		 (cadar (trace-run (x1) (proveo ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
+		 (cadar (trace-run (x1) (prove ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
       (tassert "theorem constraint head fail"
 	       (parameterize ([current-output-port (open-output-string)])
-		 (trace-run (x1) (proveo ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())    
+		 (trace-run (x1) (prove ((x1=2)) (trace-goal x1=1 (== x1 1))))) '())    
       (tassert "theorem trace-conde select branch"
 	       (parameterize ([current-output-port (open-output-string)])
-		 (map cadr (trace-run (x1) (proveo ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)]))))) '(((x1=2))))
+		 (map cadr (trace-run (x1) (prove ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)]))))) '(((x1=2))))
       (tassert "theorem conj of trace-conde"
 	       (parameterize ([current-output-port (open-output-string)])
-		 (cadar (trace-run (x1 x2) (proveo ((x1=2) (x2=2))
+		 (cadar (trace-run (x1 x2) (prove ((x1=2) (x2=2))
 						   (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
 						   (trace-conde [x2=1 (== x2 1)] [x2=2 (== x2 2)]))))) '((x1=2) (x2=2)))
       (tassert "theorem trace-conde nested"
 	       (parameterize ([current-output-port (open-output-string)])
 		 (map cadr (trace-run (x1 x2)
-				      (proveo ((x1=2 (x2=2)))
+				      (prove ((x1=2 (x2=2)))
 					      (trace-conde [x1=1 (== x1 1)]
 							   [x1=2 (== x1 2)
 								 (trace-conde
@@ -61,7 +61,7 @@
       (tassert "theorem trace-conde theorem too shallow fail"
 	       (parameterize ([current-output-port (open-output-string)])
 		 (trace-run (x1 x2)
-			    (proveo ((x1=2))
+			    (prove ((x1=2))
 				    (trace-conde [x1=1 (== x1 1)]
 						 [x1=2 (== x1 2)
 						       (trace-conde
@@ -70,13 +70,13 @@
       (tassert "theorem trace-conde theorem too deep fail"
 	       (parameterize ([current-output-port (open-output-string)])
 		 (trace-run (x1 x2)
-			    (proveo ((x1=2 (x2=2)))
+			    (prove ((x1=2 (x2=2)))
 				    (trace-conde [x1=1 (== x1 1)]
 						 [x1=2 (== x1 2)])))) '())
       (tassert "theorem trace-conde theorem prefix succeeds"
 	       (parameterize ([current-output-port (open-output-string)])
 		 (map cadr (trace-run (x1 x2)
-				      (proveo ((x1=2 __))
+				      (prove ((x1=2 __))
 					      (trace-conde [x1=1 (== x1 1)]
 							   [x1=2 (== x1 2)
 								 (trace-conde
@@ -88,7 +88,7 @@
 		  cadr
 		  (trace-run
 		   (x1 x2 x3)
-		   (proveo ((x1=2 __))
+		   (prove ((x1=2 __))
 			   (trace-conde
 			    [x1=1 (== x1 1)]
 			    [x1=2 (== x1 2)

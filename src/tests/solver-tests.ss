@@ -41,7 +41,7 @@
     (tassert "substitution constraint disunify free" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) (list (conj (=/= x1 1) (=/= x1 x2)) x2))
     (tassert "substitution constraint disunify free2" (run1 (x1 x2) (=/= x2 1) (=/= x1 x2)) (list (=/= x1 x2) (=/= x2 1)))
     ;;TODO implement disunification solver
-    ;;(tassert "substitution constraint disunify bound" (run1 (x1) (=/= x1 1) (=/= 1 x1)) (=/= x1 1))
+					;(org-trace    (tassert "substitution constraint disunify bound" (run1 (x1) (=/= x1 1) (=/= 1 x1)) (=/= x1 1)))
 
     (tassert "substitution pconstraint-ground fail" (run1 (x1) (symbolo x1) (== x1 1)) (void))
     (tassert "substitution ground-pconstraint fail" (run1 (x1) (== x1 1) (symbolo x1)) (void))
@@ -163,8 +163,10 @@
 	     (list (conj* (=/= x2 1) (=/= x2 2)) (conj* (=/= x2 1) (=/= x2 2))))
     (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2)) (void))
     (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2)) (void))
-    (tassert "disunify constraint cleared after fired"
-	     (constraint-store-constraints (state-constraints (run1-state (x1) (=/= x1 1) (== x1 2)))) '())
+    (tassert "disunify fired constraints restored on failure" (run1 (x1) (disj (== x1 1) (== x1 1)) (=/= (list x1 x1) '(1 1))) (void))
+;    (org-trace    (tassert "disunify disj" (run1 (x1 x2) (=/= (list x1 x2) '(1 2))) (list (=/= x1 x2) (=/= x2 1))))
+
+    
 
     ;; === EQUALITY ===
     

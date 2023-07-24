@@ -3,7 +3,7 @@
   (export with-values values-car values->list values-ref
 	  cert
 	  comment
-	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing
+	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing org-if
 	  nyi)
   (import (chezscheme))
 
@@ -126,6 +126,14 @@
       [(_ name (head body ...) ...)
        (cond
 	[head ((org-lambda name (branch) body ...) 'head)] ...)]))
+
+  (define-syntax org-if
+    (syntax-rules ()
+      [(_ test true false) (org-if if test true false)]
+      [(_ name test true false)
+       (if (test)
+	   ((org-lambda name (branch) true) 'true)
+	   ((org-lambda name (branch) false) 'false))]))
 
   (define-syntax org-exclusive-cond (identifier-syntax org-cond))
   

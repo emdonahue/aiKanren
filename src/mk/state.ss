@@ -128,7 +128,7 @@
   ;; === DISUNIFICATION ===
   
   (define (disunify s x y)
-    ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system.
+    ;; Specialized unification for =/= constraints. Only solves enough to confirm non failure and simplifies using special routines for =/=.
 	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
@@ -136,16 +136,16 @@
 	  (disunify-binding s y-var y x-var x)
 	  (disunify-binding s x-var x y-var y))))
 
-  (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
-    (cond
-     [(goal? x)
-      (if (eq? x-var y-var) (values fail fail failure)
-	  (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail.
+  (org-define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
+    (org-cond disunify-binding
+	      [(goal? x)
+      (if (eq? x-var y-var) (values fail fail failure) ; Equal vars are always unsatisfiable, so fail.
+	  (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail when conjoined with =/=.
 	   (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
-	   (values (=/= x-var (if (goal? y) y-var y)) succeed s)))]
+	   (values (=/= x-var (if (goal? y) y-var y)) succeed s)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
      [(goal? y) (if (var? x)
-		    (values (=/= x y-var) succeed s) ; x is lower id, so it controls the constraints that may pertain to x=/=y. Therefore, we only need to add a constraint. There is nothing to check.
-		    (values (=/= y-var x) succeed s)
+		    (values (=/= x y-var) succeed s) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
+		    (values (=/= y-var x) succeed s) ; Only when x is ground does y take priority.
 		    #;
 		    (let ([c (simplify-disunification y y-var x)])
 		      (exclusive-cond y-goal-x-val
@@ -172,6 +172,9 @@
      [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
      [else #f]))
 
+  (define (solve-disunification g var val)
+    g)
+  
   (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort; TODO simplify disunifications
     ;; Simplifies a constraint with the information that var =/= val
     (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?

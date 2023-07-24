@@ -7,7 +7,7 @@
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
   
-  (define (solve-constraint g s conjs out)
+  (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
     (exclusive-cond
@@ -62,21 +62,23 @@
 		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
 	       [else #f]))
   
-  (define (solve-=/= g s ctn out)   
-    (let-values ([(g c s) (disunify s (==-lhs g) (==-rhs g))])
+  (org-define (solve-=/= g s ctn out)
+    (cert (==? g))
+    (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))])
+      (org-display g)
       (exclusive-cond
        [(fail? g) (values fail failure)]
-       [(succeed? g) (solve-constraint ctn s succeed out)]
+       [(succeed? g) (solve-constraint ctn s^ succeed out)]
        [else
-	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
+	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s^ (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
 	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
-		(exclusive-cond
-		 [(succeed? g0) (values (conj g out) s)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+		(org-exclusive-cond first-disj-=/=
+		 [(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
 		 ;;TODO let solve constraint handle fail case
 		 [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		 ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 		 ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s)])))])))
+		 [else (values (conj out (conj (disj-car g) (disj g0 (conj (disj-cdr g) ctn)))) s^)])))])))
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
