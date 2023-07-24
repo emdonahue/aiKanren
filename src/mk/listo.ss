@@ -35,7 +35,7 @@
 
   (define (asspo x xs proc) ; TODO does asspo need an extra argument to succeed if none found? eg disjoin with final goal?
     (matcho asspo-list ([xs (a-d . t)]) ;TODO merge asspo matchos into single matcho once optimized
-	    (matcho asspo-pair ([a-d (a . d)])
+	    (matcho asspo-pair ([a-d (a . d)]) ;TODO can alist relations just be constraints if they only return 1 and use constraint semantics to terminate search?
 		    (conde
 		      [(== x a) (proc d)]
 		      [(=/= x a) (asspo x t proc)])))))

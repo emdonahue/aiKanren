@@ -27,7 +27,7 @@
        (not-in-envo 'quote env))))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
-    (trace-goal lookupo-r (displayo env) (assoco var env val)))
+    (trace-goal lookupo-r (displayo var env val) (assoco var env val)))
 
   (define (eval-lambda expr env val)
     (trace-goal eval-lambda

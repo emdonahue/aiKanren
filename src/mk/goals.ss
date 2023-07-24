@@ -23,12 +23,15 @@
 		  [(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		 (values (mplus lhs rhs) p))]
      [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
-		    (suspend g s^ p s)
+		    (if structurally-recursive?
+			(suspend g s^ p s);(run-goal g s^ p)
+			(suspend g s^ p s))
 		    #;
 		    (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
 			(run-goal g s^ p) ; so continue running aggressively on this branch.
 		    (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
      [(trace-goal? g) (run-goal (trace-goal-goal g) s p)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
+     ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
      [else (values (run-constraint g s) p)]))
   
   (define (mplus lhs rhs)

@@ -148,23 +148,36 @@
        [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
        [else (values fail failure)])))
 
+
+  (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
+    (org-case-lambda pcon ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
+      [(g s ctn out) (solve-pconstraint g s ctn out '())]
+      [(g s ctn out vs)
+       (if (not (pconstraint? g)) (solve-constraint g s ctn out)
+	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
+	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj out g)) ; All vars walked. Store constraint.
+		 (let-values ([(var^ val) (walk-var-val s var)])
+		   (cond
+		    [(eq? var^ val) (solve-pconstraint g s ctn out (cons var (cons var^ vs)))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+		    [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
+						    s ctn out (cons var^ (cons var vs)))]
+		    [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
+					     s ctn out (cons var^ vs))])))))]))
+  
+#;
   (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
     (cert (pconstraint? g))
-    (let ([g (fold-left (lambda (g v)
+    (let ([g (fold-pconstraint (lambda (g v)
 			  (if (pconstraint? g)
-			      (let ([walked (walk s v)])
+			      (let-values ([(v walked) (walk-var-val s v)])
 				(if (eq? v walked) g ((pconstraint-procedure g) v walked (pconstraint-data g)))) g))
 		      g (pconstraint-vars g))])
-      (solve-constraint ctn (store-constraint s g) succeed (conj out g)))
-    #;
-    (let ([v (walk s (car (pconstraint-vars g)))])
-    )
-    #;
-    (let ([g ((pconstraint-procedure g) s)])
-		  (exclusive-cond
-		   [(succeed? g) (values succeed s)]
-		   [(fail? g) (values fail failure)]
-		   [else (solve-constraint ctn (store-constraint s g) succeed (conj out g))])))
+      (solve-constraint ctn (store-constraint s g) succeed (conj out g))))
+#;
+  (define (fold-pconstraint p g vs)
+    (if (and (not (null? vs)) (pconstraint? g))
+	(fold-pconstraint p (p g (car vs)) (cdr vs))
+	g))
   
   (define (store-disjunctions g s)
     (cert (goal? g) (or (fail? g) (not (failure? s))))

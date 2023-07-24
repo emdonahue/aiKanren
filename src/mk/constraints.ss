@@ -14,12 +14,13 @@
     (disj (noto antecedent) consequent))
   
   (define typeo
-    (case-lambda
+    (org-case-lambda
       [(v t?) ; User-facing constraint constructor
 	(cert (procedure? t?))
 	(if (var? v) (pconstraint (list v) typeo t?) (if (t? v) succeed fail))]
-      [(var val t?) ; Internal constraint application interface
-       (if (goal? val) (simplify-typeo val var t?) (typeo val t?))]))
+      [(var val t?) (typeo val t?)] ; Internal interface for var/val bindings
+      [(var var^ c t?) ; Internal interface for constraints
+       (simplify-typeo c var^ t?)]))
 
   (define (simplify-typeo c v t?)
     (cert (goal? c) (var? v))

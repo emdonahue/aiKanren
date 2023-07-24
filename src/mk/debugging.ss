@@ -7,7 +7,7 @@
   ;; === DEBUG PRINTING ===
   
   (define (printfo . args)
-    (noopo (apply org-printf args)))
+    (noopo (apply org-printf args) (org-printf "~%")))
 
   (define-syntax displayo
     (syntax-rules ()
@@ -32,4 +32,6 @@
 
   (define (walk-substitution s)
     (cert (state? s))
-    (org-untrace (map (lambda (v) (walk s v)) (reverse (sbral->list (state-substitution s)))))))
+    (org-untrace
+     (let ([bindings (reverse (sbral->list (state-substitution s)))])
+       (map (lambda (i b) (cons (fx1+ i) b)) (enumerate bindings) bindings)))))

@@ -3,7 +3,6 @@
   (import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goals-tests) (quine-tests) (interpreter-tests) (dfs-tests) (tracing-tests))
 
   (define (run-all-tests)
-    
     (run-sbral-tests)
     (run-mini-substitution-tests)
     (run-state-tests)

@@ -1,4 +1,4 @@
-;; Utilities for working with multiple value returns
+; Utilities for working with multiple value returns
 (library (utils)
   (export with-values values-car values->list values-ref
 	  cert
@@ -47,8 +47,8 @@
   
   (define org-depth (make-parameter 1))
   (define org-max-depth (make-parameter 0))
-  (define org-tracing (make-parameter #f))
-  (define is-logging (make-parameter #f))
+  (define org-tracing (make-parameter #f)) ;TODO maybe fold org-tracing boolean into depth 0?
+  (define is-logging (make-parameter #f)) ; Flag to determine if we need a new "logging" header for additional logger print outs.
     
   (define-syntax org-trace
     (syntax-rules ()
@@ -97,6 +97,8 @@
   
   (define-syntax org-lambda
     (syntax-rules ()
+      [(_ (arg ...) body0 body ...)
+       (org-lambda lambda (_ name (arg ...) body0 body ...))]
       [(_ name (arg ...) body0 body ...)
        (lambda (arg ...)
 	 (org-print-header `name)
@@ -111,6 +113,8 @@
 
   (define-syntax org-case-lambda
     (syntax-rules ()
+      [(_ [(arg ...) body ...] ...)
+       (org-case-lambda case-lambda [(arg ...) body ...] ...)]
       [(_ name [(arg ...) body ...] ...)
        (case-lambda
 	 [(arg ...) ((org-lambda name (arg ...) body ...) arg ...)] ...)]))

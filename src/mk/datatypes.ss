@@ -21,7 +21,7 @@
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
-	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure
+	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var
 	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
 	  make-noto noto? noto-goal
@@ -64,6 +64,12 @@
   (define (pconstraint vars procedure data)
     (cert (list? vars) (procedure? procedure))
     (make-pconstraint vars procedure data))
+
+  (define (pconstraint-rebind-var g v)
+    ;; Moves a pconstraint from one var to another
+    (pconstraint (cons v (cdr (pconstraint-vars g)))
+		 (pconstraint-procedure g)
+		 (pconstraint-data g)))
   
   (define-structure (guardo var procedure))
   (define guardo make-guardo)
