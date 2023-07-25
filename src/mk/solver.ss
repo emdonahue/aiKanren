@@ -67,17 +67,15 @@
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (if (disj? g)
-	      (values (conj out g) s) ;TODO make =/= disjunctions solve more
-	      (let-values ([(g0 s0) (solve-constraint c (store-constraint s^ (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
-	  (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
-	      (org-exclusive-cond first-disj-=/=
-				  [(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
-				  ;;TODO let solve constraint handle fail case
-				  [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-				  ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
-				  ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-				  [else (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)])))))))
+	  (let-values ([(g0 s0) (solve-constraint c (store-constraint s^ (disj-car g)) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
+	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
+		(org-exclusive-cond first-disj-=/=
+				    [(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+				    ;;TODO let solve constraint handle fail case
+				    [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+				    ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
+				    ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
+				    [else (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)]))))))
 
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
