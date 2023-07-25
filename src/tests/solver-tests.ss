@@ -168,9 +168,9 @@
     (tassert "disunify fired constraints restored on failure" (run1 (x1) (disj (== x1 1) (== x1 1)) (=/= (list x1 x1) '(1 1))) (void))
     (tassert "disunify disjunction builds continuation" (run1 (x1) (disj (== x1 1) (== x1 2)) (=/= (list x1 x1) '(3 3)))
 	     (conj (disj (=/= x1 3) (=/= (list x1) '(3))) (disj (== x1 1) (== x1 2))))
-;    (org-trace    (tassert "disunify disj" (run1 (x1 x2) (=/= (list x1 x2) '(1 2))) (list (=/= x1 x2) (=/= x2 1))))
     (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
-    
+    (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
+    (tassert "disunify simplifies conj" (run1 (x1) (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 1) (=/= x1 2)) (=/= x1 3)))
 
     ;; === EQUALITY ===
     

@@ -81,23 +81,34 @@
 				       [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 				       ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
 				       ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-				       [else (org-printf "returning =/=-disj") (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)]))))))))
+				       [else (org-printf "returning =/=-disj") (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) (if (succeed? recheck) s (unbind-constraint s (==-lhs (noto-goal head)))))]))))))))
 
   (org-define (simplify-=/= g x y)
     (exclusive-cond
      [(succeed? g) (values (=/= x y) succeed succeed)]
+     [(conj? g) (let-values ([(deq simplified-lhs recheck-lhs) (simplify-=/= (conj-lhs g) x y)])
+		  (if (or (succeed? g) (fail? g)) (nyi abort-early-simplify-=/=)
+		      (let-values ([(deq simplified-rhs recheck-rhs) (simplify-=/= (conj-rhs g) x y)])
+			(values deq (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      [(noto? g)
       (if (==? (noto-goal g))
-	  (begin
-	    (cert (eq? x (==-lhs (noto-goal g)))) ; Conjoined =/= must have same normalized lhs
-	    (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= can simply be dropped
-		(values (=/= x y) succeed succeed)
-		(values (=/= x y) g succeed)))
+	  (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= can simply be dropped
+	      (values (=/= x y) succeed succeed)
+	      (values (=/= x y) g succeed))
 	  (nyi simplify-neg-pconstraint))]
+     [(disj? g) (let ([g (simplify-=/=-disj g x y)])
+		  (if (fail? g) (values fail fail fail)
+		      (values (=/= x y) succeed g)))]
      [(pconstraint? g) (if (fail? ((pconstraint-procedure g) x y (pconstraint-data g)))
 			   (values succeed succeed succeed)
-			   (values ))]
+			   (nyi passing-pconstraint))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
+
+  (org-define (simplify-=/=-disj g x y)
+	      (exclusive-cond
+	       [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g))) fail g)]
+	       [(disj? g) (disj (simplify-=/=-disj (disj-car g) x y) (simplify-=/=-disj (disj-cdr g) x y))]
+	       [else (assertion-violation 'simplify-=/=-disj "Unrecognized constraint type" g)]))
   
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
