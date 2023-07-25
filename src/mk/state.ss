@@ -147,17 +147,12 @@
 		    (values (=/= x y-var) succeed s) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
 		    (values (=/= y-var x) succeed s)
 		    #;
-		    (let-values ([(abort? simplified? c) (solve-disunification y y-var x)]) ; Only when x is ground does y take priority.
-		      (exclusive-cond
-		       []
-		       [else (values (=/= y-var x) succeed s)])) 
-		    #;
-		    (let ([c (simplify-disunification y y-var x)])
-		      (exclusive-cond y-goal-x-val
-		       [(fail? c) (values fail fail failure)]
-		       [(succeed? c) (values succeed succeed s)]
-		       [(eq? c y) (values (=/= y-var x) succeed s)]
-		       [else (values (=/= y-var x) c (unbind-constraint s y-var))])))]
+		    (let ([c (solve-disunification y y-var x)])
+		      (org-exclusive-cond y-goal-x-val
+				      [(not c) (values (=/= y-var x) succeed s)]
+				      [(fail? c) (values fail fail failure)]
+				      [(succeed? c) (values succeed succeed s)]
+				      [else (values (=/= y-var x) succeed (extend s y-var c))])))]
      [(eq? x y) (values fail fail failure)]
      [(var? x) (values (=/= x y) succeed s)]
      [(var? y) (values (=/= y x) succeed s)]
@@ -178,6 +173,8 @@
      [else #f]))
 
   (define (solve-disunification g var val)
+    #f
+    #;
     (exclusive-cond
      [(noto? g)
       (if (==? (noto-goal g))
