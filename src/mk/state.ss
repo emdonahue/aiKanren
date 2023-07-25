@@ -106,7 +106,7 @@
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
-    (cert (not (eq? x y)))
+    (cert (state? s) (not (eq? x y)))
     (set-state-substitution
      s
      (sbral-set-ref
@@ -140,9 +140,9 @@
     (org-cond disunify-binding
 	      [(goal? x)
       (if (eq? x-var y-var) (values fail fail failure) ; Equal vars are always unsatisfiable, so fail.
-	  (if (may-unify x x-var) ; We only need to recheck goals that may unify what this =/= disunifies, as other constraints will never fail when conjoined with =/=.
-	   (values (=/= x-var (if (goal? y) y-var y)) x (unbind-constraint s x-var)) ;TODO can we extract only the subgoals that may unify when solving a =/= in disunify
-	   (values (=/= x-var (if (goal? y) y-var y)) succeed s)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
+	  (if (goal? y)
+	      (values (=/= x-var y-var) x s) ;TODO we may not need to simplify y goal in disunify so return it separately
+	      (values (=/= x-var y) x s)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed s) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
 		    (values (=/= y-var x) succeed s)
@@ -164,6 +164,7 @@
 	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c s^)]))]
      [else (values succeed succeed s)]))
 
+  #;
   (define (may-unify g v)
     ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
     (exclusive-cond

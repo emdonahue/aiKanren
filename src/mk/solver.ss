@@ -67,19 +67,34 @@
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (let*-values ([(simplified recheck) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))))]
-			[(g0 s0) (solve-constraint recheck (store-constraint s^ simplified) ctn succeed)]) ; Evaluate constraints with the first disequality in the store.
-	    (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
-		(org-exclusive-cond first-disj-=/=
-				    [(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
-				    ;;TODO let solve constraint handle fail case
-				    [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-				    ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
-				    ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-				    [else (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)]))))))
+	  (let-values ([(g simplified recheck) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))))]) ; Evaluate constraints with the first disequality in the store.
+	    (if (succeed? g) (solve-constraint g s ctn out)
+	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified g)) ctn succeed)])
+					;	    (org-display (extend s (==-lhs (noto-goal (disj-car g))) simplified) (store-constraint s^ simplified))
+	       (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
+		   (org-exclusive-cond first-disj-=/=
+				       [(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+				       ;;TODO let solve constraint handle fail case
+				       [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+				       ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
+				       ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
+				       [else (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) s^)]))))))))
 
-  (define (simplify-=/= c x y)
-    (values (=/= x y) c))
+  (define (simplify-=/= g x y)
+    (exclusive-cond
+     [(succeed? g) (values (=/= x y) succeed succeed)]
+     [(noto? g)
+      (if (==? (noto-goal g))
+	  (begin
+	    (cert (eq? x (==-lhs (noto-goal g)))) ; Conjoined =/= must have same normalized lhs
+	    (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= can simply be dropped
+		(values (=/= x y) succeed succeed)
+		(values (=/= x y) g succeed)))
+	  (nyi simplify-neg-pconstraint))]
+     [(pconstraint? g) (if (fail? ((pconstraint-procedure g) x y (pconstraint-data g)))
+			   (values succeed succeed succeed)
+			   (values ))]
+     [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
   
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
