@@ -55,7 +55,7 @@
 
     ;; === ATTRIBUTED VARIABLES ===
 
-    (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= `(,x1 . ,x2) '(1 . 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
+    (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= (cons x1 x2) '(1 . 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
     (tassert "disj of disequalities attribute only to first var" (run1 (x1 x2) (disj (=/= x1 1) (=/= x2 2))) `(,(disj (=/= x1 1) (=/= x2 2)) ,x2))
 
 
@@ -94,7 +94,9 @@
     (tassert "constraint =/=" (run1 (x1) (constrain (=/= x1 1))) (=/= x1 1))
     (tassert "constraint fail|succeed" (run1 (x1) (constrain (conde [(== x1 1) (== x1 2)] [(== 3 3)]))) x1)
     (tassert "constraint fail|==" (run1 (x1) (constrain (conde [(== x1 1) (== x1 2)] [(== x1 3)]))) 3)
+
     (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)])) (constrain (== x1 1))) 1)
+
     (tassert "constraint =/= ==|==" (run1 (x1) (constrain (=/= x1 1)) (constrain (conde [(== x1 1)] [(== x1 2)]))) 2)
     (tassert "constraint ==|== =/=" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)])) (constrain (=/= x1 1))) 2)
     (tassert "constraint &" (run1 (x1 x2) (== x1 1) (=/= x2 2)) (list 1 (=/= x2 2)))
