@@ -99,6 +99,8 @@
      [(disj? g) (let ([g (simplify-=/=-disj g x y)])
 		  (if (fail? g) (values fail fail fail)
 		      (values (=/= x y) succeed g)))]
+     [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
+		      (values (=/= x y) g succeed))] ;TODO de can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(pconstraint? g) (if (fail? ((pconstraint-procedure g) x y (pconstraint-data g)))
 			   (values succeed succeed succeed)
 			   (nyi passing-pconstraint))]
