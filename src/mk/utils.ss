@@ -131,7 +131,7 @@
     (syntax-rules ()
       [(_ test true false) (org-if if test true false)]
       [(_ name test true false)
-       (if (test)
+       (if test
 	   ((org-lambda name (branch) true) 'true)
 	   ((org-lambda name (branch) false) 'false))]))
 

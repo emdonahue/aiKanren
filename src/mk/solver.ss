@@ -136,35 +136,34 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
-  (define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
+  (org-define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
-      (values (conj out (disj head-disj g)) s)))
+      (org-display head-disj ==s neck-disj g)
+      (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) s)))
   
-  (define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
+  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
     (cert (goal? g) (state? s) (goal? ctn))
     (exclusive-cond
-     [(fail? g) (values fail fail fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
+     [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
-	     (exclusive-cond
+	     (org-exclusive-cond g0-cond
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
 	      [(disj? g0) (values (disj-car g0) fail fail (disj (disj-cdr g0) (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
 	      [else
-	       (org-display ==s)
 	       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
-		 (org-display g0 ==s)
-		 (if (succeed? ==s) ; If there are none,
+		 (org-if if-==s (succeed? ==s) ; If there are none,
 		     (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
-			 (values (disj-car g0) fail fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
-			 (values g0 fail fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
-		  (let-values ([(head-disj ==s^ neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
-		    (exclusive-cond
+			 (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
+			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
+		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
+		    (org-exclusive-cond rest-cond
 		     [(and (fail? g) (fail? head-disj)) (values fail fail fail g0 s0)] ; If tail fails, propagate the modified state.
 		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
 		     ;; Propagate the new head.
-		     [else (values head-disj fail fail (disj g0 g) s)]))))]))]))
+		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj g0 neck-disj) g s)]))))]))]))
   
   (define (solve-guardo g s conjs out) ;TODO remove guardo
     (let ([v (walk s (guardo-var g))])
