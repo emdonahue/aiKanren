@@ -69,8 +69,6 @@
 	     (list (disj (== x2 2) (== x1 1)) (disj (== x2 2) (== x1 1)))) 
     (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2))))
 	     (list (disj (== x1 1) (conj (== x1 1) (== x2 2))) (disj (== x1 1) (conj (== x1 1) (== x2 2)))))
-    (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2))))
-	     (list (disj (== x1 1) (conj (== x1 1) (== x2 2))) (disj (== x1 1) (conj (== x1 1) (== x2 2)))))
     (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2) (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2))))
 	     (list (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))
 		   (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))))

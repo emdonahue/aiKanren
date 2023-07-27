@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail? trivial-goal?
 	  == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
-	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter ;TODO replace conj-car/cdr with lhs/rhs
+	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var
@@ -231,6 +231,18 @@
 	 (conj-filter (conj-lhs c) p)
 	 (conj-filter (conj-rhs c) p))
 	(if (p c) c succeed)))
+
+  (define (conj-diff c d)
+    (if (conj? c) (conj (conj-diff (conj-lhs c) d) (conj-diff (conj-rhs c) d))
+	(if (conj-member c d) succeed c)))
+
+  (define (conj-intersect c d)
+    (if (conj? c) (conj (conj-intersect (conj-lhs c) d) (conj-intersect (conj-rhs c) d))
+	(if (conj-member c d) c succeed)))
+
+  (define (conj-member e c)
+    (if (conj? c) (or (conj-member e (conj-lhs c)) (conj-member e (conj-rhs c)))
+	(equal? c e)))
 
   (define (conj-memp c p)
     (if (conj? c)

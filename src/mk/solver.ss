@@ -92,6 +92,9 @@
   ;; double succeed implies trivial, dont modify subst
   ;; if a doesnt drivialize and still has constraint in recursion, do rest with succeed and conjoin at that point
   ;; disj may start either with no ==, or == not shared by 2nd disj
+  ;; disj 1: (=/=, unwalked ...)
+  ;; disj 2: (==1, ==2, unwalked ...)
+  ;; disj 3: (=/=, ==1, unwalked ...)
   (org-define (simplify-=/= g x y)
     (exclusive-cond
      [(succeed? g) (values (=/= x y) succeed succeed)]
@@ -142,46 +145,26 @@
     (cert (goal? g) (state? s) (goal? ctn))
     (exclusive-cond
      [(fail? g) (values fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)])
+     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
 	     (exclusive-cond
 	      [(succeed? g0) (values succeed succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
 	      [(disj? g0) (values (disj-car g0) (disj (disj-cdr g0) (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
 	      [else
-	       (let ([==s (diff-== ==s g0)])
-		 (if (succeed? ==s)
-		     (if (disj? g)
+	       (org-display ==s)
+	       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts.
+		 (org-display g0 ==s)
+		 (if (succeed? ==s) ; If there are none,
+		     (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
 			 (values (disj-car g0) (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
-			 (values g0 fail s0))
-		  (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)])
+			 (values g0 fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
+		  (let-values ([(head-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
 		    (exclusive-cond
-		     [(and (fail? g) (fail? head-disj)) (values fail g0 s0)]
-		     [(succeed? g) (values succeed succeed s)]
+		     [(and (fail? g) (fail? head-disj)) (values fail g0 s0)] ; If only the tail succeeded, propagate the modified state.
+		     [(succeed? g) (values succeed succeed s)] ; Propagate trivial success up through disjunction.
+		     ;; Propagate the new head.
 		     [else (values head-disj (disj g0 g) s)]))))]))]))
-#;
-(let ([==s (diff-== ==s g0)])
-		      (if (succeed? ==s )
-		       (let-values ([(g s^) (solve-disj* (disj-cdr g) s ctn ==s)])
-			 (exclusive-cond
-			  [(fail? g) (values g0 s0)]
-			  [(succeed? g) (values succeed s)]
-			  [else (values (make-disj g0 g) s)]))))
-  
-  (define (diff-== ==s g) ;TODO make diff-== just a list. no need to dedup because we are dredging normalized output
-    (cond ; TODO succeed should probably skip any computations in diff-==
-     [(fail? ==s) (conj-filter g ==?)] ; ==s starts as fail, so at the beginning we want to filter out the initial ==s. TODO instead of filtering out ==s in disj, subgoals should return them automatically as a starting point.
-     [(fail? g) ==s] ; A failed goal has no bearing on the ==s common to succeeding goals.
-     [(==? ==s) (if (fail? g) ==s (conj-member g ==s))]
-     [(conj? ==s) (conj (diff-== (conj-car ==s) g) (diff-== (conj-cdr ==s) g))]
-     [else succeed]))
-
-  (define (conj-member c e)
-    (cond
-     [(equal? c e) e]
-     [(conj? c) (let ([lhs (conj-member (conj-car c) e)])
-		  (if (succeed? lhs) (conj-member (conj-cdr c) e) lhs))]
-     [else succeed]))
   
   (define (solve-guardo g s conjs out) ;TODO remove guardo
     (let ([v (walk s (guardo-var g))])
