@@ -98,7 +98,7 @@
 	      (presento present a)
 	      (presento present d)))))
 
-  (define (absento absent term)
+  (define (absento absent term) ;TODO create defconstraint that tags any matchos returned with the function pointer so they can dedup themselves
     (conj*
       (=/= term absent)
       (disj

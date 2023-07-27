@@ -6,7 +6,8 @@
   ;; === INTERLEAVING INTERPRETER ===
   
   (define (run-goal g s p) ;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
-	      ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances
+    ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances. might work if tracing goals just mutate rather than shadow params
+    ;;TODO if convert search to cps, can we use the results of walk to simplify the ctn and decide not to walk some of its goals?
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
 ;	      (org-display (print-substitution s) (print-reification s))

@@ -83,6 +83,15 @@
 				       ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
 				       [else (org-printf "returning =/=-disj") (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) (if (succeed? recheck) s (unbind-constraint s (==-lhs (noto-goal head)))))]))))))))
 
+
+  ;; encountering a goal that makes =/= trivial in conj should fail early
+  ;; if all disjs make a =/= trivial also fail early
+  ;; if no disjs, conjoin to end
+  ;; if disjs, conjoin as far inside first as needed but simplify everything
+  ;; if first disj fails, and second has ==, rerun
+  ;; double succeed implies trivial, dont modify subst
+  ;; if a doesnt drivialize and still has constraint in recursion, do rest with succeed and conjoin at that point
+  ;; disj may start either with no ==, or == not shared by 2nd disj
   (org-define (simplify-=/= g x y)
     (exclusive-cond
      [(succeed? g) (values (=/= x y) succeed succeed)]
@@ -100,7 +109,7 @@
 		  (if (fail? g) (values fail fail fail)
 		      (values (=/= x y) succeed g)))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
-		      (values (=/= x y) g succeed))] ;TODO de can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+		      (values (=/= x y) g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(pconstraint? g) (if (fail? ((pconstraint-procedure g) x y (pconstraint-data g)))
 			   (values succeed succeed succeed)
 			   (nyi passing-pconstraint))]
@@ -124,7 +133,7 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
-  (define (solve-disj g s ctn out)
+  (define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
     (let-values ([(head-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (values (conj out (disj head-disj g)) s)))
