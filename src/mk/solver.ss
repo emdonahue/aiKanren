@@ -160,7 +160,7 @@
 			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
 		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
 		    (org-exclusive-cond rest-cond
-		     [(and (fail? g) (fail? head-disj)) (values fail fail fail g0 s0)] ; If tail fails, propagate the modified state.
+		     [(and (fail? g) (fail? head-disj)) (values fail ==s g0 fail s0)] ; If tail fails, propagate the modified state.
 		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
 		     ;; Propagate the new head.
 		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj g0 neck-disj) g s)]))))]))]))
