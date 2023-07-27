@@ -136,14 +136,20 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
 
-  (org-define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
+  (define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
+    ;; The solver attempts to find ==s common to all disjuncts and factor them out. If it fails, it puts the failing disjunct at the head (failing because it had no ==s in common with previous disjuncts, either because it had none or it had different ones) and factors any common ==s out of those it has searched and puts them second as one disjunct (properly factored and conjoined to their common ==s). This yields 3 possible normal forms for disjunctions:
+    ;; (=/=, unnormalized ...) a head disjunct containing no ==s and the rest unnormalized. This happens if the first non failing disjunct it finds has no ==s
+    ;; (=/=, ==&normalized, unnormalized ...) a head disjunct containing no ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with no ==s.
+    ;; (==1, ==2&normalized, unnormalized ...) a head disjunct containing some ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s (all distinct from the ==s in the first disjunct) and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with different ==s.
+    ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, and so need only be attributed to the first disjunct's variables.
+    ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail, since either might imply the ability to commit to the ==s in the other.
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
       (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
   
-  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
-    (cert (goal? g) (state? s) (goal? ctn))
+  (org-define (solve-disj* g s ctn ==s parent-disj)
+    (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
      [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
@@ -151,7 +157,7 @@
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
-	      [(disj? g0) (values (disj-car g0) fail fail (disj (disj-cdr g0) (make-conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
+	      [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
 	      [else
 	       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
 		 (org-if if-==s (succeed? ==s) ; If there are none,
@@ -228,7 +234,7 @@
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
 
-  (define (invert-disj ds) ds) ;TODO reevaluate inverting disj given that they are now binary
+  (define (invert-disj ds) ds) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
   #;
   (define (invert-disj ds)
     ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars

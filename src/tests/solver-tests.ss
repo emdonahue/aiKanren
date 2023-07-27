@@ -68,7 +68,10 @@
     (tassert "attribute ~x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (== x2 2)))
 	     (list (disj (== x2 2) (== x1 1)) (disj (== x2 2) (== x1 1)))) 
     (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2)))) (list 1 x2))
-    (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2) (disj (conj (== x1 1) (== x2 2)) (conj (== x1 1) (== x2 2)))) '(1 2))
+    (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2 x3) (disj (conj (== x1 1) (== x2 2)) (== x3 3)))
+	     (list (disj (== x3 3) (conj (== x1 1) (== x2 2)))
+		   (disj (== x3 3) (conj (== x1 1) (== x2 2)))
+		   (disj (== x3 3) (conj (== x1 1) (== x2 2)))))
     
 
     ;; Multi variable with negation
@@ -193,4 +196,8 @@
     ;; === DISJUNCTION ===
 
     (tassert "== factored out of disj" (run1 (x1) (disj (== x1 1) (== x1 1))) 1)
+    (tassert "== factored out of nested disj" (run1 (x1 x2) (== x2 2) (disj (conj (== x2 2) (disj (== x1 1) (== x1 1))) (== x2 3))) '(1 2))
+    (tassert "== factored out of nested disj tail" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 1) (== x1 1))))) '(1 2))
+    (tassert "nested disj terminates disj solving" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 2) (== x1 1))))) (list (disj (== x1 1) (disj (== x1 1) (== x1 2))) 2))
+    
     ))
