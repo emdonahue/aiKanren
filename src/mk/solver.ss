@@ -140,7 +140,7 @@
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
-      (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) s)))
+      (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
   
   (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO delete extracted == from disj clauses
     (cert (goal? g) (state? s) (goal? ctn))
@@ -160,10 +160,10 @@
 			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
 		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
 		    (org-exclusive-cond rest-cond
-		     [(and (fail? g) (fail? head-disj)) (values fail ==s g0 fail s0)] ; If tail fails, propagate the modified state.
+		     [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
 		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
 		     ;; Propagate the new head.
-		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj g0 neck-disj) g s)]))))]))]))
+		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))]))
   
   (define (solve-guardo g s conjs out) ;TODO remove guardo
     (let ([v (walk s (guardo-var g))])
@@ -203,6 +203,12 @@
     (if (and (not (null? vs)) (pconstraint? g))
 	(fold-pconstraint p (p g (car vs)) (cdr vs))
 	g))
+
+  (define (store-== s ==s) ;TODO == should be propagated up and stored at top level, not after every disj. we should propagate one commited conj and one uncommited conj
+    (if (conj? ==s) (store-== (store-== s (conj-lhs ==s)) (conj-rhs ==s))
+	(begin
+	  (cert (==? ==s))
+	  (extend s (==-lhs ==s) (==-rhs ==s)))))
   
   (define (store-disjunctions g s)
     (cert (goal? g) (or (fail? g) (not (failure? s))))
