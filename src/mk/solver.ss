@@ -122,6 +122,9 @@
 		      (values #f succeed g)))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
 		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+     [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
+		  (values fail fail fail)
+		  (values #f g succeed))]
      [(pconstraint? g) (if (fail? (pconstraint-check g x y))
 			   (values succeed succeed succeed)
 			   (values #f g succeed))]
