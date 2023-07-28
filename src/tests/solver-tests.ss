@@ -167,9 +167,12 @@
 	     (conj (disj (=/= x1 3) (=/= (list x1) '(3))) (disj (== x1 1) (== x1 2))))
     (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
     (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
+
     (tassert "disunify simplifies conj" (run1 (x1) (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 1) (=/= x1 2)) (=/= x1 3)))
+    (tassert "disunify simplifies conj early succeed" (run1 (x1) (=/= x1 1) (=/= x1 1)) (=/= x1 1))
     (tassert "disunify simplifies matcho succeed" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho? c)))
     (tassert "disunify simplifies matcho" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
+        
 
     ;; === EQUALITY ===
     
