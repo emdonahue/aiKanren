@@ -103,7 +103,7 @@
   ;; if compatible and first had ==s, see if we can make the second fail
   ;; if 
   (org-define (simplify-=/= g x y)
-    (exclusive-cond
+    (org-exclusive-cond simplify-cond
      [(succeed? g) (values #f succeed succeed)]
      [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs) (simplify-=/= (conj-lhs g) x y)])
 		  (if abort? (values abort? simplified-lhs recheck-lhs)
@@ -120,8 +120,10 @@
 	    (values succeed succeed succeed)
 	    (values #f g succeed))]
        [else (values #f g succeed)])]
-     [(disj? g) (let ([g (simplify-=/=-disj g x y)])
-		  (if (fail? g) (values fail fail fail)
+     [(disj? g) (let-values ([(abort? simplified recheck) (simplify-=/= (disj-car g) x y)])
+		  (if (fail? g)
+		      (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
+			(values #f succeed (conj simplified recheck)))
 		      (values #f succeed g)))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
 		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?

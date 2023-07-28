@@ -177,6 +177,8 @@
     (tassert "disunify simplify matcho succeed" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho? c)))
     (tassert "disunify simplify matcho" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
     (tassert "disunify simplify negative matcho" (run1 (x1) (constrain (noto (matcho ([x1 (a . d)])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
+    (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
+    ;(tassert "disunify simplify disjunction succeeds" (run1 (x1) (disj (=/= x1 1) (symbolo x1)) (=/= x1 1)) (disj (=/= x1 1) (symbolo x1)))
         
 
     ;; === EQUALITY ===
