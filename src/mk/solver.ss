@@ -110,13 +110,16 @@
 		      (let-values ([(abort? simplified-rhs recheck-rhs) (simplify-=/= (conj-rhs g) x y)])
 			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      [(noto? g)
-      (if (==? (noto-goal g))
-	  (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= terminates early
-	      (values succeed succeed succeed)
-	      (values #f g succeed))
-	  (if (succeed? (pconstraint-check (noto-goal g) x y))
-	      (values succeed succeed succeed)
-	      (values #f g succeed)))]
+      (exclusive-cond
+       [(==? (noto-goal g))
+	(if (and (eq? y (==-rhs (noto-goal g))) (eq? x (==-lhs (noto-goal g))))
+	    (values succeed succeed succeed)
+	    (values #f g succeed))]
+       [(pconstraint? (noto-goal g))
+	(if (succeed? (pconstraint-check (noto-goal g) x y)) ; A pconstraint that always fails when == obsoletes the =/=.
+	    (values succeed succeed succeed)
+	    (values #f g succeed))]
+       [else (values #f g succeed)])]
      [(disj? g) (let ([g (simplify-=/=-disj g x y)])
 		  (if (fail? g) (values fail fail fail)
 		      (values #f succeed g)))]
