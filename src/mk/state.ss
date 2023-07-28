@@ -45,7 +45,7 @@
   (define (walk-constraint s v)
     (cert (state? s) (var? v))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)])
-      (cert (or (var? v) (goal? v)))
+      (cert (or (var? v) (goal? v))) ;TODO can we remove walk-constraint since succeed is the new unbound?
       (if (var? v) succeed v)))
   
   (define (walk-binding s v)

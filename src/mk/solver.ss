@@ -105,24 +105,26 @@
   (org-define (simplify-=/= g x y)
     (exclusive-cond
      [(succeed? g) (values #f succeed succeed)]
-     [(conj? g) (let-values ([(_ simplified-lhs recheck-lhs) (simplify-=/= (conj-lhs g) x y)])
-		  (if (or (succeed? g) (fail? g)) (nyi abort-early-simplify-=/=)
-		      (let-values ([(head simplified-rhs recheck-rhs) (simplify-=/= (conj-rhs g) x y)])
-			(values head (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+     [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs) (simplify-=/= (conj-lhs g) x y)])
+		  (if abort? (values abort? simplified-lhs recheck-lhs)
+		      (let-values ([(abort? simplified-rhs recheck-rhs) (simplify-=/= (conj-rhs g) x y)])
+			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      [(noto? g)
       (if (==? (noto-goal g))
-	  (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= can simply be dropped
-	      (values #f succeed succeed)
+	  (if (eq? y (==-rhs (noto-goal g))) ; An identical =/= terminates early
+	      (values succeed succeed succeed)
 	      (values #f g succeed))
-	  (nyi simplify-neg-pconstraint))]
+	  (if (succeed? (pconstraint-check (noto-goal g) x y))
+	      (values succeed succeed succeed)
+	      (values #f g succeed)))]
      [(disj? g) (let ([g (simplify-=/=-disj g x y)])
 		  (if (fail? g) (values fail fail fail)
 		      (values #f succeed g)))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
 		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
-     [(pconstraint? g) (if (fail? ((pconstraint-procedure g) x y (pconstraint-data g)))
+     [(pconstraint? g) (if (fail? (pconstraint-check g x y))
 			   (values succeed succeed succeed)
-			   (nyi passing-pconstraint))]
+			   (values #f g succeed))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   (org-define (simplify-=/=-disj g x y)

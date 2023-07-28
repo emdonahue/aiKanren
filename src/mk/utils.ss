@@ -129,11 +129,11 @@
 
   (define-syntax org-if
     (syntax-rules ()
-      [(_ test true false) (org-if if test true false)]
-      [(_ name test true false)
+      [(_ test t f) (org-if if test t f)]
+      [(_ name test t f)
        (if test
-	   ((org-lambda name (branch) true) 'true)
-	   ((org-lambda name (branch) false) 'false))]))
+	   ((org-lambda name (branch) t) 'true)
+	   ((org-lambda name (branch) f) 'false))]))
 
   (define-syntax org-exclusive-cond (identifier-syntax org-cond))
   

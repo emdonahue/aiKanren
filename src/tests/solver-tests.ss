@@ -168,10 +168,14 @@
     (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
     (tassert "disunify disjunction runs ctn" (run1 (x1) (constrain (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
 
-    (tassert "disunify simplifies conj" (run1 (x1) (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 1) (=/= x1 2)) (=/= x1 3)))
-    (tassert "disunify simplifies conj early succeed" (run1 (x1) (=/= x1 1) (=/= x1 1)) (=/= x1 1))
-    (tassert "disunify simplifies matcho succeed" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho? c)))
-    (tassert "disunify simplifies matcho" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
+    (tassert "disunify simplify simple abort" (run1 (x1) (=/= x1 1) (=/= x1 1)) (=/= x1 1))
+    (tassert "disunify simplify ignores conj" (run1 (x1) (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 1) (=/= x1 2)) (=/= x1 3)))
+    (tassert "disunify simplify conj early succeed" (run1 (x1) (conj (=/= x1 1) (=/= x1 2)) (=/= x1 1)) (conj (=/= x1 1) (=/= x1 2)))
+    (tassert "disunify simplify abort pconstraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (symbolo x1))    
+    (tassert "disunify simplify ignore pconstraint" (run1 (x1) (numbero x1) (=/= x1 1)) (conj (numbero x1) (=/= x1 1)))
+    (tassert "disunify simplify abort negative pconstraint" (run1 (x1) (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
+    (tassert "disunify simplify matcho succeed" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho? c)))
+    (tassert "disunify simplify matcho" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
         
 
     ;; === EQUALITY ===
