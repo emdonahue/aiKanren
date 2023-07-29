@@ -126,6 +126,9 @@
 		   [(fail? abort?)
 		    (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
 		      (values #f succeed (conj simplified recheck)))]
+		   [(succeed? abort?)
+		    (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
+		      (values #f succeed (conj simplified recheck)))]
 		   [else (values #f succeed g)]))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
 		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
@@ -137,6 +140,9 @@
 			   (values #f g succeed))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
+  ;; a =/= anywhere should discard the whole disjunction, but not abort early
+  ;; a symbolo means the =/= isnt needed in that disjunct, continue searching
+  ;; a == that conflicts fails, toss the disjunct
   (org-define (simplify-=/=-disj g x y)
 	      (exclusive-cond
 	       [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g))) fail g)]

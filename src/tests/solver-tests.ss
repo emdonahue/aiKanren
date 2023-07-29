@@ -213,5 +213,7 @@
     (tassert "== factored out of nested disj" (run1 (x1 x2) (== x2 2) (disj (conj (== x2 2) (disj (== x1 1) (== x1 1))) (== x2 3))) '(1 2))
     (tassert "== factored out of nested disj tail" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 1) (== x1 1))))) '(1 2))
     (tassert "nested disj terminates disj solving" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 2) (== x1 1))))) (list (disj (== x1 1) (disj (== x1 1) (== x1 2))) 2))
+;    (tassert "=/= & (=/=|numbero)" (run1 (x1) (disj (=/= x1 1) (numbero x1)) (=/= x1 1)) (=/= x1 1))
+;    (tassert "=/= & (symbolo|numbero)" (run1 (x1) (disj (symbolo x1) (numbero x1)) (=/= x1 1)) (disj (symbolo x1) (conj (numbero x1) (=/= x1 1))))
     
     ))
