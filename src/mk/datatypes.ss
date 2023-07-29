@@ -72,6 +72,7 @@
 		 (pconstraint-data g)))
 
   (define (pconstraint-check p var val)
+    (cert (memq var (pconstraint-vars p)))
     ((pconstraint-procedure p) var val (pconstraint-data p)))
   
   (define-structure (guardo var procedure))

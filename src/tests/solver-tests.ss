@@ -72,6 +72,10 @@
 	     (list (disj (== x3 3) (conj (== x1 1) (== x2 2)))
 		   (disj (== x3 3) (conj (== x1 1) (== x2 2)))
 		   (disj (== x3 3) (conj (== x1 1) (== x2 2)))))
+    (tassert "attribute == =/=" (run1 (x1 x2) (disj (== x1 1) (=/= x2 2)))
+	     (list x1 (disj (=/= x2 2) (== x1 1))))
+    (tassert "attribute =/= ==" (run1 (x1 x2) (disj (=/= x2 2) (== x1 1)))
+	     (list x1 (disj (=/= x2 2) (== x1 1))))
     
 
     ;; Multi variable with negation

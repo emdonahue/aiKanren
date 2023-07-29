@@ -121,10 +121,12 @@
 	    (values #f g succeed))]
        [else (values #f g succeed)])]
      [(disj? g) (let-values ([(abort? simplified recheck) (simplify-=/= (disj-car g) x y)])
-		  (if (fail? g)
-		      (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
-			(values #f succeed (conj simplified recheck)))
-		      (values #f succeed g)))]
+		  (org-display abort? simplified recheck)
+		  (org-exclusive-cond =/=-disj-simplify
+		   [(fail? abort?)
+		    (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
+		      (values #f succeed (conj simplified recheck)))]
+		   [else (values #f succeed g)]))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
 		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))

@@ -1,4 +1,4 @@
-; Utilities for working with multiple value returns
+;; Utilities for working with multiple value returns
 (library (utils)
   (export with-values values-car values->list values-ref
 	  cert
@@ -95,7 +95,7 @@
 	    (org-print-item 'expr val))
 	  val) ...)]))
   
-  (define-syntax org-lambda
+  (define-syntax org-lambda ;TODO make org-lambda check for optimization and remove itself to improve performance with debugging infrastructure in place
     (syntax-rules ()
       [(_ (arg ...) body0 body ...)
        (org-lambda lambda (_ name (arg ...) body0 body ...))]
