@@ -68,10 +68,10 @@
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (let-values ([(aborted? simplified recheck) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))))]) ; Evaluate constraints with the first disequality in the store.
+	  (let-values ([(aborted? simplified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
 	    (org-display aborted? simplified recheck)
 	    (if aborted? (solve-constraint aborted? s ctn out)
-	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified (disj-car g))) ctn succeed)])
+	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified diseq)) ctn succeed)])
 					;	    (org-display (extend s (==-lhs (noto-goal (disj-car g))) simplified) (store-constraint s^ simplified))
 	       (org-display g0 s0)
 	       (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
@@ -102,42 +102,42 @@
   ;; if constraints compatible, if first not had ==s, just wrap the rest and contniue
   ;; if compatible and first had ==s, see if we can make the second fail
   ;; if 
-  (org-define (simplify-=/= g x y)
+  (org-define (simplify-=/= g x y xy)
     (org-exclusive-cond simplify-cond
-     [(succeed? g) (values #f succeed succeed)]
-     [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs) (simplify-=/= (conj-lhs g) x y)])
-		  (if abort? (values abort? simplified-lhs recheck-lhs)
-		      (let-values ([(abort? simplified-rhs recheck-rhs) (simplify-=/= (conj-rhs g) x y)])
-			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+     [(succeed? g) (values #f succeed succeed xy)]
+     [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs xy) (simplify-=/= (conj-lhs g) x y xy)])
+		  (if abort? (values abort? simplified-lhs recheck-lhs xy)
+		      (let-values ([(abort? simplified-rhs recheck-rhs xy) (simplify-=/= (conj-rhs g) x y xy)])
+			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) xy))))]
      [(noto? g)
       (exclusive-cond
        [(==? (noto-goal g))
 	(if (and (eq? y (==-rhs (noto-goal g))) (eq? x (==-lhs (noto-goal g))))
-	    (values succeed succeed succeed)
-	    (values #f g succeed))]
+	    (values succeed succeed succeed xy)
+	    (values #f g succeed xy))]
        [(pconstraint? (noto-goal g))
 	(if (succeed? (pconstraint-check (noto-goal g) x y)) ; A pconstraint that always fails when == obsoletes the =/=.
-	    (values succeed succeed succeed)
-	    (values #f g succeed))]
-       [else (values #f g succeed)])]
-     [(disj? g) (let-values ([(abort? simplified recheck) (simplify-=/= (disj-car g) x y)])
+	    (values succeed succeed succeed xy)
+	    (values #f g succeed xy))]
+       [else (values #f g succeed xy)])]
+     [(disj? g) (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car g) x y xy)])
 		  (org-display abort? simplified recheck)
 		  (org-exclusive-cond =/=-disj-simplify
 		   [(fail? abort?)
-		    (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
-		      (values #f succeed (conj simplified recheck)))]
+		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
+		      (values #f succeed (conj simplified recheck) xy))]
 		   [(succeed? abort?)
-		    (let-values ([(abort? simplified recheck) (simplify-=/= (disj-cdr g) x y)])
-		      (values #f succeed (conj simplified recheck)))]
-		   [else (values #f succeed g)]))]
-     [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed)
-		      (values #f g succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
+		      (values #f succeed (conj simplified recheck) xy))]
+		   [else (values #f succeed g xy)]))]
+     [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
+		      (values #f g succeed xy))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
-		  (values fail fail fail)
-		  (values #f g succeed))]
+		  (values fail fail fail xy)
+		  (values #f g succeed xy))]
      [(pconstraint? g) (if (fail? (pconstraint-check g x y))
-			   (values succeed succeed succeed)
-			   (values #f g succeed))]
+			   (values succeed succeed succeed xy)
+			   (values #f g succeed xy))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   ;; a =/= anywhere should discard the whole disjunction, but not abort early
