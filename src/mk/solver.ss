@@ -131,7 +131,7 @@
 		      (values #f succeed (conj simplified recheck) xy))]
 		   [else (values #f succeed g xy)]))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
-		      (values #f (conj xy g) succeed succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+		      (values #f g succeed succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
 		  (values fail fail fail xy)
 		  (values #f g succeed xy))]
