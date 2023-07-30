@@ -1,6 +1,6 @@
 (library (solver-tests) ; Tests the core mechanisms of the constraint solver
   (export run-solver-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state))
+  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state) (solver))
   
   (define (run-solver-tests)
     (define x1 (make-var 1))
@@ -217,5 +217,9 @@
 					;(tassert "=/= & (symbolo|numbero)" (run1 (x1) (disj (symbolo x1) (numbero x1)) (=/= x1 1)) (disj (symbolo x1) (conj (=/= x1 1) (numbero x1))))
     (tassert "=/= & (=/=|succeed)" (run1 (x1) (disj (numbero x1) (symbolo x1)) (=/= x1 1)) (conj (=/= x1 1) (disj (numbero x1) (symbolo x1))))
 ;    (tassert "=/= & (fail|succeed)" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x2 2)) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
-    
+
+    (tassert "== succeed" (simplify-=/=2 (== x1 1) x1 1) succeed) 
+    (tassert "symbolo fail" (simplify-=/=2 (symbolo x1) x1 1) fail)
+    (tassert "not numbero fail" (simplify-=/=2 (noto (numbero x1)) x1 1) fail)
+    (tassert "=/= fail" (simplify-=/=2 (=/= x1 1) x1 1) fail)
     ))

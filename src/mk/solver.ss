@@ -126,9 +126,12 @@
   (define (simplify-=/=2 g x y)
     (exclusive-cond
      [(succeed? g) (values succeed)]
-     [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
-		  (values fail)
-		  (values succeed))]
+     [(==? g) (if (eq? x (==-lhs g))
+		  (if (eq? y (==-rhs g))
+		      (values succeed)
+		      (if (or (var? y) (var? (==-rhs g))) (values g) (values fail)))
+		  (if (or (var? x) (var? (==-lhs g)))
+		      (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))]
      [(pconstraint? g) (values (pconstraint-check g x y))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values fail)
 		      (values g))]
