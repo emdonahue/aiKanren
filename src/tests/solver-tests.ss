@@ -219,8 +219,10 @@
 ;    (tassert "=/= & (fail|succeed)" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x2 2)) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
 
     (tassert "== succeed" (simplify-=/=2 (== x1 1) x1 1) succeed)
-    (tassert "== undecidable" (simplify-=/=2 (== x1 (cons x2 x3)) x1 (cons x3 x2)) (== x1 (cons x2 x3))) 
+    (tassert "== undecidable" (simplify-=/=2 (== x1 (cons x2 x3)) x1 (cons x3 x2)) succeed) 
     (tassert "symbolo fail" (simplify-=/=2 (symbolo x1) x1 1) fail)
     (tassert "not numbero fail" (simplify-=/=2 (noto (numbero x1)) x1 1) fail)
     (tassert "=/= fail" (simplify-=/=2 (=/= x1 1) x1 1) fail)
+    (tassert "=/= succeed" (simplify-=/=2 (=/= x1 2) x1 1) succeed)
+    (tassert "conj fail" (simplify-=/=2 (conj (== x1 1) (=/= x1 1)) x1 1) fail)
     ))

@@ -126,12 +126,8 @@
   (define (simplify-=/=2 g x y)
     (exclusive-cond
      [(succeed? g) (values succeed)]
-     [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
-		     [s^ (mini-unify s x y)])
-		(cond
-		 [(failure? s^) (values fail)]
-		 [(eq? s s^) (values succeed)]
-		 [else g]))]
+     [(==? g) (let ([s (list (cons (==-lhs g) (==-rhs g)))])
+		(if (failure? (mini-unify s x y)) fail succeed))]
      [(pconstraint? g) (values (pconstraint-check g x y))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values fail)
 		      (values g))]
@@ -149,45 +145,52 @@
 		      (values succeed)
 		      (if (or (var? y) (var? (==-rhs g))) (values g) (values fail)))
 		  (if (or (var? x) (var? (==-lhs g)))
-		      (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))
+  (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))
+  #;
+  (let* ([s (list (cons (==-lhs g) (==-rhs g)))] ;
+  [s^ (mini-unify s x y)])		;
+  (cond					;
+  [(failure? s^) (values fail)]		;
+  [(eq? s s^) (values succeed)]		;
+  [else g]))
   
   (org-define (simplify-=/= g x y xy)
-    (org-exclusive-cond simplify-cond
-     [(succeed? g) (values #f succeed succeed xy)]
-     [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs xy) (simplify-=/= (conj-lhs g) x y xy)])
-		  (if abort? (values abort? simplified-lhs recheck-lhs xy)
-		      (let-values ([(abort? simplified-rhs recheck-rhs xy) (simplify-=/= (conj-rhs g) x y xy)])
-			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) xy))))]
-     [(noto? g)
-      (exclusive-cond
-       [(==? (noto-goal g))
-	(if (and (eq? y (==-rhs (noto-goal g))) (eq? x (==-lhs (noto-goal g))))
-	    (values succeed succeed succeed xy)
-	    (values #f g succeed xy))]
-       [(pconstraint? (noto-goal g))
-	(if (succeed? (pconstraint-check (noto-goal g) x y)) ; A pconstraint that always fails when == obsoletes the =/=.
-	    (values succeed succeed succeed xy)
-	    (values #f g succeed xy))]
-       [else (values #f g succeed xy)])]
-     [(disj? g) (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car g) x y xy)])
-		  (org-display abort? simplified recheck)
-		  (org-exclusive-cond =/=-disj-simplify
-		   [(fail? abort?)
-		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car (disj-cdr g)) x y xy)])
-		      (values #f succeed (conj simplified recheck) xy))]
-		   [(succeed? abort?)
-		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
-		      (values #f succeed (conj simplified recheck) xy))]
-		   [else (values #f succeed g xy)]))]
-     [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
-		      (values #f g succeed xy))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
-     [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
-		  (values fail fail fail xy)
-		  (values #f g succeed xy))]
-     [(pconstraint? g) (if (fail? (pconstraint-check g x y))
-			   (values succeed succeed succeed xy)
-			   (values #f g succeed xy))]
-     [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
+	      (org-exclusive-cond simplify-cond
+				  [(succeed? g) (values #f succeed succeed xy)]
+				  [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs xy) (simplify-=/= (conj-lhs g) x y xy)])
+					       (if abort? (values abort? simplified-lhs recheck-lhs xy)
+						   (let-values ([(abort? simplified-rhs recheck-rhs xy) (simplify-=/= (conj-rhs g) x y xy)])
+						     (values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) xy))))]
+				  [(noto? g)
+				   (exclusive-cond
+				    [(==? (noto-goal g))
+				     (if (and (eq? y (==-rhs (noto-goal g))) (eq? x (==-lhs (noto-goal g))))
+					 (values succeed succeed succeed xy)
+					 (values #f g succeed xy))]
+				    [(pconstraint? (noto-goal g))
+				     (if (succeed? (pconstraint-check (noto-goal g) x y)) ; A pconstraint that always fails when == obsoletes the =/=.
+					 (values succeed succeed succeed xy)
+					 (values #f g succeed xy))]
+				    [else (values #f g succeed xy)])]
+				  [(disj? g) (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car g) x y xy)])
+					       (org-display abort? simplified recheck)
+					       (org-exclusive-cond =/=-disj-simplify
+								   [(fail? abort?)
+								    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car (disj-cdr g)) x y xy)])
+								      (values #f succeed (conj simplified recheck) xy))]
+								   [(succeed? abort?)
+								    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
+								      (values #f succeed (conj simplified recheck) xy))]
+								   [else (values #f succeed g xy)]))]
+				  [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
+						   (values #f g succeed xy))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+				  [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
+					       (values fail fail fail xy)
+					       (values #f g succeed xy))]
+				  [(pconstraint? g) (if (fail? (pconstraint-check g x y))
+							(values succeed succeed succeed xy)
+							(values #f g succeed xy))]
+				  [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   ;; a =/= anywhere should discard the whole disjunction, but not abort early
   ;; a symbolo means the =/= isnt needed in that disjunct, continue searching
@@ -204,7 +207,7 @@
 	  (solve-constraint g s ctn out)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
 	(let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
 	  ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
-	  (if (var? v) ; If first out-var is free,
+	  (if (var? v)			; If first out-var is free,
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho. 
 		(solve-constraint ctn (store-constraint s m) succeed (conj out m))) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
@@ -223,29 +226,29 @@
       (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
   
   (org-define (solve-disj* g s ctn ==s parent-disj)
-    (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
-    (exclusive-cond
-     [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
-	     (org-exclusive-cond g0-cond
-	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
-	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
-	      [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
-	      [else
-	       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
-		 (org-if if-==s (succeed? ==s) ; If there are none,
-		     (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
-			 (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
-			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
-		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
-		    (org-exclusive-cond rest-cond
-		     [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
-		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
-		     ;; Propagate the new head.
-		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))]))
+	      (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
+	      (exclusive-cond
+	       [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
+	       [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
+		       (org-exclusive-cond g0-cond
+					   [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+					   [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
+					   ;;TODO do we have to continue to check ==s if the returned disj might commit?
+					   [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
+					   [else
+					    (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
+					      (org-if if-==s (succeed? ==s) ; If there are none,
+						      (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
+							  (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
+							  (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
+						      (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
+							(org-exclusive-cond rest-cond
+									    [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
+									    [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
+									    ;; Propagate the new head.
+									    [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))]))
   
-  (define (solve-guardo g s conjs out) ;TODO remove guardo
+  (define (solve-guardo g s conjs out)	;TODO remove guardo
     (let ([v (walk s (guardo-var g))])
       (exclusive-cond
        [(var? v) (let ([g (guardo v (guardo-procedure g))])
@@ -263,26 +266,26 @@
 	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj out g)) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (cond
-			 [(eq? var val) (solve-pconstraint g s ctn out (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
-			 [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
-							 s ctn out (cons var^ vs))]
-			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
-						  s ctn out (cons var^ vs))])))))]))
+		    [(eq? var val) (solve-pconstraint g s ctn out (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+		    [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
+						    s ctn out (cons var^ vs))]
+		    [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
+					     s ctn out (cons var^ vs))])))))]))
   
-#;
-  (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
-    (cert (pconstraint? g))
-    (let ([g (fold-pconstraint (lambda (g v)
-			  (if (pconstraint? g)
-			      (let-values ([(v walked) (walk-var-val s v)])
-				(if (eq? v walked) g ((pconstraint-procedure g) v walked (pconstraint-data g)))) g))
-		      g (pconstraint-vars g))])
-      (solve-constraint ctn (store-constraint s g) succeed (conj out g))))
-#;
-  (define (fold-pconstraint p g vs)
-    (if (and (not (null? vs)) (pconstraint? g))
-	(fold-pconstraint p (p g (car vs)) (cdr vs))
-	g))
+  #;
+  (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving ;
+  (cert (pconstraint? g))		;
+  (let ([g (fold-pconstraint (lambda (g v) ;
+  (if (pconstraint? g)			;
+  (let-values ([(v walked) (walk-var-val s v)]) ;
+  (if (eq? v walked) g ((pconstraint-procedure g) v walked (pconstraint-data g)))) g)) ;
+  g (pconstraint-vars g))])		;
+  (solve-constraint ctn (store-constraint s g) succeed (conj out g))))
+  #;
+  (define (fold-pconstraint p g vs)	;
+  (if (and (not (null? vs)) (pconstraint? g)) ;
+  (fold-pconstraint p (p g (car vs)) (cdr vs)) ;
+  g))
 
   (define (store-== s ==s) ;TODO == should be propagated up and stored at top level, not after every disj. we should propagate one commited conj and one uncommited conj
     (if (conj? ==s) (store-== (store-== s (conj-lhs ==s)) (conj-rhs ==s))
@@ -310,12 +313,12 @@
 
   (define (invert-disj ds) ds) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
   #;
-  (define (invert-disj ds)
-    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
-    (let ([rest (disj-cdr ds)])
-      (if (disj? rest)
-	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
-	  (disj rest (disj-car ds)))))
+  (define (invert-disj ds)		;
+    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars ;
+  (let ([rest (disj-cdr ds)])		;
+  (if (disj? rest)			;
+  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest)) ;
+  (disj rest (disj-car ds)))))
   
   (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
