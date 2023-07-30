@@ -5,7 +5,7 @@
   (define (booleano v)
     (disj (== v #t) (== v #f)))
 
-  (define (finite-domain v ds)
+  (define (finite-domain v ds) ;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
     (cert (list? ds))
     (apply disj* (map (lambda (d) (== v d)) ds)))
 

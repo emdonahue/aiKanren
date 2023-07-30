@@ -1,5 +1,5 @@
 (library (solver) ; Constraint solving
-  (export run-constraint)
+  (export run-constraint simplify-=/=2) ;TODO trim exports
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging))
 
   (define (run-constraint g s)
@@ -101,7 +101,45 @@
   ;; if abort, keep and continue
   ;; if constraints compatible, if first not had ==s, just wrap the rest and contniue
   ;; if compatible and first had ==s, see if we can make the second fail
-  ;; if 
+  ;; if first has failing ==, the second was at least normalized but cant fail. if it succeeds, we succeed 
+  ;; (symbolo x) => x=/=3 is always true
+  ;; x=/=3 <=> x=/=3 is always true (replace with identical term, eg skip modification)
+  ;; (symbolo x) | (symbolo x) => x=/=3 is always true
+  ;; (symbolo x) | x=/=3 <=> x=/=3 is always true (replace with simpler term eg x=/=3)
+  ;; (symbolo x) => simplified ~simplifies
+  ;; (numbero x) => ~simplified ~simplifies
+  ;; x=/=3 => simplified simplifies
+  ;; x==3 => fail fail
+  ;; only disjunctions get replaced, so only need to overwrite constraint if there are disjunctions or we dont throw away the =/=
+  ;;
+  ;; 1: throw away the new constraint without modification, 2: modify the current constraint and continue, 3: modify the constraint and recheck something. failure is never an option
+  ;; (not (numbero x)) => simplified ~simplifies
+  ;; (symbolo x) = fail => succeed (symbolo x) ; fail
+  ;; (numbero x) = succeed => x=/=3 (numbero x)
+  ;; (not (symbolo x)=fail)=succeed => x=/=3 (not (symbolo x))
+  ;; (not (numbero x)=succeed)=fail => succeed (not (numbero x))
+  ;; x==3=fail => fail fail
+  ;; x=/=3=succeed => succeed
+  ;; not matcho=fail => x=/=3 matcho
+  ;;
+  ;; calculate what happens to the constraint under unification. if it fails, the =/= is irrelevant. or if it succeeds under negation
+  (define (simplify-=/=2 g x y)
+    (exclusive-cond
+     [(succeed? g) (values succeed)]
+     [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
+		  (values fail)
+		  (values succeed))]
+     [(pconstraint? g) (values (pconstraint-check g x y))]
+     [(matcho? g) (if (not (or (var? y) (pair? y))) (values fail)
+		      (values g))]
+     [(noto? g) (let ([h (simplify-=/=2 (noto-goal g) x y)])
+		  (values (noto h)))]
+     [(conj? g) (values (conj (simplify-=/=2 (conj-lhs g) x y) (simplify-=/=2 (conj-rhs g) x y)))]
+     ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
+     [(disj? g) 3
+
+      ]))
+  
   (org-define (simplify-=/= g x y xy)
     (org-exclusive-cond simplify-cond
      [(succeed? g) (values #f succeed succeed xy)]
@@ -124,14 +162,14 @@
 		  (org-display abort? simplified recheck)
 		  (org-exclusive-cond =/=-disj-simplify
 		   [(fail? abort?)
-		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
+		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car (disj-cdr g)) x y xy)])
 		      (values #f succeed (conj simplified recheck) xy))]
 		   [(succeed? abort?)
 		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
 		      (values #f succeed (conj simplified recheck) xy))]
 		   [else (values #f succeed g xy)]))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
-		      (values #f g succeed succeed))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
+		      (values #f g succeed xy))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
      [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
 		  (values fail fail fail xy)
 		  (values #f g succeed xy))]
