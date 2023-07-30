@@ -226,4 +226,8 @@
     (tassert "=/= fail" (simplify-=/=2 (=/= x1 1) x1 1) fail)
     (tassert "=/= succeed" (simplify-=/=2 (=/= x1 2) x1 1) succeed)
     (tassert "conj fail" (simplify-=/=2 (conj (== x1 1) (=/= x1 1)) x1 1) fail)
+    (tassert "matcho fail" (simplify-=/=2 (matcho ([x1 (a . d)])) x1 1) fail)
+    (tassert "not matcho succeed" (simplify-=/=2 (noto (matcho ([x1 (a . d)]))) x1 1) succeed)
+    (tassert "matcho undecidable" (simplify-=/=2 (matcho ([x1 (a . d)])) x1 '(1 . 2)) matcho?)
+    (tassert "not matcho undecidable" (simplify-=/=2 (noto (matcho ([x1 (a . d)]))) x1 '(1 . 2)) noto?)
     ))
