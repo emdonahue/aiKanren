@@ -1,6 +1,6 @@
 (library (solver) ; Constraint solving
   (export run-constraint simplify-=/=2) ;TODO trim exports
-  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging))
+  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution))
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
@@ -126,12 +126,12 @@
   (define (simplify-=/=2 g x y)
     (exclusive-cond
      [(succeed? g) (values succeed)]
-     [(==? g) (if (eq? x (==-lhs g))
-		  (if (eq? y (==-rhs g))
-		      (values succeed)
-		      (if (or (var? y) (var? (==-rhs g))) (values g) (values fail)))
-		  (if (or (var? x) (var? (==-lhs g)))
-		      (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))]
+     [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
+		     [s^ (mini-unify s x y)])
+		(cond
+		 [(failure? s^) (values fail)]
+		 [(eq? s s^) (values succeed)]
+		 [else g]))]
      [(pconstraint? g) (values (pconstraint-check g x y))]
      [(matcho? g) (if (not (or (var? y) (pair? y))) (values fail)
 		      (values g))]
@@ -142,6 +142,14 @@
      [(disj? g) 3
 
       ]))
+
+  #;
+  (if (eq? x (==-lhs g))
+		  (if (eq? y (==-rhs g))
+		      (values succeed)
+		      (if (or (var? y) (var? (==-rhs g))) (values g) (values fail)))
+		  (if (or (var? x) (var? (==-lhs g)))
+		      (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))
   
   (org-define (simplify-=/= g x y xy)
     (org-exclusive-cond simplify-cond
