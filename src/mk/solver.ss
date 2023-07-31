@@ -129,17 +129,18 @@
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
-		 [(failure? s^) (values fail (void) (void))]
-		 [(eq? s s^) (values succeed #t (void))]
+		 [(failure? s^) (values fail fail fail)]
+		 [(eq? s s^) (values succeed succeed fail)]
 		 [else (values g g succeed)]))]
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed) (values g g succeed))]
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail #f (void))
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail fail fail)
 		      (values g g succeed))]
-     [(noto? g) (let ([h (simplify-=/=2 (noto-goal g) x y)])
+     [(noto? g) (let-values ([(h _ _2) (simplify-=/=2 (noto-goal g) x y)]) ; Cannot contain disjunctions so no need to inspect returns.
 		  (values (noto h) g succeed))]
      [(conj? g) (let-values ([(entailed simplified-lhs recheck-lhs) (simplify-=/=2 (conj-lhs g) x y)])
 		  (if (fail? entailed) (values fail simplified-lhs recheck-lhs)
 		      (let-values ([(entailed simplified-rhs recheck-rhs) (simplify-=/=2 (conj-rhs g) x y)])
+			(org-display  simplified-lhs simplified-rhs recheck-lhs recheck-rhs)
 			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
      [(disj? g) 3
