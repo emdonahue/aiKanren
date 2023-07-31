@@ -233,5 +233,6 @@
     (tassert "matcho undecidable" (simplify-=/=2 (matcho ([x1 (a . d)])) x1 '(1 . 2)) (lambda (a) (and (matcho? (car a)) (matcho? (cadr a)) (succeed? (caddr a)))))
     (tassert "not matcho undecidable" (simplify-=/=2 (noto (matcho ([x1 (a . d)]))) x1 '(1 . 2)) (lambda (a) (and (noto? (car a)) (noto? (cadr a)) (succeed? (caddr a)))))
     (tassert "=/= satisfied|satisfied" (simplify-=/=2 (disj (=/= x1 1) (symbolo x1)) x1 1) (list fail (disj (=/= x1 1) (symbolo x1)) succeed))
+    (tassert "=/= satisfied|satisfied|unnormalized" (simplify-=/=2 (disj (=/= x1 1) (disj (symbolo x1) (=/= x2 2))) x1 1) (list (conj (=/= x1 1) (=/= x2 2)) (disj (=/= x1 1) (disj (symbolo x1) (conj (=/= x1 1) (=/= x2 2)))) succeed))
 ;    (tassert "=/= ==|undecidable" (simplify-=/=2 (disj (== x1 1) (numbero x1)) x1 1) (list (numbero x1) succeed (numbero x1)))
     ))
