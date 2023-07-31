@@ -20,8 +20,9 @@
 	  (raise e))
 	(lambda ()
 	  (total (fx1+ (total)))
-	  (let ([expected expected!]
-		[received received!])
+	  (let* ([expected expected!]
+		 [received-values (call-with-values (lambda () received!) list)]
+		 [received (if (fx= 1 (length received-values)) (car received-values) received-values)])
 	    (when (and (not (equal? expected received)) (or (not (procedure? expected)) (not (expected received))))
 	      (failed (fx1+ (failed)))
 	      (parameterize ([pretty-initial-indent 10]
