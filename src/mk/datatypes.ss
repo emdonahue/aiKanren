@@ -21,9 +21,9 @@
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
-	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check
+	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
 	  guardo? guardo-var guardo-procedure guardo
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho
+	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed?
 	  make-noto noto? noto-goal
 	  __
 	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
@@ -74,6 +74,9 @@
   (define (pconstraint-check p var val)
     (cert (memq var (pconstraint-vars p)))
     ((pconstraint-procedure p) var val (pconstraint-data p)))
+
+  (define (pconstraint-attributed? p var)
+    (memq var (pconstraint-vars p)))
   
   (define-structure (guardo var procedure))
   (define guardo make-guardo)
@@ -155,6 +158,9 @@
 
   (define (expand-matcho g s p)
     ((matcho-goal g) s p (matcho-in-vars g)))
+
+  (define (matcho-attributed? g var)
+    (memq var (matcho-out-vars g)))
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g) (exist? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))

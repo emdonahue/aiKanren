@@ -132,15 +132,15 @@
 		 [(failure? s^) (values fail)]
 		 [(eq? s s^) (values succeed)]
 		 [else g]))]
-     [(pconstraint? g) (values (pconstraint-check g x y))]
-     [(matcho? g) (if (not (or (var? y) (pair? y))) (values fail)
+     [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y)) (values g))]
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail)
 		      (values g))]
      [(noto? g) (let ([h (simplify-=/=2 (noto-goal g) x y)])
 		  (values (noto h)))]
      [(conj? g) (values (conj (simplify-=/=2 (conj-lhs g) x y) (simplify-=/=2 (conj-rhs g) x y)))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
      [(disj? g) 3
-
+      
       ]))
 
   #;
