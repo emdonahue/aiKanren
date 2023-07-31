@@ -145,13 +145,24 @@
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
      [(disj? g) (let-values ([(entailed-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
 			     [(entailed-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
-		  
-		  (if (fail? entailed-lhs)
-		      (if (fail? entailed-rhs)
-			  (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
-			    (values ctn (disj simplified-lhs (disj simplified-rhs ctn)) succeed))
-			  (nyi rhs not entailed))
-		      (nyi lhs not entailed))
+		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
+			(not (and (fail? entailed-rhs) (fail? simplified-rhs)))) 
+		  (exclusive-cond ;entailed can be simplified by disj with entailed
+		   [(fail? entailed-lhs)
+		    (exclusive-cond
+		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+					     (values ctn (disj simplified-lhs (disj simplified-rhs ctn)) succeed))]
+		     [(fail? simplified-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+					       (values ctn succeed (disj simplified-lhs ctn)))] ;TODO should recheck
+		     [else (let ([ctn (conj (=/= x y) (disj-cdr g))]) ; Nothing failed, so simply insert the =/= and store
+			     (values ctn (disj simplified-lhs ctn) succeed))])]
+		   [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
+		    (exclusive-cond
+		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+					     (values ctn (disj simplified-rhs ctn) succeed))]
+		     
+		     [else (nyi rhs not entailed)])]
+		   [else (nyi lhs not entailed)])
 		  )
       
       ]))
@@ -311,7 +322,7 @@
      [(disj? g) (store-constraint s g)]
      [else s]))
 
-  (define (store-constraint s g)
+  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
     (cert (state? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
