@@ -129,11 +129,11 @@
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
-		 [(failure? s^) (values fail fail fail)] ; == different from =/= => =/= satisfied
-		 [(eq? s s^) (values succeed succeed fail)] ; == same as =/= => =/= unsatisfiable
+		 [(failure? s^) (values fail succeed fail)] ; == different from =/= => =/= satisfied
+		 [(eq? s s^) (values succeed fail fail)] ; == same as =/= => =/= unsatisfiable
 		 [else (values g g succeed)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed) (values g g succeed))]
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail fail fail)
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed fail)
 		      (values g g succeed))]
      [(noto? g) (let-values ([(h _ _2) (simplify-=/=2 (noto-goal g) x y)]) ; Cannot contain disjunctions so no need to inspect returns.
 		  (values (noto h) g succeed))]
