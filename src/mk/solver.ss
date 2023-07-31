@@ -129,9 +129,9 @@
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
-		 [(failure? s^) (values fail fail fail)]
-		 [(eq? s s^) (values succeed succeed fail)]
-		 [else (values g g succeed)]))]
+		 [(failure? s^) (values fail fail fail)] ; == different from =/= => =/= satisfied
+		 [(eq? s s^) (values succeed succeed fail)] ; == same as =/= => =/= unsatisfiable
+		 [else (values g g succeed)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed) (values g g succeed))]
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail fail fail)
 		      (values g g succeed))]
@@ -143,7 +143,16 @@
 			(org-display  simplified-lhs simplified-rhs recheck-lhs recheck-rhs)
 			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) 3
+     [(disj? g) (let-values ([(entailed-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
+			     [(entailed-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
+		  
+		  (if (fail? entailed-lhs)
+		      (if (fail? entailed-rhs)
+			  (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+			    (values ctn (disj simplified-lhs (disj simplified-rhs ctn)) succeed))
+			  (nyi rhs not entailed))
+		      (nyi lhs not entailed))
+		  )
       
       ]))
 
