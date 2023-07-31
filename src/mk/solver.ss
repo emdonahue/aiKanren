@@ -161,7 +161,8 @@
 		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
 					     (values ctn (disj simplified-rhs ctn) succeed))]
 		     
-		     [else (nyi rhs not entailed)])]
+		     [else (let ([ctn (disj-cdr (disj-cdr g))])
+			     (values (disj (conj (=/= x y) simplified-rhs) ctn) succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
 		   [else (nyi lhs not entailed)])
 		  )
       
@@ -241,6 +242,7 @@
     ;; (==1, ==2&normalized, unnormalized ...) a head disjunct containing some ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s (all distinct from the ==s in the first disjunct) and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with different ==s.
     ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, and so need only be attributed to the first disjunct's variables.
     ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail, since either might imply the ability to commit to the ==s in the other.
+    ;; TODO can neighboring disjs cancel each other, eg x==1|x=/=1 => succeed
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
