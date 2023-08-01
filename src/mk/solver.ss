@@ -160,16 +160,16 @@
 		    [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
 		     (exclusive-cond
 		      [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
-					      (values ctn (disj simplified-rhs ctn) succeed))]
+					      (values unified (disj simplified-rhs ctn) succeed))]
 		     
 		      [else (let ([ctn (disj-cdr (disj-cdr g))])
-			      (values (disj (conj (=/= x y) simplified-rhs) ctn) succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
+			      (values unified succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
 		    [else
 		     (exclusive-cond
 		      [(fail? simplified-rhs) (let ([ctn (disj-cdr (disj-cdr g))])
 						(values (conj (=/= x y) (disj simplified-lhs ctn)) succeed (conj (=/= x y) (disj simplified-lhs ctn))))]
 		      [else (let ([ctn (disj-cdr (disj-cdr g))])
-			      (values (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) succeed))])]))
+			      (values unified (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) succeed))])]))
 		  )
       
       ]))
