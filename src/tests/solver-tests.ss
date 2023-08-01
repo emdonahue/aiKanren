@@ -241,6 +241,7 @@
     (tassert "=/= unsatisfiable|undecidable" (simplify-=/=2 (disj (== x1 1) (=/= x1 2)) x1 1 (=/= x1 1)) (list succeed succeed (conj (=/= x1 1) (=/= x1 2)) succeed))
     (tassert "=/= undecidable|unsatisfiable" (simplify-=/=2 (disj (=/= x1 2) (== x1 1)) x1 1 (=/= x1 1)) (list succeed succeed (conj (=/= x1 1) (=/= x1 2)) succeed))
     (tassert "=/= undecidable|undecidable" (simplify-=/=2 (disj (=/= x1 2) (=/= x1 3)) x1 1 (=/= x1 1)) (list succeed (conj (=/= x1 1) (disj (=/= x1 2) (=/= x1 3))) succeed succeed))
+    (tassert "=/= recheck|undecidable" (simplify-=/=2 (disj (conj (=/= x2 2) (disj (== x1 1) (=/= x2 3))) (=/= x1 3)) x1 1 (=/= x1 1)) (list succeed succeed (disj (conj (=/= x2 2) (conj (=/= x1 1) (=/= x2 3))) (=/= x1 3)) succeed))
     ;;    (tassert "=/= ==|undecidable" (simplify-=/=2 (disj (== x1 1) (numbero x1)) x1 1) (list (numbero x1) succeed (numbero x1)))
     ;;TODO deal with =/= succeeding completely in disj and throwing disj away/replacing it with =/=
     ))

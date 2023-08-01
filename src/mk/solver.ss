@@ -143,16 +143,18 @@
 		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
 			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(unified-lhs disunified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
-		  (let-values ([(unified-rhs disunified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
-		    (let* ([ctn (disj-cdr (disj-cdr g))]
+     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
+		  (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
+		    (let* ([disunified-lhs (conj simplified-lhs recheck-lhs)]
+			   [disunified-rhs (conj simplified-rhs recheck-rhs)]
+			   [ctn (disj-cdr (disj-cdr g))]
 			   [unified (disj unified-lhs (disj unified-rhs ctn))]
 			   [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
 					   (if (fail? unified-rhs)
 					       (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
 					       (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
 					   (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
-		      (if (or (fail? disunified-lhs) (fail? disunified-rhs))
+		      (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed)))))]))
 
