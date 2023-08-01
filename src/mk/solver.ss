@@ -141,7 +141,6 @@
      [(conj? g) (let-values ([(entailed simplified-lhs recheck-lhs) (simplify-=/=2 (conj-lhs g) x y)])
 		  (if (fail? entailed) (values fail simplified-lhs recheck-lhs)
 		      (let-values ([(entailed simplified-rhs recheck-rhs) (simplify-=/=2 (conj-rhs g) x y)])
-			(org-display  simplified-lhs simplified-rhs recheck-lhs recheck-rhs)
 			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
      [(disj? g) (let-values ([(entailed-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
