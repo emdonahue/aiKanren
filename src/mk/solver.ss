@@ -147,28 +147,29 @@
      [(disj? g) (let-values ([(entailed-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
 			     [(entailed-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
 		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
-			(not (and (fail? entailed-rhs) (fail? simplified-rhs)))) 
-		  (exclusive-cond ;entailed can be simplified by disj with entailed
-		   [(fail? entailed-lhs)
-		    (let ([de (=/= x y)]
-			  [ctn (disj-cdr (disj-cdr g))])
-		      (exclusive-cond
-		       [(fail? entailed-rhs) (values ctn (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
-		       [(fail? simplified-rhs) (values ctn succeed (disj simplified-lhs (conj de ctn)))] ;TODO should recheck
-		       [else (values (disj simplified-lhs (conj de (disj simplified-rhs ctn))) (disj simplified-lhs (conj de (disj simplified-rhs ctn))) succeed)]))]
-		   [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
-		    (exclusive-cond
-		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
-					     (values ctn (disj simplified-rhs ctn) succeed))]
+			(not (and (fail? entailed-rhs) (fail? simplified-rhs))))
+		  (let* ([ctn (disj-cdr (disj-cdr g))]
+			 [unified (disj (conj entailed-lhs simplified-lhs) (disj (conj entailed-rhs simplified-rhs) ctn))]
+			 [de (=/= x y)])
+		   (exclusive-cond ;entailed can be simplified by disj with entailed
+		    [(fail? entailed-lhs)
+		     (exclusive-cond
+		      [(fail? entailed-rhs) (values unified (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
+		      [(fail? simplified-rhs) (values unified succeed (disj simplified-lhs (conj de ctn)))] ;TODO should recheck
+		      [else (values unified (disj simplified-lhs (conj de (disj simplified-rhs ctn))) succeed)])]
+		    [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
+		     (exclusive-cond
+		      [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+					      (values ctn (disj simplified-rhs ctn) succeed))]
 		     
-		     [else (let ([ctn (disj-cdr (disj-cdr g))])
-			     (values (disj (conj (=/= x y) simplified-rhs) ctn) succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
-		   [else
-		    (exclusive-cond
-		     [(fail? simplified-rhs) (let ([ctn (disj-cdr (disj-cdr g))])
-					       (values (conj (=/= x y) (disj simplified-lhs ctn)) succeed (conj (=/= x y) (disj simplified-lhs ctn))))]
-		     [else (let ([ctn (disj-cdr (disj-cdr g))])
-			     (values (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) succeed))])])
+		      [else (let ([ctn (disj-cdr (disj-cdr g))])
+			      (values (disj (conj (=/= x y) simplified-rhs) ctn) succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
+		    [else
+		     (exclusive-cond
+		      [(fail? simplified-rhs) (let ([ctn (disj-cdr (disj-cdr g))])
+						(values (conj (=/= x y) (disj simplified-lhs ctn)) succeed (conj (=/= x y) (disj simplified-lhs ctn))))]
+		      [else (let ([ctn (disj-cdr (disj-cdr g))])
+			      (values (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) succeed))])]))
 		  )
       
       ]))
