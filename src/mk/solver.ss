@@ -123,51 +123,41 @@
   ;; not matcho=fail => x=/=3 matcho
   ;;
   ;; calculate what happens to the constraint under unification. if it fails, the =/= is irrelevant. or if it succeeds under negation
-  (define (simplify-=/=2 g x y)
+  (define (simplify-=/=2 g x y d)
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck)
     (exclusive-cond
-     [(succeed? g) (values succeed succeed succeed)] ; If no constraints
+     [(succeed? g) (values succeed succeed succeed d)] ; If no constraints
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
-		 [(failure? s^) (values fail succeed fail)] ; == different from =/= => =/= satisfied
-		 [(eq? s s^) (values succeed fail fail)] ; == same as =/= => =/= unsatisfiable
-		 [else (values g g succeed)]))] ; free vars => =/= undecidable
-     [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed) (values g g succeed))]
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed fail)
-		      (values g g succeed))]
-     [(noto? g) (let-values ([(h _ _2) (simplify-=/=2 (noto-goal g) x y)]) ; Cannot contain disjunctions so no need to inspect returns.
-		  (values (noto h) g succeed))]
-     [(conj? g) (let-values ([(entailed simplified-lhs recheck-lhs) (simplify-=/=2 (conj-lhs g) x y)])
-		  (if (fail? entailed) (values fail simplified-lhs recheck-lhs)
-		      (let-values ([(entailed simplified-rhs recheck-rhs) (simplify-=/=2 (conj-rhs g) x y)])
-			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+		 [(failure? s^) (values fail succeed fail d)] ; == different from =/= => =/= satisfied
+		 [(eq? s s^) (values succeed fail fail d)] ; == same as =/= => =/= unsatisfiable
+		 [else (values g g succeed d)]))] ; free vars => =/= undecidable
+     [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))]
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed fail d)
+		      (values g g succeed d))]
+     [(noto? g) (let-values ([(h _ _2 d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
+		  (values (noto h) g succeed d))]
+     [(conj? g) (let-values ([(entailed simplified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
+		  (if (fail? entailed) (values fail simplified-lhs recheck-lhs d)
+		      (let-values ([(entailed simplified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
+			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
-			     [(unified-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
+     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)]
+			     [(unified-rhs simplified-rhs recheck-rhs d2) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
 		  (cert (not (and (fail? unified-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
 			(not (and (fail? unified-rhs) (fail? simplified-rhs))))
 		  (let* ([ctn (disj-cdr (disj-cdr g))]
 			 [unified (disj unified-lhs (disj unified-rhs ctn))]
-			 [de (=/= x y)])
-		   (exclusive-cond ;entailed can be simplified by disj with entailed
-		    [(fail? unified-lhs)
-		     (exclusive-cond
-		      [(fail? unified-rhs) (values unified (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
-		      [(fail? simplified-rhs) (values unified succeed (disj simplified-lhs (conj de ctn)))] ;TODO should recheck
-		      [else (values unified (disj simplified-lhs (conj de (disj simplified-rhs ctn))) succeed)])]
-		    [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
-		     (exclusive-cond
-		      [(fail? unified-rhs) (values unified (disj simplified-rhs (conj de ctn)) succeed)]
-		     
-		      [else (values unified succeed (disj (conj de simplified-rhs) ctn))])]
-		    [else
-		     (exclusive-cond
-		      [(fail? simplified-rhs) (values (conj (=/= x y) (disj simplified-lhs ctn)) succeed (conj (=/= x y) (disj simplified-lhs ctn)))]
-		      [else (values unified (conj (=/= x y) (disj simplified-lhs (disj simplified-rhs ctn))) succeed)])]))
-		  )
-      
-      ]))
+			 [de (=/= x y)]
+			 [disunified (if (or (fail? unified-lhs) (fail? simplified-lhs))
+					 (if (fail? unified-rhs)
+					     (disj simplified-lhs (disj simplified-rhs (conj de ctn)))
+					     (disj simplified-lhs (conj de (disj simplified-rhs ctn))))
+					 (conj de (disj simplified-lhs (disj simplified-rhs ctn))))])
+		    (if (or (fail? simplified-lhs) (fail? simplified-rhs))
+			(values unified succeed disunified d)
+			(values unified disunified succeed d))))]))
 
   #;
   (if (eq? x (==-lhs g))
