@@ -143,21 +143,18 @@
 		      (let-values ([(entailed simplified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
 			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)]
-			     [(unified-rhs simplified-rhs recheck-rhs d2) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
-		  (cert (not (and (fail? unified-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
-			(not (and (fail? unified-rhs) (fail? simplified-rhs))))
-		  (let* ([ctn (disj-cdr (disj-cdr g))]
-			 [unified (disj unified-lhs (disj unified-rhs ctn))]
-			 [de (=/= x y)]
-			 [disunified (if (or (fail? unified-lhs) (fail? simplified-lhs))
-					 (if (fail? unified-rhs)
-					     (disj simplified-lhs (disj simplified-rhs (conj de ctn)))
-					     (disj simplified-lhs (conj de (disj simplified-rhs ctn))))
-					 (conj de (disj simplified-lhs (disj simplified-rhs ctn))))])
-		    (if (or (fail? simplified-lhs) (fail? simplified-rhs))
-			(values unified succeed disunified d)
-			(values unified disunified succeed d))))]))
+     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
+		  (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
+		    (let* ([ctn (disj-cdr (disj-cdr g))]
+			   [unified (disj unified-lhs (disj unified-rhs ctn))]
+			   [disunified (if (or (fail? unified-lhs) (fail? simplified-lhs))
+					   (if (fail? unified-rhs)
+					       (disj simplified-lhs (disj simplified-rhs (conj d ctn)))
+					       (disj simplified-lhs (conj d (disj simplified-rhs ctn))))
+					   (conj d (disj simplified-lhs (disj simplified-rhs ctn))))])
+		      (if (or (fail? simplified-lhs) (fail? simplified-rhs))
+			  (values unified succeed disunified succeed)
+			  (values unified disunified succeed succeed)))))]))
 
   #;
   (if (eq? x (==-lhs g))
