@@ -149,7 +149,7 @@
 		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
 			(not (and (fail? entailed-rhs) (fail? simplified-rhs))))
 		  (let* ([ctn (disj-cdr (disj-cdr g))]
-			 [unified (disj (conj entailed-lhs simplified-lhs) (disj (conj entailed-rhs simplified-rhs) ctn))]
+			 [unified (disj entailed-lhs (disj entailed-rhs ctn))]
 			 [de (=/= x y)])
 		   (exclusive-cond ;entailed can be simplified by disj with entailed
 		    [(fail? entailed-lhs)
