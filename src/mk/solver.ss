@@ -143,22 +143,22 @@
 		      (let-values ([(entailed simplified-rhs recheck-rhs) (simplify-=/=2 (conj-rhs g) x y)])
 			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(entailed-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
-			     [(entailed-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
-		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
-			(not (and (fail? entailed-rhs) (fail? simplified-rhs))))
+     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs) (simplify-=/=2 (disj-car g) x y)]
+			     [(unified-rhs simplified-rhs recheck-rhs) (simplify-=/=2 (disj-car (disj-cdr g)) x y)])
+		  (cert (not (and (fail? unified-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
+			(not (and (fail? unified-rhs) (fail? simplified-rhs))))
 		  (let* ([ctn (disj-cdr (disj-cdr g))]
-			 [unified (disj entailed-lhs (disj entailed-rhs ctn))]
+			 [unified (disj unified-lhs (disj unified-rhs ctn))]
 			 [de (=/= x y)])
 		   (exclusive-cond ;entailed can be simplified by disj with entailed
-		    [(fail? entailed-lhs)
+		    [(fail? unified-lhs)
 		     (exclusive-cond
-		      [(fail? entailed-rhs) (values unified (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
+		      [(fail? unified-rhs) (values unified (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
 		      [(fail? simplified-rhs) (values unified succeed (disj simplified-lhs (conj de ctn)))] ;TODO should recheck
 		      [else (values unified (disj simplified-lhs (conj de (disj simplified-rhs ctn))) succeed)])]
 		    [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
 		     (exclusive-cond
-		      [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
+		      [(fail? unified-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
 					      (values unified (disj simplified-rhs ctn) succeed))]
 		     
 		      [else (let ([ctn (disj-cdr (disj-cdr g))])
