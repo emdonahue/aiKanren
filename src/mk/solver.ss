@@ -138,21 +138,21 @@
 		      (values g g succeed d))]
      [(noto? g) (let-values ([(h _ _2 d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
 		  (values (noto h) g succeed d))]
-     [(conj? g) (let-values ([(entailed simplified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
-		  (if (fail? entailed) (values fail simplified-lhs recheck-lhs d)
-		      (let-values ([(entailed simplified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
-			(values entailed (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) d))))]
+     [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
+		  (if (fail? unified) (values fail disunified-lhs recheck-lhs d)
+		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
+			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
-		  (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
+     [(disj? g) (let-values ([(unified-lhs disunified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
+		  (let-values ([(unified-rhs disunified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
 		    (let* ([ctn (disj-cdr (disj-cdr g))]
 			   [unified (disj unified-lhs (disj unified-rhs ctn))]
-			   [disunified (if (or (fail? unified-lhs) (fail? simplified-lhs))
+			   [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
 					   (if (fail? unified-rhs)
-					       (disj simplified-lhs (disj simplified-rhs (conj d ctn)))
-					       (disj simplified-lhs (conj d (disj simplified-rhs ctn))))
-					   (conj d (disj simplified-lhs (disj simplified-rhs ctn))))])
-		      (if (or (fail? simplified-lhs) (fail? simplified-rhs))
+					       (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
+					       (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
+					   (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
+		      (if (or (fail? disunified-lhs) (fail? disunified-rhs))
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed)))))]))
 
