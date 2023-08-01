@@ -237,7 +237,7 @@
     (tassert "=/= unsatisfiable|satisfied" (simplify-=/=2 (disj (== x1 1) (symbolo x1)) x1 1) (list fail (symbolo x1) succeed))
     (tassert "=/= satisfied|unsatisfiable" (simplify-=/=2 (disj (symbolo x1) (== x1 1)) x1 1) (list fail succeed (symbolo x1)))
     (tassert "=/= satisfied|unsatisfiable|undecidable" (simplify-=/=2 (disj (symbolo x1) (disj (== x1 1) (=/= x1 2))) x1 1) (list (conj (=/= x1 1) (=/= x1 2)) succeed (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2)))))
-    (tassert "=/= satisfied|undecidable" (simplify-=/=2 (disj (symbolo x1) (=/= x1 2)) x1 1) (list (conj (=/= x1 1) (=/= x1 2)) (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) succeed))
+    (tassert "=/= satisfied|undecidable" (simplify-=/=2 (disj (symbolo x1) (=/= x1 2)) x1 1) (list (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) succeed))
     (tassert "=/= unsatisfiable|undecidable" (simplify-=/=2 (disj (== x1 1) (=/= x1 2)) x1 1) (list (conj (=/= x1 1) (=/= x1 2)) succeed (conj (=/= x1 1) (=/= x1 2))))
     (tassert "=/= undecidable|unsatisfiable" (simplify-=/=2 (disj (=/= x1 2) (== x1 1)) x1 1) (list (conj (=/= x1 1) (=/= x1 2)) succeed (conj (=/= x1 1) (=/= x1 2))))
     (tassert "=/= undecidable|undecidable" (simplify-=/=2 (disj (=/= x1 2) (=/= x1 3)) x1 1) (list (conj (=/= x1 1) (disj (=/= x1 2) (=/= x1 3))) (conj (=/= x1 1) (disj (=/= x1 2) (=/= x1 3))) succeed))

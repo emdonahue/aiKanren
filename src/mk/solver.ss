@@ -124,6 +124,7 @@
   ;;
   ;; calculate what happens to the constraint under unification. if it fails, the =/= is irrelevant. or if it succeeds under negation
   (define (simplify-=/=2 g x y)
+    (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck)
     (exclusive-cond
      [(succeed? g) (values succeed succeed succeed)] ; If no constraints
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
@@ -148,14 +149,14 @@
 		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
 			(not (and (fail? entailed-rhs) (fail? simplified-rhs)))) 
 		  (exclusive-cond ;entailed can be simplified by disj with entailed
-		   [(fail? entailed-lhs)
+		   [(fail? entailed-lhs) 
 		    (exclusive-cond
 		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
 					     (values ctn (disj simplified-lhs (disj simplified-rhs ctn)) succeed))]
 		     [(fail? simplified-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
 					       (values ctn succeed (disj simplified-lhs ctn)))] ;TODO should recheck
 		     [else (let ([ctn (conj (=/= x y) (disj-cdr g))]) ; Nothing failed, so simply insert the =/= and store
-			     (values ctn (disj simplified-lhs ctn) succeed))])]
+			     (values (disj simplified-lhs ctn) (disj simplified-lhs ctn) succeed))])]
 		   [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
 		    (exclusive-cond
 		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
