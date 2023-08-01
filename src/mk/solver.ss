@@ -149,14 +149,13 @@
 		  (cert (not (and (fail? entailed-lhs) (fail? simplified-lhs))) ; Both fail => == and =/= => contradiction
 			(not (and (fail? entailed-rhs) (fail? simplified-rhs)))) 
 		  (exclusive-cond ;entailed can be simplified by disj with entailed
-		   [(fail? entailed-lhs) 
-		    (exclusive-cond
-		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
-					     (values ctn (disj simplified-lhs (disj simplified-rhs ctn)) succeed))]
-		     [(fail? simplified-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
-					       (values ctn succeed (disj simplified-lhs ctn)))] ;TODO should recheck
-		     [else (let ([ctn (conj (=/= x y) (disj-cdr g))]) ; Nothing failed, so simply insert the =/= and store
-			     (values (disj simplified-lhs ctn) (disj simplified-lhs ctn) succeed))])]
+		   [(fail? entailed-lhs)
+		    (let ([de (=/= x y)]
+			  [ctn (disj-cdr (disj-cdr g))])
+		      (exclusive-cond
+		       [(fail? entailed-rhs) (values ctn (disj simplified-lhs (disj simplified-rhs (conj de ctn))) succeed)]
+		       [(fail? simplified-rhs) (values ctn succeed (disj simplified-lhs (conj de ctn)))] ;TODO should recheck
+		       [else (values (disj simplified-lhs (conj de (disj simplified-rhs ctn))) (disj simplified-lhs (conj de (disj simplified-rhs ctn))) succeed)]))]
 		   [(fail? simplified-lhs) ; 2nd disjunct must be normalized bc 1st must have contained a == to fail =/=
 		    (exclusive-cond
 		     [(fail? entailed-rhs) (let ([ctn (conj (=/= x y) (disj-cdr (disj-cdr g)))])
