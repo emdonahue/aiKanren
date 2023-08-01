@@ -163,7 +163,11 @@
 		     
 		     [else (let ([ctn (disj-cdr (disj-cdr g))])
 			     (values (disj (conj (=/= x y) simplified-rhs) ctn) succeed (disj (conj (=/= x y) simplified-rhs) ctn)))])]
-		   [else (nyi lhs not entailed)])
+		   [else
+		    (exclusive-cond
+		     [(fail? simplified-rhs) (let ([ctn (disj-cdr (disj-cdr g))])
+					       (values (conj (=/= x y) (disj simplified-lhs ctn)) succeed (conj (=/= x y) (disj simplified-lhs ctn))))]
+		     [else (nyi lhs else rhs else)])])
 		  )
       
       ]))
