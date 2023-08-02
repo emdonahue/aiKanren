@@ -238,7 +238,7 @@
     (tassert "=/= satisfied|satisfied|unnormalized" (simplify-=/=2 (disj (symbolo x1) (disj (symbolo x1) (=/= x2 2))) x1 1 (=/= x1 1)) (list (=/= x2 2) (disj (symbolo x1) (disj (symbolo x1) (conj (=/= x1 1) (=/= x2 2)))) succeed succeed))
     (tassert "=/= unsatisfiable|satisfied" (simplify-=/=2 (disj (== x1 1) (symbolo x1)) x1 1 (=/= x1 1)) (list (== x1 1) succeed (symbolo x1) succeed))
     (tassert "=/= satisfied|unsatisfiable" (simplify-=/=2 (disj (symbolo x1) (== x1 1)) x1 1 (=/= x1 1)) (list (== x1 1) succeed (symbolo x1) succeed))
-    (tassert "=/= satisfied|unsatisfiable|undecidable" (simplify-=/=2 (disj (symbolo x1) (disj (== x1 1) (=/= x1 2))) x1 1 (=/= x1 1)) (list (disj (== x1 1) (=/= x1 2)) succeed (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) succeed))
+    (tassert "=/= satisfied|unsatisfiable|undecidable" (simplify-=/=2 (disj (symbolo x1) (disj (== x1 1) (=/= x1 2))) x1 1 (=/= x1 1)) (list succeed succeed (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) succeed))
     (tassert "=/= satisfied|undecidable" (simplify-=/=2 (disj (symbolo x1) (=/= x1 2)) x1 1 (=/= x1 1)) (list succeed (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 2))) succeed succeed))
     (tassert "=/= unsatisfiable|undecidable" (simplify-=/=2 (disj (== x1 1) (=/= x1 2)) x1 1 (=/= x1 1)) (list succeed succeed (conj (=/= x1 1) (=/= x1 2)) succeed))
     (tassert "=/= undecidable|unsatisfiable" (simplify-=/=2 (disj (=/= x1 2) (== x1 1)) x1 1 (=/= x1 1)) (list succeed succeed (conj (=/= x1 1) (=/= x1 2)) succeed))
@@ -248,7 +248,7 @@
     (tassert "=/= satisfies|undecidable" (simplify-=/=2 (disj (=/= x1 1) (=/= x1 2)) x1 1 (=/= x1 1)) (list (=/= x1 1) succeed succeed (=/= x1 1)))
     (tassert "=/= undecidable|satisfies" (simplify-=/=2 (disj (=/= x1 2) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
     (tassert "=/= =/=^|=/=^|=/=" (simplify-=/=2 (disj (=/= x1 2) (disj (=/= x1 3) (=/= x1 1))) x1 1 (=/= x1 1)) (list (=/= x1 1) succeed succeed (=/= x1 1)))
-;(org-trace    (tassert "=/= ==^|==^|==" (simplify-=/=2 (disj (== x1 2) (disj (== x1 3) (== x1 1))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (== x1 3)) succeed succeed)))
+    (tassert "=/= ==^|==^|==" (simplify-=/=2 (disj (== x1 2) (disj (== x1 3) (== x1 1))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (== x1 3)) succeed succeed))
 
 
     ))

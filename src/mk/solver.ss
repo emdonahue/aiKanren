@@ -151,12 +151,12 @@
 		      (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
 			(if (succeed? simplified-rhs) (values unified-lhs succeed succeed d)
 			    (let-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y d)])
-			      (org-display unified-tail simplified-tail recheck-tail)
+			      (org-display (disj-cdr (disj-cdr g)) unified-lhs unified-rhs unified-tail simplified-tail recheck-tail)
 			      (if (succeed? simplified-tail) (values unified-tail succeed succeed d)
 			       (let* ([disunified-lhs (conj simplified-lhs recheck-lhs)]
 				      [disunified-rhs (conj simplified-rhs recheck-rhs)]
 				      [ctn (disj-cdr (disj-cdr g))]
-				      [unified (disj unified-lhs (disj unified-rhs ctn))]
+				      [unified (disj unified-lhs (disj unified-rhs unified-tail))]
 				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
 						      (if (fail? unified-rhs)
 							  (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
@@ -239,8 +239,8 @@
     ;; (=/=, unnormalized ...) a head disjunct containing no ==s and the rest unnormalized. This happens if the first non failing disjunct it finds has no ==s
     ;; (=/=, ==&normalized, unnormalized ...) a head disjunct containing no ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with no ==s.
     ;; (==1, ==2&normalized, unnormalized ...) a head disjunct containing some ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s (all distinct from the ==s in the first disjunct) and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with different ==s.
-    ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, and so need only be attributed to the first disjunct's variables.
-    ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail, since either might imply the ability to commit to the ==s in the other.
+    ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, or if a subgoal of the first disjunct is a disjunction that needs to be rechecked, and so need only be attributed to the first disjunct's variables.
+    ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail or contains a disjunction that needs to be rechecked, since either might imply the ability to commit to the ==s in the other.
     ;; TODO can neighboring disjs cancel each other, eg x==1|x=/=1 => succeed
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
