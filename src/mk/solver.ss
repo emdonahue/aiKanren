@@ -1,5 +1,5 @@
 (library (solver) ; Constraint solving
-  (export run-constraint simplify-=/=2) ;TODO trim exports
+  (export run-constraint simplify-=/=) ;TODO trim exports
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution))
 
   (define (run-constraint g s)
@@ -68,11 +68,9 @@
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (let-values ([(aborted? simplified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]
-		       [(unified disunified recheck2 diseq2) (simplify-=/=2 c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
-	    (org-display aborted? simplified recheck)
-	    (if (fail? unified) (solve-constraint ctn s succeed out) ;if aborted? (solve-constraint aborted? s ctn out)
-	     (let-values ([(g0 s0) (solve-constraint recheck2 (extend s (==-lhs (noto-goal (disj-car g))) (conj diseq2 disunified)) ctn succeed)]) ;(solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified diseq)) ctn succeed)
+	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
+	    (if (fail? unified) (solve-constraint ctn s succeed out)
+	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj diseq disunified)) ctn succeed)])
 					;	    (org-display (extend s (==-lhs (noto-goal (disj-car g))) simplified) (store-constraint s^ simplified))
 	       (org-display g0 s0)
 	       (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
@@ -124,7 +122,7 @@
   ;; not matcho=fail => x=/=3 matcho
   ;;
   ;; calculate what happens to the constraint under unification. if it fails, the =/= is irrelevant. or if it succeeds under negation
-  (org-define (simplify-=/=2 g x y d)
+  (org-define (simplify-=/= g x y d)
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck)
     (exclusive-cond
      [(succeed? g) (values succeed succeed succeed d)] ; If no constraints
@@ -138,23 +136,23 @@
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))]
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail g succeed d)
 		      (values g g succeed d))]
-     [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
+     [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
 		  (cert (succeed? recheck)) ; noto only wraps primitive goals, which should never need rechecking on their own
 		  (values (noto unified) (noto disunified) recheck d))] ;TODO why dont i use simplified here?
-     [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
+     [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/= (conj-lhs g) x y d)])
 		  (if (fail? unified) (values fail disunified-lhs recheck-lhs d)
-		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
+		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/= (conj-rhs g) x y d)])
 			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let*-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)]
+     [(disj? g) (let*-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/= (disj-car g) x y d)]
 			      [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
 		  (org-printf "lhs")
 		  (org-display unified-lhs simplified-lhs recheck-lhs d)
 		  (if (succeed? disunified-lhs) (values unified-lhs succeed succeed d)
-		      (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)]
+		      (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/= (disj-car (disj-cdr g)) x y d)]
 				    [(disunified-rhs) (conj simplified-rhs recheck-rhs)])
 			(if (succeed? disunified-rhs) (values unified-lhs succeed succeed d)
-			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y succeed)]
+			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/= (disj-cdr (disj-cdr g)) x y succeed)]
 					  [(disunified-tail) (conj simplified-tail recheck-tail)])
 			      (org-printf "tail")
 			      (org-display (disj-cdr (disj-cdr g)) unified-lhs unified-rhs unified-tail simplified-tail recheck-tail)
@@ -171,61 +169,6 @@
 				     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
 				     (values unified disunified succeed succeed)))))))))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
-
-  #;
-  (if (eq? x (==-lhs g))
-		  (if (eq? y (==-rhs g))
-		      (values succeed)
-		      (if (or (var? y) (var? (==-rhs g))) (values g) (values fail)))
-		  (if (or (var? x) (var? (==-lhs g)))
-		      (if (and (not (var? y)) (not (var? (==-rhs g))) (not (eq? y (==-rhs g)))) (values fail) (values g))))
-  
-  (org-define (simplify-=/= g x y xy)
-    (org-exclusive-cond simplify-cond
-     [(succeed? g) (values #f succeed succeed xy)]
-     [(conj? g) (let-values ([(abort? simplified-lhs recheck-lhs xy) (simplify-=/= (conj-lhs g) x y xy)])
-		  (if abort? (values abort? simplified-lhs recheck-lhs xy)
-		      (let-values ([(abort? simplified-rhs recheck-rhs xy) (simplify-=/= (conj-rhs g) x y xy)])
-			(values abort? (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) xy))))]
-     [(noto? g)
-      (exclusive-cond
-       [(==? (noto-goal g))
-	(if (and (eq? y (==-rhs (noto-goal g))) (eq? x (==-lhs (noto-goal g))))
-	    (values succeed succeed succeed xy)
-	    (values #f g succeed xy))]
-       [(pconstraint? (noto-goal g))
-	(if (succeed? (pconstraint-check (noto-goal g) x y)) ; A pconstraint that always fails when == obsoletes the =/=.
-	    (values succeed succeed succeed xy)
-	    (values #f g succeed xy))]
-       [else (values #f g succeed xy)])]
-     [(disj? g) (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car g) x y xy)])
-		  (org-display abort? simplified recheck)
-		  (org-exclusive-cond =/=-disj-simplify
-		   [(fail? abort?)
-		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-car (disj-cdr g)) x y xy)])
-		      (values #f succeed (conj simplified recheck) xy))]
-		   [(succeed? abort?)
-		    (let-values ([(abort? simplified recheck xy) (simplify-=/= (disj-cdr g) x y xy)])
-		      (values #f succeed (conj simplified recheck) xy))]
-		   [else (values #f succeed g xy)]))]
-     [(matcho? g) (if (not (or (var? y) (pair? y))) (values succeed succeed succeed xy)
-		      (values #f g succeed xy))] ;TODO =/= can simplify more precisely against matcho if it uses the actual pattern and not just pair?
-     [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g)))
-		  (values fail fail fail xy)
-		  (values #f g succeed xy))]
-     [(pconstraint? g) (if (fail? (pconstraint-check g x y))
-			   (values succeed succeed succeed xy)
-			   (values #f g succeed xy))]
-     [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
-
-  ;; a =/= anywhere should discard the whole disjunction, but not abort early
-  ;; a symbolo means the =/= isnt needed in that disjunct, continue searching
-  ;; a == that conflicts fails, toss the disjunct
-  (org-define (simplify-=/=-disj g x y)
-	      (exclusive-cond
-	       [(==? g) (if (and (eq? y (==-rhs g)) (eq? x (==-lhs g))) fail g)]
-	       [(disj? g) (disj (simplify-=/=-disj (disj-car g) x y) (simplify-=/=-disj (disj-cdr g) x y))]
-	       [else (assertion-violation 'simplify-=/=-disj "Unrecognized constraint type" g)]))
   
   (define (solve-matcho g s ctn out)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
