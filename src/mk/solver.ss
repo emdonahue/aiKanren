@@ -137,7 +137,7 @@
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed fail d)
 		      (values g g succeed d))]
      [(noto? g) (let-values ([(h _ _2 d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
-		  (values (noto h) g succeed d))]
+		  (values (noto h) g succeed d))] ;TODO why dont i use simplified here?
      [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
 		  (if (fail? unified) (values fail disunified-lhs recheck-lhs d)
 		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
@@ -155,7 +155,7 @@
 					       (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
 					   (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
 		      (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
-			  (values unified succeed disunified succeed)
+			  (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
 			  (values unified disunified succeed succeed)))))]))
 
   #;
