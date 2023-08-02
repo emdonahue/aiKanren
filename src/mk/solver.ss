@@ -161,7 +161,7 @@
 			       (let* ([unified (disj unified-lhs (disj unified-rhs unified-tail))]
 				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
 						      (if (or (fail? unified-rhs) (fail? disunified-rhs))
-							  (if (fail? unified-tail)
+							  (if (or (fail? unified-tail) (equal? unified-tail (== x y)))
 							      (disj disunified-lhs (disj disunified-rhs disunified-tail))
 							      (disj disunified-lhs (disj disunified-rhs (conj d disunified-tail))))
 							  (disj disunified-lhs (conj d (disj disunified-rhs disunified-tail))))
