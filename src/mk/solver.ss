@@ -130,14 +130,16 @@
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
-		 [(failure? s^) (values fail succeed fail d)] ; == different from =/= => =/= satisfied
-		 [(eq? s s^) (values succeed fail fail d)] ; == same as =/= => =/= unsatisfiable
+		 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
+		 [(eq? s s^) (values g fail succeed d)] ; == same as =/= => =/= unsatisfiable
 		 [else (values g g succeed d)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))]
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed fail d)
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed succeed d)
 		      (values g g succeed d))]
-     [(noto? g) (let-values ([(h _ _2 d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
-		  (values (noto h) g succeed d))] ;TODO why dont i use simplified here?
+     [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
+		  (org-display g unified disunified recheck)
+		  (cert (succeed? recheck)) ; noto only wraps primitive goals, which should never need rechecking on their own
+		  (values (noto unified) (noto disunified) recheck d))] ;TODO why dont i use simplified here?
      [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
 		  (if (fail? unified) (values fail disunified-lhs recheck-lhs d)
 		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
