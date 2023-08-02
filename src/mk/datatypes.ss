@@ -147,7 +147,7 @@
      [(equal? x y) succeed]
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
-
+  
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
 
   (define-structure (matcho out-vars in-vars goal))

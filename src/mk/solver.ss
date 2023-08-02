@@ -64,23 +64,23 @@
 	       [else #f]))
   
   (org-define (solve-=/= g s ctn out)
-    (cert (==? g))
+	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
+    (cert (==? g)) ; -> goal? state?
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
-      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
-	    (if (fail? unified) (solve-constraint ctn s succeed out);TODO if c succeeds trivially, we dont need to extend the state
-	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj diseq disunified)) ctn succeed)])
-					;	    (org-display (extend s (==-lhs (noto-goal (disj-car g))) simplified) (store-constraint s^ simplified))
-	       (org-display g0 s0)
-	       (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
-		   (org-exclusive-cond first-disj-=/=
-				       ;[(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
-				       ;;TODO let solve constraint handle fail case
-				       [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-				       ;; To suspend a disjunction, conjoin the output var, the head of the disjunction that has already been simplified, and a disjunction of the constraints on the head attributed vars with the continuation bound to the tail of the disjunction.
-				       ;; TODO potential opportunity to store the whole disjunction instead of just the head and reuse the state if =/= is the top level disjunction
-				       [else (org-printf "returning =/=-disj") (values (conj out (conj (disj (disj-car g) (conj (disj-cdr g) ctn)) g0)) (if (succeed? recheck) s (unbind-constraint s (==-lhs (noto-goal (disj-car g))))))]))))))))
+      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
+	  ;;TODO if c is succeed, skip rest
+	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
+	    (if (fail? unified) (solve-constraint ctn s succeed out) ; If the constraints entail =/=, skip the rest and continue with ctn.
+		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
+		  (org-display g0 s0)
+		  (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. s0 already entails ctn, so we are done.
+		      (org-exclusive-cond first-disj-=/=
+					;[(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
+					  ;;TODO let solve constraint handle fail case
+					  [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+					  ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
+					  [else (org-printf "returning =/=-disj") (values (conj out (disj (disj-car g) (conj (disj-cdr g) ctn))) s)]))))))))
 
   (define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
@@ -119,7 +119,7 @@
 			      (if (succeed? disunified-tail) (values unified-tail succeed succeed d) ; If the tail succeeds, abort.
 			       (let* ([unified (disj unified-lhs (disj unified-rhs unified-tail))] ; If all disjuncts fail, x=/=y is already entoiled by the disjunction as a whole and can be discarded.
 				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs)) ; Place the disequality as deep into the disjunction as possible provided it is already entailed by all previous disjuncts.
-						      (if (or (fail? unified-rhs) (fail? disunified-rhs))
+						      (if (or (fail? unified-rhs) (fail? disunified-rhs)) ;TODO push the diseq as far back as needed by giving it to the tail computation if we would otherwise append it before tail
 							  (if (or (fail? unified-tail) (equal? unified-tail (== x y)))
 							      (disj disunified-lhs (disj disunified-rhs disunified-tail))
 							      (disj disunified-lhs (disj disunified-rhs (conj d disunified-tail))))
