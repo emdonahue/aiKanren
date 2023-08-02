@@ -137,15 +137,16 @@
 	  (disunify-binding s x-var x y-var y))))
 
   (org-define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
+	      (cert (state? s)) ; -> goal?(disequality) goal?(constraint)
     (org-cond disunify-binding
 	      [(goal? x)
-      (if (eq? x-var y-var) (values fail fail failure) ; Equal vars are always unsatisfiable, so fail.
+      (if (eq? x-var y-var) (values fail fail) ; Equal vars are always unsatisfiable, so fail.
 	  (if (goal? y)
-	      (values (=/= x-var y-var) x s) ;TODO we may not need to simplify y goal in disunify so return it separately
-	      (values (=/= x-var y) x s)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
+	      (values (=/= x-var y-var) x) ;TODO we may not need to simplify y goal in disunify so return it separately
+	      (values (=/= x-var y) x)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
      [(goal? y) (if (var? x)
-		    (values (=/= x y-var) succeed s) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
-		    (values (=/= y-var x) succeed s)
+		    (values (=/= x y-var) succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
+		    (values (=/= y-var x) succeed)
 		    #;
 		    (let ([c (solve-disunification y y-var x)])
 		      (org-exclusive-cond y-goal-x-val
@@ -153,16 +154,16 @@
 				      [(fail? c) (values fail fail failure)]
 				      [(succeed? c) (values succeed succeed s)]
 				      [else (values (=/= y-var x) succeed (extend s y-var c))])))]
-     [(eq? x y) (values fail fail failure)]
-     [(var? x) (values (=/= x y) succeed s)]
-     [(var? y) (values (=/= y x) succeed s)]
+     [(eq? x y) (values fail fail)]
+     [(var? x) (values (=/= x y) succeed)]
+     [(var? y) (values (=/= y x) succeed)]
      [(and (pair? x) (pair? y))
-      (let-values ([(lhs c s^) (disunify s (car x) (car y))])
+      (let-values ([(lhs c) (disunify s (car x) (car y))])
 	(exclusive-cond
-	 [(succeed? lhs) (values succeed succeed s)] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
+	 [(succeed? lhs) (values succeed succeed)] ; TODO test whether all the manual checks for fail/succeed could be replaced by conj/disj macros
 	 [(fail? lhs) (disunify s (cdr x) (cdr y))]
-	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c s^)]))]
-     [else (values succeed succeed s)]))
+	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c)]))]
+     [else (values succeed succeed)]))
 
   #;
   (define (may-unify g v)

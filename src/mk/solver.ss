@@ -66,7 +66,7 @@
   (org-define (solve-=/= g s ctn out)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     (cert (==? g)) ; -> goal? state?
-    (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
+    (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 	  ;;TODO if c is succeed, skip rest
@@ -74,13 +74,11 @@
 	    (if (fail? unified) (solve-constraint ctn s succeed out) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
 		  (org-display g0 s0)
-		  (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. s0 already entails ctn, so we are done.
-		      (org-exclusive-cond first-disj-=/=
-					;[(succeed? g0) (values (conj g out) s^)] ; The constraints on the attributed vars are trivial, so simply return the entire disjunction and the unmodified state.
-					  ;;TODO let solve constraint handle fail case
-					  [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-					  ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
-					  [else (org-printf "returning =/=-disj") (values (conj out (disj (disj-car g) (conj (disj-cdr g) ctn))) s)]))))))))
+		  (cond
+		   [(noto? g) (values (conj out (conj g g0)) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
+		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+		   ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
+		   [else (org-printf "returning =/=-disj") (values (conj out (disj (disj-car g) (conj (disj-cdr g) ctn))) s)])))))))
 
   (define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
