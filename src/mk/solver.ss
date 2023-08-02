@@ -68,10 +68,11 @@
     (let-values ([(g c s^) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out)
-	  (let-values ([(aborted? simplified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
+	  (let-values ([(aborted? simplified recheck diseq) (simplify-=/= c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]
+		       [(unified disunified recheck2 diseq2) (simplify-=/=2 c (==-lhs (noto-goal (disj-car g))) (==-rhs (noto-goal (disj-car g))) (disj-car g))]) ; Evaluate constraints with the first disequality in the store.
 	    (org-display aborted? simplified recheck)
-	    (if aborted? (solve-constraint aborted? s ctn out)
-	     (let-values ([(g0 s0) (solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified diseq)) ctn succeed)])
+	    (if (fail? unified) (solve-constraint ctn s succeed out) ;if aborted? (solve-constraint aborted? s ctn out)
+	     (let-values ([(g0 s0) (solve-constraint recheck2 (extend s (==-lhs (noto-goal (disj-car g))) (conj diseq2 disunified)) ctn succeed)]) ;(solve-constraint recheck (extend s (==-lhs (noto-goal (disj-car g))) (conj simplified diseq)) ctn succeed)
 					;	    (org-display (extend s (==-lhs (noto-goal (disj-car g))) simplified) (store-constraint s^ simplified))
 	       (org-display g0 s0)
 	       (if (noto? g) (values (conj out (conj g g0)) s0) ; This is not a disjunction, so just modify the state and proceed with whatever the value. 
@@ -135,7 +136,7 @@
 		 [(eq? s s^) (values g fail succeed d)] ; == same as =/= => =/= unsatisfiable
 		 [else (values g g succeed d)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))]
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed succeed d)
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail g succeed d)
 		      (values g g succeed d))]
      [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
 		  (cert (succeed? recheck)) ; noto only wraps primitive goals, which should never need rechecking on their own
