@@ -153,21 +153,19 @@
 		      (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)]
 				    [(disunified-rhs) (conj simplified-rhs recheck-rhs)])
 			(if (succeed? disunified-rhs) (values unified-lhs succeed succeed d)
-			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y d)]
+			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y succeed)]
 					  [(disunified-tail) (conj simplified-tail recheck-tail)])
 			      (org-printf "tail")
 			      (org-display (disj-cdr (disj-cdr g)) unified-lhs unified-rhs unified-tail simplified-tail recheck-tail)
 			      (if (succeed? disunified-tail) (values unified-tail succeed succeed d)
-			       (let* (
-				      [ctn disunified-tail] 
-				      [unified (disj unified-lhs (disj unified-rhs unified-tail))]
+			       (let* ([unified (disj unified-lhs (disj unified-rhs unified-tail))]
 				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
 						      (if (or (fail? unified-rhs) (fail? disunified-rhs))
 							  (if (fail? unified-tail)
-							      (disj disunified-lhs (disj disunified-rhs ctn))
-							      (disj disunified-lhs (disj disunified-rhs (conj d ctn))))
-							  (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
-						      (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
+							      (disj disunified-lhs (disj disunified-rhs disunified-tail))
+							      (disj disunified-lhs (disj disunified-rhs (conj d disunified-tail))))
+							  (disj disunified-lhs (conj d (disj disunified-rhs disunified-tail))))
+						      (conj d (disj disunified-lhs (disj disunified-rhs disunified-tail))))])
 				 (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
 				     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
 				     (values unified disunified succeed succeed)))))))))]
