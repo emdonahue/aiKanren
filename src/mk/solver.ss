@@ -123,7 +123,7 @@
   ;; not matcho=fail => x=/=3 matcho
   ;;
   ;; calculate what happens to the constraint under unification. if it fails, the =/= is irrelevant. or if it succeeds under negation
-  (define (simplify-=/=2 g x y d)
+  (org-define (simplify-=/=2 g x y d)
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck)
     (exclusive-cond
      [(succeed? g) (values succeed succeed succeed d)] ; If no constraints
@@ -138,7 +138,6 @@
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail succeed succeed d)
 		      (values g g succeed d))]
      [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/=2 (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
-		  (org-display g unified disunified recheck)
 		  (cert (succeed? recheck)) ; noto only wraps primitive goals, which should never need rechecking on their own
 		  (values (noto unified) (noto disunified) recheck d))] ;TODO why dont i use simplified here?
      [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/=2 (conj-lhs g) x y d)])
@@ -146,20 +145,27 @@
 		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/=2 (conj-rhs g) x y d)])
 			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      ;; if the first param is fail, =/= already entailed there: something already fails when it will. if second param true, its bidirectional so replace whole disj, otherwise check next one
-     [(disj? g) (let-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)])
-		  (if (succeed? simplified-lhs) (values unified-lhs succeed succeed d)
-		      (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
-			(if (succeed? simplified-rhs) (values unified-lhs succeed succeed d)
-			    (let-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y d)])
+     [(disj? g) (let*-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/=2 (disj-car g) x y d)]
+			      [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
+		  (org-printf "lhs")
+		  (org-display unified-lhs simplified-lhs recheck-lhs d)
+		  (if (succeed? disunified-lhs) (values unified-lhs succeed succeed d)
+		      (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)]
+				    [(disunified-rhs) (conj simplified-rhs recheck-rhs)])
+			(if (succeed? disunified-rhs) (values unified-lhs succeed succeed d)
+			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y d)]
+					  [(disunified-tail) (conj simplified-tail recheck-tail)])
+			      (org-printf "tail")
 			      (org-display (disj-cdr (disj-cdr g)) unified-lhs unified-rhs unified-tail simplified-tail recheck-tail)
-			      (if (succeed? simplified-tail) (values unified-tail succeed succeed d)
-			       (let* ([disunified-lhs (conj simplified-lhs recheck-lhs)]
-				      [disunified-rhs (conj simplified-rhs recheck-rhs)]
-				      [ctn (disj-cdr (disj-cdr g))]
+			      (if (succeed? disunified-tail) (values unified-tail succeed succeed d)
+			       (let* (
+				      [ctn disunified-tail] 
 				      [unified (disj unified-lhs (disj unified-rhs unified-tail))]
 				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
-						      (if (fail? unified-rhs)
-							  (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
+						      (if (or (fail? unified-rhs) (fail? disunified-rhs))
+							  (if (fail? unified-tail)
+							      (disj disunified-lhs (disj disunified-rhs ctn))
+							      (disj disunified-lhs (disj disunified-rhs (conj d ctn))))
 							  (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
 						      (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
 				 (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))

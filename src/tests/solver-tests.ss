@@ -249,6 +249,7 @@
     (tassert "=/= undecidable|satisfies" (simplify-=/=2 (disj (=/= x1 2) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
     (tassert "=/= =/=^|=/=^|=/=" (simplify-=/=2 (disj (=/= x1 2) (disj (=/= x1 3) (=/= x1 1))) x1 1 (=/= x1 1)) (list (=/= x1 1) succeed succeed (=/= x1 1)))
     (tassert "=/= ==^|==^|==" (simplify-=/=2 (disj (== x1 2) (disj (== x1 3) (== x1 1))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (== x1 3)) succeed succeed))
-
+;(org-trace    (tassert "=/= ==^|==^|==|==^" (simplify-=/=2 (disj (== x1 2) (disj (== x1 3) (disj (== x1 1) (== x1 4)))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (disj (== x1 3) (== x1 4))) succeed succeed)))
+    (tassert "=/= (recheck&recheck)|undecidable" (simplify-=/=2 (disj (conj (disj (== x1 1) (=/= x2 3)) (disj (== x1 1) (=/= x2 3))) (=/= x1 3)) x1 1 (=/= x1 1)) (list succeed succeed (disj (conj (conj (=/= x1 1) (=/= x2 3)) (=/= x2 3)) (=/= x1 3)) succeed))
 
     ))
