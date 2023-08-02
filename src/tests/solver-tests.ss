@@ -247,7 +247,8 @@
     (tassert "=/= satisfied|recheck" (simplify-=/=2 (disj (symbolo x1) (conj (=/= x2 2) (disj (== x1 1) (=/= x2 3)))) x1 1 (=/= x1 1)) (list (disj (== x1 1) (=/= x2 3)) succeed (disj (symbolo x1) (conj (=/= x2 2) (conj (=/= x1 1) (=/= x2 3)))) succeed))
     (tassert "=/= satisfies|undecidable" (simplify-=/=2 (disj (=/= x1 1) (=/= x1 2)) x1 1 (=/= x1 1)) (list (=/= x1 1) succeed succeed (=/= x1 1)))
     (tassert "=/= undecidable|satisfies" (simplify-=/=2 (disj (=/= x1 2) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
+    (tassert "=/= =/=^|=/=^|=/=" (simplify-=/=2 (disj (=/= x1 2) (disj (=/= x1 3) (=/= x1 1))) x1 1 (=/= x1 1)) (list (=/= x1 1) succeed succeed (=/= x1 1)))
+;(org-trace    (tassert "=/= ==^|==^|==" (simplify-=/=2 (disj (== x1 2) (disj (== x1 3) (== x1 1))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (== x1 3)) succeed succeed)))
 
-    ;;    (tassert "=/= ==|undecidable" (simplify-=/=2 (disj (== x1 1) (numbero x1)) x1 1) (list (numbero x1) succeed (numbero x1)))
-    ;;TODO deal with =/= succeeding completely in disj and throwing disj away/replacing it with =/=
+
     ))

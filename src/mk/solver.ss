@@ -127,6 +127,7 @@
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck)
     (exclusive-cond
      [(succeed? g) (values succeed succeed succeed d)] ; If no constraints
+     [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail
      [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
 		     [s^ (mini-unify s x y)])
 		(cond
@@ -149,18 +150,22 @@
 		  (if (succeed? simplified-lhs) (values unified-lhs succeed succeed d)
 		      (let-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/=2 (disj-car (disj-cdr g)) x y d)])
 			(if (succeed? simplified-rhs) (values unified-lhs succeed succeed d)
-			 (let* ([disunified-lhs (conj simplified-lhs recheck-lhs)]
-				[disunified-rhs (conj simplified-rhs recheck-rhs)]
-				[ctn (disj-cdr (disj-cdr g))]
-				[unified (disj unified-lhs (disj unified-rhs ctn))]
-				[disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
-						(if (fail? unified-rhs)
-						    (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
-						    (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
-						(conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
-			   (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
-			       (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
-			       (values unified disunified succeed succeed)))))))]))
+			    (let-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/=2 (disj-cdr (disj-cdr g)) x y d)])
+			      (org-display unified-tail simplified-tail recheck-tail)
+			      (if (succeed? simplified-tail) (values unified-tail succeed succeed d)
+			       (let* ([disunified-lhs (conj simplified-lhs recheck-lhs)]
+				      [disunified-rhs (conj simplified-rhs recheck-rhs)]
+				      [ctn (disj-cdr (disj-cdr g))]
+				      [unified (disj unified-lhs (disj unified-rhs ctn))]
+				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs))
+						      (if (fail? unified-rhs)
+							  (disj disunified-lhs (disj disunified-rhs (conj d ctn)))
+							  (disj disunified-lhs (conj d (disj disunified-rhs ctn))))
+						      (conj d (disj disunified-lhs (disj disunified-rhs ctn))))])
+				 (if (or (fail? simplified-lhs) (fail? simplified-rhs) (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
+				     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
+				     (values unified disunified succeed succeed)))))))))]
+     [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   #;
   (if (eq? x (==-lhs g))
