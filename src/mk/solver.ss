@@ -6,7 +6,7 @@
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
-      (store-disjunctions committed s)))
+      (store-disjunctions committed (store-constraint s pending))))
   
   (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
@@ -227,11 +227,12 @@
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
-    (cert (state? s) (goal? g) (not (conde? g))) ; -> state?
+    (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
      [(succeed? g) s]
      [(fail? g) failure]
      [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
+     [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
 
