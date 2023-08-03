@@ -5,37 +5,36 @@
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(committed pending s) (solve-constraint g s succeed succeed)])
-      (store-disjunctions g s)))
+    (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
+      (store-disjunctions committed s)))
   
-  (org-define (solve-constraint g s conjs out)
+  (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
     (exclusive-cond
      [(fail? g) (values fail fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
-     [(==? g) (solve-== g s conjs out)]
-     [(noto? g) (solve-noto (noto-goal g) s conjs out)]
-     [(disj? g) (solve-disj g s conjs out)]
-     [(conde? g) (solve-constraint (conde->disj g) s conjs out)]
-     [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) out)]
-     [(constraint? g) (solve-constraint (constraint-goal g) s conjs out)]
-     [(guardo? g) (solve-guardo g s conjs out)]
+     [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
+     [(==? g) (solve-== g s conjs committed pending)]
+     [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
+     [(disj? g) (solve-disj g s conjs committed pending)]
+     [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
+     [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
+     [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
      [(fresh? g) (let-values ([(g s p) (g s empty-package)])
-		   (solve-constraint g s conjs out))]
-     [(matcho? g) (solve-matcho g s conjs out)]
-     [(pconstraint? g) (solve-pconstraint g s conjs out)]
-     [(trace-goal? g) (solve-constraint (trace-goal-goal g) s conjs out)]
+		   (solve-constraint g s conjs committed pending))]
+     [(matcho? g) (solve-matcho g s conjs committed pending)]
+     [(pconstraint? g) (solve-pconstraint g s conjs committed pending)]
+     [(trace-goal? g) (solve-constraint (trace-goal-goal g) s conjs committed pending)]
      [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
 
-  (define (solve-noto g s ctn out)
-    (if (==? g) (solve-=/= g s ctn out)
-	(let-values ([(g s^) (solve-constraint g s succeed out)])
+  (define (solve-noto g s ctn committed pending)
+    (if (==? g) (solve-=/= g s ctn committed pending)
+	(let-values ([(g s^) (solve-constraint g s succeed committed pending)])
 	  (let ([g (noto g)])
-	    (if (fail? g) (values fail failure)
-		(solve-constraint ctn (store-constraint s g) succeed (conj out g)))))))
+	    (if (fail? g) (values fail fail failure)
+		(solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending))))))
   
-  (define (solve-== g s ctn out)
+  (org-define (solve-== g s ctn committed pending)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
@@ -45,8 +44,8 @@
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (cert (goal? c))
       (org-display g c)
-      (if (or (fail? g) (occurs-check* g s)) (values fail failure)
-	  (solve-constraint c s ctn (conj out g)))))
+      (if (or (fail? g) (occurs-check* g s)) (values fail fail failure)
+	  (solve-constraint c s ctn (conj committed g) pending))))
 #;
   (define (simplify-== g us)
     3)
@@ -68,22 +67,22 @@
 		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
 	       [else #f]))
   
-  (org-define (solve-=/= g s ctn out)
+  (org-define (solve-=/= g s ctn committed pending)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
 	      ;;TODO can we just add the =/= disjunction directly to the state and let the solver deal with it? might have to report it as added rather than pending once the two constraint return system is in place
     (cert (==? g)) ; -> goal? state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
-      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
+      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-	    (if (fail? unified) (solve-constraint ctn s succeed out) ; If the constraints entail =/=, skip the rest and continue with ctn.
-		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
+	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
+		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
 		  (org-display g0 s0)
 		  (cond
-		   [(noto? g) (values (conj out (conj g g0)) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
-		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn out)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+		   [(noto? g) (values (conj committed (conj g g0)) pending s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
+		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		   ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
-		   [else (org-printf "returning =/=-disj") (values (conj out (disj (disj-car g) (conj (disj-cdr g) ctn))) s)])))))))
+		   [else (org-printf "returning =/=-disj") (values (conj committed (disj (disj-car g) (conj (disj-cdr g) ctn))) pending s)])))))))
 
   (define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
@@ -134,19 +133,19 @@
 				     (values unified disunified succeed succeed)))))))))]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
   
-  (define (solve-matcho g s ctn out)
+  (define (solve-matcho g s ctn committed pending)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
-	  (solve-constraint g s ctn out)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
+	  (solve-constraint g s ctn committed pending)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
 	(let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
 	  ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
 	  (if (var? v) ; If first out-var is free,
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho. 
-		(solve-constraint ctn (store-constraint s m) succeed (conj out m))) ; Otherwise, keep looking for a free var.
+		(solve-constraint ctn (store-constraint s m) succeed (conj committed m) pending)) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
-	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn out)))))
+	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn committed pending)))))
 
-  (define (solve-disj g s ctn out) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
+  (define (solve-disj g s ctn committed pending) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
     ;; The solver attempts to find ==s common to all disjuncts and factor them out. If it fails, it puts the failing disjunct at the head (failing because it had no ==s in common with previous disjuncts, either because it had none or it had different ones) and factors any common ==s out of those it has searched and puts them second as one disjunct (properly factored and conjoined to their common ==s). This yields 3 possible normal forms for disjunctions:
     ;; (=/=, unnormalized ...) a head disjunct containing no ==s and the rest unnormalized. This happens if the first non failing disjunct it finds has no ==s
     ;; (=/=, ==&normalized, unnormalized ...) a head disjunct containing no ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with no ==s.
@@ -157,13 +156,13 @@
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
-      (values (conj out (disj head-disj (disj (conj ==s neck-disj) g))) (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
+      (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) pending (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
   
   (org-define (solve-disj* g s ctn ==s parent-disj)
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed)]) ; First, solve the head disjunct.
+     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]) ; First, solve the head disjunct.
 	     (org-exclusive-cond g0-cond
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
@@ -181,30 +180,21 @@
 		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
 		     ;; Propagate the new head.
 		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))]))
-  
-  (define (solve-guardo g s conjs out) ;TODO remove guardo
-    (let ([v (walk s (guardo-var g))])
-      (exclusive-cond
-       [(var? v) (let ([g (guardo v (guardo-procedure g))])
-		   (values g (store-constraint s g)))]
-       [(pair? v) (solve-constraint ((guardo-procedure g) (car v) (cdr v)) s conjs out)]
-       [else (values fail failure)])))
-
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
-      [(g s ctn out) (solve-pconstraint g s ctn out '())]
-      [(g s ctn out vs)
-       (if (not (pconstraint? g)) (solve-constraint g s ctn out)
+      [(g s ctn committed pending) (solve-pconstraint g s ctn committed pending '())]
+      [(g s ctn committed pending vs)
+       (if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
-	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj out g)) ; All vars walked. Store constraint.
+	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (cond
-			 [(eq? var val) (solve-pconstraint g s ctn out (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (solve-pconstraint ((pconstraint-procedure g) var var^ val (pconstraint-data g))
-							 s ctn out (cons var^ vs))]
+							 s ctn committed pending (cons var^ vs))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
-						  s ctn out (cons var^ vs))])))))]))
+						  s ctn committed pending (cons var^ vs))])))))]))
   
 #;
   (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
@@ -227,7 +217,7 @@
 	  (cert (==? ==s))
 	  (extend s (==-lhs ==s) (==-rhs ==s)))))
   
-  (define (store-disjunctions g s)
+  (org-define (store-disjunctions g s)
     (cert (goal? g) (or (fail? g) (not (failure? s))))
     ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
     (exclusive-cond

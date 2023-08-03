@@ -51,7 +51,7 @@
     (tassert "exist no vars" (run1 (x1) (exist () (== x1 1))) 1)
     (tassert "exist var" (run1 (x1) (exist (x2) (== x1 x2))) x2)
 
-    (tassert "occurs check simple  lhs" (run1 (x1) (== x1 (cons x1 2))) (void))
+    (tassert "occurs check simple lhs" (run1 (x1) (== x1 (cons x1 2))) (void))
 
     (tassert "occurs check simple rhs" (run1 (x1) (== x1 (cons 1 x1))) (void))
     (tassert "occurs check deep lhs" (run1 (x1 x2) (== x2 (list x1)) (== x1 (cons x2 2))) (void))
