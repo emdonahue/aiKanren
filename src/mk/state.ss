@@ -132,28 +132,18 @@
 	      (cert (state? s)) ; -> substitution? goal?
     (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
 		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
-      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
-	  (disunify-binding s y-var y x-var x)
-	  (disunify-binding s x-var x y-var y))))
+      (if (eq? x-var y-var) (values fail fail) ; The same variable is never =/= itself regardless of value or constraint.
+	  (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	      (disunify-binding s y-var y x-var x)
+	      (disunify-binding s x-var x y-var y)))))
 
   (org-define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
 	      (cert (state? s)) ; -> goal?(disequality) goal?(constraint)
-    (org-cond disunify-binding
-	      [(goal? x)
-      (if (eq? x-var y-var) (values fail fail) ; Equal vars are always unsatisfiable, so fail.
-	  (if (goal? y)
-	      (values (=/= x-var y-var) x) ;TODO we may not need to simplify y goal in disunify so return it separately
-	      (values (=/= x-var y) x)))] ; Just return the simple =/= and leave the constraint on x alone, as it need not be rechecked.
+    (cond
+     [(goal? x) (values (=/= x-var (if (goal? y) y-var y)) x)] ; Return the constraint on x to recheck for possible == to commit.
      [(goal? y) (if (var? x)
-		    (values (=/= x y-var) succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. Therefore, we only need to add a constraint. There is nothing to check.
-		    (values (=/= y-var x) succeed)
-		    #;
-		    (let ([c (solve-disunification y y-var x)])
-		      (org-exclusive-cond y-goal-x-val
-				      [(not c) (values (=/= y-var x) succeed s)]
-				      [(fail? c) (values fail fail failure)]
-				      [(succeed? c) (values succeed succeed s)]
-				      [else (values (=/= y-var x) succeed (extend s y-var c))])))]
+		    (values (=/= x y-var) succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. If a constraint that might unify could be solved by x=/=y, it would already be attributed to x. Therefore, we only need to add the x=/=y constraint. There is nothing to recheck.
+		    (values (=/= y-var x) succeed))] ; Since x is a value here, treat y like the dominant constraint and simplify it.
      [(eq? x y) (values fail fail)]
      [(var? x) (values (=/= x y) succeed)]
      [(var? y) (values (=/= y x) succeed)]
@@ -164,45 +154,6 @@
 	 [(fail? lhs) (disunify s (cdr x) (cdr y))]
 	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c)]))]
      [else (values succeed succeed)]))
-
-  #;
-  (define (may-unify g v)
-    ;; #t if this constraint contains a == containing var v, implying that it might fail or collapse if we conjoin a =/= assigned to v.
-    (exclusive-cond
-     [(==? g) (equal? (==-lhs g) v)] ; Existing constraints are already normalized, so only lhs need be checked.
-     [(conj? g) (or (may-unify (conj-car g) v) (may-unify (conj-cdr g) v))]
-     [(disj? g) (or (may-unify (disj-car g) v) (may-unify (disj-car (disj-cdr g)) v))] ; If the disjunction has 2 disjuncts without v, it can neither fail nor collapse.
-     [else #f]))
-
-  (define (solve-disunification g var val)
-    #f
-    #;
-    (exclusive-cond
-     [(noto? g)
-      (if (==? (noto-goal g))
-	  (if (and (eq? val (==-rhs (noto-goal g))) ; =/= only cancel each other if identical
-		   (eq? val (==-rhs (noto-goal g))))
-	      (values #t #f succeed)
-	      (values #f #f g))
-	  (values #f #f g))]))
-  
-  (define (simplify-disunification g var val) ;x=/=10.  x==10->fail x==3->abort x==y, ignore. ;x=/=10->abort; TODO simplify disunifications
-    ;; Simplifies a constraint with the information that var =/= val
-    (exclusive-cond ;TODO should we check multiple directions during simplification for unnormalized disjuncts?
-     [(conj? g) (conj (simplify-disunification (conj-lhs g) var val)
-		      (simplify-disunification (conj-rhs g) var val))]
-     [(disj? g) (disj (simplify-disunification (disj-lhs g) var val) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
-		      (simplify-disunification (disj-rhs g) var val))]
-     [(==? g) (if (eq? var (==-lhs g)) ; If the == is on the same variable as the =/=,
-		  (if (equal? val (==-rhs g)) ; and it has an equal value,
-		      fail ; fail. Otherwise, 
-		      (if (or (var? (==-rhs g)) (var? val)) g succeed)) ; succeed if both are ground (since they are not eq?)
-		  g)] ; Ignore constraints on unrelated variables.
-     [(noto? g) (if (==? (noto-goal g))
-		    (if (and (eq? val (==-rhs (noto-goal g))) ; =/= only cancel each other if identical
-			     (eq? val (==-rhs (noto-goal g))))
-			succeed g) g)] ; TODO should we simplify pconstraints during disunification
-     [else g]))
   
   ;; === CONSTRAINTS ===
   
