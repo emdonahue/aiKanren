@@ -29,7 +29,7 @@
 
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
-	(let-values ([(g s^) (solve-constraint g s succeed committed pending)])
+	(let-values ([(g p s^) (solve-constraint g s succeed committed pending)])
 	  (let ([g (noto g)])
 	    (if (fail? g) (values fail fail failure)
 		(solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending))))))
@@ -76,7 +76,7 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
 	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
-		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
+		(let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
 		  (org-display g0 s0)
 		  (cond
 		   [(noto? g) (values (conj committed (conj g g0)) pending s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
@@ -162,7 +162,7 @@
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let-values ([(g0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]) ; First, solve the head disjunct.
+     [else (let-values ([(g0 p0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]) ; First, solve the head disjunct.
 	     (org-exclusive-cond g0-cond
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
