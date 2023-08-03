@@ -124,23 +124,6 @@
     (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj only walks 1st disjunct if no ==" (run1 (x1 x2) (== x2 2) (constrain (conde [(=/= x1 1)] [(=/= x2 2)]))) (list (disj (=/= x1 1) (=/= x2 2)) 2))
     
-					;(pretty-print (run* (x1 x2) (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1))) (=/= (cons x1 x2) '(1 . 2))))
-
-					;(pretty-print (run1 (x1 x2) (constrain (disj (== x1 1) (== x1 2)) (== x2 3))))
-    
-    
-					;(tassert "constraint =/=* collapses ==|== where 1 == fails all =/=" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 2)) (conj* (== x1 2) (== x2 1)))) (constrain (=/= (cons x1 x2) '(1 . 2)))) '(2 1))
-					;(pretty-print (run* (x1 x2) (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2))) (disj* (== x1 1) (== x2 1))))
-					;(pretty-print (run* (x1 x2 x3) (constrain (disj* (== x1 1) (== x2 1)) (== x3 3)))) ; maybe if a state survives a conjunction we strap the full disjunction to it and send it on its way, thereby inverting the issue
-					;(pretty-print (run* (x1) (constrain (disj* (== x1 1) (== x1 2)) (disj* (== x1 2) (== x1 3))))) succeeds
-					; maybe we try joining the whole constraint inverted as a conj and seeing if we get a unique state back?, or a succeed goal. maybe we inspect the continuation first for disjs? maybe we put ourselves on the back of the continuation?  maybe we try the conjoined answer and if we get success we return the state, if we get partial success we push the rest into the state as a disjunction, if we get a failure we start testing our branches. maybe we do the normal tests and instead of returning we pack it into the state as a disj in lowest terms and re-run the future of the computation to see if anything tries to simplify against it. will need to prove this terminates, however
-					;(exit)
-					;(tassert "constraint ==|== collapses ==|(==&==)" (run1 (x1 x2) (constrain (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))) (constrain (disj* (== x1 1) (== x2 1)))) '(2 1))
-					;(exit)
-
-    ;;(tassert "constraint nested |" (run1 (x1 x2 x3) (constrain (disj* (conj* (== x1 1) (disj* (== x2 1) (== x3 1))) (== x1 2))) (== x3 3)) '(1 1 3)) TODO check that attr vars for diseq should be first 2 vs 1
-    
-    
     ;; === DISEQUALITY ===
 
     (tassert "disunify ground-self" (run* (q) (=/= 2 2)) '())
@@ -182,6 +165,7 @@
     (tassert "disunify simplify matcho" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-lhs c) (=/= x1 '(1 . 2))) (matcho? (conj-rhs c)))))
     (tassert "disunify simplify negative matcho" (run1 (x1) (constrain (noto (matcho ([x1 (a . d)])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho? (noto-goal (conj-rhs c))) (equal? (conj-lhs c) (=/= x1 1)))))
     (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
+    (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
 
     ;; === EQUALITY ===
     

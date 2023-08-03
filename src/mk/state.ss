@@ -143,7 +143,7 @@
      [(goal? x) (values (=/= x-var (if (goal? y) y-var y)) x)] ; Return the constraint on x to recheck for possible == to commit.
      [(goal? y) (if (var? x)
 		    (values (=/= x y-var) succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. If a constraint that might unify could be solved by x=/=y, it would already be attributed to x. Therefore, we only need to add the x=/=y constraint. There is nothing to recheck.
-		    (values (=/= y-var x) succeed))] ; Since x is a value here, treat y like the dominant constraint and simplify it.
+		    (values (=/= y-var x) y))] ; Since x is a value here, treat y like the dominant constraint and simplify it.
      [(eq? x y) (values fail fail)]
      [(var? x) (values (=/= x y) succeed)]
      [(var? y) (values (=/= y x) succeed)]
