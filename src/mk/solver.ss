@@ -229,8 +229,7 @@
     ;; Store simplified constraints into the constraint store.
     (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
-     [(succeed? g) s]
-     [(fail? g) failure]
+     [(or (succeed? g) (fail? g)) s]
      [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
      [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
@@ -269,6 +268,5 @@
 	 (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
 	[(pconstraint? g)
 	 (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
-	[(guardo? g) (values (if (memq (guardo-var g) vs) vs (cons (guardo-var g) vs)) unifies)]
 	[(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]
 	[else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))

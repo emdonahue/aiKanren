@@ -22,7 +22,6 @@
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-	  guardo? guardo-var guardo-procedure guardo
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed?
 	  make-noto noto? noto-goal
 	  __
@@ -78,9 +77,6 @@
 
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
-  
-  (define-structure (guardo var procedure))
-  (define guardo make-guardo)
 
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
@@ -165,7 +161,7 @@
     (memq var (matcho-out-vars g)))
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (guardo? g) (conde? g) (exist? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
 
   #;
   (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed
