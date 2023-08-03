@@ -3,7 +3,7 @@
   (export simplification-level
 	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
-	  make-var var? var-id set-var-id!
+	  var make-var var? var-id set-var-id!
 	  stream?
 	  failure failure?
 	  make-bind bind? bind-goal bind-stream
@@ -47,6 +47,7 @@
   
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
+  (define var make-var)
 
   ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
@@ -154,7 +155,8 @@
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (cert (not (and (null? out) (null? in))))
-    (if (or (null? out) (var? (car out))) (make-matcho out in proc) (normalize-matcho (cdr out) (cons (car out) in) proc)))
+    (if (or (null? out) (var? (car out))) (make-matcho out in proc)
+	(if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)))
 
   (define (expand-matcho g s p)
     ((matcho-goal g) s p (matcho-in-vars g)))

@@ -45,6 +45,9 @@
       (cert (goal? c))
       (if (or (fail? g) (occurs-check* g s)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
+#;
+  (define (simplify-== g us)
+    3)
 
   (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
     ;; TODO can we pack eigen checks onto occurs check and get them for free?
@@ -65,11 +68,11 @@
   
   (org-define (solve-=/= g s ctn out)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
+	      ;;TODO can we just add the =/= disjunction directly to the state and let the solver deal with it? might have to report it as added rather than pending once the two constraint return system is in place
     (cert (==? g)) ; -> goal? state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y, s^ is s without c
       (org-display g)
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn out) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
-	  ;;TODO if c is succeed, skip rest
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
 	    (if (fail? unified) (solve-constraint ctn s succeed out) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		(let-values ([(g0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
