@@ -5,13 +5,14 @@
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (call-with-values (lambda () (solve-constraint g s succeed succeed)) store-disjunctions))
+    (let-values ([(committed pending s) (solve-constraint g s succeed succeed)])
+      (store-disjunctions g s)))
   
   (org-define (solve-constraint g s conjs out)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
     (exclusive-cond
-     [(fail? g) (values fail failure)]
+     [(fail? g) (values fail fail failure)]
      [(succeed? g) (if (succeed? conjs) (values out s) (solve-constraint conjs s succeed out))]
      [(==? g) (solve-== g s conjs out)]
      [(noto? g) (solve-noto (noto-goal g) s conjs out)]
@@ -43,6 +44,7 @@
     ;;TODO we can construct the unified normalized goal as a binary tree no var ids and make it faster to use it as a mini substitution for further simplification
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (cert (goal? c))
+      (org-display g c)
       (if (or (fail? g) (occurs-check* g s)) (values fail failure)
 	  (solve-constraint c s ctn (conj out g)))))
 #;
