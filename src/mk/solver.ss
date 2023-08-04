@@ -29,10 +29,12 @@
 
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
-	(let-values ([(g p s^) (solve-constraint g s succeed committed pending)])
-	  (let ([g (noto g)])
-	    (if (fail? g) (values fail fail failure)
-		(solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending))))))
+	(let-values ([(g h s^) (solve-constraint g s succeed committed pending)])
+	  (let* ([g (noto g)]
+		[h (noto h)]
+		[gh (disj g h)])
+	    (if (fail? gh) (values fail fail failure)
+		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
   
   (org-define (solve-== g s ctn committed pending)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
