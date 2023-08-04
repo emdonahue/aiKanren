@@ -156,6 +156,8 @@
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
+      (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)
+      #;
       (if (fail? head-disj)
 	  (values (disj (conj ==s neck-disj) g) ==s s)
 	  (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) succeed s))))
@@ -164,7 +166,8 @@
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let-values ([(g0 p0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]) ; First, solve the head disjunct.
+     [else (let*-values ([(h0 i0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]
+			 [(g0) (conj h0 i0)]) ; First, solve the head disjunct.
 	     (org-exclusive-cond g0-cond
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
 	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
