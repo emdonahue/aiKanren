@@ -156,7 +156,9 @@
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
-      (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) pending (if (and (fail? head-disj) (not (or (succeed? ==s) (fail? ==s)))) (store-== s ==s) s))))
+      (if (fail? head-disj)
+	  (values (disj (conj ==s neck-disj) g) ==s s)
+	  (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) succeed s))))
   
   (org-define (solve-disj* g s ctn ==s parent-disj)
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
