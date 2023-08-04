@@ -6,7 +6,7 @@
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
-      (store-disjunctions committed (store-constraint s pending))))
+      (store-constraint s pending)))
   
   (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
@@ -164,7 +164,7 @@
 	  (values (disj (conj ==s neck-disj) g) ==s s)
 	  (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) succeed s))))
   
-  (org-define (solve-disj* g s ctn ==s parent-disj)
+  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
@@ -202,35 +202,6 @@
 							 s ctn committed pending (cons var^ vs))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
-  
-#;
-  (define (solve-pconstraint g s ctn out) ; TODO add guard rails for pconstraints returning lowest form and further solving
-    (cert (pconstraint? g))
-    (let ([g (fold-pconstraint (lambda (g v)
-			  (if (pconstraint? g)
-			      (let-values ([(v walked) (walk-var-val s v)])
-				(if (eq? v walked) g ((pconstraint-procedure g) v walked (pconstraint-data g)))) g))
-		      g (pconstraint-vars g))])
-      (solve-constraint ctn (store-constraint s g) succeed (conj out g))))
-#;
-  (define (fold-pconstraint p g vs)
-    (if (and (not (null? vs)) (pconstraint? g))
-	(fold-pconstraint p (p g (car vs)) (cdr vs))
-	g))
-
-  (define (store-== s ==s) ;TODO == should be propagated up and stored at top level, not after every disj. we should propagate one commited conj and one uncommited conj
-    (if (conj? ==s) (store-== (store-== s (conj-lhs ==s)) (conj-rhs ==s))
-	(begin
-	  (cert (==? ==s))
-	  (extend s (==-lhs ==s) (==-rhs ==s)))))
-  
-  (org-define (store-disjunctions g s)
-    (cert (goal? g) (or (fail? g) (not (failure? s))))
-    ;; Because solve-constraint has already stored all simple conjoined constraints in the state, throw them away and only put disjunctions in the store.
-    (exclusive-cond
-     [(conj? g) (store-disjunctions (conj-cdr g) (store-disjunctions (conj-car g) s))]
-     [(disj? g) (store-constraint s g)]
-     [else s]))
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
@@ -241,15 +212,6 @@
      [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (attributed-vars g))]))
-
-  (define (invert-disj ds) ds) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
-  #;
-  (define (invert-disj ds)
-    ;;TODO perhaps instead of a fully inverted disj constraint pair we can simply add a dummy proxy constraint that if looked up succeeds but raises the constraint waiting on the original vars
-    (let ([rest (disj-cdr ds)])
-      (if (disj? rest)
-	  (disj* (disj-car rest) (disj-car ds) (disj-cdr rest))
-	  (disj rest (disj-car ds)))))
   
   (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
