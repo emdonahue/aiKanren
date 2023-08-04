@@ -33,7 +33,7 @@
 	  (let* ([g (noto g)]
 		[h (noto h)]
 		[gh (disj g h)])
-	    (if (fail? gh) (values fail fail failure)
+	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
 		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
   
   (org-define (solve-== g s ctn committed pending)
@@ -155,7 +155,7 @@
     ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, or if a subgoal of the first disjunct is a disjunction that needs to be rechecked, and so need only be attributed to the first disjunct's variables.
     ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail or contains a disjunction that needs to be rechecked, since either might imply the ability to commit to the ==s in the other.
     ;; TODO can neighboring disjs cancel each other, eg x==1|x=/=1 => succeed
-    (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
+    (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
       (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)
@@ -164,7 +164,7 @@
 	  (values (disj (conj ==s neck-disj) g) ==s s)
 	  (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) succeed s))))
   
-  (org-define (solve-disj* g s ctn ==s parent-disj) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
+  (org-define (solve-disj* g s ctn ==s) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
     (exclusive-cond
      [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
@@ -172,7 +172,7 @@
 			 [(g0) (conj h0 i0)]) ; First, solve the head disjunct.
 	     (org-exclusive-cond g0-cond
 	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s parent-disj)] ; First disjunct fails => check next disjunct.
+	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
 	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
 	      [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
 	      [else
@@ -181,7 +181,7 @@
 		     (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
 			 (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
 			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
-		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s g0)]) ; Solve the rest of the disjuncts
+		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s)]) ; Solve the rest of the disjuncts
 		    (org-exclusive-cond rest-cond
 		     [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
 		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
