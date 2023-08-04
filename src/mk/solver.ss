@@ -158,35 +158,30 @@
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
       (cert (goal? head-disj))
       (org-display head-disj ==s neck-disj g)
-      (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)
-      #;
-      (if (fail? head-disj)
-	  (values (disj (conj ==s neck-disj) g) ==s s)
-	  (values (conj committed (disj head-disj (disj (conj ==s neck-disj) g))) succeed s))))
+      (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)))
   
   (org-define (solve-disj* g s ctn ==s) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
     (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
-    (exclusive-cond
-     [(fail? g) (values fail ==s fail fail failure)] ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
-     [else (let*-values ([(h0 i0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]
-			 [(g0) (conj h0 i0)]) ; First, solve the head disjunct.
-	     (org-exclusive-cond g0-cond
-	      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
-	      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
-	      ;;TODO do we have to continue to check ==s if the returned disj might commit?
-	      [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
-	      [else
-	       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
-		 (org-if if-==s (succeed? ==s) ; If there are none,
-		     (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
-			 (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
-			 (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
-		  (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s)]) ; Solve the rest of the disjuncts
-		    (org-exclusive-cond rest-cond
-		     [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
-		     [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
-		     ;; Propagate the new head.
-		     [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))]))
+    (if (fail? g) (values fail ==s fail fail failure) ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
+	(let*-values ([(h0 i0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]
+		      [(g0) (conj h0 i0)]) ; First, solve the head disjunct.
+	  (org-exclusive-cond g0-cond
+			      [(succeed? g0) (values succeed fail fail succeed s)] ; First disjunct succeeds => entire constraint is already satisfied.
+			      [(fail? g0) (solve-disj* (disj-cdr g) s ctn ==s)] ; First disjunct fails => check next disjunct.
+			      ;;TODO do we have to continue to check ==s if the returned disj might commit?
+			      [(disj? g0) (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)] ; First disjunct itself a disjunction => whole disjunction not reducible otherwise that disjunction would have normalized to a non-disjunction.
+			      [else
+			       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
+				 (org-if if-==s (succeed? ==s) ; If there are none,
+					 (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
+					     (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
+					     (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
+					 (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s)]) ; Solve the rest of the disjuncts
+					   (org-exclusive-cond rest-cond
+							       [(and (fail? g) (fail? head-disj) (fail? neck-disj)) (values fail ==s (conj-diff g0 ==s) fail s0)] ; If tail fails, propagate the modified state.
+							       [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
+							       ;; Propagate the new head.
+							       [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
