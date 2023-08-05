@@ -191,15 +191,19 @@
   [else (solve-constraint g s ctn committed pending)]))
 
   (org-define (solve-disj3 g s ctn committed pending) ;TODO can solve-disj be cps?
-    (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
+    (let*-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)]
+		  [(lhs) (conj c-lhs p-lhs)])
       (org-display c-lhs p-lhs s-lhs)
-      (if (and (succeed? c-lhs) (succeed? p-lhs)) (values committed pending s)
-	  (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
-			[(lhs) (conj c-lhs p-lhs)]
-			[(rhs) (conj c-rhs p-rhs)]
-			[(cs ds lhs rhs) (disj-factorize lhs rhs)])
-	    (org-display c-rhs p-rhs s-rhs)
-	    (values committed (conj pending (conj cs (conj (disj lhs rhs) ds))) s)))))
+      (exclusive-cond
+       [(succeed? lhs) (values committed pending s)]
+       [(fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)]
+       [else 
+	(let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
+		      
+		      [(rhs) (conj c-rhs p-rhs)]
+		      [(cs ds lhs rhs) (disj-factorize lhs rhs)])
+	  (org-display c-rhs p-rhs s-rhs)
+	  (values committed (conj pending (conj cs (conj (disj lhs rhs) ds))) s))])))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
