@@ -18,8 +18,8 @@
 	  succeed fail succeed? fail? trivial-goal?
 	  == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
-	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect conj-factorize ;TODO replace conj-car/cdr with lhs/rhs
-	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds?
+	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
+	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed?
@@ -266,9 +266,6 @@
 	  (conj-fold p lhs (conj-rhs cs))
 	  (p lhs (conj-rhs cs)))))
 
-  (define (conj-factorize lhs rhs)
-    (values #f #f lhs rhs))
-
   ;; DISJ
   (define (disj lhs rhs) ;TODO convert constructor fns to constructed params of structure  
     (cert (goal? lhs) (goal? rhs))
@@ -300,6 +297,9 @@
      [(succeed? d) #t]
      [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
      [else #f]))
+
+  (define (disj-factorize lhs rhs)
+    (values #f #f lhs rhs))
 
   ;; === QUANTIFICATION ===
 

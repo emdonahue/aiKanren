@@ -197,7 +197,7 @@
 	  (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
 			[(lhs) (conj c-lhs p-lhs)]
 			[(rhs) (conj c-rhs p-rhs)]
-			[(cs ds lhs rhs) (conj-factorize lhs rhs)])
+			[(cs ds lhs rhs) (disj-factorize lhs rhs)])
 	    (org-display c-rhs p-rhs s-rhs)
 	    (values committed (conj pending (disj lhs rhs)) s)))))
 
