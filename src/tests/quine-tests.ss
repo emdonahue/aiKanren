@@ -140,5 +140,5 @@
     (tassert "evalo-quine quine" (run 5 (y) (evalo y y)) 1)
 
     
-;    (display (run 1 (q) (evalo q q)))
+    (display (run 1 (q) (evalo q q)))
     ))
