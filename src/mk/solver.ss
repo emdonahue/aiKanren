@@ -194,9 +194,12 @@
     (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
       (org-display c-lhs p-lhs s-lhs)
       (if (and (succeed? c-lhs) (succeed? p-lhs)) (values committed pending s)
-	  (let-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)])
+	  (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
+			[(lhs) (conj c-lhs p-lhs)]
+			[(rhs) (conj c-rhs p-rhs)]
+			[(cs ds lhs rhs) (conj-factorize lhs rhs)])
 	    (org-display c-rhs p-rhs s-rhs)
-	    (values committed (conj pending (disj (conj c-lhs p-lhs) (conj c-rhs p-rhs))) s)))))
+	    (values committed (conj pending (disj lhs rhs)) s)))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
