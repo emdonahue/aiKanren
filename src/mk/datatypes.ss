@@ -299,7 +299,11 @@
      [else #f]))
 
   (define (disj-factorize lhs rhs)
-    (values #f #f lhs rhs))
+    (let ([intersection (conj-intersect lhs rhs)])
+      (values (conj-filter intersection (lambda (c) (not (disj? c))))
+	      (conj-filter intersection disj?)
+	      (conj-diff lhs intersection)
+	      (conj-diff rhs intersection))))
 
   ;; === QUANTIFICATION ===
 
