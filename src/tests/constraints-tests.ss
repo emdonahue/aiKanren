@@ -65,7 +65,7 @@
 
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
-    (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (booleano x1)) (void))
+(org-trace    (tassert "booleano bound undecidable fail" (run1 (x1) (== x1 'undecidable) (booleano x1)) (void)))
     (tassert "booleano fired t" (run1 (x1) (booleano x1) (== x1 #t)) #t)
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
