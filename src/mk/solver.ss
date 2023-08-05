@@ -204,7 +204,7 @@
 			  [(rhs) (conj c-rhs p-rhs)]
 			  [(cs ds lhs rhs) (disj-factorize lhs rhs)])
 	      (org-display c-rhs p-rhs s-rhs)
-	      (values committed (conj pending (conj cs (conj (disj lhs rhs) ds))) s)))])))
+	      (values committed (conj pending (conj cs (conj (if (conj-memp rhs ==?) (disj lhs rhs) (disj rhs lhs)) ds))) s)))])))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
