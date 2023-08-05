@@ -78,6 +78,10 @@
     
     (syntax-case bindings ()
       #;
+      [(_ label ([out-var (p-car . p-cdr)]) body ...)
+       (and (identifier? #'p-car) (identifier? #'p-cdr))
+      #'(matcho-pair ([out-var (p-car . p-cdr)]) body ...)]
+      #;
       [(_ ([out-var (p-car . p-cdr)]) body ...)
        (and (identifier? #'p-car) (identifier? #'p-cdr))
        #'(matcho-pair ([out-var (p-car . p-cdr)]) body ...)]

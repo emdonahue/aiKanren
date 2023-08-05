@@ -20,7 +20,7 @@ lib/aikanren.wpo lib/aikanren.so &: $(OBJ)
 build/preprocessed/%.ss: src/mk/%.ss
 # Strip out the assertions and generate new source files as a preprocessing step. Assertions are assumed to be on their own lines.
 	mkdir -p build/preprocessed
-	sed '/(assert /d' $< > $@
+	sed '/(cert /d' $< > $@
 
 build/object/%.so: $(OBJSRC)
 # Compile each library separately before compiling them all together as a whole library object file.
