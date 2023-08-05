@@ -198,7 +198,7 @@
        [(succeed? lhs) (values committed pending s)]
        [(fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)]
        [else
-	(if (conj-memp lhs ==?) (values committed (disj lhs (conj (disj-rhs g) ctn)) s)
+	(if (not (conj-memp lhs ==?)) (values committed (disj lhs (conj (disj-rhs g) ctn)) s)
 	    (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
 			  
 			  [(rhs) (conj c-rhs p-rhs)]
