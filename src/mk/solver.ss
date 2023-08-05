@@ -16,7 +16,7 @@
      [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
      [(==? g) (solve-== g s conjs committed pending)]
      [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
-     [(disj? g) (solve-disj3 g s conjs committed pending)]
+     [(disj? g) (solve-disj g s conjs committed pending)]
      [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
@@ -146,18 +146,6 @@
 		(solve-constraint ctn (store-constraint s m) succeed (conj committed m) pending)) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn committed pending)))))
-
-  (define (solve-disj g s ctn committed pending) ;TODO solve-disj should compress disjs with shared == into one disjunct conjoined to the ==
-    ;; The solver attempts to find ==s common to all disjuncts and factor them out. If it fails, it puts the failing disjunct at the head (failing because it had no ==s in common with previous disjuncts, either because it had none or it had different ones) and factors any common ==s out of those it has searched and puts them second as one disjunct (properly factored and conjoined to their common ==s). This yields 3 possible normal forms for disjunctions:
-    ;; (=/=, unnormalized ...) a head disjunct containing no ==s and the rest unnormalized. This happens if the first non failing disjunct it finds has no ==s
-    ;; (=/=, ==&normalized, unnormalized ...) a head disjunct containing no ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with no ==s.
-    ;; (==1, ==2&normalized, unnormalized ...) a head disjunct containing some ==s and a "neck" disjunct beneath it that is a conjunction of one or more ==s (all distinct from the ==s in the first disjunct) and an arbitrary normalized constraint. This happens when the search is terminated early by a disjunct with different ==s.
-    ;; A normalized disjunction headed by a =/= (goal without ==s) need only be rechecked if the head goal fails, or if a subgoal of the first disjunct is a disjunction that needs to be rechecked, and so need only be attributed to the first disjunct's variables.
-    ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail or contains a disjunction that needs to be rechecked, since either might imply the ability to commit to the ==s in the other.
-    ;; TODO can neighboring disjs cancel each other, eg x==1|x=/=1 => succeed
-    (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
-      (org-display head-disj ==s neck-disj g) ; TODO make disj return via committed path if all but one fail
-      (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)))
   
   (org-define (solve-disj* g s ctn ==s) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts. look for tautologies
     (cert (goal? g) (state? s) (goal? ctn)) ; -> head-disj ==s neck-disj tail-disj state?
@@ -182,29 +170,18 @@
 							       ;; Propagate the new head.
 							       [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))))
 
-  #;
-  (define (solve-disj2 g s ctn committed pending) ;TODO can solve-disj be cps?
-    (exclusive-cond
-     [(disj? g) (let-values ([(a b c) (solve-disj2 (disj-lhs g) s ctn committed pending)])
-		  3)]
-     [(conj? g) (nyi disj conj)]
-  [else (solve-constraint g s ctn committed pending)]))
-
-  (org-define (solve-disj3 g s ctn committed pending) ;TODO can solve-disj be cps?
+  (org-define (solve-disj g s ctn committed pending)
     (let*-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)]
 		  [(lhs) (conj c-lhs p-lhs)])
       (org-display c-lhs p-lhs s-lhs)
-      (exclusive-cond
-       [(succeed? lhs) (values committed pending s)] ;TODO handled by checking for ==?
-       [(fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)]
-       [else
-	(if (not (conj-memp lhs ==?)) (values committed (disj lhs (conj (disj-rhs g) ctn)) s)
-	    (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
-			  
-			  [(rhs) (conj c-rhs p-rhs)]
-			  [(cs ds lhs rhs) (disj-factorize lhs rhs)])
-	      (org-display c-rhs p-rhs s-rhs)
-	      (values committed (conj pending (conj cs (conj (if (conj-memp rhs ==?) (disj lhs rhs) (disj rhs lhs)) ds))) s)))])))
+      (if (fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)
+	  (if (not (conj-memp lhs ==?)) (values committed (conj pending (disj lhs (conj (disj-rhs g) ctn))) s)
+	      (let*-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)]
+			    [(rhs) (conj c-rhs p-rhs)])
+		(if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
+		    (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
+		      (org-display c-rhs p-rhs s-rhs)
+		      (values committed (conj pending (conj cs (conj (if (conj-memp rhs ==?) (disj lhs rhs) (disj rhs lhs)) ds))) s))))))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
