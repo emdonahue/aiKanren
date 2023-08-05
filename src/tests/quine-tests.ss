@@ -23,7 +23,12 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
 
-    (tassert "full quines run" (run 1 (q) (evalo q q)) list?)
+    (tassert "full quines run" (run1 (q) (evalo q q)) list?)
+    (tassert "unconstrained quines correct structure" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
+    
+;    (pretty-print (run 1 (q x y) (evalo q q) (== q (cons x y))))
+
+    ;'((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))
 
     #;
     (parameterize ([trace-goal-print #t])
@@ -142,5 +147,5 @@
     (tassert "evalo-quine quine" (run 5 (y) (evalo y y)) 1)
 
     
-    ;(display (run 1 (q) (evalo q q)))
+;    (pretty-print (run 1 (q) (evalo q q)))
     ))
