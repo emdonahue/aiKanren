@@ -61,7 +61,7 @@
     (tassert "booleano ground t" (run1 () (booleano #t)) '())
     (tassert "booleano ground f" (run1 () (booleano #f)) '())
     (tassert "booleano ground undecidable" (run1 () (booleano 'undecidable)) (void))
-    (tassert "booleano free t" (run1 (x1) (booleano x1)) (disj (== x1 #f) (== x1 #t)))
+    (tassert "booleano free t" (run1 (x1) (booleano x1)) (disj (== x1 #t) (== x1 #f)))
 
     (tassert "booleano bound t" (run1 (x1) (== x1 #t) (booleano x1)) #t)
     (tassert "booleano bound f" (run1 (x1) (== x1 #f) (booleano x1)) #f)
@@ -106,7 +106,7 @@
     (tassert "finite domain ground succeed 3" (run1 () (finite-domain 3 '(1 2 3))) '())
     (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
 
-    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (== x1 2) (disj (== x1 1) (== x1 3))))
+    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (disj (== x1 2) (== x1 3)) (== x1 1)))
 
     (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
     (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))

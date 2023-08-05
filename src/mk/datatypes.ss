@@ -288,8 +288,11 @@
 	(disj (disj-cdr (disj-lhs g)) (disj-rhs g))
 	fail))
 
-  (define (conde->disj c)
-    (if (conde? c) (disj (conde->disj (conde-lhs c)) (conde->disj (conde-rhs c))) c))
+  (define conde->disj
+    ;; Inverts conde from right-branching to left-branching to allow for optimizations in solve-disj
+    (case-lambda
+      [(c) (conde->disj c fail)]
+      [(c d) (if (conde? c) (conde->disj (conde-rhs c) (conde->disj (conde-lhs c) d)) (disj d c))]))
   
   (define (disj-succeeds? d)
     ;; True if d contains a literal succeed goal.

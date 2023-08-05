@@ -195,7 +195,7 @@
 		  [(lhs) (conj c-lhs p-lhs)])
       (org-display c-lhs p-lhs s-lhs)
       (exclusive-cond
-       [(succeed? lhs) (values committed pending s)]
+       [(succeed? lhs) (values committed pending s)] ;TODO handled by checking for ==?
        [(fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)]
        [else
 	(if (not (conj-memp lhs ==?)) (values committed (disj lhs (conj (disj-rhs g) ctn)) s)
