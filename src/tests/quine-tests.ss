@@ -23,6 +23,8 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
 
+    (tassert "full quines run" (run 1 (q) (evalo q q)) list?)
+
     #;
     (parameterize ([trace-goal-print #t])
     (trace-run 10 (q) (prove ((evalo
@@ -140,5 +142,5 @@
     (tassert "evalo-quine quine" (run 5 (y) (evalo y y)) 1)
 
     
-    (display (run 1 (q) (evalo q q)))
+    ;(display (run 1 (q) (evalo q q)))
     ))
