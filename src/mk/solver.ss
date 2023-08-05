@@ -16,7 +16,7 @@
      [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
      [(==? g) (solve-== g s conjs committed pending)]
      [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
-     [(disj? g) (solve-disj g s conjs committed pending)]
+     [(disj? g) (solve-disj3 g s conjs committed pending)]
      [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
      [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
      [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
@@ -190,11 +190,13 @@
      [(conj? g) (nyi disj conj)]
   [else (solve-constraint g s ctn committed pending)]))
 
-  (define (solve-disj3 g s ctn committed pending) ;TODO can solve-disj be cps?
+  (org-define (solve-disj3 g s ctn committed pending) ;TODO can solve-disj be cps?
     (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
-      (if (and (succeed? c-lhs) succeed? p-lhs) (values committed pending s)
+      (org-display c-lhs p-lhs s-lhs)
+      (if (and (succeed? c-lhs) (succeed? p-lhs)) (values committed pending s)
 	  (let-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)])
-	    (values committed (conj p-lhs p-rhs) s)))))
+	    (org-display c-rhs p-rhs s-rhs)
+	    (values committed (conj pending (disj (conj c-lhs p-lhs) (conj c-rhs p-rhs))) s)))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
