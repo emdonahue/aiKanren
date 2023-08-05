@@ -195,11 +195,7 @@
     (tassert "== factored out of nested disj" (run1 (x1 x2) (== x2 2) (disj (conj (== x2 2) (disj (== x1 1) (== x1 1))) (== x2 3))) '(1 2))
     (tassert "== factored out of nested disj tail" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 1) (== x1 1))))) '(1 2))
     (tassert "nested disj terminates disj solving" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 2) (== x1 1))))) (list (disj (disj (== x1 2) (== x1 1)) (== x1 1)) 2))
-;    (tassert "=/= & (=/=|numbero)" (run1 (x1) (disj (=/= x1 1) (numbero x1)) (=/= x1 1)) (=/= x1 1))
-					;(tassert "=/= & (symbolo|numbero)" (run1 (x1) (disj (symbolo x1) (numbero x1)) (=/= x1 1)) (disj (symbolo x1) (conj (=/= x1 1) (numbero x1))))
     (tassert "=/= & (=/=|succeed)" (run1 (x1) (disj (numbero x1) (symbolo x1)) (=/= x1 1)) (conj (=/= x1 1) (disj (numbero x1) (symbolo x1))))
-;    (tassert "=/= & (fail|succeed)" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x2 2)) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
-
     (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list (== x1 1) fail succeed (=/= x1 1)))
     (tassert "== undecidable" (simplify-=/= (== x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (== x1 (cons x2 x3)) (== x1 (cons x2 x3)) succeed (=/= x1 1)))
     (tassert "=/= undecidable" (simplify-=/= (=/= x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (=/= x1 (cons x2 x3)) (=/= x1 (cons x2 x3)) succeed (=/= x1 1)))
@@ -234,6 +230,7 @@
     (tassert "=/= ==^|==^|==|==^" (simplify-=/= (disj (== x1 2) (disj (== x1 3) (disj (== x1 1) (== x1 4)))) x1 1 (=/= x1 1)) (list (== x1 1) (disj (== x1 2) (disj (== x1 3) (== x1 4))) succeed succeed))
     (tassert "=/= (recheck&recheck)|undecidable" (simplify-=/= (disj (conj (disj (== x1 1) (=/= x2 3)) (disj (== x1 1) (=/= x2 3))) (=/= x1 3)) x1 1 (=/= x1 1)) (list succeed succeed (disj (conj (conj (=/= x1 1) (=/= x2 3)) (=/= x2 3)) (=/= x1 3)) succeed))
     (tassert "=/= (satisfies|undecidable)|(satisfied|undecidable)" (simplify-=/= (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) x1 1 (=/= x1 1)) (list succeed (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 5))))) succeed succeed))
+    (tassert "disj common non == are extracted" (run1 (x1) (disj (=/= x1 1) (=/= x1 1))) (=/= x1 1))
 
     ;; === MATCHO ===
 ;(org-trace    (tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1))

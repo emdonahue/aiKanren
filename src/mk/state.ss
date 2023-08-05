@@ -7,7 +7,7 @@
 
   ;; === VARIABLES ===
   
-  (define reify
+  (define reify ;TODO reify vars inside constraints
     (case-lambda
       [(s v) (reify s v '())]
       [(s v vs) 
@@ -137,7 +137,7 @@
 	      (disunify-binding s y-var y x-var x)
 	      (disunify-binding s x-var x y-var y)))))
 
-  (org-define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
+  (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
 	      (cert (state? s)) ; -> goal?(disequality) goal?(constraint)
     (cond
      [(goal? x) (values (=/= x-var (if (goal? y) y-var y)) x)] ; Return the constraint on x to recheck for possible == to commit.

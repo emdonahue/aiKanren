@@ -10,7 +10,6 @@
     ;;TODO if convert search to cps, can we use the results of walk to simplify the ctn and decide not to walk some of its goals?
     ;; Converts a goal into a stream. Primary interface for evaluating goals.
 	      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
-;	      (org-display (print-substitution s) (print-reification s))
     (exclusive-cond
      [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 	       (bind (conj-cdr g) s p))]
