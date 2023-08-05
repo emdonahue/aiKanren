@@ -10,7 +10,7 @@
   
   (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
-    (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> goal? state-or-failure?
+    (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> committed pending state-or-failure?
     (exclusive-cond
      [(fail? g) (values fail fail failure)]
      [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
@@ -30,7 +30,7 @@
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
 	(let-values ([(g h s^) (solve-constraint g s succeed committed pending)])
-	  (let* ([g (noto g)]
+	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow?
 		[h (noto h)]
 		[gh (disj g h)])
 	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
@@ -156,12 +156,11 @@
     ;; A normalized disjunction headed by a == (goal with ==s) must be rechecked if either the first or second disjuncts fail or contains a disjunction that needs to be rechecked, since either might imply the ability to commit to the ==s in the other.
     ;; TODO can neighboring disjs cancel each other, eg x==1|x=/=1 => succeed
     (let-values ([(head-disj ==s neck-disj g s) (solve-disj* g s ctn fail)]) ; The head disjunct is the first that does not unify vars common to previous disjuncts, or fail if all share at least one ==.
-      (cert (goal? head-disj))
-      (org-display head-disj ==s neck-disj g)
+      (org-display head-disj ==s neck-disj g) ; TODO make disj return via committed path if all but one fail
       (values committed (conj pending (disj head-disj (disj (conj ==s neck-disj) g))) s)))
   
-  (org-define (solve-disj* g s ctn ==s) ;TODO reevaluate inverting disj to put disjuncts with relevant vars at the head to be rechecked
-    (cert (goal? g) (state? s) (goal? ctn)) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts
+  (org-define (solve-disj* g s ctn ==s) ;TODO disj can use solved head disjs to propagate simplifying info to other disjuncts. look for tautologies
+    (cert (goal? g) (state? s) (goal? ctn)) ; -> head-disj ==s neck-disj tail-disj state?
     (if (fail? g) (values fail ==s fail fail failure) ; Base case: no more disjuncts to analyze. Failure produced by disj-cdr on a non-disj?.
 	(let*-values ([(h0 i0 s0) (solve-constraint (disj-car g) s ctn succeed succeed)]
 		      [(g0) (conj h0 i0)]) ; First, solve the head disjunct.
@@ -174,7 +173,7 @@
 			       (let ([==s (if (fail? ==s) (conj-filter g0 ==?) (conj-intersect ==s g0))]) ; Find ==s in common with previous disjuncts or filter them out of the first disjunct (signified by ==s = fail)
 				 (org-if if-==s (succeed? ==s) ; If there are none,
 					 (if (disj? g) ; return the disjunct that breaks the pattern to be the new head. We make it the head because when it fails, it is worth reconsidering the disjuncts with common ==s.
-					     (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s)
+					     (values (disj-car g0) ==s fail (disj (disj-cdr g0) (conj (disj-cdr g) ctn)) s) ;TODO does disj account for terminal disj subgoals?
 					     (values g0 ==s fail fail s0)) ; The tail should return the modified state in case we can get away with committing to it if all previous disjuncts fail. 
 					 (let-values ([(head-disj ==s neck-disj g s^) (solve-disj* (disj-cdr g) s ctn ==s)]) ; Solve the rest of the disjuncts
 					   (org-exclusive-cond rest-cond
@@ -182,6 +181,20 @@
 							       [(succeed? g) (values succeed fail fail succeed s)] ; Propagate trivial success up through disjunction.
 							       ;; Propagate the new head.
 							       [else (org-display g0 ==s neck-disj g) (values head-disj ==s (disj (conj-diff g0 ==s) neck-disj) g s)]))))]))))
+
+  #;
+  (define (solve-disj2 g s ctn committed pending) ;TODO can solve-disj be cps?
+    (exclusive-cond
+     [(disj? g) (let-values ([(a b c) (solve-disj2 (disj-lhs g) s ctn committed pending)])
+		  3)]
+     [(conj? g) (nyi disj conj)]
+  [else (solve-constraint g s ctn committed pending)]))
+
+  (define (solve-disj3 g s ctn committed pending) ;TODO can solve-disj be cps?
+    (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
+      (if (and (succeed? c-lhs) succeed? p-lhs) (values committed pending s)
+	  (let-values ([(c-rhs p-rhs s-rhs) (solve-constraint (disj-rhs g) s ctn succeed succeed)])
+	    (values committed (conj p-lhs p-rhs) s)))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
