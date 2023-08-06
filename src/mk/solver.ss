@@ -92,9 +92,8 @@
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
     (exclusive-cond
      [(succeed? g) (values succeed succeed succeed d)] ; If no constraints on x, add succeed back to the store.
-     [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
-     [(==? g) (let* ([s (list (cons (==-lhs g) (==-rhs g)))]
-		     [s^ (mini-unify s x y)])
+     [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
+		     [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))])
 		(cond
 		 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
 		 [(eq? s s^) (values g fail succeed d)] ; == same as =/= => =/= unsatisfiable
@@ -130,6 +129,8 @@
 					 (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs))) ; or if a subgoal disjunct needs to be rechecked.
 				     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
 				     (values unified disunified succeed succeed)))))))))]
+     [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
+     [(constraint? g) (nyi simplify constraint =/=)]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
   
   (define (solve-matcho g s ctn committed pending)

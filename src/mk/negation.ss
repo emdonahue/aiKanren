@@ -4,7 +4,7 @@
 
   (define (noto g)
     (cert (goal? g))
-    (cond
+    (exclusive-cond
      [(succeed? g) fail]
      [(fail? g) succeed]
      [(or (==? g) (matcho? g) (pconstraint? g)) (make-noto g)]
