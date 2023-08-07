@@ -11,6 +11,8 @@
 ;    (tassert "evalo number" (evalo 42) 42)
 
     (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
+
+    (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
     
     (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
     (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))

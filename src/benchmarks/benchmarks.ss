@@ -1,4 +1,4 @@
-(import (chezscheme) (aikanren) (benchmark-runner) (quine))
+(import (chezscheme) (aikanren) (benchmark-runner) (prefix (quine) quine-))
 
 (include "src/benchmarks/core-benchmarks.ss")
 (include "src/benchmarks/disequality-benchmarks.ss")

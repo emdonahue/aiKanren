@@ -4,13 +4,14 @@
 
   (define empty-env '())
   (define initial-env `((list . (val . (closure (lambda x x) ,empty-env)))
+			(cons . (val . (prim . cons)))
 
 			. ,empty-env))
-  #;
+#;
   (			(not . (val . (prim . not)))
 			(equal? . (val . (prim . equal?)))
 			(symbol? . (val . (prim . symbol?)))
-			(cons . (val . (prim . cons)))
+			
 			(null? . (val . (prim . null?)))
 			(car . (val . (prim . car)))
 			(cdr . (val . (prim . cdr))))
@@ -21,32 +22,30 @@
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (conde
-	 [(eval-quote expr env val)]
-	 [(numbero expr) (== expr val)]
+	 [(evalo-quote expr env val)]
+	 [(constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
 	 [(symbolo expr) (lookupo expr env val)]
-	 [(eval-lambda expr env val)]
-	 [(eval-prim expr env val)]
-	 [(eval-apply expr env val)])]))
+	 [(evalo-lambda expr env val)]
+	 [(evalo-apply expr env val)])]))
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
     (run1 (val) (evalo expr env val)))
   
-  (define (eval-quote expr env val)
+  (define (evalo-quote expr env val)
     (fresh ()
       (== `(quote ,val) expr)
       (absento 'closure val)
-;      (absento 'prim val)
+      (absento 'prim val)
       (not-in-envo 'quote env)))
   
   (define (lookupo var env val) ;TODO can lookup be a constraint?
     (asspo var env 
 	   (lambda (v)
-	     ;(printf "lookup~%")
 	     (conde
 	       [(== v `(val . ,val))]))))
 
-  (define (eval-lambda expr env val)
+  (define (evalo-lambda expr env val)
     (fresh ()
       (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
 	      ;(printfo "eval lambda~%")
@@ -57,35 +56,36 @@
 		 [(for-eacho (lambda (x) (symbolo x)) args)])))
       (not-in-envo 'lambda env)))
 
-  (define (eval-apply expr env val)
+  (define (evalo-apply expr env val)
     (matcho
      ([expr (rator . rands)])
      (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
 	    (evalo rator env closure)
-	    (matcho
-	     ([closure ('closure ('lambda params body) env^)])
-	     (conde
-	       [(symbolo params)
-		(exist (arg)
-		       (eval-listo rands env arg)
-		       (evalo body `((,params . (val . ,arg)) . ,env^) val))]
-	       [(pairo params)
-		(extend-env params rands env env
-			    (lambda (env^) (evalo body env^ val)))])))))
+	    (conde
+	      [(matcho
+		 ([closure ('closure ('lambda params body) env^)])
+		 (conde
+		   [(symbolo params)
+		    (exist (arg)
+			   (evalo-listo rands env arg)
+			   (evalo body `((,params . (val . ,arg)) . ,env^) val))]
+		   [(pairo params)
+		    (extend-env params rands env env
+				(lambda (env^) (evalo body env^ val)))]))]
+	      [(matcho ([closure ('prim . prim-id)])
+		       (evalo-prim prim-id rands val))]))))
   
-  (define (eval-prim expr env val)
+  (define (evalo-prim expr rands val)
     (conde
-      [(eval-boolean expr env val)]
+      
+      #;
       [(matcho ([expr (and . e*)])
 	       (not-in-envo 'and env)
-	       (eval-and e* env val))]))
+	       (evalo-and e* env val))]
+      [(== expr 'cons) (matcho ([rands (a d)]
+				[val (a . d)]))]))
 
-  (define (eval-boolean expr env val)
-    (conde
-      [(== #t expr) (== #t val)]
-      [(== #f expr) (== #f val)]))
-
-  (define (eval-and e* env val)
+  (define (evalo-and e* env val)
     (conde
       [(== e* '()) (== val #t)]))
 
@@ -102,12 +102,12 @@
 		      (evalo r env arg)
 		      (extend-env ps rs env `((,p . (val . ,arg)) . ,env^) ctn)))]))
   
-  (define (eval-listo expr env val)
+  (define (evalo-listo expr env val)
     (conde
       [(== expr '()) (== val '())]
       [(matcho ([expr (e . es)]
 		[val (v . vs)])
 	       ;(printfo "eval listo~%")
 	       (evalo e env v)
-	       (eval-listo es env vs))]))
+	       (evalo-listo es env vs))]))
 )
