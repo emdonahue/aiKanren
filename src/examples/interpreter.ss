@@ -7,6 +7,7 @@
 			(cons . (val . (prim . cons)))
 			(car . (val . (prim . car)))
 			(cdr . (val . (prim . cdr)))
+			(null? . (val . (prim . null?)))
 
 			. ,empty-env))
 #;
@@ -14,7 +15,7 @@
 			(equal? . (val . (prim . equal?)))
 			(symbol? . (val . (prim . symbol?)))
 			
-			(null? . (val . (prim . null?)))
+			
 			)
   
   (define evalo
@@ -22,12 +23,12 @@
       [(expr) (run1 (val) (evalo expr val))]
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
-       (conde
-	 [(evalo-quote expr env val)]
-	 [(constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
-	 [(symbolo expr) (lookupo expr env val)]
-	 [(evalo-lambda expr env val)]
-	 [(evalo-apply expr env val)])]))
+       (trace-goal testing (trace-conde
+	 [quote (evalo-quote expr env val)]
+	 [literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
+	 [lookup (symbolo expr) (lookupo expr env val)]
+	 [lambda (evalo-lambda expr env val)]
+	 [apply (evalo-apply expr env val)]))]))
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
@@ -77,19 +78,23 @@
 		       (evalo-prim prim-id args val)
 		       (evalo-listo rands env args))]))))
   
-  (define (evalo-prim expr rands val)
+  (define (evalo-prim expr args val)
     (conde
       
       #;
       [(matcho ([expr (and . e*)])
 	       (not-in-envo 'and env)
 	       (evalo-and e* env val))]
-      [(== expr 'cons) (matcho ([rands (a d)]
+      [(== expr 'cons) (matcho ([args (a d)]
 				[val (a . d)]))]
-      [(== expr 'car) (matcho ([rands ((a . d))])
+      [(== expr 'car) (matcho ([args ((a . d))])
 			      (== val a))]
-      [(== expr 'cdr) (matcho ([rands ((a . d))])
-			      (== val d))]))
+      [(== expr 'cdr) (matcho ([args ((a . d))])
+			      (== val d))]
+      [(== expr 'null?)
+
+       (disj (conj (=/= args '(())) (== val #f))
+			      (conj (== args '(())) (== val #t)))]))
 
   (define (evalo-and e* env val)
     (conde

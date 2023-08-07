@@ -17,8 +17,7 @@
       (tassert "trace fail if constraint fails" (map car (trace-run (x1) (org-untrace (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])))) '(2))    
 
       (tassert "proof constraint"
-	       (parameterize ([current-output-port (open-output-string)])
-		 (cadar (trace-run (x1) (trace-goal x1=1 (== x1 1))))) '((x1=1)))
+	       (cadar (trace-run (x1) (trace-goal x1=1 (== x1 1)))) '((x1=1)))
       (tassert "proof trace-conde"
 	       (parameterize ([current-output-port (open-output-string)])
 		 (map cadr (trace-run (x1) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])))) '(((x1=1)) ((x1=2))))

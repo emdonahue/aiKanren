@@ -93,7 +93,11 @@
 		  (let*-values ([(ans-remaining answers p) (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)])
 		    (when (theorem-trivial? theorem)
 		      (org-print-header " <answers>")
-		      (org-print-item answers))
+		      (for-each (lambda (i a)
+				  (parameterize ([org-depth (fx1+ (org-depth))])
+				    (org-print-header (number->string i))
+				    (parameterize ([org-depth (fx1+ (org-depth))])
+				      (print-trace-state (trace-answer-state a))))) (enumerate answers) answers))
 		    (values ans-remaining answers p))))
 	      (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)))))
 
@@ -131,16 +135,20 @@
 	(for-each org-print-item (trace-goal-source g))
 	(org-print-header "simplified")
 	(org-print-item (trace-goal-goal g))
-	(org-print-header "query")
-	(org-print-item (reify-var s (trace-query)))
-	(let* ([substitution (walk-substitution s)]
-	       [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
-	  (unless (null? constraints)
-	    (org-print-header "constraints")
-	    (for-each (lambda (b) (org-print-item (car b) (cdr b))) constraints))
-	  (unless (null? substitution)
-	    (org-print-header "substitution")
-	    (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution))))
+	(print-trace-state s))))
+
+  (define (print-trace-state s)
+    (cert (state? s))
+    (org-print-header "query")
+    (org-print-item (reify-var s (trace-query)))
+    (let* ([substitution (walk-substitution s)]
+	   [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
+      (unless (null? constraints)
+	(org-print-header "constraints")
+	(for-each (lambda (b) (org-print-item (car b) (cdr b))) constraints))
+      (unless (null? substitution)
+	(org-print-header "substitution")
+	(for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution))))
 	#;
 	(let ([substitution (walk-substitution s)])
 	(org-print-header " <substitution>")
@@ -149,7 +157,7 @@
 	(org-print-item (print-store substitution))
 	(org-print-header " <reification>")
 	(org-print-item (print-reification substitution)))
-      ))
+      
 
   (define (print-depth-limit theorem)
     (when (tracing? theorem) (org-print-header " <depth limit reached>")))

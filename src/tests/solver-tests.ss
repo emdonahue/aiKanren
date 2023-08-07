@@ -233,6 +233,6 @@
     (tassert "disj common non == are extracted" (run1 (x1) (disj (=/= x1 1) (=/= x1 1))) (=/= x1 1))
 
     ;; === MATCHO ===
-;(org-trace    (tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1))
-
+;;(org-trace    (tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1))
+    (tassert "matcho doesn't overwrite =/=" (run1 (x1) (=/= x1 '(())) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
     ))
