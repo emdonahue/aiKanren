@@ -18,7 +18,7 @@
     ;(tassert "evalo null? number" (evalo '(null? 42)) #f)
     (tassert "evalo null? empty" (evalo '(null? '())) #t)
 					;    (tassert "evalo null? pair" (evalo '(null? (cons 42 43))) #f)
-    (trace-run (q) (evalo '(null? 42) q))
+;    (trace-run (q) (evalo '(null? 42) q))
     
     
     (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))

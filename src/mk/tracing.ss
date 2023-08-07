@@ -14,7 +14,9 @@
   (define-syntax trace-goal ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
     (syntax-rules ()
       [(_ name goals ...)
-       (make-trace-goal 'name '(goals ...) (conj* goals ...))]))
+       (if (trace-query)
+	   (make-trace-goal 'name '(goals ...) (conj* goals ...))
+	   (conj* goals ...))]))
   
   (define-syntax trace-conde
     (syntax-rules ()

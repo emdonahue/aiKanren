@@ -4,7 +4,7 @@
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
 	  fresh exist constrain conde
 	  trace-run)
-  (import (chezscheme) (running) (datatypes) (state) (utils))
+  (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
   
  (define-syntax fresh ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
    (syntax-rules ()
@@ -111,11 +111,13 @@
        [(_ depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
-	 (trace-runner q (conj* g ...) (set-state-varid empty-state varid) depth))]
+	 (parameterize ([trace-query q])
+	     (trace-runner q (conj* g ...) (set-state-varid empty-state varid) depth)))]
        [(_ depth (q ...) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q ...)
-	 (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth))]))
+	 (parameterize ([trace-query (list q ...)])
+	     (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth)))]))
 
    (define-syntax constrain
      (syntax-rules ()
