@@ -23,12 +23,12 @@
       [(expr) (run1 (val) (evalo expr val))]
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
-       (trace-goal testing (trace-conde
-	 [quote (evalo-quote expr env val)]
-	 [literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
-	 [lookup (symbolo expr) (lookupo expr env val)]
-	 [lambda (evalo-lambda expr env val)]
-	 [apply (evalo-apply expr env val)]))]))
+       (trace-conde
+	[quote (evalo-quote expr env val)]
+	[literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
+	[lookup (symbolo expr) (lookupo expr env val)]
+	[lambda (evalo-lambda expr env val)]
+	[apply (evalo-apply expr env val)])]))
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
@@ -75,8 +75,10 @@
 		    (extend-env params rands env env
 				(lambda (env^) (evalo body env^ val)))]))]
 	      [(matcho ([closure ('prim . prim-id)])
-		       (evalo-prim prim-id args val)
-		       (evalo-listo rands env args))]))))
+		       (trace-goal prim (evalo-prim prim-id args val))
+		       (displayo prim-id rands args val env)
+		       (evalo-listo rands env args)
+		       (trace-goal eval-prim-args (displayo prim-id rands args val env)))]))))
   
   (define (evalo-prim expr args val)
     (conde
@@ -91,10 +93,10 @@
 			      (== val a))]
       [(== expr 'cdr) (matcho ([args ((a . d))])
 			      (== val d))]
-      [(== expr 'null?)
+      [(trace-goal null (== expr 'null?) ;(== args val)
 
-       (disj (conj (=/= args '(())) (== val #f))
-			      (conj (== args '(())) (== val #t)))]))
+	(disj (conj (=/= args '(())) (== val #f))
+	      (conj (== args '(())) (== val #t))))]))
 
   (define (evalo-and e* env val)
     (conde

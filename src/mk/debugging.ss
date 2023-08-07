@@ -12,7 +12,7 @@
   (define-syntax displayo
     (syntax-rules ()
       [(_ expr ...)
-       (noopo (org-display expr ...))]))
+       (let ([displayo (lambda (s p) (org-display (reify s expr) ...) (values succeed s p))]) displayo)]))
 
   (define-syntax noopo
     (syntax-rules ()

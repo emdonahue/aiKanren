@@ -8,7 +8,7 @@
     (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
       (store-constraint s pending)))
   
-  (define (solve-constraint g s conjs committed pending)
+  (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> committed pending state-or-failure?
     (exclusive-cond
@@ -68,7 +68,7 @@
 		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
 	       [else #f]))
   
-  (define (solve-=/= g s ctn committed pending)
+  (org-define (solve-=/= g s ctn committed pending)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
 	      ;;TODO can we just add the =/= disjunction directly to the state and let the solver deal with it? might have to report it as added rather than pending once the two constraint return system is in place
     (cert (==? g)) ; -> goal? state?
@@ -77,11 +77,12 @@
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
 	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		(let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
+		  (org-display g0 p0 s0 g)
 		  (cond
 		   [(noto? g) (values (conj committed (conj g g0)) pending s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
 		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		   ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
-		   [else (values committed (conj pending (disj (disj-car g) (conj (disj-cdr g) ctn))) s)])))))))
+		   [else (values committed (conj pending (conj g ctn)) s)])))))))
 
   (define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
