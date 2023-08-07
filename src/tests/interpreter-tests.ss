@@ -13,6 +13,9 @@
     (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
 
     (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
+    (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
+    (tassert "evalo cdr" (evalo '(cdr (cons 42 43))) 43)
+    
     
     (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
     (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
@@ -20,9 +23,11 @@
 ;    (tassert "evalo and" (evalo '(and)) #t)
 
     (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
+    (tassert "evalo apply lambda eval arg" (evalo '((lambda (x) x) (cons 42 43))) '(42 . 43))
+    (tassert "evalo apply lambda variadic" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
+    (tassert "evalo apply lambda variadic eval arg" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
     (tassert "evalo apply var" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
-
-    (tassert "evalo apply variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
+    (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
 
     (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
 

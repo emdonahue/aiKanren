@@ -5,6 +5,8 @@
   (define empty-env '())
   (define initial-env `((list . (val . (closure (lambda x x) ,empty-env)))
 			(cons . (val . (prim . cons)))
+			(car . (val . (prim . car)))
+			(cdr . (val . (prim . cdr)))
 
 			. ,empty-env))
 #;
@@ -13,8 +15,7 @@
 			(symbol? . (val . (prim . symbol?)))
 			
 			(null? . (val . (prim . null?)))
-			(car . (val . (prim . car)))
-			(cdr . (val . (prim . cdr))))
+			)
   
   (define evalo
     (case-lambda
@@ -59,7 +60,7 @@
   (define (evalo-apply expr env val)
     (matcho
      ([expr (rator . rands)])
-     (exist (closure) ;TODO can we use first order matcho to eliminate need for exist?
+     (exist (closure args) ;TODO can we use first order matcho to eliminate need for exist?
 	    (evalo rator env closure)
 	    (conde
 	      [(matcho
@@ -73,7 +74,8 @@
 		    (extend-env params rands env env
 				(lambda (env^) (evalo body env^ val)))]))]
 	      [(matcho ([closure ('prim . prim-id)])
-		       (evalo-prim prim-id rands val))]))))
+		       (evalo-prim prim-id args val)
+		       (evalo-listo rands env args))]))))
   
   (define (evalo-prim expr rands val)
     (conde
@@ -83,7 +85,11 @@
 	       (not-in-envo 'and env)
 	       (evalo-and e* env val))]
       [(== expr 'cons) (matcho ([rands (a d)]
-				[val (a . d)]))]))
+				[val (a . d)]))]
+      [(== expr 'car) (matcho ([rands ((a . d))])
+			      (== val a))]
+      [(== expr 'cdr) (matcho ([rands ((a . d))])
+			      (== val d))]))
 
   (define (evalo-and e* env val)
     (conde
