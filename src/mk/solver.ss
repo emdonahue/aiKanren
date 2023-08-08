@@ -101,7 +101,7 @@
 		     [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))])
 		(cond
 		 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
-		 [(eq? s s^) (values g fail succeed d)] ; == same as =/= => =/= unsatisfiable
+		 [(eq? s s^) (values succeed fail succeed d)] ; == same as =/= => =/= unsatisfiable
 		 [else (values g g succeed d)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail g succeed d) ; Check that y could be a pair.
@@ -129,9 +129,13 @@
 	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)  ;TODO rhs or lhs for early return?
 		(let ([unified (disj unified-lhs unified-rhs)])
 		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
-		    (let ([disunified (conj conjs (conj (disj (if (fail? unified-lhs) lhs (conj d lhs))
-							      (if (fail? unified-rhs) rhs (conj d rhs))) disjs))])
-		      (if (or (fail? simplified-lhs) (fail? simplified-rhs) ;TODO rhs only matters if lhs has ==
+		    (let ([disunified
+			   (conj conjs (conj
+					(if (not (or (fail? unified-lhs) (fail? unified-rhs)))
+					    (conj d (disj lhs rhs))
+					    (disj (if (fail? unified-lhs) lhs (conj d lhs))
+					       (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
+		      (if (or (fail? simplified-lhs) (and (fail? simplified-rhs) (conj-memp simplified-lhs ==?))
 			      (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
