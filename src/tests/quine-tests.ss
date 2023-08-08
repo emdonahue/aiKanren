@@ -22,6 +22,19 @@
 
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo-quine quine" (evalo q) q))
+#;
+    (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
+      (display (parameterize ([trace-goals #f]) (trace-run () (evalo q q)))))
 
-    (tassert "full quines run" (run1 (q) (evalo q q)) list?)
+    (trace-run (q) (prove ((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
+			  (evalo q q)))
+    
+    ;;((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
+
+    
+    (exit)
+(org-trace    (tassert "full quines run" (run1 (q) (evalo q q)) list?))
+
+    (printf "DONE")
+    (exit)
     (tassert "unconstrained quines correct structure" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)))

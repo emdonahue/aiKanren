@@ -108,6 +108,9 @@
    (define-syntax trace-run
      (syntax-rules ()
        [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
+       [(_ depth () g ...)
+	(parameterize ([trace-query '()])
+	  (trace-runner '() (conj* g ...) empty-state -1))]
        [(_ depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)

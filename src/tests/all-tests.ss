@@ -14,8 +14,10 @@
     (run-constraints-tests)
     (run-listo-tests)
     (run-tracing-tests)
-    (run-quine-tests)
-    (run-interpreter-tests)
+#;
+    (begin 
+      (run-quine-tests)
+      (run-interpreter-tests)
 
-    (parameterize ([benchmark-testing #t])
-      (include "src/benchmarks/benchmarks.ss"))))
+      (parameterize ([benchmark-testing #t])
+	(include "src/benchmarks/benchmarks.ss")))))

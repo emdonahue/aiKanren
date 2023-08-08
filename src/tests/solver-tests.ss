@@ -167,6 +167,8 @@
     (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) 2))
     (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
     (tassert "disunify suspends and preserves whole ctn" (run1 (x1 x2 x3) (constrain (=/= (cons x1 x2) '(())) (== x3 1))) (list (disj (=/= x1 '()) (=/= x2 '())) x2 1))
+    (tassert "disunify preserves pending goals in ctn" (run1 (x1 x2) (constrain (=/= x1 1) (disj (=/= x2 1) (=/= x2 2)))) (list (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))))
+    (tassert "disunify simplify drops when =/= in a conj" (run1 (x1) (disj (conj (=/= x1 1) (conj (numbero x1) (=/= x1 1))) (=/= x1 2))) (disj (=/= x1 2) (conj (=/= x1 1) (numbero x1)))) ;TODO org-trace
 
     ;; === EQUALITY ===
     

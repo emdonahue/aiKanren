@@ -79,12 +79,15 @@
 		(let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
 		  (org-display g0 p0 s0 g)
 		  (cond
-		   [(noto? g) (values (conj committed (conj g g0)) pending s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
+		   [(noto? g) (values (conj committed (conj g g0)) (conj pending p0) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
 		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
 		   ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
 		   [else (values committed (conj pending (conj g ctn)) s)])))))))
 
-  (define (simplify-=/= g x y d)
+  ;; numbero&=/= -> succeed numbero =/=
+  ;; numbero -> numbero numbero =/=
+  
+  (org-define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
     ;; 1) g simplified under the assumption x==y. If fail?, g => x=/=y, so we can simply throw away the new constraint. Since we only need to check for failure, we can cut corners and not compute the true simplification of g, g', so long as ~g <=> ~g'.
     ;; 2) g simplified under x=/=y but only conjuncts that are completely normalized. Since they are guaranteed to be already normalized, we can simply add them directly to the store.
@@ -109,30 +112,34 @@
 		  (if (fail? unified) (values fail disunified-lhs recheck-lhs d) ; If unified fails, we can throw the =/= away, so abort early.
 		      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/= (conj-rhs g) x y d)])
 			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
-     [(disj? g) (let*-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/= (disj-car g) x y d)]
-			      [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
-		  (if (succeed? disunified-lhs) (values unified-lhs succeed succeed d) ; If the whole disjunction succeeds because it contained a single x=/=y, skip the rest of the computation and preserve the final disequality to conjoin to the whole constraint (or subsequent disjunction)
-		      (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/= (disj-car (disj-cdr g)) x y d)]
-				    [(disunified-rhs) (conj simplified-rhs recheck-rhs)]) ; We need to check the first two disjuncts for failure and recheck the whole disjunction if either fails.
-			(if (succeed? disunified-rhs) (values unified-lhs succeed succeed d)
-			    (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/= (disj-cdr (disj-cdr g)) x y succeed)]
-					  [(disunified-tail) (conj simplified-tail recheck-tail)]) ; Tail may not be normalized,, but we can see if it happens to universally fail or succeed as those result in cleaner normal forms.
-			      (if (succeed? disunified-tail) (values unified-tail succeed succeed d) ; If the tail succeeds, abort.
-			       (let* ([unified (disj unified-lhs (disj unified-rhs unified-tail))] ; If all disjuncts fail, x=/=y is already entoiled by the disjunction as a whole and can be discarded.
-				      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs)) ; Place the disequality as deep into the disjunction as possible provided it is already entailed by all previous disjuncts.
-						      (if (or (fail? unified-rhs) (fail? disunified-rhs)) ;TODO push the diseq as far back as needed by giving it to the tail computation if we would otherwise append it before tail
-							  (if (or (fail? unified-tail) (equal? unified-tail (== x y)))
-							      (disj disunified-lhs (disj disunified-rhs disunified-tail))
-							      (disj disunified-lhs (disj disunified-rhs (conj d disunified-tail))))
-							  (disj disunified-lhs (conj d (disj disunified-rhs disunified-tail))))
-						      (conj d (disj disunified-lhs (disj disunified-rhs disunified-tail))))])
-				 (if (or (fail? simplified-lhs) (fail? simplified-rhs) ; Recheck if there was a failure in one of the first two disjuncts,
-					 (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs))) ; or if a subgoal disjunct needs to be rechecked.
-				     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
-				     (values unified disunified succeed succeed)))))))))]
+     [(disj? g) (simplify-=/=-disj g fail x y d)]
      [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
      [(constraint? g) (nyi simplify constraint =/=)]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
+
+  (define (simplify-=/=-disj g ds x y d)
+    (if (disj? g) (simplify-=/=-disj (disj-lhs g) (disj (disj-rhs g) ds) x y d)
+     (let*-values ([(unified-lhs simplified-lhs recheck-lhs d) (simplify-=/= g x y d)]
+		   [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
+       (if (succeed? disunified-lhs) (values unified-lhs succeed succeed d) ; If the whole disjunction succeeds because it contained a single x=/=y, skip the rest of the computation and preserve the final disequality to conjoin to the whole constraint (or subsequent disjunction)
+	   (let*-values ([(unified-rhs simplified-rhs recheck-rhs d) (simplify-=/= (disj-car ds) x y d)]
+			 [(disunified-rhs) (conj simplified-rhs recheck-rhs)]) ; We need to check the first two disjuncts for failure and recheck the whole disjunction if either fails.
+	     (if (succeed? disunified-rhs) (values unified-lhs succeed succeed d)
+		 (let*-values ([(unified-tail simplified-tail recheck-tail _) (simplify-=/= (disj-cdr ds) x y succeed)]
+			       [(disunified-tail) (conj simplified-tail recheck-tail)]) ; Tail may not be normalized,, but we can see if it happens to universally fail or succeed as those result in cleaner normal forms.
+		   (if (succeed? disunified-tail) (values unified-tail succeed succeed d) ; If the tail succeeds, abort.
+		       (let* ([unified (disj unified-lhs (disj unified-rhs unified-tail))] ; If all disjuncts fail, x=/=y is already entoiled by the disjunction as a whole and can be discarded.
+			      [disunified (if (or (fail? unified-lhs) (fail? disunified-lhs)) ; Place the disequality as deep into the disjunction as possible provided it is already entailed by all previous disjuncts.
+					      (if (or (fail? unified-rhs) (fail? disunified-rhs)) ;TODO push the diseq as far back as needed by giving it to the tail computation if we would otherwise append it before tail
+						  (if (or (fail? unified-tail) (equal? unified-tail (== x y)))
+						      (disj disunified-lhs (disj disunified-rhs disunified-tail))
+						      (disj disunified-lhs (disj disunified-rhs (conj d disunified-tail))))
+						  (disj disunified-lhs (conj d (disj disunified-rhs disunified-tail))))
+					      (conj d (disj disunified-lhs (disj disunified-rhs disunified-tail))))])
+			 (if (or (fail? simplified-lhs) (fail? simplified-rhs) ; Recheck if there was a failure in one of the first two disjuncts,
+				 (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs))) ; or if a subgoal disjunct needs to be rechecked.
+			     (values unified succeed disunified succeed) ; TODO if disj1 contains no ==, and disj-tail fails, we do not need to recheck disj2
+			     (values unified disunified succeed succeed)))))))))))
   
   (define (solve-matcho g s ctn committed pending)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
