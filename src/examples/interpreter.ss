@@ -29,6 +29,7 @@
 	[lookup (symbolo expr) (lookupo expr env val)]
 	[lambda (evalo-lambda expr env val)]
 	[apply (evalo-apply expr env val)]
+	[letrec (evalo-letrec expr env val)]
 	[if (evalo-if expr env val)])]))
 
   (define (evalo-env expr env)
@@ -72,7 +73,7 @@
 		    (exist (arg)
 			   (evalo-listo rands env arg)
 			   (evalo body `((,params . (val . ,arg)) . ,env^) val))]
-		   [(pairo params)
+		   [(list-of-symbolso params)
 		    (extend-env params rands env env
 				(lambda (env^) (evalo body env^ val)))]))]
 	      [(matcho ([closure ('prim . prim-id)])
@@ -80,6 +81,9 @@
 		       (displayo prim-id rands args val env)
 		       (evalo-listo rands env args)
 		       (trace-goal eval-prim-args (displayo prim-id rands args val env)))]))))
+
+  (define (evalo-letrec expr env val)
+    (matcho ([expr ('letrec ([name ('lambda args body)]))])))
   
   (define (evalo-prim expr args val)
     (conde
@@ -123,6 +127,12 @@
 	       (exist (arg)
 		      (evalo r env arg)
 		      (extend-env ps rs env `((,p . (val . ,arg)) . ,env^) ctn)))]))
+
+  (define (list-of-symbolso xs)
+    (disj (== xs '())
+	  (matcho ([xs (a . d)])
+		  (symbolo a)
+		  (list-of-symbolso d))))
   
   (define (evalo-listo expr env val)
     (conde
