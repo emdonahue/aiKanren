@@ -28,7 +28,8 @@
 	[literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
 	[lookup (symbolo expr) (lookupo expr env val)]
 	[lambda (evalo-lambda expr env val)]
-	[apply (evalo-apply expr env val)])]))
+	[apply (evalo-apply expr env val)]
+	[if (evalo-if expr env val)])]))
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
@@ -101,6 +102,14 @@
   (define (evalo-and e* env val)
     (conde
       [(== e* '()) (== val #t)]))
+
+  (define (evalo-if expr env val)
+    (matcho ([expr ('if c t f)])
+	    (exist (tf)
+		   (evalo c env tf)
+		   (conde
+		     [(== tf #f) (evalo f env val)]
+		     [(=/= tf #f) (evalo t env val)]))))
 
   (define (not-in-envo sym env)
     (noto (asspo sym env (lambda (v) succeed))))

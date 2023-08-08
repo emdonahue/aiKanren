@@ -18,7 +18,11 @@
     (tassert "evalo null? number" (evalo '(null? 42)) #f)
     (tassert "evalo null? empty" (evalo '(null? '())) #t)
     (tassert "evalo null? pair" (evalo '(null? (cons 42 43))) #f)
-    
+
+    (tassert "evalo if true" (evalo '(if #t 1 2)) 1)
+    (tassert "evalo if false" (evalo '(if #f 1 2)) 2)
+    (tassert "evalo if null" (evalo '(if (null? '()) 1 2)) 1)
+        (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
     
     (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
     (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
