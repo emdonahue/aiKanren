@@ -14,7 +14,7 @@
     (run-constraints-tests)
     (run-listo-tests)
     (run-tracing-tests)
-#;
+
     (begin 
       (run-quine-tests)
       (run-interpreter-tests)

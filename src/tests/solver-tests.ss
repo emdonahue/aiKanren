@@ -238,4 +238,6 @@
     ;; === MATCHO ===
 ;;(org-trace    (tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1))
     (tassert "matcho doesn't overwrite =/=" (run1 (x1) (=/= x1 '(())) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+;;    (tassert "matcho doesnt double count itself in disj simplification" (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (disj (matcho ([x1 (a . d)]) (=/= a d)) (=/= x1 1))) 1)
+  
     ))

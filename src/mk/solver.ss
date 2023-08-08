@@ -126,7 +126,7 @@
 	  (let*-values ([(unified-rhs simplified-rhs recheck-rhs d)
 			 (simplify-=/= (disj-rhs g) x y d)]
 			[(disunified-rhs) (conj simplified-rhs recheck-rhs)])
-	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)  ;TODO rhs or lhs for early return?
+	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
 		(let ([unified (disj unified-lhs unified-rhs)])
 		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
 		    (let ([disunified
