@@ -40,6 +40,8 @@
 
     (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
 
+    (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
+
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
 

@@ -47,7 +47,9 @@
     (asspo var env 
 	   (lambda (v)
 	     (conde
-	       [(== v `(val . ,val))]))))
+	       [(== v `(val . ,val))]
+	       [(matcho ([v ('rec . lambda-expr)])
+			(== val `(closure ,lambda-expr ,env)))]))))
 
   (define (evalo-lambda expr env val)
     (fresh ()
@@ -83,7 +85,11 @@
 		       (trace-goal eval-prim-args (displayo prim-id rands args val env)))]))))
 
   (define (evalo-letrec expr env val)
-    (matcho ([expr ('letrec ([name ('lambda args body)]))])))
+    (matcho ([expr ('letrec ([name ('lambda args body)]) letrec-body)])
+	    (disj (symbolo args) (list-of-symbolso args))
+	    (not-in-envo 'letrec env)
+	    (evalo letrec-body `((,name . (rec . (lambda ,args ,body))) . ,env) val)
+	    ))
   
   (define (evalo-prim expr args val)
     (conde
