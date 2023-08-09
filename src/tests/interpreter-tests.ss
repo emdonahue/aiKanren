@@ -67,6 +67,11 @@
     
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
+
+    (display (run1 (body)
+		   (absento '(1 . 1) body)
+		   (evalo `(letrec ([f (lambda (x y) ,body)])
+			    (f 1 1)) '(1 . 1))))
     
 ;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
 
