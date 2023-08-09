@@ -76,14 +76,15 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
 	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
-		;;TODO add a flag to solve-constraint that signals that disjs are normalized so it can skip the head(s)
-		(let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
-		  (org-display g0 p0 s0 g committed pending)
-		  (cond
-		   [(noto? g) (values (conj committed (conj g g0)) (conj pending p0) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
-		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
-		   ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
-		   [else (values committed (conj pending (conj g ctn)) s)])))))))
+		(if (noto? g) (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn (conj committed g) pending)
+		 ;;TODO add a flag to solve-constraint that signals that disjs are normalized so it can skip the head(s)
+		 (let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
+		   (org-display g0 p0 s0 g committed pending)
+		   (cond
+		    [(noto? g) (values (conj committed (conj g g0)) (conj pending p0) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
+		    [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
+		    ;; The normal form of a disj of =/= is head | (body & ctn), representing the suspension of the continuation over the body goals but not the already-run head goal (as in bind in the normal mk search).
+		    [else (values committed (conj pending (conj g ctn)) s)]))))))))
 
   ;; numbero&=/= -> succeed numbero =/=
   ;; numbero -> numbero numbero =/=
