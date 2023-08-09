@@ -42,9 +42,10 @@
   (define (walk-var-val s v)
     (walk-binding (state-substitution s) v))
 
-  (define (walk-constraint s v)
+  (org-define (walk-constraint s v)
     (cert (state? s) (var? v))
     (let-values ([(binding v) (walk-binding (state-substitution s) v)])
+      (org-printf "walk constraint")
       (cert (or (var? v) (goal? v))) ;TODO can we remove walk-constraint since succeed is the new unbound?
       (if (var? v) succeed v)))
   
@@ -157,7 +158,7 @@
   
   ;; === CONSTRAINTS ===
   
-  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
+  (org-define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
     (cert (state? s) (goal? c) (list? vs))
     (fold-left (lambda (s v)
 		 (extend s v (conj (walk-constraint s v) c))

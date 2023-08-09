@@ -131,8 +131,8 @@
   (define (print-trace-args g s proof)
     (org-print-header "<arguments>")
     (parameterize ([org-depth (fx1+ (org-depth))])
-      (print-trace-goal g)
-      (print-trace-answer proof s)))
+      (print-trace-answer proof s)
+      (print-trace-goal g)))
 
   (define (print-trace-goal g)
     (org-print-header "source")

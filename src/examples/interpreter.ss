@@ -1,5 +1,5 @@
 (library (interpreter) ; Ported from https://github.com/michaelballantyne/faster-minikanren/blob/master/full-interp.scm
-  (export evalo initial-env evalo-env)
+  (export evalo initial-env evalo-env synthesizeo)
   (import (chezscheme) (aikanren))
 
   (define empty-env '())
@@ -31,6 +31,19 @@
 	[apply (evalo-apply expr env val)]
 	[letrec (evalo-letrec expr env val)]
 	[if (evalo-if expr env val)])]))
+
+  (define synthesizeo
+    (case-lambda
+      [(examples)
+       (trace-run (args body input output)
+		  ;;(absento input body)
+		  ;;(absento output body)
+		  (fold-left (lambda (g io) (conj g (conj (fold-left (lambda (g i) (conj g (absento i body))) succeed (car io)) (conj (absento (cdr io) body) (==> (== input (car io)) (== output (cdr io))))))) succeed examples)
+	;;	  (== args '(y))
+;;		  (== body '(cons y y))
+		  (evalo `(letrec ([f (lambda ,args ,body)])
+			    (f . ,input)) output))]))
+  ;`(lambda ,(caar args-body) ,(cadr args-body))
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.

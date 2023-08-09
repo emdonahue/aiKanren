@@ -2,7 +2,7 @@
   (export run-constraint simplify-=/=) ;TODO trim exports
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution))
 
-  (define (run-constraint g s)
+  (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
@@ -78,7 +78,7 @@
 	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		;;TODO add a flag to solve-constraint that signals that disjs are normalized so it can skip the head(s)
 		(let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
-		  (org-display g0 p0 s0 g)
+		  (org-display g0 p0 s0 g committed pending)
 		  (cond
 		   [(noto? g) (values (conj committed (conj g g0)) (conj pending p0) s0)] ; This is not a disjunction, so just modify the state and proceed with whatever the value. The normal form consists of the =/= conjoined with the normal form of the constraint we had to remove from the state and recheck. Simplified portions of the constraint we added back to s0 are already in s0. s0 already entails ctn, so we are done.
 		   [(fail? g0) (solve-constraint (disj-cdr g) s ctn committed pending)] ; The head of the disjunction fails, so continue with other disjuncts unless we are out, in which case fail.
@@ -180,7 +180,7 @@
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
-  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
+  (org-define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
     (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
