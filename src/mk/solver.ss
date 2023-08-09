@@ -43,6 +43,7 @@
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
     ;; TODO can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now? may have to do with analyzing which ones have disjunctions that are still normalized even after updates with current unifications
     ;;TODO we can construct the unified normalized goal as a binary tree no var ids and make it faster to use it as a mini substitution for further simplification
+    ;;TODO test whether repeated variable transfers inside a disj crowd up the pending constraint
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (cert (goal? c))
       (if (or (fail? g) (occurs-check* g s)) (values fail fail failure)
@@ -77,6 +78,8 @@
 	  (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
 	    (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		(if (noto? g) (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn (conj committed g) pending)
+		    (solve-constraint g s ctn committed pending)
+		    #;
 		 ;;TODO add a flag to solve-constraint that signals that disjs are normalized so it can skip the head(s)
 		 (let-values ([(g0 p0 s0) (solve-constraint recheck (extend s (=/=-lhs (disj-car g)) (conj diseq disunified)) ctn succeed succeed)]) ; Check that the constraints that need to be rechecked are consistent with x=/=y
 		   (org-display g0 p0 s0 g committed pending)
@@ -153,18 +156,17 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn committed pending)))))
 
-  (define (solve-disj g s ctn committed pending)
+  (org-define (solve-disj g s ctn committed pending)
     (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
-      (let* ([lhs (conj c-lhs p-lhs)]
-	     [maybe-== (conj-memp lhs ==?)])
+      (let* ([lhs (conj c-lhs p-lhs)])
 	(if (fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)
 	    (let*-values ([(c-rhs p-rhs s-rhs)
-			   (if maybe-== (solve-constraint (disj-rhs g) s ctn succeed succeed)
+			   (if (conj-memp lhs ==?) (solve-constraint (disj-rhs g) s ctn succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
 			       (values succeed (conj (disj-rhs g) ctn) s))]
 			  [(rhs) (conj c-rhs p-rhs)])
 	      (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
 		  (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
-		    (values committed (conj pending (conj cs (conj (if (or (not maybe-==) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))) s))))))))
+		    (values committed (conj pending (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))) s))))))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
