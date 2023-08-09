@@ -34,10 +34,10 @@
 
   (define (walk s v)
     (cert (state? s))
-    (let-values ([(binding v) (walk-binding (state-substitution s) v)]) v))
+    (let-values ([(binding v) (walk-var-val s v)]) v))
 
   (define (walk-var s v)
-    (let-values ([(binding v) (walk-binding (state-substitution s) v)]) (if (goal? v) binding v)))
+    (let-values ([(binding v) (walk-var-val s v)]) (if (goal? v) binding v)))
 
   (define (walk-var-val s v)
     (walk-binding (state-substitution s) v))
@@ -62,9 +62,9 @@
   
   (define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
-	      (cert (state? s)) ; -> substitution? goal?
-    (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
-		 [(y-var y) (walk-binding (state-substitution s) y)])
+    (cert (state? s)) ; -> substitution? goal?
+    (let-values ([(x-var x) (walk-var-val s x)]
+		 [(y-var y) (walk-var-val s y)])
       (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
 	  (unify-binding s y-var y x-var x)
 	  (unify-binding s x-var x y-var y))))
@@ -125,9 +125,9 @@
   
   (define (disunify s x y)
     ;; Specialized unification for =/= constraints. Only solves enough to confirm non failure and simplifies using special routines for =/=.
-	      (cert (state? s)) ; -> substitution? goal?
-    (let-values ([(x-var x) (walk-binding (state-substitution s) x)]
-		 [(y-var y) (walk-binding (state-substitution s) y)]) ;TODO how does disunify play with constraints in substitution?
+    (cert (state? s)) ; -> substitution? goal?
+    (let-values ([(x-var x) (walk-var-val s x)]
+		 [(y-var y) (walk-var-val s y)]) ;TODO how does disunify play with constraints in substitution?
       (if (eq? x-var y-var) (values fail fail) ; The same variable is never =/= itself regardless of value or constraint.
 	  (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
 	      (disunify-binding s y-var y x-var x)
