@@ -42,20 +42,15 @@
   (define (walk-var-val s v)
     (walk-binding (state-substitution s) v))
 
-  (org-define (walk-constraint s v)
-    (cert (state? s) (var? v))
-    (let-values ([(binding v) (walk-binding (state-substitution s) v)])
-      (org-printf "walk constraint")
-      (cert (or (var? v) (goal? v))) ;TODO can we remove walk-constraint since succeed is the new unbound?
-      (if (var? v) succeed v)))
+  (define (substitution-ref s v)
+    ;; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
+    (cert (sbral? s) (var? v))
+    (sbral-ref s (fx- (sbral-length s) (var-id v)) unbound))
   
   (define (walk-binding s v)
     (cert (sbral? s) (not (and (var? v) (zero? (var-id v)))))
     (if (var? v)
-	(let ([walked (sbral-ref
-		       s
-		       (fx- (sbral-length s) (var-id v)) ; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
-		       unbound)])
+	(let ([walked (substitution-ref s v)])
 	  ;(printf "walked ~s ~s ~%" v walked)
 	  (exclusive-cond
 	   [(unbound? walked) (values v v)]
@@ -158,10 +153,10 @@
   
   ;; === CONSTRAINTS ===
   
-  (org-define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
+  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
     (cert (state? s) (goal? c) (list? vs))
     (fold-left (lambda (s v)
-		 (extend s v (conj (walk-constraint s v) c))
+		 (extend s v (conj (substitution-ref (state-substitution s) v) c))
 		 #;;TODO clean up state add constraint. remove dead code
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 

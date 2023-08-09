@@ -68,10 +68,19 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
 
-    (display (run1 (body)
-		   (absento 1 body)
-		   (evalo `(letrec ([f (lambda (x y) ,body)])
-			    (f 1)) 1)))
+    #;
+(parameterize ([lazy-solver #f])
+ (trace-run (body)
+	    (absento '(1 . 1) body)
+	    ;;	       (== body '(cons x x))
+	    (evalo `(letrec ([f (lambda (x) ,body)])
+		      (f 1)) '(1 . 1))))
+#;
+    ((letrec (apply
+          [lookup]
+          [literal]
+          [apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)]))
+  __)
     
 ;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
 

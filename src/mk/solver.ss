@@ -132,7 +132,7 @@
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
   
-  (define (solve-matcho g s ctn committed pending)
+  (org-define (solve-matcho g s ctn committed pending)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
 	  (solve-constraint g s ctn committed pending)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
@@ -144,12 +144,12 @@
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn committed pending)))))
 
-  (org-define (solve-disj g s ctn committed pending)
+  (org-define (solve-disj g s ctn committed pending) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
     (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
       (let* ([lhs (conj c-lhs p-lhs)])
 	(if (fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)
 	    (let*-values ([(c-rhs p-rhs s-rhs)
-			   (if (conj-memp lhs ==?) (solve-constraint (disj-rhs g) s ctn succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
+			   (if (or (not (lazy-solver)) (conj-memp lhs ==?)) (solve-constraint (disj-rhs g) s ctn succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
 			       (values succeed (conj (disj-rhs g) ctn) s))]
 			  [(rhs) (conj c-rhs p-rhs)])
 	      (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)

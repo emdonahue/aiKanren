@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export simplification-level
+  (export lazy-solver
 	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
 	  var make-var var? var-id set-var-id!
@@ -30,7 +30,7 @@
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
-  (define simplification-level (make-parameter 2))
+  (define lazy-solver (make-parameter #t))
   
   ;; === RUNNER ===
   (define-structure (runner stream query package))

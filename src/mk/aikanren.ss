@@ -12,6 +12,7 @@
    appendo assoco asspo for-eacho ; List
    __ ; Quantification
    printfo displayo noopo trace-goal trace-run trace-conde prove trace-proof-goals trace-goals var ; Debugging
+   lazy-solver ; Parameters
    )
   (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing))
 
