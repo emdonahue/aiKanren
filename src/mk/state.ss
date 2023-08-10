@@ -121,14 +121,15 @@
 		    (values (conj simplified simplified^) (conj recheck recheck^))))]
      [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)])
 		  (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
-		    (values (disj simplified simplified^) (disj recheck recheck^))))]
-     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+		    (values succeed (disj (conj simplified recheck) (conj simplified^ recheck^)))))]
+     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=
 		(exclusive-cond
 		 [(failure? s^) (values fail fail)]
 		 [(eq? s s^) (values succeed succeed)]
 		 [else (values (make-== (caar s^) (cdar s^)) succeed)]))]
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
-		  (values succeed (noto (conj simplified recheck))))]
+		  (if (and (succeed? simplified) (succeed? recheck)) (values fail fail)
+		      (values (noto simplified) succeed)))] ;(values succeed (noto (conj simplified recheck)))
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
      [(constraint? g) (nyi simplify unification constraint)]
      [(procedure? g) (nyi simplify unification procedure)]

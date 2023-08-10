@@ -199,6 +199,8 @@
       (tassert "simplify == & ^==^" (simplify-unification (== x2 2) s) (list (== x2 2) succeed))
 
       (tassert "simplify == & =/=" (simplify-unification (=/= x1 1) s) (list fail fail))
+      (tassert "simplify == & =/=!" (simplify-unification (=/= x1 2) s) (list succeed succeed))
+      (tassert "simplify == & =/=?" (simplify-unification (=/= x1 1) s-free) (list (=/= x2 1) succeed))
       ;(tassert "simplify == & =/=^" (simplify-unification (=/= x1 2) s) (list succeed succeed))
 					;(tassert "simplify == & ^=/=" (simplify-unification (=/= x2 1) s) (list (=/= x2 1) succeed))
 
