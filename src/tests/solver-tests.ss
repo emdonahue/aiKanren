@@ -218,6 +218,7 @@
       (tassert "simplify == & matcho fail" (simplify-unification (matcho ([x1 (a . d)])) s) (list fail fail))
       (tassert "simplify == & matcho simplified" (simplify-unification (matcho ([x1 (a . d)])) s-free) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (eq? x2 (car (matcho-out-vars (car g)))))))
       (tassert "simplify == & matcho recheck" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
+      (tassert "simplify == & not matcho succeed" (simplify-unification (noto (matcho ([x1 (a . d)]))) s) (list succeed succeed))
       
       
       )
