@@ -1,6 +1,6 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify reify-var instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var walk-var-val extend unbind-constraint) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils))
+  (export reify reify-var instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var walk-var-val extend unbind-constraint simplify-unification) ;;TODO double check state exports. remove extend at least
+  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils) (mini-substitution))
 
   (define unbound succeed) ; Internal placeholder for unbound variables in the substitution.
   (define unbound? succeed?) ;TODO replace unbound with success as null element in state
@@ -100,30 +100,49 @@
   (define (extend-constraint s var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var))
-    (let ([c (simplify-unification var-c var val)])
-      (if (fail? c) (values fail fail fail failure)
-	  (values (cons (cons var val) bindings) succeed (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
+    (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))])
+      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure)
+	  (values (cons (cons var val) bindings) simplified (conj simplified (conj recheck val-c)) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
     (cert (state? s) (not (eq? x y)))
     (set-state-substitution
-     s
-     (sbral-set-ref
-      (state-substitution s)
-      (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
+     s (sbral-set-ref
+	(state-substitution s)
+	(fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
 
-  (define (simplify-unification g v x) ;TODO simplifiers need more thorough testing
-    (cert (goal? g) (var? v)) ;TODO separate into conj and disj simplifier. conj can assume all primitive constraints attribute to var. disj simplifier has to check
+  (org-define (simplify-unification g s)
+    (cert (goal? g))
     (exclusive-cond
-     [(conj? g) (conj (simplify-unification (conj-lhs g) v x)
-		      (simplify-unification (conj-rhs g) v x))]
-     [(disj? g) (disj (simplify-unification (disj-lhs g) v x) ;TODO consider only simplifying part of disj to guarantee that analyzed constraints attribute to the currently unified pair.
-		      (simplify-unification (disj-rhs g) v x))]
-     [(==? g) (if (eq? v (==-lhs g)) (== x (==-rhs g)) g)]
-     [(noto? g) (noto (simplify-unification (noto-goal g) v x))]
-     [(pconstraint? g) (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)]
-     [else g]))
+     [(or (fail? g) (succeed? g)) (values g g)]
+     [(conj? g) (let-values ([(simplified recheck) (simplify-unification (conj-lhs g) s)])
+		  (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
+		    (values (conj simplified simplified^) (conj recheck recheck^))))]
+     [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)])
+		  (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
+		    (values (disj simplified simplified^) (disj recheck recheck^))))]
+     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+		(exclusive-cond
+		 [(failure? s^) (values fail fail)]
+		 [(eq? s s^) (values succeed succeed)]
+		 [else (values succeed (make-== (caar s^) (cdar s^)))]))]
+     [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
+		  (values succeed (noto (conj simplified recheck))))]
+     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
+     [(constraint? g) (nyi simplify unification constraint)]
+     [(procedure? g) (nyi simplify unification procedure)]
+     [(matcho? g) (values succeed g)] ;TODO simplify matcho with ==
+     [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
+
+  (define (simplify-unification/pconstraint g s vars)
+    (if (null? vars) (values succeed g)
+	(let ([walked (mini-walk s (car vars))])
+	  (if (eq? (car vars) walked)
+	      (simplify-unification/pconstraint g s (cdr vars))
+	      (simplify-unification ((pconstraint-procedure g) (car vars) walked (pconstraint-data g)) s))))
+#;
+    (values succeed (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)))
 
   ;; === DISUNIFICATION ===
   

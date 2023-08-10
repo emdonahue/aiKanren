@@ -191,6 +191,10 @@
 	     (run1 (x1 x2) (== x1 1) (constrain (disj* (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
+    (let ([s (list (cons x1 1))])
+      (tassert "== simplify == & ==" (simplify-unification (=/= x1 1) s) (list succeed ))
+
+      )
 
     ;; === DISJUNCTION ===
 
