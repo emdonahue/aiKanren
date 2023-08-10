@@ -48,10 +48,10 @@
       (cert (goal? simplified) (goal? recheck))
       (if (fail? bindings) (values fail fail failure)
 	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
-	      (let-values ([(simplified2) 3])
+	      (let-values ([(simplified/simplified simplified/recheck) (simplify-unification simplified bindings)]) ;TODO special case bindings length 1 => we have already done all solving
 		(solve-constraint
-		 (conj simplified recheck) s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
-									   succeed bindings)) pending))))))
+		 (conj simplified/recheck recheck) (store-constraint s simplified/simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
+									      succeed bindings)) pending))))))
 
   (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
