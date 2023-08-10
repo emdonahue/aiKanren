@@ -47,10 +47,9 @@
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (cert (goal? c))
       (if (fail? g) (values fail fail failure)
-	  (let ([g (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)])
-	    (org-display g)
-	    (if (occurs-check* g s) (values fail fail failure) ;(for-all occurs-check g)
-		(solve-constraint c s ctn (conj committed g) pending))))))
+	  (let ([bindings (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)])
+	    (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) g)) (values fail fail failure) ;(for-all occurs-check g) ;(occurs-check* bindings s)
+		(solve-constraint c s ctn (conj committed (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)) pending))))))
 
   (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
     ;; TODO can we pack eigen checks onto occurs check and get them for free?
@@ -61,6 +60,7 @@
      [else (occurs-check s (==-lhs g) (==-rhs g))]))
 
   (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
+    ;; Returns #t if it detects a cyclic unification.
 	      (cert (state? s) (var? v))
 	      (exclusive-cond
 	       [(eq? v term) #t] ; term is already walked by normalized ==s
