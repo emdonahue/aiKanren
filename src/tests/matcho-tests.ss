@@ -34,7 +34,7 @@
     (tassert "match constraint ground" (run1 (x1) (let ([m '(1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) 1)
     (tassert "match constraint ground-free" (run1 (x1) (let ([m (list x1 2)]) (constrain (matcho ([m (a 2)]) (== a 1))))) 1)
     (tassert "match constraint free" (matcho-out-vars (run1 (x1) (constrain (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
-    (tassert "match constraint disj first" (matcho-out-vars (cadr (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))))) (list x2))
+    (tassert "match constraint disj first" (matcho-out-vars (cadr (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))))) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-out-vars g)))))
     (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
     (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
     (tassert "match constraint no fresh" (run1 (x1 x2) (constrain (matcho ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
