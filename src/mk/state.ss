@@ -60,45 +60,49 @@
 
   ;; === UNIFICATION ===
   
-  (define (unify s x y) ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
+  (define unify ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
-    (cert (state? s)) ; -> substitution? goal?
-    (let-values ([(x-var x) (walk-var-val s x)]
-		 [(y-var y) (walk-var-val s y)])
-      (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
-	  (unify-binding s y-var y x-var x)
-	  (unify-binding s x-var x y-var y))))
+    (org-case-lambda
+      [(s x y) (unify s x y '())]
+      [(s x y bindings)
+       (cert (state? s)) ; -> bindings(goal?) constraints(goal? state?
+       (let-values ([(x-var x) (walk-var-val s x)]
+		    [(y-var y) (walk-var-val s y)])
+	 (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
+	     (unify-binding s y-var y x-var x bindings)
+	     (unify-binding s x-var x y-var y bindings)))]))
 
-  (define (unify-binding s x-var x y-var y) ; If both vars, x-var guaranteed to have lower id
+  (define (unify-binding s x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (if (eq? x-var y-var) (values succeed succeed s) (extend-constraint s x-var y-var x y)) ; x->y, y->y, ^cx(y)&cy
-	    (extend-constraint s x-var y x succeed))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
-       [(eq? x y) (values succeed succeed s)]
+	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed s) (extend-constraint s x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
+	    (extend-constraint s x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
+       [(eq? x y) (values bindings succeed s)]
        [(goal? y) (if (var? x)
-		      (extend-constraint s x y-var succeed y) ; x->y, y->y, ^cy. y always replaces x due to id, 
-		      (extend-constraint s y-var x y succeed))] ; y->x, ^cy(x). unless x is a constant.
-       [(var? x) (extend-var s x y)]
-       [(var? y) (extend-var s y x)]
+		      (extend-constraint s x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
+		      (extend-constraint s y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
+       [(var? x) (extend-var s x y bindings)]
+       [(var? y) (extend-var s y x bindings)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
-	    ([(g c s) (unify s (car x) (car y))])
-	  (if (fail? g)
+	    ([(bindings c s) (unify s (car x) (car y) bindings)])
+	  (if (fail? bindings)
 	      (values fail fail failure)
-	      (let-values ([(g^ c^ s) (unify s (cdr x) (cdr y))])
-		(values (conj g g^) (conj c c^) s))))]
+	      (let-values ([(bindings c^ s) (unify s (cdr x) (cdr y) bindings)])
+		(values bindings (conj c c^) s))))]
        [else (values fail fail failure)]))
   
-  (define (extend-var s x y)
+  (define (extend-var s x y bindings)
     ;; Insert a new binding between x and y into the substitution.
-    (values (== x y) succeed (extend s x y)))
+    (values (cons (cons x y) bindings) succeed (extend s x y)))
 
-  (define (extend-constraint s var val var-c val-c)
+  (define (extend-constraint s var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
+    (cert (var? var))
     (let ([c (simplify-unification var-c var val)])
       (if (fail? c) (values fail fail failure)
-	  (values (== var val) (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
+	  (values (cons (cons var val) bindings) (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.

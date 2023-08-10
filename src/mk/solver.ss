@@ -46,11 +46,11 @@
     ;;TODO test whether repeated variable transfers inside a disj crowd up the pending constraint
     (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
       (cert (goal? c))
-      (if (or (fail? g) (occurs-check* g s)) (values fail fail failure)
-	  (solve-constraint c s ctn (conj committed g) pending))))
-#;
-  (define (simplify-== g us)
-    3)
+      (if (fail? g) (values fail fail failure)
+	  (let ([g (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)])
+	    (org-display g)
+	    (if (occurs-check* g s) (values fail fail failure) ;(for-all occurs-check g)
+		(solve-constraint c s ctn (conj committed g) pending))))))
 
   (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
     ;; TODO can we pack eigen checks onto occurs check and get them for free?
@@ -87,12 +87,12 @@
     ;; 3) g simplified under x=/=y, but only conjuncts that might be unnormalized. We must re-check these with the full solver.
     ;; 4) The final disequality constraint x=/=y. If it is already entailed by our simplifications of g, just return succeed. This will be conjoined to the constraint from #2 when adding to the store.
     (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
-    (exclusive-cond
+x    (exclusive-cond
      [(succeed? g) (values succeed succeed succeed d)] ; If no constraints on x, add succeed back to the store.
      [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
-		     [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))])
-		(cond
-		 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
+		     [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
+		(exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
+		 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied 
 		 [(eq? s s^) (values succeed fail succeed d)] ; == same as =/= => =/= unsatisfiable
 		 [else (values g g succeed d)]))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
