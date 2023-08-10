@@ -136,7 +136,7 @@
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
 
   (define (simplify-unification/pconstraint g s vars)
-    (if (null? vars) (values succeed g)
+    (if (null? vars) (values g succeed)
 	(let ([walked (mini-walk s (car vars))])
 	  (if (eq? (car vars) walked)
 	      (simplify-unification/pconstraint g s (cdr vars))
