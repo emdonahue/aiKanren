@@ -200,17 +200,20 @@
       (tassert "simplify == & ==?" (simplify-unification (== x2 2) s) (list (== x2 2) succeed))
       (tassert "simplify == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list (conj (== x3 3) (== x2 2)) succeed))
 
-      (tassert "simplify == & =/=" (simplify-unification (=/= x1 1) s) (list fail fail))
+      (tassert "simplify == & =/=" (simplify-unification (=/= x1 1) s) (list fail succeed))
       (tassert "simplify == & =/=!" (simplify-unification (=/= x1 2) s) (list succeed succeed))
       (tassert "simplify == & =/=?" (simplify-unification (=/= x1 1) s-free) (list (=/= x2 1) succeed))
       ;(tassert "simplify == & =/=^" (simplify-unification (=/= x1 2) s) (list succeed succeed))
 					;(tassert "simplify == & ^=/=" (simplify-unification (=/= x2 1) s) (list (=/= x2 1) succeed))
 
       (tassert "simplify == & satisfied" (simplify-unification (numbero x1) s) (list succeed succeed))
-      (tassert "simplify == & not satisfied" (simplify-unification (noto (numbero x1)) s) (list fail fail))
+      (tassert "simplify == & not satisfied" (simplify-unification (noto (numbero x1)) s) (list fail succeed))
       (tassert "simplify == & unsatisfiable" (simplify-unification (symbolo x1) s) (list fail fail))
+      (tassert "simplify == & not unsatisfiable" (simplify-unification (noto (symbolo x1)) s) (list succeed succeed))
       (tassert "simplify == & undecidable" (simplify-unification (symbolo x2) s) (list (symbolo x2) succeed))
+      (tassert "simplify == & not undecidable" (simplify-unification (noto (symbolo x2)) s) (list (noto (symbolo x2)) succeed))
       (tassert "simplify ==f & undecidable" (simplify-unification (symbolo x1) s-free) (list (symbolo x2) succeed))
+      (tassert "simplify ==f & not undecidable" (simplify-unification (noto (symbolo x1)) s-free) (list (noto (symbolo x2)) succeed))
       
       )
 

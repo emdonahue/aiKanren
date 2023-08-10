@@ -70,6 +70,12 @@
       (tassert "evalo quine" (evalo q) q))
 
     #;
+     (run 1 (body)
+	    (absento '(1 . 1) body)
+	    ;;	       (== body '(cons x x))
+	    (evalo `(letrec ([f (lambda (x) ,body)])
+		      (f 1)) '(1 . 1)))
+#;
 (parameterize ([lazy-solver #f])
  (trace-run (body)
 	    (absento '(1 . 1) body)
