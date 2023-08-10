@@ -126,7 +126,7 @@
 		(exclusive-cond
 		 [(failure? s^) (values fail fail)]
 		 [(eq? s s^) (values succeed succeed)]
-		 [else (values succeed (make-== (caar s^) (cdar s^)))]))]
+		 [else (values (make-== (caar s^) (cdar s^)) succeed)]))]
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (values succeed (noto (conj simplified recheck))))]
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
