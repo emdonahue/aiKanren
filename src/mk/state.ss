@@ -117,17 +117,18 @@
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
      [(conj? g) (let-values ([(simplified recheck) (simplify-unification (conj-lhs g) s)])
-		  (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
-		    (values (conj simplified simplified^) (conj recheck recheck^))))]
-     [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)])
-		  (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
-		    (values succeed (disj (conj simplified recheck) (conj simplified^ recheck^)))))]
+		  (if (or (fail? simplified) (fail? recheck)) (values fail fail)
+		   (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
+		     (values (conj simplified simplified^) (conj recheck recheck^)))))]
+     [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]) ;TODO make disj lazy in simplify eq
+		  (if (and (succeed? simplified) (succeed? recheck)) (values succeed succeed)
+		   (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
+		     (values succeed (disj (conj simplified recheck) (conj simplified^ recheck^))))))]
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=
 		(if (failure? s^) (values fail fail)
 		    (values (mini-diff s^ s) succeed)))]
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
-		  (if (succeed? recheck)
-		      (values (noto simplified) succeed)
+		  (if (succeed? recheck) (values (noto simplified) succeed)
 		      (values succeed (noto (conj simplified recheck)))))]
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
      [(constraint? g) (nyi simplify unification constraint)]
