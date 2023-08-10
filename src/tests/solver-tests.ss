@@ -192,7 +192,9 @@
     (tassert "==-c | ==-c transfers bound"
 	     (run1 (x1 x2) (== x1 3) (constrain (disj* (== x1 1) (== x2 2)))) (list 3 2))
     (let ([s (list (cons x1 1))])
-      (tassert "== simplify == & ==" (simplify-unification (=/= x1 1) s) (list succeed ))
+      (tassert "== simplify == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
+      (tassert "== simplify == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
+      (tassert "== simplify == & ==^" (simplify-unification (== x1 x2) s) (list succeed (== x2 1)))
 
       )
 
