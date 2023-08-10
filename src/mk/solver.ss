@@ -44,30 +44,25 @@
     ;; TODO can we sort our conjunctions into those containing variables not touched by the current unifications and so may need to be further walked/solved and those that we can just directly strap on to the out parameter now? may have to do with analyzing which ones have disjunctions that are still normalized even after updates with current unifications
     ;;TODO we can construct the unified normalized goal as a binary tree no var ids and make it faster to use it as a mini substitution for further simplification
     ;;TODO test whether repeated variable transfers inside a disj crowd up the pending constraint
-    (let-values ([(g c s) (unify s (==-lhs g) (==-rhs g))]) ; g is the conjunction of normalized unifications made. c is the conjunction of constraints that need to be rechecked.
-      (cert (goal? c))
-      (if (fail? g) (values fail fail failure)
-	  (let ([bindings (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)])
-	    (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) g)) (values fail fail failure) ;(for-all occurs-check g) ;(occurs-check* bindings s)
-		(solve-constraint c s ctn (conj committed (fold-left (lambda (c e) (conj c (== (car e) (cdr e)))) succeed g)) pending))))))
-
-  (define (occurs-check* g s) ; TODO add a non occurs check =!= or ==!
-    ;; TODO can we pack eigen checks onto occurs check and get them for free?
-    (cert (or (conj? g) (==? g) (succeed? g)))
-    (exclusive-cond
-     [(conj? g) (and (occurs-check* (conj-lhs g) s) (occurs-check* (conj-rhs g) s))]
-     [(succeed? g) #f]
-     [else (occurs-check s (==-lhs g) (==-rhs g))]))
+    (let-values ([(bindings simplified recheck s) (unify s (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. c is the conjunction of constraints that need to be simplified or rechecked.
+      (cert (goal? simplified) (goal? recheck))
+      (if (fail? bindings) (values fail fail failure)
+	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
+	      (solve-constraint
+	       recheck s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
+						  succeed bindings)) pending)))))
 
   (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
+    ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
+    ;; TODO add a non occurs check =!= or ==!
     ;; Returns #t if it detects a cyclic unification.
-	      (cert (state? s) (var? v))
-	      (exclusive-cond
-	       [(eq? v term) #t] ; term is already walked by normalized ==s
-	       [(pair? term)
-		(or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
-		 (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
-	       [else #f]))
+    (cert (state? s) (var? v))
+    (exclusive-cond
+     [(eq? v term) #t] ; term is already walked by normalized ==s
+     [(pair? term)
+      (or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
+	  (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
+     [else #f]))
   
   (org-define (solve-=/= g s ctn committed pending)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.

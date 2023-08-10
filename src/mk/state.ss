@@ -76,9 +76,9 @@
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed s) (extend-constraint s x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
+	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed succeed s) (extend-constraint s x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
 	    (extend-constraint s x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
-       [(eq? x y) (values bindings succeed s)]
+       [(eq? x y) (values bindings succeed succeed s)]
        [(goal? y) (if (var? x)
 		      (extend-constraint s x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
 		      (extend-constraint s y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
@@ -86,23 +86,23 @@
        [(var? y) (extend-var s y x bindings)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
-	    ([(bindings c s) (unify s (car x) (car y) bindings)])
+	    ([(bindings simplified recheck s) (unify s (car x) (car y) bindings)])
 	  (if (fail? bindings)
-	      (values fail fail failure)
-	      (let-values ([(bindings c^ s) (unify s (cdr x) (cdr y) bindings)])
-		(values bindings (conj c c^) s))))]
-       [else (values fail fail failure)]))
+	      (values fail fail fail failure)
+	      (let-values ([(bindings simplified^ recheck^ s) (unify s (cdr x) (cdr y) bindings)])
+		(values bindings (conj simplified simplified^) (conj recheck recheck^) s))))]
+       [else (values fail fail fail failure)]))
   
   (define (extend-var s x y bindings)
     ;; Insert a new binding between x and y into the substitution.
-    (values (cons (cons x y) bindings) succeed (extend s x y)))
+    (values (cons (cons x y) bindings) succeed succeed (extend s x y)))
 
   (define (extend-constraint s var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var))
     (let ([c (simplify-unification var-c var val)])
-      (if (fail? c) (values fail fail failure)
-	  (values (cons (cons var val) bindings) (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
+      (if (fail? c) (values fail fail fail failure)
+	  (values (cons (cons var val) bindings) succeed (conj c val-c) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.

@@ -16,7 +16,7 @@
 	  constraint constraint? constraint-goal set-constraint-goal
 	  goal? ;goal-cond
 	  succeed fail succeed? fail? trivial-goal?
-	  == ==? ==-lhs ==-rhs
+	  make-== == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize
