@@ -1,6 +1,6 @@
 					;TODO remove mini-substitution
 (library (mini-substitution)
-  (export mini-walk mini-unify mini-reify)
+  (export mini-walk mini-unify mini-reify mini-diff)
   (import (chezscheme) (datatypes) (utils))
 
 
@@ -31,6 +31,12 @@
 	(let ([s (mini-unify s (car x) (car y))])
 	  (if (failure? s) s (mini-unify s (cdr x) (cdr y))))]
        [else failure])))
+
+  (define (mini-diff s^ s)
+    ;; Returns a conjunction of == representing the bindings in s^ that are not in s
+    (if (eq? s^ s) succeed
+	(conj (make-== (caar s^) (cdar s^)) (mini-diff (cdr s^) s))))
+  
 
   (define (extend s x y)
     (cons (cons x y) s)))

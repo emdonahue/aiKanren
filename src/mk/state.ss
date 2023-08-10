@@ -62,7 +62,7 @@
   
   (define unify ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
-    (org-case-lambda
+    (org-case-lambda unify
       [(s x y) (unify s x y '())]
       [(s x y bindings)
        (cert (state? s)) ; -> bindings(goal?) constraints(goal? state?
@@ -126,7 +126,7 @@
 		(exclusive-cond
 		 [(failure? s^) (values fail fail)]
 		 [(eq? s s^) (values succeed succeed)]
-		 [else (values (make-== (caar s^) (cdar s^)) succeed)]))]
+		 [else (values (mini-diff s^ s) succeed)]))]
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (if (and (succeed? simplified) (succeed? recheck)) (values fail fail)
 		      (values (noto simplified) succeed)))] ;(values succeed (noto (conj simplified recheck)))

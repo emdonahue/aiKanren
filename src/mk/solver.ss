@@ -36,7 +36,7 @@
 	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
 		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
   
-  (define (solve-== g s ctn committed pending)
+  (org-define (solve-== g s ctn committed pending)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
@@ -48,9 +48,10 @@
       (cert (goal? simplified) (goal? recheck))
       (if (fail? bindings) (values fail fail failure)
 	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
-	      (solve-constraint
-	       (conj simplified recheck) s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
-							  succeed bindings)) pending)))))
+	      (begin (org-display bindings simplified recheck)
+	       (solve-constraint
+		(conj simplified recheck) s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
+									   succeed bindings)) pending))))))
 
   (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
