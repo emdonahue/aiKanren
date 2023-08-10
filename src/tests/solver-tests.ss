@@ -205,8 +205,6 @@
       (tassert "simplify == & =/=" (simplify-unification (=/= x1 1) s) (list fail succeed))
       (tassert "simplify == & =/=!" (simplify-unification (=/= x1 2) s) (list succeed succeed))
       (tassert "simplify == & =/=?" (simplify-unification (=/= x1 1) s-free) (list (=/= x2 1) succeed))
-      ;(tassert "simplify == & =/=^" (simplify-unification (=/= x1 2) s) (list succeed succeed))
-					;(tassert "simplify == & ^=/=" (simplify-unification (=/= x2 1) s) (list (=/= x2 1) succeed))
 
       (tassert "simplify == & satisfied" (simplify-unification (numbero x1) s) (list succeed succeed))
       (tassert "simplify == & not satisfied" (simplify-unification (noto (numbero x1)) s) (list fail succeed))
@@ -217,6 +215,9 @@
       (tassert "simplify ==f & undecidable" (simplify-unification (symbolo x1) s-free) (list (symbolo x2) succeed))
       (tassert "simplify ==f & not undecidable" (simplify-unification (noto (symbolo x1)) s-free) (list (noto (symbolo x2)) succeed))
 
+      (tassert "simplify == & matcho fail" (simplify-unification (matcho ([x1 (a . d)])) s) (list fail fail))
+      (tassert "simplify == & matcho simplified" (simplify-unification (matcho ([x1 (a . d)])) s-free) 1)
+      (tassert "simplify == & matcho recheck" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 4)))) 2)
       
       
       )

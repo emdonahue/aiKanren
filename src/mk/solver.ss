@@ -48,7 +48,9 @@
       (cert (goal? simplified) (goal? recheck))
       (if (fail? bindings) (values fail fail failure)
 	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
-	      (let-values ([(simplified/simplified simplified/recheck) (simplify-unification simplified bindings)]) ;TODO special case bindings length 1 => we have already done all solving
+	      (let-values ([(simplified/simplified simplified/recheck) ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
+			    (if (and (not (null? bindings)) (not (null? (cdr bindings)))) (values simplified succeed) ; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
+				(simplify-unification simplified bindings))]) 
 		(solve-constraint
 		 (conj simplified/recheck recheck) (store-constraint s simplified/simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
 									      succeed bindings)) pending))))))
