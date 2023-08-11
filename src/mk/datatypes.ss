@@ -19,7 +19,7 @@
 	  make-== == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
-	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize
+	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
 	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed?
@@ -137,7 +137,7 @@
   (define-values (succeed fail) (values (vector 'succeed) (vector 'fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
-  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==
+  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==. then we can simplify the order checking inside the unifier
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
@@ -146,9 +146,9 @@
   (define (== x y)
     (cond
      [(or (eq? x __) (eq? y __)) succeed]
-     [(or (var? x) (var? y)) (make-== x y)]
+     [(or (var? x) (var? y)) (make-== x y)] ;TODO == should put vars first so it has a better chance of simplifying in the ctn
      [(equal? x y) succeed]
-     [(and (pair? x) (pair? y)) (make-== x y)]
+     [(and (pair? x) (pair? y)) (make-== x y)] ;TODO the double pair case for == should factorize into a conj of ==. this can then simplify the unifier's order checking
      [else fail]))
   
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
@@ -314,6 +314,10 @@
 	      (conj-filter intersection disj?)
 	      (conj-diff lhs intersection)
 	      (conj-diff rhs intersection))))
+
+  (define (disj-factorized lhs rhs)
+    (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
+      (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))))
 
   ;; === QUANTIFICATION ===
 

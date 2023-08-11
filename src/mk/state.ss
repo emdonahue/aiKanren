@@ -121,12 +121,13 @@
 		   (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
 		     (values (conj simplified simplified^) (conj recheck recheck^)))))]
      [(disj? g) (let*-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]
-			      [(lhs) (conj simplified recheck)]) ;TODO make disj lazy in simplify eq
+			      [(lhs) (conj simplified recheck)])
 		  (if (succeed? lhs) (values succeed succeed)
 		      (let*-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)]
 				    [(rhs) (conj simplified^ recheck^)])
+			
 			(if (or (fail? simplified) (not (succeed? recheck))
-				(fail? simplified^) (not (succeed? recheck^))) ;TODO finish the normalization check for == simplify disj
+				(and (or (fail? simplified^) (not (succeed? recheck^)) )))
 			    (values succeed (disj lhs rhs))
 ;			    (values succeed (disj lhs rhs))
 

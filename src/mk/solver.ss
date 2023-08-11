@@ -152,8 +152,7 @@ x    (exclusive-cond
 			       (values succeed (conj (disj-rhs g) ctn) s))]
 			  [(rhs) (conj c-rhs p-rhs)])
 	      (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
-		  (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
-		    (values committed (conj pending (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))) s))))))))
+		  (values committed (conj pending (disj-factorized lhs rhs)) s)))))))
 
   (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
     (case-lambda ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
