@@ -87,7 +87,7 @@
   (define-structure (state substitution constraints pseudocounts varid))
   (define empty-state (make-state empty-substitution empty-constraint-store #f 1))
 
-  (define (set-state-substitution s substitution)
+  (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
     (if (not (failure? substitution))
 	(let ([s (vector-copy s)])
 	  (set-state-substitution! s substitution) s) substitution))
@@ -98,7 +98,7 @@
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
   (define (state-extend-store s g)
-    s)
+    (make-state (state-substitution s) (cons g (state-constraints s)) (state-pseudocounts s) (state-varid s)))
   
   (define (increment-varid s)
     (cert (state? s))
