@@ -266,7 +266,6 @@
     (tassert "=/= (satisfies|undecidable)|(satisfied|undecidable)" (simplify-=/= (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) x1 1 (=/= x1 1)) (list succeed (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (conj (=/= x1 1) (=/= x1 5))))) succeed succeed))
     (tassert "disj common non == are extracted" (run1 (x1) (disj (=/= x1 1) (=/= x1 1))) (=/= x1 1))
     (tassert "stale constraints on multiple vars are ignored when stored" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 2) (== x2 3))) (== x1 1) (== x2 3)) '(1 3))
-    (exit)
 
     ;; === MATCHO ===
 ;;(org-trace    (tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1))
