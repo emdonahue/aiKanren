@@ -125,8 +125,9 @@ x    (exclusive-cond
 					    (conj d (disj lhs rhs))
 					    (disj (if (fail? unified-lhs) lhs (conj d lhs))
 					       (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
-		      (if (or (fail? simplified-lhs) (and (fail? simplified-rhs) (conj-memp simplified-lhs ==?))
-			      (not (succeed? recheck-lhs)) (not (succeed? recheck-rhs)))
+		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
+			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
+				   (conj-memp simplified-lhs ==?)))
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
   

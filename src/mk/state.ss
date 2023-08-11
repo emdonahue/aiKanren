@@ -122,9 +122,9 @@
 		     (values (conj simplified simplified^) (conj recheck recheck^)))))]
      [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]) ;TODO make disj lazy in simplify eq
 		  (if (and (succeed? simplified) (succeed? recheck)) (values succeed succeed)
-		   (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
-		     (values succeed (disj (conj simplified recheck) (conj simplified^ recheck^))))))]
-     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=
+		      (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
+			(values succeed (disj (conj simplified recheck) (conj simplified^ recheck^))))))]
+     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=. may not need to unify lhs if already ==
 		(if (failure? s^) (values fail fail)
 		    (values (mini-diff s^ s) succeed)))]
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
