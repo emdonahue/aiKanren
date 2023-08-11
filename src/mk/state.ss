@@ -190,15 +190,15 @@
   
   (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
-    (let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) (proxy c)))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed. 
-      (fold-left (lambda (s v)
-		   (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
-			 (pretty-print c))
-		   (let ([prev-c (substitution-ref (state-substitution s) v)])
-		     (cert (goal? prev-c))
-		     (extend s v (conj prev-c c)))
+    ;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed. 
+    (fold-left (lambda (s v)
+		 #;
+		 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
+		       (pretty-print c))
+		 (let ([val-or-goal (substitution-ref (state-substitution s) v)])
+		   (if (goal? val-or-goal) (extend s v (conj val-or-goal c)) s))
 #;;TODO clean up state add constraint. remove dead code
-		  (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs)))
+		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 
   (define (get-constraints s vs)
     (fold-left make-conj succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
