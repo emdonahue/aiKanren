@@ -13,9 +13,9 @@
 	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  constraint constraint? constraint-goal set-constraint-goal make-proxy-constraint  proxy-constraint? proxy-constraint-constraint
+	  constraint constraint? constraint-goal set-constraint-goal proxy proxy-constraint? proxy-constraint-constraint
 	  goal? ;goal-cond
-	  succeed fail succeed? fail? trivial-goal?
+	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
 	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
@@ -79,6 +79,9 @@
     (memq var (pconstraint-vars p)))
 
   (define-structure (proxy-constraint constraint))
+  (define (proxy g)
+    (cert (goal? g))
+    (make-proxy-constraint g))
 
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
@@ -134,7 +137,6 @@
   (define-values (succeed fail) (values (vector 'succeed) (vector 'fail)))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
-  (define (trivial-goal? g) (or (fail? g) (succeed? g)))
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
@@ -165,7 +167,7 @@
     (memq var (matcho-out-vars g)))
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (proxy-constraint? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
 
   #;
   (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed

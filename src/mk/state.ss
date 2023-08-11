@@ -15,7 +15,8 @@
 	[(pair? v) (cons (reify s (car v) vs) (reify s (cdr v) vs))]
 	[(var? v)
 	 (if (memq v vs) v
-	  (let* ([w (walk s v)])
+	     (let* ([w (walk s v)]
+		    [w (if (proxy-constraint? w) (proxy-constraint-constraint w) w)])
 	    (if (var? w) w (reify s w (cons v vs)))))]
 	[else v])]))
 
@@ -189,13 +190,13 @@
   
   (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
-    (let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ;(make-proxy-constraint c)
-     (fold-left (lambda (s v)
-		  (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
-			(pretty-print c))
-		  (let ([prev-c (substitution-ref (state-substitution s) v)])
-		    (cert (goal? prev-c))
-		    (extend s v (conj prev-c c)))
+    (let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) (proxy c)))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed. 
+      (fold-left (lambda (s v)
+		   (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
+			 (pretty-print c))
+		   (let ([prev-c (substitution-ref (state-substitution s) v)])
+		     (cert (goal? prev-c))
+		     (extend s v (conj prev-c c)))
 #;;TODO clean up state add constraint. remove dead code
 		  (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs)))
 
