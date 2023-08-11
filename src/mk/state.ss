@@ -128,10 +128,10 @@
 			
 			(if (or (fail? simplified) (not (succeed? recheck))
 				(and (or (fail? simplified^) (not (succeed? recheck^)) )))
-			    (values succeed (disj lhs rhs))
+			    (values succeed (disj-factorized lhs rhs))
 ;			    (values succeed (disj lhs rhs))
 
-			    (values (disj lhs rhs) succeed)))))]
+			    (values (disj-factorized lhs rhs) succeed)))))]
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=. may not need to unify lhs if already ==
 		(if (failure? s^) (values fail fail)
 		    (values (mini-diff s^ s) succeed)))]
