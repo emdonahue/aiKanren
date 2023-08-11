@@ -131,7 +131,7 @@
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
   (define (trivial-goal? g) (or (fail? g) (succeed? g)))
-  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints
+  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==
   (define-structure (conj lhs rhs))
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
@@ -201,6 +201,7 @@
   
   ;; CONJ
   (define (conj lhs rhs) ;TODO replace conj with make-conj or short circuiting conj* where possible
+    (when (not (goal? lhs)) (display lhs))
     (cert (goal? lhs) (goal? rhs))
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]

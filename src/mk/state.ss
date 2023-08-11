@@ -126,10 +126,10 @@
 		      (let*-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)]
 				    [(rhs) (conj simplified^ recheck^)])
 			(if (or (fail? simplified) (not (succeed? recheck))
-				(fail? recheck) (not (succeed? recheck)))
+				(fail? simplified^) (not (succeed? recheck^))) ;TODO finish the normalization check for == simplify disj
 			    (values succeed (disj lhs rhs))
-			    (values succeed (disj lhs rhs))
-			    #;
+;			    (values succeed (disj lhs rhs))
+
 			    (values (disj lhs rhs) succeed)))))]
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=. may not need to unify lhs if already ==
 		(if (failure? s^) (values fail fail)
@@ -142,7 +142,7 @@
      [(procedure? g) (values succeed g)]
      [(matcho? g) (let ([g (normalize-matcho (map (lambda (v) (mini-walk s v)) (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g))])
 		    (cond
-		     [(fail? g) (values fail fail)]
+		     [(fail? g) (values fail fail)] ; can i just return the g case and let one fail be enough?
 		     [(null? (matcho-out-vars g)) (values succeed g)]
 		     [else (values g succeed)]))]
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
@@ -188,10 +188,14 @@
   
   ;; === CONSTRAINTS ===
   
-  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral
+  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
     (fold-left (lambda (s v)
-		 (extend s v (conj (substitution-ref (state-substitution s) v) c))
+		 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
+		       (pretty-print c))
+		 (let ([prev-c (substitution-ref (state-substitution s) v)])
+		   (cert (goal? prev-c))
+		   (extend s v (conj prev-c c)))
 		 #;;TODO clean up state add constraint. remove dead code
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
 

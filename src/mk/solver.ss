@@ -49,7 +49,7 @@
       (if (fail? bindings) (values fail fail failure)
 	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
 	      (let-values ([(simplified/simplified simplified/recheck) ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
-			    (if (and (not (null? bindings)) (not (null? (cdr bindings)))) (values simplified succeed) ; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
+			    (if (or (null? bindings) (null? (cdr bindings))) (values simplified succeed) ; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
 				(simplify-unification simplified bindings))]) 
 		(solve-constraint
 		 (conj simplified/recheck recheck) (store-constraint s simplified/simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
@@ -170,7 +170,7 @@ x    (exclusive-cond
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
-  (org-define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
+  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
     (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
