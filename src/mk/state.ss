@@ -120,10 +120,17 @@
 		  (if (or (fail? simplified) (fail? recheck)) (values fail fail)
 		   (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
 		     (values (conj simplified simplified^) (conj recheck recheck^)))))]
-     [(disj? g) (let-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]) ;TODO make disj lazy in simplify eq
-		  (if (and (succeed? simplified) (succeed? recheck)) (values succeed succeed)
-		      (let-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)])
-			(values succeed (disj (conj simplified recheck) (conj simplified^ recheck^))))))]
+     [(disj? g) (let*-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]
+			      [(lhs) (conj simplified recheck)]) ;TODO make disj lazy in simplify eq
+		  (if (succeed? lhs) (values succeed succeed)
+		      (let*-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)]
+				    [(rhs) (conj simplified^ recheck^)])
+			(if (or (fail? simplified) (not (succeed? recheck))
+				(fail? recheck) (not (succeed? recheck)))
+			    (values succeed (disj lhs rhs))
+			    (values succeed (disj lhs rhs))
+			    #;
+			    (values (disj lhs rhs) succeed)))))]
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=. may not need to unify lhs if already ==
 		(if (failure? s^) (values fail fail)
 		    (values (mini-diff s^ s) succeed)))]
@@ -133,15 +140,14 @@
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(procedure? g) (values succeed g)]
-     [(matcho? g) (if (null? (matcho-out-vars g)) (values succeed g)
-		   (let ([v (mini-walk s (car (matcho-out-vars g)))])
-		     (if (var? v)
-			 (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) succeed)
-			 (if (not (pair? v)) (values fail fail)
-			     (simplify-unification (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))]
+     [(matcho? g) (let ([g (normalize-matcho (map (lambda (v) (mini-walk s v)) (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g))])
+		    (cond
+		     [(fail? g) (values fail fail)]
+		     [(null? (matcho-out-vars g)) (values succeed g)]
+		     [else (values g succeed)]))]
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
   
-  (define (simplify-unification/pconstraint g s vars)
+  (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying
     (if (null? vars) (values g succeed)
 	(let ([walked (mini-walk s (car vars))])
 	  (if (eq? (car vars) walked)
