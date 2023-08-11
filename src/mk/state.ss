@@ -116,21 +116,20 @@
     (cert (goal? g))
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
-     [(conj? g) (let-values ([(simplified recheck) (simplify-unification (conj-lhs g) s)])
-		  (if (or (fail? simplified) (fail? recheck)) (values fail fail)
-		   (let-values ([(simplified^ recheck^) (simplify-unification (conj-rhs g) s)])
-		     (values (conj simplified simplified^) (conj recheck recheck^)))))]
-     [(disj? g) (let*-values ([(simplified recheck) (simplify-unification (disj-lhs g) s)]
-			      [(lhs) (conj simplified recheck)])
+     [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (simplify-unification (conj-lhs g) s)])
+		  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
+		   (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
+		     (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (simplify-unification (disj-lhs g) s)]
+			      [(lhs) (conj simplified-lhs recheck-lhs)])
 		  (if (succeed? lhs) (values succeed succeed)
-		      (let*-values ([(simplified^ recheck^) (simplify-unification (disj-rhs g) s)]
-				    [(rhs) (conj simplified^ recheck^)])
+		      (let*-values ([(simplified-rhs recheck-rhs) (simplify-unification (disj-rhs g) s)]
+				    [(rhs) (conj simplified-rhs recheck-rhs)])
 			
-			(if (or (fail? simplified) (not (succeed? recheck))
-				(and (or (fail? simplified^) (not (succeed? recheck^)) )))
+			(if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
+				(and (or (fail? simplified-rhs) (not (succeed? recheck-rhs))
+					 (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g)))))))))
 			    (values succeed (disj-factorized lhs rhs))
-;			    (values succeed (disj lhs rhs))
-
 			    (values (disj-factorized lhs rhs) succeed)))))]
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))]) ;TODO special case simplify == mini unification like =/=. may not need to unify lhs if already ==
 		(if (failure? s^) (values fail fail)
