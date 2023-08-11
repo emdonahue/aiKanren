@@ -10,10 +10,10 @@
 	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-answers answers? answers-car answers-cdr
 	  answer? state-or-failure?
-	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var
+	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  constraint constraint? constraint-goal set-constraint-goal
+	  constraint constraint? constraint-goal set-constraint-goal make-proxy-constraint  proxy-constraint? proxy-constraint-constraint
 	  goal? ;goal-cond
 	  succeed fail succeed? fail? trivial-goal?
 	  make-== == ==? ==-lhs ==-rhs
@@ -78,6 +78,8 @@
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
 
+  (define-structure (proxy-constraint constraint))
+
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
   
@@ -95,7 +97,9 @@
     (if (not (failure? c))
 	(let ([s (vector-copy s)])
 	  (set-state-constraints! s c) s) c))
-
+  (define (state-extend-store s g)
+    s)
+  
   (define (increment-varid s)
     (cert (state? s))
     (let ([s (vector-copy s)])
