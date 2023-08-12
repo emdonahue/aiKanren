@@ -131,8 +131,12 @@
 				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
 			    (values succeed (disj-factorized lhs rhs))
 			    (values (disj-factorized lhs rhs) succeed)))))]
-     [(==? g) (let-values ([(_ simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
-		(values simplified recheck))]
+     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+		(if (failure? s^) (values fail fail)
+		    (values (mini-diff s^ s) succeed)))]
+     #;
+     (let-values ([(_ simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
+		(values simplified recheck))
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (if (succeed? recheck) (values (noto simplified) succeed)
 		      (values succeed (noto (conj simplified recheck)))))]
