@@ -197,7 +197,7 @@
       (tassert "simplify == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
       (tassert "simplify == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
       (tassert "simplify == & ==^" (simplify-unification (== x1 x2) s) (list (== x2 1) succeed))
-      (tassert "simplify == & ==?" (simplify-unification (== x2 2) s) (list (== x2 2) succeed))
+      (tassert "simplify == & ==?" (simplify-unification (== x2 2) s) (list succeed (== x2 2)))
       (tassert "simplify == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list (conj (== x3 3) (== x2 2)) succeed))
       (tassert "simplify == & ==!&==" (simplify-unification (conj (== x1 2) (== x1 1)) s) (list fail fail))
       (tassert "simplify == & ==&==!" (simplify-unification (conj (== x1 1) (== x1 2)) s) (list fail fail))
@@ -220,7 +220,11 @@
       (tassert "simplify == & matcho recheck" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
       (tassert "simplify == & not matcho succeed" (simplify-unification (noto (matcho ([x1 (a . d)]))) s) (list succeed succeed))
       (tassert "simplify == & not matcho simplified" (simplify-unification (noto (matcho ([x1 (a . d)]))) s-free) (lambda (g) (and (succeed? (cadr g)) (noto? (car g)) (matcho? (noto-goal (car g))) (eq? x2 (car (matcho-out-vars (noto-goal (car g))))))))
-      (tassert "simplify == & not matcho recheck" (simplify-unification (noto (matcho ([x1 (a . d)] [x2 (b . c)]))) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (null? (matcho-out-vars (noto-goal (cadr g)))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (noto-goal (cadr g))))))))
+      (tassert "simplify == & not matcho recheck" (simplify-unification (noto (matcho ([x1 (a . d)] [x2 (b . c)]))) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (null? (matcho-out-vars (noto-goal (cadr g)))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (noto-goal (cadr g)))))))
+      (tassert "simplify == & ==!&==?" (simplify-unification (disj (== x1 2) (== x2 3)) s) (list succeed (== x2 3)))
+      (tassert "simplify == & ==?!&==?" (simplify-unification (disj (== x2 2) (== x2 3)) s) (list succeed (disj (== x2 2) (== x2 3))))
+
+      )
     
 
     ;; === DISJUNCTION ===
