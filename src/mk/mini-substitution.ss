@@ -37,7 +37,7 @@
 	[(not (var? v)) (values #t v)]
 	[(null? tail) (values normalized v)]
 	[(eq? v (caar tail)) (mini-walk-normalized s (cdar tail) s #t)]
-	[else (mini-walk-normalized s v (cdr tail) normalized)])]))
+	[else (mini-walk-normalized s v (cdr tail) (or normalized (eq? v (cdar tail))))])]))
   
   (define (mini-normalized? s v)
     (cert (list? s))

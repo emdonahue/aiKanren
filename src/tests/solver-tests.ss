@@ -196,9 +196,10 @@
 	  [s-pair (list (cons x1 (cons x2 x3)))])
       (tassert "simplify == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
       (tassert "simplify == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
-      (tassert "simplify == & ==^" (simplify-unification (== x1 x2) s) (list (== x2 1) succeed))
-      (tassert "simplify == & ==?" (simplify-unification (== x2 2) s) (list succeed (== x2 2)))
-      (tassert "simplify == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list (conj (== x3 3) (== x2 2)) succeed))
+      (tassert "simplify == & ==?" (simplify-unification (== x1 x2) s) (list succeed (== x2 1)))
+      (tassert "simplify == & ?==" (simplify-unification (== x2 2) s) (list succeed (== x2 2)))
+      (tassert "simplify == & ^==" (simplify-unification (== x2 2) s-free) (list (== x2 2) succeed))
+      (tassert "simplify == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list succeed (conj (== x3 3) (== x2 2))))
       (tassert "simplify == & ==!&==" (simplify-unification (conj (== x1 2) (== x1 1)) s) (list fail fail))
       (tassert "simplify == & ==&==!" (simplify-unification (conj (== x1 1) (== x1 2)) s) (list fail fail))
 
