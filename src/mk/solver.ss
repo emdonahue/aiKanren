@@ -47,15 +47,17 @@
     (let-values ([(bindings simplified recheck s) (unify s (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. c is the conjunction of constraints that need to be simplified or rechecked.
       (cert (goal? simplified) (goal? recheck))
       (if (fail? bindings) (values fail fail failure)
-	  (if (not (for-all (lambda (b) (not (occurs-check s (car b) (cdr b)))) bindings)) (values fail fail failure)
-	      (let-values ([(simplified/simplified simplified/recheck) ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
-			    (if (or (null? bindings) (null? (cdr bindings))) (values simplified succeed) ; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
-				(simplify-unification simplified bindings))]) 
-		(solve-constraint
-		 (conj simplified/recheck recheck) (store-constraint s simplified/simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e))))
-									      succeed bindings)) pending))))))
+	  (let-values ([(simplified/simplified simplified/recheck) ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
+			(if (or (null? bindings) (null? (cdr bindings))) (values simplified succeed) ; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
+			    (simplify-unification simplified bindings))]) 
+	    (occurs-check bindings simplified/simplified (conj simplified/recheck recheck) s ctn committed pending)))))
 
-  (define (occurs-check s v term) ;TODO see if the normalized ==s can help speed up occurs-check, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
+  (define (occurs-check bindings simplified recheck s ctn committed pending)
+    (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
+	(solve-constraint
+	 recheck (store-constraint s simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
+  
+  (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
     ;; TODO add a non occurs check =!= or ==!
     ;; Returns #t if it detects a cyclic unification.
@@ -64,7 +66,7 @@
      [(eq? v term) #t] ; term is already walked by normalized ==s
      [(pair? term)
       (or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
-	  (occurs-check s v (walk-var s (car term))) (occurs-check s v (walk-var s (cdr term))))]
+	  (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
      [else #f]))
   
   (org-define (solve-=/= g s ctn committed pending)
