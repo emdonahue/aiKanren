@@ -48,7 +48,7 @@
     (tassert "substitution pconstraint-ground succeed" (run1 (x1) (symbolo x1) (== x1 'symbol)) 'symbol)
     (tassert "substitution ground-pconstraint succeed" (run1 (x1) (== x1 'symbol) (symbolo x1)) 'symbol)
     (tassert "substitution pconstraint-constraint" (run1 (x1) (symbolo x1) (=/= x1 1)) (symbolo x1))
-    (tassert "substitution pconstraint-constraint" (run1 (x1) (=/= x1 1) (symbolo x1)) (symbolo x1))
+    (tassert "substitution constraint-pconstraint" (run1 (x1) (=/= x1 1) (symbolo x1)) (symbolo x1))
 
     (tassert "eq? variables must not unify when constrained" (run1 (x1) (=/= x1 1) (== x1 x1)) (=/= x1 1))
     (tassert "eq? variables must not disunify when constrained" (run1 (x1) (=/= x1 1) (=/= x1 x1)) (void))

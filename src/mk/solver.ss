@@ -114,7 +114,8 @@ x    (exclusive-cond
 			(values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
      [(disj? g) (simplify-=/=-disj g x y d)]
      [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
-     [(constraint? g) (nyi simplify constraint =/=)]
+     [(constraint? g) (simplify-=/= (constraint-goal g) x y d)]
+     [(procedure? g) (nyi simplify-=/= proceedure)]
      [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   (define (simplify-=/=-disj g x y d)
@@ -163,8 +164,8 @@ x    (exclusive-cond
 	      (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
 		  (values committed (conj pending (disj-factorized lhs rhs)) s)))))))
 
-  (define solve-pconstraint ; TODO add guard rails for pconstraints returning lowest form and further solving
-    (org-case-lambda solve-pconstraint ;TODO solve-pconstraint really only needs to be called the first time. after that pconstraints solve themselves
+  (define solve-pconstraint
+    (org-case-lambda solve-pconstraint
       [(g s ctn committed pending) (solve-pconstraint g s ctn committed pending '())]
       [(g s ctn committed pending vs)
        (org-if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
@@ -175,18 +176,20 @@ x    (exclusive-cond
 			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (let-values ([(g simplified recheck)
 						    (simplify-pconstraint
-						     ((pconstraint-procedure g) var var^ (pconstraint-data g)) val)])
+						      val ((pconstraint-procedure g) var var^ (pconstraint-data g)))])
 					(solve-pconstraint g (extend s var^ simplified)
 							   (conj recheck ctn) committed pending (cons var^ vs)))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
-  (define (simplify-pconstraint p g)
+  (define (simplify-pconstraint g p)
     (cert (pconstraint? p) (goal? g))
     (exclusive-cond
      [(pconstraint? g) (if (equal? p g) (values succeed p succeed) (values p g succeed))]
      [(==? g) (let-values ([(simplified recheck) (simplify-unification (->mini-substitution g) p)])
 		(values simplified g recheck))]
+     [(noto? g) (let-values ([(_ simplified recheck) (simplify-pconstraint (noto-goal g) p)])
+		  (values p succeed (disj (noto simplified) (noto recheck))))]
      [else (values p g succeed)]))
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
