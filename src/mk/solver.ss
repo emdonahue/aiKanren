@@ -176,7 +176,7 @@ x    (exclusive-cond
 			 [(goal? val) (let-values ([(g simplified recheck)
 						    (simplify-pconstraint
 						     ((pconstraint-procedure g) var var^ (pconstraint-data g)) val)])
-					(solve-pconstraint g (store-constraint s simplified)
+					(solve-pconstraint g (extend s var^ simplified)
 							   (conj recheck ctn) committed pending (cons var^ vs)))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
@@ -185,6 +185,8 @@ x    (exclusive-cond
     (cert (pconstraint? p) (goal? g))
     (exclusive-cond
      [(pconstraint? g) (if (equal? p g) (values succeed p succeed) (values p g succeed))]
+     [(==? g) (let-values ([(simplified recheck) (simplify-unification (->mini-substitution g) p)])
+		(values simplified g recheck))]
      [else (values p g succeed)]))
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
