@@ -182,14 +182,15 @@ x    (exclusive-cond
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
-  (define (simplify-pconstraint g p)
+  (org-define (simplify-pconstraint g p)
     (cert (pconstraint? p) (goal? g))
     (exclusive-cond
      [(pconstraint? g) (if (equal? p g) (values succeed p succeed) (values p g succeed))]
-     [(==? g) (let-values ([(simplified recheck) (simplify-unification (->mini-substitution g) p)])
+     [(==? g) (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))])
 		(values simplified g recheck))]
      [(noto? g) (let-values ([(_ simplified recheck) (simplify-pconstraint (noto-goal g) p)])
-		  (values p succeed (disj (noto simplified) (noto recheck))))]
+		  (if (succeed? recheck) (values p (noto simplified) succeed)
+		      (values p succeed (disj (noto simplified) (noto recheck)))))]
      [else (values p g succeed)]))
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
