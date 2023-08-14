@@ -274,23 +274,23 @@
     (tassert "stale constraints on multiple vars are ignored when stored" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 2) (== x2 3))) (== x1 1) (== x2 3)) '(1 3))
 
     ;; === PCONSTRAINT ===
-    (tassert "simplify pconstraint ==" (simplify-pconstraint (== x1 1) (numbero x1)) (list succeed (== x1 1) succeed))
-    (tassert "simplify pconstraint ==!" (simplify-pconstraint (== x1 'symbol) (numbero x1)) (list fail (== x1 'symbol) fail))
-    (tassert "simplify pconstraint ?==" (simplify-pconstraint (== x2 1) (numbero x1)) (list (numbero x1) (== x2 1) succeed))
-    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (== x2 'symbol) (numbero x1)) (list (numbero x1) (== x2 'symbol) succeed))
+    (tassert "simplify pconstraint ==" (simplify-pconstraint (== x1 1) (numbero x1)) (list succeed (== x1 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint ==!" (simplify-pconstraint (== x1 'symbol) (numbero x1)) (list fail (== x1 'symbol) fail (numbero x1)))
+    (tassert "simplify pconstraint ?==" (simplify-pconstraint (== x2 1) (numbero x1)) (list (numbero x1) (== x2 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (== x2 'symbol) (numbero x1)) (list (numbero x1) (== x2 'symbol) succeed (numbero x1)))
     
-    (tassert "simplify pconstraint =/=" (simplify-pconstraint (=/= x1 1) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
-    (tassert "simplify pconstraint =/=!" (simplify-pconstraint (=/= x1 'symbol) (numbero x1)) (list (numbero x1) succeed succeed))
-    (tassert "simplify pconstraint ?==" (simplify-pconstraint (=/= x2 1) (numbero x1)) (list (numbero x1) (=/= x2 1) succeed))
-    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (=/= x2 'symbol) (numbero x1)) (list (numbero x1) (=/= x2 'symbol) succeed))
+    (tassert "simplify pconstraint =/=" (simplify-pconstraint (=/= x1 1) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint =/=!" (simplify-pconstraint (=/= x1 'symbol) (numbero x1)) (list (numbero x1) succeed succeed (numbero x1)))
+    (tassert "simplify pconstraint ?==" (simplify-pconstraint (=/= x2 1) (numbero x1)) (list (numbero x1) (=/= x2 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (=/= x2 'symbol) (numbero x1)) (list (numbero x1) (=/= x2 'symbol) succeed (numbero x1)))
 
-    (tassert "simplify pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list (numbero x1) succeed succeed))
-    (tassert "simplify pconstraint pconstraint!" (simplify-pconstraint (symbolo x1) (numbero x1)) (list fail fail fail))
-    (tassert "simplify pconstraint ?pconstraint!" (simplify-pconstraint (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed))
+    (tassert "simplify pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list (numbero x1) succeed succeed (numbero x1)))
+    (tassert "simplify pconstraint pconstraint!" (simplify-pconstraint (symbolo x1) (numbero x1)) (list fail fail fail (numbero x1)))
+    (tassert "simplify pconstraint ?pconstraint!" (simplify-pconstraint (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed (numbero x1)))
 
-    (tassert "simplify pconstraint =/= & pconstraint" (simplify-pconstraint (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
-    (tassert "simplify pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
-    (tassert "simplify pconstraint == & ?==" (simplify-pconstraint (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed))
+    (tassert "simplify pconstraint =/= & pconstraint" (simplify-pconstraint (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed (numbero x1)))
+    (tassert "simplify pconstraint == & ?==" (simplify-pconstraint (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1)))
     
     (exit)
     

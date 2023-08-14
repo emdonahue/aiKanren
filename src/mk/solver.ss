@@ -174,12 +174,12 @@ x    (exclusive-cond
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (org-cond
 			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
-			 [(goal? val) (let-values ([(g simplified recheck)
+			 [(goal? val) (let-values ([(g simplified recheck p)
 						    (simplify-pconstraint
 						     val ((pconstraint-procedure g) var var^ (pconstraint-data g)))])
 					(if (or (fail? g) (fail? simplified) (fail? recheck))
 					    (values fail failure)
-					 (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
+					 (solve-pconstraint p (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
 							    (conj recheck ctn) committed pending (cons var^ vs))))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
@@ -190,22 +190,46 @@ x    (exclusive-cond
       [(g p c)
        (cert (or (pconstraint? p) (succeed? p)) (goal? g))
        (cond
-	[(succeed? p) (values succeed succeed succeed)]
-	[(conj? g) (let-values ([(p simplified-lhs recheck-lhs) (simplify-pconstraint (conj-lhs g) p c)])
-		     (if (or (fail? p) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail fail)
-			 (if (succeed? p) (values succeed (conj simplified-lhs (conj-rhs g)) recheck-lhs)
-			     (let-values ([(p simplified-rhs recheck-rhs) (simplify-pconstraint (conj-rhs g) p c)])
-			       (values p (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs))))))]
-	[(pconstraint? g) (if (equal? p g) (values p succeed succeed)
+	[(succeed? p) (values succeed succeed succeed c)]
+	[(conj? g) (let-values ([(p-lhs simplified-lhs recheck-lhs c) (simplify-pconstraint (conj-lhs g) p c)])
+		     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail fail fail)
+			 (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
+			   (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
+	[(disj? g) (simplify-pconstraint-disj g p c)]
+	[(pconstraint? g) (if (equal? p g) (values p succeed succeed c)
 			      (if (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))
-				  ((pconstraint-procedure g) g p)
-				  (values p g succeed)))]
+				  (let-values ([(g simplified recheck) ((pconstraint-procedure g) g p)])
+				    (values g simplified recheck c))
+				  (values p g succeed c)))]
 	[(==? g) (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))])
-		   (values simplified g recheck))]
-	[(noto? g) (let-values ([(_ simplified recheck) (simplify-pconstraint (noto-goal g) p c)])
-		     (if (succeed? recheck) (values p (noto simplified) succeed)
-			 (values p succeed (disj (noto simplified) (noto recheck)))))]
-	[else (values p g succeed)])]))
+		   (values simplified g recheck c))]
+	[(noto? g) (let-values ([(_ simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
+		     (if (succeed? recheck) (values p (noto simplified) succeed c)
+			 (values p succeed (disj (noto simplified) (noto recheck)) c)))]
+	[else (values p g succeed c)])]))
+
+  (define (simplify-pconstraint-disj g p d)
+    (let*-values ([(unified-lhs simplified-lhs recheck-lhs d)
+		   (simplify-pconstraint (disj-lhs g) p d)]
+		  [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
+      (if (succeed? disunified-lhs) (values unified-lhs succeed succeed d)
+	  (let*-values ([(unified-rhs simplified-rhs recheck-rhs d)
+			 (simplify-pconstraint (disj-rhs g) p d)]
+			[(disunified-rhs) (conj simplified-rhs recheck-rhs)])
+	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
+		(let ([unified (disj unified-lhs unified-rhs)])
+		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
+		    (let ([disunified
+			   (conj conjs (conj
+					(if (not (or (fail? unified-lhs) (fail? unified-rhs)))
+					    (conj d (disj lhs rhs))
+					    (disj (if (fail? unified-lhs) lhs (conj d lhs))
+						  (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
+		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
+			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
+				   (conj-memp simplified-lhs ==?)))
+			  (values unified succeed disunified succeed)
+			  (values unified disunified succeed succeed))))))))))
 
   (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
