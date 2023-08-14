@@ -274,7 +274,11 @@
     (tassert "stale constraints on multiple vars are ignored when stored" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 2) (== x2 3))) (== x1 1) (== x2 3)) '(1 3))
 
     ;; === PCONSTRAINT ===
-
+    (tassert "simplify pconstraint ==" (simplify-pconstraint (== x1 1) (numbero x1)) (list succeed (== x1 1) succeed))
+    (tassert "simplify pconstraint ==!" (simplify-pconstraint (== x1 'symbol) (numbero x1)) (list fail (== x1 'symbol) fail))
+    (tassert "simplify pconstraint ?==" (simplify-pconstraint (== x2 1) (numbero x1)) (list (numbero x1) (== x2 1) succeed))
+    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (== x2 'symbol) (numbero x1)) (list (numbero x1) (== x2 'symbol) succeed))
+    
 
     (exit)
     

@@ -1,5 +1,5 @@
 (library (solver) ; Constraint solving
-  (export run-constraint simplify-=/=) ;TODO trim exports
+  (export run-constraint simplify-=/= simplify-pconstraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution))
 
   (org-define (run-constraint g s)
@@ -167,7 +167,7 @@ x    (exclusive-cond
   (define solve-pconstraint
     (org-case-lambda solve-pconstraint
       [(g s ctn committed pending) (solve-pconstraint g s ctn committed pending '())]
-      [(g s ctn committed pending vs)
+      [(g s ctn committed pending vs) ;-> goal? state?
        (org-if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
 	     (org-if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
@@ -176,9 +176,11 @@ x    (exclusive-cond
 			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (let-values ([(g simplified recheck)
 						    (simplify-pconstraint
-						      val ((pconstraint-procedure g) var var^ (pconstraint-data g)))])
-					(solve-pconstraint g (extend s var^ simplified)
-							   (conj recheck ctn) committed pending (cons var^ vs)))]
+						     val ((pconstraint-procedure g) var var^ (pconstraint-data g)))])
+					(if (or (fail? g) (fail? simplified) (fail? recheck))
+					    (values fail failure)
+					 (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
+							    (conj recheck ctn) committed pending (cons var^ vs))))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
