@@ -185,8 +185,14 @@ x    (exclusive-cond
 						  s ctn committed pending (cons var^ vs))])))))]))
 
   (org-define (simplify-pconstraint g p)
-    (cert (pconstraint? p) (goal? g))
-    (exclusive-cond
+    (cert (or (pconstraint? p) (succeed? p)) (goal? g))
+    (cond
+     [(succeed? p) (values succeed succeed succeed)]
+     [(conj? g) (let-values ([(p simplified-lhs recheck-lhs) (simplify-pconstraint (conj-lhs g) p)])
+		  (if (or (fail? p) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail fail)
+		      (if (succeed? p) (values succeed (conj simplified-lhs (conj-rhs g)) recheck-lhs)
+		       (let-values ([(p simplified-rhs recheck-rhs) (simplify-pconstraint (conj-rhs g) p)])
+			 (values p (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs))))))]
      [(pconstraint? g) (if (equal? p g) (values p succeed succeed)
 			   (if (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))
 			       ((pconstraint-procedure g) g p)

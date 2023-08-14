@@ -287,6 +287,11 @@
     (tassert "simplify pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list (numbero x1) succeed succeed))
     (tassert "simplify pconstraint pconstraint!" (simplify-pconstraint (symbolo x1) (numbero x1)) (list fail fail fail))
     (tassert "simplify pconstraint ?pconstraint!" (simplify-pconstraint (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed))
+
+    (tassert "simplify pconstraint =/= & pconstraint" (simplify-pconstraint (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
+    (tassert "simplify pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
+    (tassert "simplify pconstraint == & ?==" (simplify-pconstraint (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed))
+    
     (exit)
     
     ;; === MATCHO ===
