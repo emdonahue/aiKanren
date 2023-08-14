@@ -187,7 +187,10 @@ x    (exclusive-cond
   (org-define (simplify-pconstraint g p)
     (cert (pconstraint? p) (goal? g))
     (exclusive-cond
-     [(pconstraint? g) (if (equal? p g) (values succeed p succeed) (values p g succeed))]
+     [(pconstraint? g) (if (equal? p g) (values p succeed succeed)
+			   (if (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))
+			       ((pconstraint-procedure g) g p)
+			       (values p g succeed)))]
      [(==? g) (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))])
 		(values simplified g recheck))]
      [(noto? g) (let-values ([(_ simplified recheck) (simplify-pconstraint (noto-goal g) p)])

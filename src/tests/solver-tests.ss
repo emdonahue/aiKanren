@@ -278,10 +278,15 @@
     (tassert "simplify pconstraint ==!" (simplify-pconstraint (== x1 'symbol) (numbero x1)) (list fail (== x1 'symbol) fail))
     (tassert "simplify pconstraint ?==" (simplify-pconstraint (== x2 1) (numbero x1)) (list (numbero x1) (== x2 1) succeed))
     (tassert "simplify pconstraint ?==!" (simplify-pconstraint (== x2 'symbol) (numbero x1)) (list (numbero x1) (== x2 'symbol) succeed))
+    
     (tassert "simplify pconstraint =/=" (simplify-pconstraint (=/= x1 1) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed))
     (tassert "simplify pconstraint =/=!" (simplify-pconstraint (=/= x1 'symbol) (numbero x1)) (list (numbero x1) succeed succeed))
-    
+    (tassert "simplify pconstraint ?==" (simplify-pconstraint (=/= x2 1) (numbero x1)) (list (numbero x1) (=/= x2 1) succeed))
+    (tassert "simplify pconstraint ?==!" (simplify-pconstraint (=/= x2 'symbol) (numbero x1)) (list (numbero x1) (=/= x2 'symbol) succeed))
 
+    (tassert "simplify pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list (numbero x1) succeed succeed))
+    (tassert "simplify pconstraint pconstraint!" (simplify-pconstraint (symbolo x1) (numbero x1)) (list fail fail fail))
+    (tassert "simplify pconstraint ?pconstraint!" (simplify-pconstraint (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed))
     (exit)
     
     ;; === MATCHO ===
