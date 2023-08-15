@@ -196,16 +196,26 @@ x    (exclusive-cond
 			 (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
 			   (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
 	[(disj? g) (simplify-pconstraint-disj g p c)]
-	[(pconstraint? g) (if (equal? p g) (values p succeed succeed c)
+	[(pconstraint? g) (if (equal? p g) (values succeed succeed succeed c)
 			      (if (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))
 				  (let-values ([(g simplified recheck) ((pconstraint-procedure g) g p)])
 				    (values g simplified recheck c))
 				  (values p g succeed c)))]
-	[(==? g) (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))])
-		   (values simplified g recheck c))]
-	[(noto? g) (let-values ([(_ simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
-		     (if (succeed? recheck) (values p (noto simplified) succeed c)
-			 (values p succeed (disj (noto simplified) (noto recheck)) c)))]
+	[(==? g) (if (memq (==-lhs g) (pconstraint-vars p))
+		     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) (pconstraint-data p))])
+		       (if (fail? entailed) (values p fail succeed c)
+			   (values entailed g succeed c)))
+		     (values p g succeed c))
+	 #;
+	 (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))])
+	 (values simplified g recheck c))]
+	;;numbero & ~numbero -> fail fail
+	;;numbero & not symbolo  -> numbero succeed
+	;;numbero x & x=/=1 -> numbero succeed
+	[(noto? g) (let-values ([(entailed simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
+		     (let ([p (if (or (succeed? entailed) (fail? entailed)) (noto entailed) entailed)])
+		      (if (succeed? recheck) (values p (noto simplified) succeed c)
+			  (values p succeed (disj (noto simplified) (noto recheck)) c))))]
 	[else (values p g succeed c)])]))
 
   (define (simplify-pconstraint-disj g p d)
