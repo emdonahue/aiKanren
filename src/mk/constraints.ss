@@ -22,7 +22,10 @@
      [(pconstraint? reducee) (if (eq? type (pconstraint-procedure reducee))
 			   (values fail fail fail) ; The solver checks equality, so non equal typeos must fail.
 			   (values reducer reducee succeed))]
-     [(matcho? reducee) (nyi matcho typeo)]
+     [(matcho? reducee) (exclusive-cond
+			 [(eq? pair? t?) (values succeed reducee succeed)]
+			 [(or (eq? symbol? t?) (eq? number? t?)) (values fail fail succeed)] ;TODO do constraints need to manage recheck individually or is that just for matcho and disj?
+			 [else (values reducer reducee succeed)])]
      [else (assertion-violation 'typeo "Unrecognized constraint type" reducee)]))
   
   (define (simplify-typeo c v t?)
