@@ -73,7 +73,7 @@
 
   (define (pconstraint-check p var val)
     (cert (memq var (pconstraint-vars p)))
-    ((pconstraint-procedure p) var val (pconstraint-data p)))
+    ((pconstraint-procedure p) var val succeed succeed (pconstraint-data p)))
 
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))

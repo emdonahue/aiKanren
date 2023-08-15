@@ -103,6 +103,8 @@
     (tassert "reduce pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
     (tassert "reduce pconstraint == & ?==" (simplify-pconstraint (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1)))
 
+    (tassert "reduce pconstraint matcho" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))
+
     
     (exit)
 

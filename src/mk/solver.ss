@@ -175,13 +175,13 @@ x    (exclusive-cond
 		   (org-cond
 			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (let-values ([(g simplified recheck p)
-						    (simplify-pconstraint
-						     val ((pconstraint-procedure g) var var^ (pconstraint-data g)))])
-					(if (or (fail? g) (fail? simplified) (fail? recheck))
-					    (values fail failure)
-					 (solve-pconstraint p (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
-							    (conj recheck ctn) committed pending (cons var^ vs))))]
-			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val (pconstraint-data g))
+						    (simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
+						     val ((pconstraint-procedure g) var var^ succeed succeed (pconstraint-data g)))])
+					(if (succeed? g) (solve-constraint ctn s succeed committed pending)
+					    (if (or (fail? simplified) (fail? recheck)) (values fail failure)
+						(solve-pconstraint p (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
+								   (conj recheck ctn) committed pending (cons var^ vs)))))]
+			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val succeed succeed (pconstraint-data g))
 						  s ctn committed pending (cons var^ vs))])))))]))
 
   (define simplify-pconstraint
@@ -197,12 +197,12 @@ x    (exclusive-cond
 			   (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
 	[(disj? g) (simplify-pconstraint-disj g p c)]
 	[(pconstraint? g) (if (equal? p g) (values succeed succeed succeed c)
-			      (if (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))
-				  (let-values ([(g simplified recheck) ((pconstraint-procedure g) g p)])
-				    (values g simplified recheck c))
-				  (values p g succeed c)))]
+			      (let ([v (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))])
+				(if (not v) (values p g succeed c)
+				 (let-values ([(g simplified recheck) ((pconstraint-procedure g) v v p g (pconstraint-data p))])
+				   (values g simplified recheck c)))))]
 	[(==? g) (if (memq (==-lhs g) (pconstraint-vars p))
-		     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) (pconstraint-data p))])
+		     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) p succeed (pconstraint-data p))])
 		       (values entailed (if (fail? entailed) fail g) succeed c))
 		     (values p g succeed c))
 	 #;
@@ -218,6 +218,10 @@ x    (exclusive-cond
 		     (cert (succeed? recheck))
 		     (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
 		       (values p (noto simplified) succeed c)))]
+	[(matcho? g) (let ([v (memp (lambda (v) (memq v (matcho-out-vars g))) (pconstraint-vars p))])
+		       (if (not v) (values p g succeed c)
+			(let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g (pconstraint-data p))])
+			  (values entailed simplified recheck c))))]
 	[else (values p g succeed c)])]))
 
   (define (simplify-pconstraint-disj g p d)

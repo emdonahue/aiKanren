@@ -155,7 +155,7 @@
 	(let ([walked (mini-walk s (car vars))])
 	  (if (eq? (car vars) walked)
 	      (simplify-unification/pconstraint g s (cdr vars)) ;TODO make == simplifier for pconstraints check for new vars
-	      (simplify-unification ((pconstraint-procedure g) (car vars) walked (pconstraint-data g)) s))))
+	      (simplify-unification ((pconstraint-procedure g) (car vars) walked g succeed (pconstraint-data g)) s))))
 #;
     (values succeed (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)))
 

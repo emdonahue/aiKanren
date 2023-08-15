@@ -16,10 +16,14 @@
   (define (typeo v t?)
     (if (var? v) (pconstraint (list v) type t?) (if (t? v) succeed fail)))
 
-  (define type
-    (case-lambda
-      [(var val t?) (typeo val t?)]
-      [(a b) (if (eq? type (pconstraint-procedure b)) (values fail fail fail) (values a b succeed))]))
+  (define (type var val reducer reducee t?)
+    (exclusive-cond
+     [(succeed? reducee) (typeo val t?)]
+     [(pconstraint? reducee) (if (eq? type (pconstraint-procedure reducee))
+			   (values fail fail fail) ; The solver checks equality, so non equal typeos must fail.
+			   (values reducer reducee succeed))]
+     [(matcho? reducee) (nyi matcho typeo)]
+     [else (assertion-violation 'typeo "Unrecognized constraint type" reducee)]))
   
   (define (simplify-typeo c v t?)
     (cert (goal? c) (var? v))
