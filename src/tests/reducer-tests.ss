@@ -95,12 +95,12 @@
     (tassert "reduce pconstraint ?==" (simplify-pconstraint (=/= x2 1) (numbero x1)) (list (numbero x1) (=/= x2 1) succeed (numbero x1)))
     (tassert "reduce pconstraint ?==!" (simplify-pconstraint (=/= x2 'symbol) (numbero x1)) (list (numbero x1) (=/= x2 'symbol) succeed (numbero x1)))
 
-    (tassert "reduce pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list (numbero x1) succeed succeed (numbero x1)))
+    (tassert "reduce pconstraint pconstraint" (simplify-pconstraint (numbero x1) (numbero x1)) (list succeed succeed succeed (numbero x1)))
     (tassert "reduce pconstraint pconstraint!" (simplify-pconstraint (symbolo x1) (numbero x1)) (list fail fail fail (numbero x1)))
     (tassert "reduce pconstraint ?pconstraint!" (simplify-pconstraint (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed (numbero x1)))
 
-    (tassert "reduce pconstraint =/= & pconstraint" (simplify-pconstraint (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed (numbero x1)))
-    (tassert "reduce pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list (numbero x1) (=/= x1 1) succeed (numbero x1)))
+    (tassert "reduce pconstraint =/= & pconstraint" (simplify-pconstraint (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
+    (tassert "reduce pconstraint pconstraint & =/=" (simplify-pconstraint (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
     (tassert "reduce pconstraint == & ?==" (simplify-pconstraint (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1)))
 
     
