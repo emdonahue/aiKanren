@@ -178,7 +178,7 @@ x    (exclusive-cond
 						    (simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
 						     val ((pconstraint-procedure g) var var^ succeed succeed (pconstraint-data g)))])
 					(if (succeed? g) (solve-constraint ctn s succeed committed pending)
-					    (if (or (fail? simplified) (fail? recheck)) (values fail failure)
+					    (if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 						(solve-pconstraint p (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
 								   (conj recheck ctn) committed pending (cons var^ vs)))))]
 			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val succeed succeed (pconstraint-data g))
@@ -192,7 +192,7 @@ x    (exclusive-cond
        (cond
 	[(succeed? p) (values succeed succeed succeed c)]
 	[(conj? g) (let-values ([(p-lhs simplified-lhs recheck-lhs c) (simplify-pconstraint (conj-lhs g) p c)])
-		     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail fail fail)
+		     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail succeed fail)
 			 (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
 			   (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
 	[(disj? g) (simplify-pconstraint-disj g p c)]
@@ -215,6 +215,7 @@ x    (exclusive-cond
 	;; numbero & not symbolo x2 -> numbero symbolo x2 -> numbero not symbolo x2
 	[(noto? g) (let-values ([(entailed simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
 		     (org-display entailed simplified recheck)
+		     (when (not (succeed? recheck)) (display p))
 		     (cert (succeed? recheck))
 		     (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
 		       (values p (noto simplified) succeed c)))]

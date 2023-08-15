@@ -20,7 +20,7 @@
     (exclusive-cond
      [(succeed? reducee) (typeo val t?)]
      [(pconstraint? reducee) (if (eq? type (pconstraint-procedure reducee))
-			   (values fail fail fail) ; The solver checks equality, so non equal typeos must fail.
+			   (values fail fail succeed) ; The solver checks equality, so non equal typeos must fail.
 			   (values reducer reducee succeed))]
      [(matcho? reducee) (exclusive-cond
 			 [(eq? pair? t?) (values succeed reducee succeed)]
