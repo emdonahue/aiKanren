@@ -62,7 +62,7 @@
   (define (occurs-check bindings simplified recheck s ctn committed pending)
     (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
 	(solve-constraint
-	 recheck (store-constraint s simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
+	 recheck s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
 
   (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
@@ -267,7 +267,7 @@ x    (exclusive-cond
        (cert (goal? g))
        (exclusive-cond
 	[(succeed? g) (values vs unifies)]
-	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)])
+	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)]) ;TODO do we need to check for recheckable matchos when attributing disj?
 		     (if lhs-unifies ; Disjunct 2 normalized iff 1 contains no ==
 			 (attributed-vars (disj-car (disj-cdr g)) lhs #t)
 			 (values lhs unifies)))]

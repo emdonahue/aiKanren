@@ -199,6 +199,7 @@
 		 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
 		       (pretty-print c))
 		 (let ([val-or-goal (substitution-ref (state-substitution s) v)])
+		   (cert (goal? val-or-goal)) ;TODO can we store stale constraints?
 		   (if (goal? val-or-goal) (extend s v (conj val-or-goal c)) s))
 #;;TODO clean up state add constraint. remove dead code
 		 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))

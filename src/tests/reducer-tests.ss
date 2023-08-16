@@ -39,7 +39,9 @@
 
       (tassert "reduce == & matcho fail" (simplify-unification (matcho ([x1 (a . d)])) s) (list fail fail))
       (tassert "reduce == & matcho simplified" (simplify-unification (matcho ([x1 (a . d)])) s-free) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (eq? x2 (car (matcho-out-vars (car g)))))))
-      (tassert "reduce == & matcho recheck" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
+      (tassert "reduce == & matcho recheck no vars" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
+           (tassert "reduce == & matcho unified out vars" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) s-free) (lambda (g) (and (succeed? (list-ref g 1)) (matcho? (car g)) (null? (matcho-in-vars (car g))) (equal? (list x2 x2) (matcho-out-vars (car g))))))
+;      (tassert "reduce == & matcho recheck unnormalized vars" (simplify-unification (matcho ([x1 (a . d)] [x3 (b . c)])) s-free) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
       (tassert "reduce == & not matcho succeed" (simplify-unification (noto (matcho ([x1 (a . d)]))) s) (list succeed succeed))
       (tassert "reduce == & not matcho simplified" (simplify-unification (noto (matcho ([x1 (a . d)]))) s-free) (lambda (g) (and (succeed? (cadr g)) (noto? (car g)) (matcho? (noto-goal (car g))) (eq? x2 (car (matcho-out-vars (noto-goal (car g))))))))
       (tassert "reduce == & not matcho recheck" (simplify-unification (noto (matcho ([x1 (a . d)] [x2 (b . c)]))) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (null? (matcho-out-vars (noto-goal (cadr g)))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (noto-goal (cadr g)))))))

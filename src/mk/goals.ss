@@ -93,7 +93,7 @@
     
     (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
       (cert (stream? s) (package? p)) ; -> goal? stream? package?
-      (exclusive-cond
+      (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
        [(failure? s) (values s p)]
        [(state? s) (values s p)]
        [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
