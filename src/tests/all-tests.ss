@@ -1,6 +1,6 @@
 (library (all-tests)
   (export run-all-tests)
-  (import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests) (quine-tests) (interpreter-tests) (dfs-tests) (tracing-tests) (reducer-tests))
+  (import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (mini-substitution-tests) (listo-tests) (matcho-tests) (goal-tests) (quine-tests) (interpreter-tests) (dfs-tests) (tracing-tests) (reducer-tests) (generative-tests))
 
   (define (run-all-tests)
     (run-sbral-tests)
@@ -15,10 +15,10 @@
     (run-constraints-tests)
     (run-listo-tests)
     (run-tracing-tests)
+    (run-generative-tests)
 
-    (begin 
-      (run-quine-tests)
-      (run-interpreter-tests)
+    (run-quine-tests)
+    (run-interpreter-tests)
 
-      (parameterize ([benchmark-testing #t])
-	(include "src/benchmarks/benchmarks.ss")))))
+    (parameterize ([benchmark-testing #t])
+      (include "src/benchmarks/benchmarks.ss"))))

@@ -80,7 +80,7 @@
 			(evalo `(letrec ([f (lambda (x) ,body)])
 				  (f 1)) '(1 . 1))))
 
-    
+#;    
     (display (trace-run (body)
 			(prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
 			 (absento '(1 . 1) body)

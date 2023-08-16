@@ -4,6 +4,12 @@
   
   (define (run-listo-tests)
     (define x1 (make-var 1))
+
+    ;; membero
+    (tassert "membero empty" (run* (x1) (membero x1 '())) '())
+    (tassert "membero one" (run* (x1) (membero x1 '(1))) '(1))
+    (tassert "membero multiple" (run* (x1) (membero x1 '(1 2 3))) '(1 2 3))
+    (tassert "membero free list" (run* (x1) (membero 1 (list x1))) '(1))
     
     ;; appendo
     (tassert "append empty" (run1 (x1) (appendo '() '() x1)) '())

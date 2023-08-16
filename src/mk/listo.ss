@@ -1,5 +1,5 @@
 (library (listo) ; Relational list library
-  (export appendo assoco containso asspo listo for-eacho)
+  (export appendo assoco containso asspo listo for-eacho membero)
   (import (chezscheme) (ui) (datatypes) (matcho) (negation) (debugging) (utils))
 
   (define (listo l)
@@ -7,6 +7,12 @@
      (== l '())
      (matcho listo ([l (a . d)])
 	     (listo d))))
+
+  (define (membero x xs)
+    (matcho ([xs (a . d)])
+	    (conde
+	      [(== x a)]
+	      [(membero x d)])))
   
   (define (appendo h t ht)
     (conde
