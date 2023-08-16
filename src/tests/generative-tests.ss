@@ -37,8 +37,16 @@
 	   [goal (run* (x y z) c)]
 	   [constraint (run* (x y z) (constrain c))]
 	   [goal+constraint (run* (x y z) (constrain c) c)])
-      (unless (and (eq? (null? goal) (null? constraint)) (eq? (null? goal) (null? goal+constraint)))
-	(tassert "Generated test" goal constraint))))
+					;(printf "~s~%~s~%~s~%" goal constraint goal+constraint)
+      (unless (answers-equal? goal constraint goal+constraint)
+	(tassert "Generated test" (list goal constraint goal+constraint) #f))))
+
+  (define (answers-equal? g c g+c)
+    (and (eq? (null? g) (null? c))
+	 (eq? (null? g) (null? g+c))
+	 (for-all (lambda (x y z)
+		    (and (eq? (goal? x) (goal? y)) (eq? (goal? x) (goal? z))
+			 (or (goal? x) (and (equal? x y) (equal? x z))))) g c g+c)))
 
   (define (compile-mk g)
     (case (car g)
@@ -55,6 +63,6 @@
   
   (define (run-generative-tests)
 
-    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
+    (for-each run-mk (run 10 (q) (mk-expression q max-expr-depth)))
     
     ))
