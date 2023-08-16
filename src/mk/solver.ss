@@ -250,7 +250,7 @@ x    (exclusive-cond
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
 
-  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
+  (org-define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
     ;; Store simplified constraints into the constraint store.
     (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
@@ -263,14 +263,14 @@ x    (exclusive-cond
 
   (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
+    (org-case-lambda attr-vars ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
       [(g vs unifies)
        (cert (goal? g))
        (exclusive-cond
 	[(succeed? g) (values vs unifies)]
 	[(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)]) ;TODO do we need to check for recheckable matchos when attributing disj?
-		     (if lhs-unifies ; Disjunct 2 normalized iff 1 contains no ==
+		     (if (conj-memp (disj-car g) ==?) ; Disjunct 2 normalized iff 1 contains no ==
 			 (attributed-vars (disj-car (disj-cdr g)) lhs #t)
 			 (values lhs unifies)))]
 	[(conj? g) (call-with-values

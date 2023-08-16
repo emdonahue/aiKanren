@@ -14,7 +14,7 @@
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
 	  constraint constraint? constraint-goal set-constraint-goal proxy proxy-constraint? proxy-constraint-constraint
-	  goal? ;goal-cond
+	  goal? goal-memp
 	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
@@ -171,6 +171,18 @@
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (proxy-constraint? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+
+  (define goal-memp
+    (case-lambda
+      [(g p) (goal-memp g  p '())]
+      [(g p gs)
+       (cond
+	[(p g) (cons g gs)]
+	[(conj? g) (let ([gs (goal-memp (conj-rhs g) p gs)])
+		     (goal-memp (conj-lhs g) p gs))]
+	[(disj? g) (let ([gs (goal-memp (disj-rhs g) p gs)])
+		     (goal-memp (disj-lhs g) p gs))]
+	[else gs])]))
 
   #;
   (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed

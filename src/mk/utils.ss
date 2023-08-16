@@ -65,7 +65,7 @@
   (define (org-print-header header)
     (when (org-tracing)
       (is-logging #f)
-      (printf "~a ~a~%" (make-string (org-depth) #\*) header)))
+      (printf "~a ~a [~a]~%" (make-string (org-depth) #\*) header (org-depth))))
 
   (define org-print-item
     (case-lambda
