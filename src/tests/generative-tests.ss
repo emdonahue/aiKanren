@@ -24,7 +24,8 @@
 		 [(mk-var lhs) (mk-term rhs max-term-depth)]
 		 [(mk-term lhs max-term-depth) (mk-var rhs)]))]
       [(matcho ([e ('numbero var)]) (mk-var var))]
-      [(matcho ([e ('symbolo var)]) (mk-var var))]))
+      [(matcho ([e ('symbolo var)]) (mk-var var))]
+      [(matcho ([e ('pairo var)]) (mk-var var))]))
 
   (define (mk-term t depth)
     (if (zero? depth) fail
@@ -61,7 +62,8 @@
       [disj (disj (compile-mk (cadr g)) (compile-mk (caddr g)))]
       [noto (noto (compile-mk (cadr g)))]
       [numbero (numbero (compile-mk/term (cadr g)))]
-      [symbolo (symbolo (compile-mk/term (cadr g)))]))
+      [symbolo (symbolo (compile-mk/term (cadr g)))]
+      [pairo (pairo (compile-mk/term (cadr g)))]))
 
   (define (compile-mk/term t)
     (cond
