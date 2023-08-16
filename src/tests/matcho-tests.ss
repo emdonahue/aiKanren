@@ -38,6 +38,9 @@
     (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
     (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
     (tassert "match constraint no fresh" (run1 (x1 x2) (constrain (matcho ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
+    (tassert "match constraint simplifies ground" (run1 (x1 x2) (constrain (matcho ([x1 (a . d)] [x2 (b . c)]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
+    (tassert "match constraint simplifies var" (run1 (x1 x2) (constrain (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
+    (org-trace    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constrain (matcho ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) '((1 . 2) (1 . 2))))
 
     ;; Negated matcho
     (tassert "match noto pattern fail" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (2 . y)]) succeed))) '(1 . 2))

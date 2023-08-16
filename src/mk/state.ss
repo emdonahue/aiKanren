@@ -72,7 +72,7 @@
 	     (unify-binding s y-var y x-var x bindings)
 	     (unify-binding s x-var x y-var y bindings)))]))
 
-  (define (unify-binding s x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
+  (org-define (unify-binding s x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
@@ -97,12 +97,12 @@
     ;; Insert a new binding between x and y into the substitution.
     (values (cons (cons x y) bindings) succeed succeed (extend s x y)))
 
-  (define (extend-constraint s var val var-c val-c bindings)
+  (org-define (extend-constraint s var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var))
     (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))])
       (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure)
-	  (values (cons (cons var val) bindings) simplified (conj simplified (conj recheck val-c)) (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
+	  (values (cons (cons var val) bindings) simplified recheck (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.

@@ -46,12 +46,14 @@
     ;;TODO test whether repeated variable transfers inside a disj crowd up the pending constraint
     (let-values ([(bindings simplified recheck s) (unify s (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. c is the conjunction of constraints that need to be simplified or rechecked.
       (cert (goal? simplified) (goal? recheck))
+      (org-display bindings simplified recheck)
       (cond
        [(fail? bindings) (values fail fail failure)]
        ;; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
        [(or (null? bindings) (null? (cdr bindings))) (occurs-check bindings simplified recheck s ctn committed pending)] ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
        [else
 	(let-values ([(simplified/simplified simplified/recheck) (simplify-unification simplified bindings)])
+	        (org-display simplified/simplified simplified/recheck)
 	  (if (or (fail? simplified/simplified) (fail? simplified/recheck)) (values fail fail failure)
 	      (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
 		(if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
@@ -62,7 +64,7 @@
   (define (occurs-check bindings simplified recheck s ctn committed pending)
     (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
 	(solve-constraint
-	 recheck s ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
+	 recheck (store-constraint s simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
 
   (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
