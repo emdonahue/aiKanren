@@ -1,5 +1,5 @@
 (library (mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-reify-normalized)
   (import (chezscheme) (datatypes) (utils))
 
   (define (->mini-substitution g)
@@ -33,7 +33,7 @@
 	(values (cons (cons x y) s) simplified (conj (== x y) recheck))))
   
   (define mini-walk-normalized
-    (case-lambda
+    (case-lambda ; -> normalized? walked
       [(s v) (mini-walk-normalized s v s #f)]
       [(s v tail normalized)
        (cond
@@ -52,8 +52,21 @@
      [(pair? v) (cons (mini-reify s (car v)) (mini-reify s (cdr v)))]
      [(var? v)
       (let ([v^ (mini-walk s v)])
-	(if (eq? v v^) v (mini-reify s v^)))]
+	(if (eq? v v^) v (mini-reify s v^)))] ;TODO should minireify check eq or var?
      [else v]))
+
+  (define (mini-reify-normalized s v)
+    (cert (list? s))
+    (exclusive-cond
+     [(pair? v)
+      (let-values ([(normalized-lhs reified-lhs) (mini-reify-normalized s (car v))]
+		   [(normalized-rhs reified-rhs) (mini-reify-normalized s (cdr v))])
+	(values (and normalized-lhs normalized-rhs) (cons reified-lhs reified-rhs)))]
+     [(var? v)
+      (let-values ([(normalized v) (mini-walk-normalized s v)])
+	(if (var? v) (values normalized v)
+	    (mini-reify-normalized s v)))]
+     [else (values #t v)]))
 
   (define (mini-unify s x y)
     (cert (list? s))

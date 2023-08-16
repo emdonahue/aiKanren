@@ -143,11 +143,13 @@
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(procedure? g) (values succeed g)]
-     [(matcho? g) (let ([g (normalize-matcho (map (lambda (v) (mini-walk s v)) (matcho-out-vars g)) (matcho-in-vars g) (matcho-goal g))])
-		    (cond
-		     [(fail? g) (values fail fail)] ; can i just return the g case and let one fail be enough?
-		     [(null? (matcho-out-vars g)) (values succeed g)]
-		     [else (values g succeed)]))]
+     [(matcho? g)
+      (let-values ([(normalized vars) (mini-reify-normalized s (matcho-out-vars g))])
+       (let ([g (normalize-matcho vars (matcho-in-vars g) (matcho-goal g))])
+	 (cond
+	  [(fail? g) (values fail fail)] ; can i just return the g case and let one fail be enough?
+	  [(and normalized (not (null? (matcho-out-vars g)))) (values g succeed)]
+	  [else (values succeed g)])))]
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
   
   (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying
