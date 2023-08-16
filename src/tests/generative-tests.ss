@@ -14,11 +14,17 @@
      (conde
        [(matcho ([e ('conde lhs rhs)]) (mk-expression rhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
        [(matcho ([e ('conj lhs rhs)]) (mk-expression rhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
-       [(matcho ([e ('noto goal)]) (mk-expression goal (fx1- depth)))]
-       [(matcho ([e ('== lhs rhs)])
-		(conde
-		  [(mk-var lhs) (mk-term rhs max-term-depth)]
-		  [(mk-term lhs max-term-depth) (mk-var rhs)]))])))
+       [(matcho ([e ('noto goal)]) (mk-expression/primitive goal))]
+       [(mk-expression/primitive e)])))
+
+  (define (mk-expression/primitive e)
+    (conde
+      [(matcho ([e ('== lhs rhs)])
+	       (conde
+		 [(mk-var lhs) (mk-term rhs max-term-depth)]
+		 [(mk-term lhs max-term-depth) (mk-var rhs)]))]
+      [(matcho ([e ('numbero var)]) (mk-var var))]
+      [(matcho ([e ('symbolo var)]) (mk-var var))]))
 
   (define (mk-term t depth)
     (if (zero? depth) fail
@@ -53,7 +59,9 @@
       [== (== (compile-mk/term (cadr g)) (compile-mk/term (caddr g)))]
       [conj (conj (compile-mk (cadr g)) (compile-mk (caddr g)))]
       [disj (disj (compile-mk (cadr g)) (compile-mk (caddr g)))]
-      [noto (noto (compile-mk (cadr g)))]))
+      [noto (noto (compile-mk (cadr g)))]
+      [numbero (numbero (compile-mk/term (cadr g)))]
+      [symbolo (symbolo (compile-mk/term (cadr g)))]))
 
   (define (compile-mk/term t)
     (cond
