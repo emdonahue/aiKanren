@@ -17,10 +17,10 @@
       
       (tassert "reduce == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
       (tassert "reduce == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
-      (tassert "reduce == & ==?" (simplify-unification (== x1 x2) s) (list (== x2 1) succeed))
-      (tassert "reduce == & ?==" (simplify-unification (== x2 2) s) (list (== x2 2) succeed))
+      (tassert "reduce == & ==?" (simplify-unification (== x1 x2) s) (list succeed (== x2 1)))
+      (tassert "reduce == & ?==" (simplify-unification (== x2 2) s) (list succeed (== x2 2)))
       (tassert "reduce == & ^==" (simplify-unification (== x2 2) s-free) (list (== x2 2) succeed))
-      (tassert "reduce == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list (conj (== x3 3) (== x2 2)) succeed))
+      (tassert "reduce == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list succeed (conj (== x3 3) (== x2 2))))
       (tassert "reduce == & ==!&==" (simplify-unification (conj (== x1 2) (== x1 1)) s) (list fail fail))
       (tassert "reduce == & ==&==!" (simplify-unification (conj (== x1 1) (== x1 2)) s) (list fail fail))
 
@@ -41,15 +41,15 @@
       (tassert "reduce == & matcho simplified" (simplify-unification (matcho ([x1 (a . d)])) s-free) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (eq? x2 (car (matcho-out-vars (car g)))))))
       (tassert "reduce == & matcho recheck no vars" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (null? (matcho-out-vars (cadr g))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (cadr g))))))
       (tassert "reduce == & matcho unified out vars" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) s-free) (lambda (g) (and (succeed? (list-ref g 1)) (matcho? (car g)) (null? (matcho-in-vars (car g))) (equal? (list x2 x2) (matcho-out-vars (car g))))))
-      (tassert "reduce == & matcho recheck unnormalized vars" (simplify-unification (matcho ([x1 (a . d)] [x3 (b . c)])) s-pair) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (equal? (matcho-out-vars (cadr g)) (list (cons x2 x3))) (equal? (list x3) (matcho-in-vars (cadr g))))))
-      (exit)
+      (tassert "reduce == & matcho recheck unnormalized vars" (simplify-unification (matcho ([x1 (a . d)] [x3 (b . c)])) s-pair) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x3))) (equal? (list x3) (matcho-out-vars (cadr g))))))
+      (tassert "reduce == & matcho simplify normalized vars" (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) (list (cons x1 '(1 . 2)) (cons x2 x3))) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (equal? (matcho-out-vars (car g)) (list x3)) (equal? '((1 . 2)) (matcho-in-vars (car g))))))
       (tassert "reduce == & not matcho succeed" (simplify-unification (noto (matcho ([x1 (a . d)]))) s) (list succeed succeed))
       (tassert "reduce == & not matcho simplified" (simplify-unification (noto (matcho ([x1 (a . d)]))) s-free) (lambda (g) (and (succeed? (cadr g)) (noto? (car g)) (matcho? (noto-goal (car g))) (eq? x2 (car (matcho-out-vars (noto-goal (car g))))))))
       (tassert "reduce == & not matcho recheck" (simplify-unification (noto (matcho ([x1 (a . d)] [x2 (b . c)]))) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (lambda (g) (and (succeed? (car g)) (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (null? (matcho-out-vars (noto-goal (cadr g)))) (equal? '((3 . 4) (1 . 2)) (matcho-in-vars (noto-goal (cadr g)))))))
       (tassert "reduce == & ==!&==?" (simplify-unification (disj (== x1 2) (== x2 3)) s) (list succeed (== x2 3)))
-      (tassert "reduce == & ==?&==?" (simplify-unification (disj (== x2 2) (== x2 3)) s) (list (disj (== x2 2) (== x2 3)) succeed))
+      (tassert "reduce == & ==?&==?" (simplify-unification (disj (== x2 2) (== x2 3)) s) (list succeed (disj (== x2 2) (== x2 3))))
       (tassert "reduce == & matcho|unsatisfiablel" (simplify-unification (disj (matcho ([x1 (a . d)]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) s-pair) (lambda (s-r) (and (succeed? (car s-r)) (matcho? (list-ref s-r 1)))))
-      (tassert "reduce == & =/=|unsatisfiable|undecidable" (simplify-unification (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) s) (list (disj (=/= x2 2) (== x2 2)) succeed)))
+      (tassert "reduce == & =/=|unsatisfiable|undecidable" (simplify-unification (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) s) (list succeed (disj (=/= x2 2) (== x2 2)))))
 
     ;; === DISEQUALITY ===
     (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list succeed fail succeed (=/= x1 1)))

@@ -22,7 +22,7 @@
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed?
+	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq?
 	  make-noto noto? noto-goal
 	  __
 	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
@@ -115,7 +115,7 @@
 	(let ([s (vector-copy s)])
 	  (set-state-varid! s v) s)))
 
-  (define (state-or-failure? s) (or (state? s) (failure? s)))
+  (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
 
   (define (instantiate-var s)
     (values (make-var (state-varid s)) (increment-varid s)))
@@ -165,6 +165,9 @@
 
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))
+
+  (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
+    (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
     (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (proxy-constraint? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))

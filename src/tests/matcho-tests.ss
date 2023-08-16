@@ -34,13 +34,13 @@
     (tassert "match constraint ground" (run1 (x1) (let ([m '(1 2)]) (constrain (matcho ([m (a 2)]) (== a x1))))) 1)
     (tassert "match constraint ground-free" (run1 (x1) (let ([m (list x1 2)]) (constrain (matcho ([m (a 2)]) (== a 1))))) 1)
     (tassert "match constraint free" (matcho-out-vars (run1 (x1) (constrain (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
-    (tassert "match constraint disj first" (matcho-out-vars (cadr (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))))) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-out-vars g)))))
+    (tassert "match constraint disj first" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) (lambda (g) (and (equal? '(1 2) (car g)) (matcho-test-eq? (cadr g) (list x2) '((1 2))))))
     (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
     (tassert "match constraint disj all" (run1 (x1 x2) (constrain (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
     (tassert "match constraint no fresh" (run1 (x1 x2) (constrain (matcho ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
     (tassert "match constraint simplifies ground" (run1 (x1 x2) (constrain (matcho ([x1 (a . d)] [x2 (b . c)]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
     (tassert "match constraint simplifies var" (run1 (x1 x2) (constrain (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
-    (org-trace    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constrain (matcho ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) '((1 . 2) (1 . 2))))
+    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constrain (matcho ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (matcho-test-eq? (cadr g) (list x3) '((1 . 2))) (matcho-test-eq? (caddr g) (list x3) '((1 . 2))))))
 
     ;; Negated matcho
     (tassert "match noto pattern fail" (run1 (x1) (== x1 `(1 . 2)) (noto (matcho ([x1 (2 . y)]) succeed))) '(1 . 2))

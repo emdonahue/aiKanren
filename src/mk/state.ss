@@ -90,7 +90,7 @@
 	  (if (fail? bindings)
 	      (values fail fail fail failure)
 	      (let-values ([(bindings simplified^ recheck^ s) (unify s (cdr x) (cdr y) bindings)])
-		(values bindings (conj simplified simplified^) (conj recheck recheck^) s))))]
+		(values bindings (conj simplified simplified^) (conj recheck recheck^) s))))] ;TODO unify should simplify constraints together as it conjoins them, or perhaps in solve-== after they have all been normalized
        [else (values fail fail fail failure)]))
   
   (define (extend-var s x y bindings)
@@ -101,8 +101,8 @@
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var))
     (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))])
-      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure)
-	  (values (cons (cons var val) bindings) simplified recheck (extend (if (succeed? val-c) s (unbind-constraint s val)) var val)))))
+      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+	  (values (cons (cons var val) bindings) simplified recheck (extend s var val)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
@@ -131,7 +131,11 @@
 				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
 			    (values succeed (disj-factorized lhs rhs))
 			    (values (disj-factorized lhs rhs) succeed)))))]
-     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+     [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
+		(values simplified recheck))
+      
+      #;
+      (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
 		(if (failure? s^) (values fail fail)
 		    (values (mini-diff s^ s) succeed)))]
      #;
