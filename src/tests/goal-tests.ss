@@ -1,4 +1,4 @@
-(library (goals-tests)
+(library (goal-tests)
   (export run-goal-tests)
   (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils))
   
