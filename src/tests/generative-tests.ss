@@ -73,6 +73,6 @@
   
   (define (run-generative-tests)
 
-    (for-each run-mk (run 10 (q) (mk-expression q max-expr-depth)))
+    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
     
     ))
