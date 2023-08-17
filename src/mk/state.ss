@@ -150,12 +150,14 @@
       (let-values ([(normalized vars) (mini-reify-normalized s (matcho-out-vars g))])
        (let ([g (normalize-matcho vars (matcho-in-vars g) (matcho-goal g))])
 	 (cond
-	  [(fail? g) (values fail fail)] ; can i just return the g case and let one fail be enough?
+	  [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
 	  [(and normalized (not (null? (matcho-out-vars g)))) (values g succeed)]
+	  [(null? (matcho-out-vars g)) (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
+					 (simplify-unification g s))] ; TODO should we thread the real state when expanding matcho while simplifying ==?
 	  [else (values succeed g)])))]
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
   
-  (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying
+  (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
     (if (null? vars) (values g succeed)
 	(let ([walked (mini-walk s (car vars))])
 	  (if (eq? (car vars) walked)
