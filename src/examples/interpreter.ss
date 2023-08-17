@@ -33,6 +33,7 @@
 	[if (evalo-if expr env val)])]))
 
   (define synthesizeo
+    ;; TODO quote/literal only needed if atoms in the output do not appear in the input
     (case-lambda
       [(examples)
        (run1 (args body input output)

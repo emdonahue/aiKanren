@@ -11,28 +11,45 @@
   (org-define (solve-constraint g s conjs committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> committed pending state-or-failure?
-    (exclusive-cond
-     [(fail? g) (values fail fail failure)]
-     [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
-     [(==? g) (solve-== g s conjs committed pending)]
-     [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
-     [(disj? g) (solve-disj g s conjs committed pending)]
-     [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
-     [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
-     [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
-     [(fresh? g) (let-values ([(g s p) (g s empty-package)])
-		   (solve-constraint g s conjs committed pending))]
-     [(matcho? g) (solve-matcho g s conjs committed pending)]
-     [(pconstraint? g) (solve-pconstraint g s conjs committed pending)]
-     [(trace-goal? g) (solve-constraint (trace-goal-goal g) s conjs committed pending)]
-     [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)]))
+    (if (failure? s) (values fail fail failure)
+	(exclusive-cond
+	 [(fail? g) (values fail fail failure)]
+	 [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
+	 [(==? g) (solve-== g s conjs committed pending)]
+	 [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
+	 [(disj? g) (solve-disj g s conjs committed pending)]
+	 [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
+	 [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
+	 [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
+	 [(fresh? g) (let-values ([(g s p) (g s empty-package)])
+		       (solve-constraint g s conjs committed pending))]
+	 [(matcho? g) (solve-matcho g s conjs committed pending)]
+	 [(pconstraint? g) (solve-pconstraint g s conjs committed pending)]
+	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s conjs committed pending)]
+	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
+	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed)])
+	  (if (succeed? p) ; If there are no pending constraints, all committed constraints must be fully normalized (non disj) so we can simply store them and continue.
+	      (solve-constraint ctn (store-constraint s (noto c)) succeed (conj committed (noto c)) pending)
+	      (solve-constraint (disj (noto c) (noto p)) s succeed committed pending))
+	  #;
+	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow?
+		 [h (noto h)]
+		 [gh (disj g h)])
+	    (org-display g h gh)
+	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
+		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
+
+  #;
+    (define (solve-noto g s ctn committed pending)
+    (if (==? g) (solve-=/= g s ctn committed pending)
 	(let-values ([(g h s^) (solve-constraint g s succeed committed pending)])
 	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow?
-		[h (noto h)]
-		[gh (disj g h)])
+		 [h (noto h)]
+		 [gh (disj g h)])
+	    (org-display g h gh)
 	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
 		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
 
@@ -170,11 +187,11 @@ x    (exclusive-cond
     (org-case-lambda solve-pconstraint
       [(g s ctn committed pending) (solve-pconstraint g s ctn committed pending '())]
       [(g s ctn committed pending vs) ;-> goal? state?
-       (org-if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
+       (if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
-	     (org-if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
+	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
-		   (org-cond
+		   (cond
 			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
 			 [(goal? val) (let-values ([(g simplified recheck p)
 						    (simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
