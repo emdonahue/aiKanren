@@ -146,7 +146,7 @@
     (org-print-item (reverse-proof proof))
     (org-print-header "query")
     (org-print-item (reify-var s (trace-query)))
-    (let* ([substitution (walk-substitution s)]
+    (let* ([substitution (walk-substitution s)] ;TODO print unbound variables in substitution debugging by checking var id in state
 	   [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
       (unless (null? constraints)
 	(org-print-header "constraints")

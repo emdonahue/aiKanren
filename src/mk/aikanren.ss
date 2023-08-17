@@ -5,7 +5,7 @@
 ;;TODO test whether optimize level works for whole library
 (library (aikanren)
   (export
-   run run* run1 run-states run*-states run1-state run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs ; Run Interface
+   run run* run1 run-states run*-states run1-state run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs runner runner-next ; Run Interface
    fresh exist conde constrain matcho ; Goal Interface
    succeed fail == conde fresh ; Goals
    conj disj noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
@@ -14,7 +14,7 @@
    printfo displayo noopo trace-goal trace-run trace-conde prove trace-proof-goals trace-goals var ; Debugging
    lazy-solver ; Parameters
    )
-  (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing))
+  (import (chezscheme) (ui) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing) (running))
 
 
 )

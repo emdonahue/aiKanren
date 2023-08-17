@@ -5,17 +5,19 @@
   (define-structure (mk-var id))
   (define vars (map make-var '(1 2 3)))
   (define max-vals 2)
-  (define max-term-depth 2)
-  (define max-expr-depth 3)
+  (define max-term-depth 1)
+  (define max-expr-depth 2)
   (define symbols '(one two))
 
   (define (mk-expression e depth)
-    (if (zero? depth) fail
-     (conde
-       [(matcho ([e ('conde lhs rhs)]) (mk-expression rhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
-       [(matcho ([e ('conj lhs rhs)]) (mk-expression rhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
-       [(matcho ([e ('noto goal)]) (mk-expression/primitive goal))]
-       [(mk-expression/primitive e)])))
+    (conde
+      [(if (zero? depth) fail
+	   (conde
+	     [(matcho ([e ('conde lhs rhs)]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
+	     [(matcho ([e ('conj lhs rhs)]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]))]
+      
+      [(matcho ([e ('noto goal)]) (mk-expression/primitive goal))]
+      [(mk-expression/primitive e)]))
 
   (define (mk-expression/primitive e)
     (conde
@@ -51,7 +53,7 @@
   (define (answers-equal? g c g+c)
     (and (eq? (null? g) (null? c))
 	 (eq? (null? g) (null? g+c))
-	 (for-all (lambda (x y z)
+	 (for-all (lambda (x y z) ;c only returns 1 answ but the others should be len eq
 		    (and (eq? (goal? x) (goal? y)) (eq? (goal? x) (goal? z))
 			 (or (goal? x) (and (equal? x y) (equal? x z))))) g c g+c)))
 
@@ -59,11 +61,12 @@
     (case (car g)
       [== (== (compile-mk/term (cadr g)) (compile-mk/term (caddr g)))]
       [conj (conj (compile-mk (cadr g)) (compile-mk (caddr g)))]
-      [disj (disj (compile-mk (cadr g)) (compile-mk (caddr g)))]
+      [conde (conde (compile-mk (cadr g)) (compile-mk (caddr g)))]
       [noto (noto (compile-mk (cadr g)))]
       [numbero (numbero (compile-mk/term (cadr g)))]
       [symbolo (symbolo (compile-mk/term (cadr g)))]
-      [pairo (pairo (compile-mk/term (cadr g)))]))
+      [pairo (pairo (compile-mk/term (cadr g)))]
+      [else (assertion-violation 'compile-mk "Unrecognized goal" g)]))
 
   (define (compile-mk/term t)
     (cond
@@ -72,7 +75,15 @@
      [else t]))
   
   (define (run-generative-tests)
+    #f
+    ;;    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
+    ;;(display (length (run* (q) (mk-expression q max-expr-depth))))
+					;(pretty-print (run 100 (q) (mk-expression q max-expr-depth)))
+    #;
+    (let loop ([r (runner (q) (mk-expression q max-expr-depth))]
+	       [i 0])
+      (let-values ([(a s r) (runner-next r)])
+	(when (eq? (mod i 100000) 0) (printf "~s: ~s~%" i a))
+	(loop r (fx1+ i)))))
 
-    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
-    
-    ))
+  )

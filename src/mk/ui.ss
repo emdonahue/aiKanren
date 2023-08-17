@@ -2,6 +2,7 @@
   (export run run* run1
 	  run-states run*-states run1-state
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
+	  runner
 	  fresh exist constrain conde
 	  trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))

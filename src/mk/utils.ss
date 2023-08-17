@@ -49,7 +49,8 @@
   (define org-max-depth (make-parameter 0))
   (define org-tracing (make-parameter #f)) ;TODO maybe fold org-tracing boolean into depth 0?
   (define is-logging (make-parameter #f)) ; Flag to determine if we need a new "logging" header for additional logger print outs.
-    
+  (define header-id (make-parameter 0)) ; Unique numeric identifier for each header to easily find again on subsequent traces
+  
   (define-syntax org-trace
     (syntax-rules ()
       [(_ body ...)
@@ -65,7 +66,8 @@
   (define (org-print-header header)
     (when (org-tracing)
       (is-logging #f)
-      (printf "~a ~a [~a]~%" (make-string (org-depth) #\*) header (org-depth))))
+      (printf "~a ~a [~a]~%" (make-string (org-depth) #\*) header (header-id))
+      (header-id (fx1+ (header-id)))))
 
   (define org-print-item
     (case-lambda

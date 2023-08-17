@@ -190,11 +190,11 @@ x    (exclusive-cond
     (org-case-lambda simplify-pconstraint
       [(g p) (simplify-pconstraint g p p)]
       [(g p c)
-       (cert (or (pconstraint? p) (succeed? p)) (goal? g))
+       (cert (or (pconstraint? p) (succeed? p)) (goal? g) (or (succeed? c) (pconstraint? c)))
        (cond
 	[(succeed? p) (values succeed succeed succeed c)]
 	[(conj? g) (let-values ([(p-lhs simplified-lhs recheck-lhs c) (simplify-pconstraint (conj-lhs g) p c)])
-		     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail succeed fail)
+		     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail succeed c)
 			 (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
 			   (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
 	[(disj? g) (simplify-pconstraint-disj g p c)]
@@ -228,6 +228,7 @@ x    (exclusive-cond
 	[else (values p g succeed c)])]))
 
   (define (simplify-pconstraint-disj g p d)
+    (cert (or (succeed? d) (pconstraint? d)))
     (let*-values ([(unified-lhs simplified-lhs recheck-lhs d)
 		   (simplify-pconstraint (disj-lhs g) p d)]
 		  [(disunified-lhs) (conj simplified-lhs recheck-lhs)])
@@ -238,6 +239,7 @@ x    (exclusive-cond
 	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
 		(let ([unified (disj unified-lhs unified-rhs)])
 		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
+		    (org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
 		    (let ([disunified
 			   (conj conjs (conj
 					(if (not (or (fail? unified-lhs) (fail? unified-rhs)))
