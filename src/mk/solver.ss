@@ -237,15 +237,16 @@ x    (exclusive-cond
 			 (simplify-pconstraint (disj-rhs g) p d)]
 			[(disunified-rhs) (conj simplified-rhs recheck-rhs)])
 	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
-		(let ([unified (disj unified-lhs unified-rhs)])
+		(let ([unified (if (and (succeed? unified-lhs) (succeed? unified-rhs)) succeed p)])
 		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
 		    (org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
 		    (let ([disunified
 			   (conj conjs (conj
-					(if (not (or (fail? unified-lhs) (fail? unified-rhs)))
+					(if (not (or (succeed? unified-lhs) (fail? unified-rhs)))
 					    (conj d (disj lhs rhs))
-					    (disj (if (fail? unified-lhs) lhs (conj d lhs))
+					    (disj (if (succeed? unified-lhs) lhs (conj d lhs))
 						  (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
+		      (org-display unified unified-lhs unified-rhs)
 		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
 			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
 				   (conj-memp simplified-lhs ==?)))
