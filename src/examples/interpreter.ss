@@ -102,7 +102,7 @@
 		       (trace-goal prim (evalo-prim prim-id args val))
 		       (displayo prim-id rands args val env)
 		       (evalo-listo rands env args)
-		       (trace-goal eval-prim-args (displayo prim-id rands args val env)))]))))
+		       )])))) ;(trace-goal eval-prim-args (displayo prim-id rands args val env))
 
   (define (evalo-letrec expr env val)
     (matcho ([expr ('letrec ([name ('lambda args body)]) letrec-body)])
@@ -124,10 +124,8 @@
 			      (== val a))]
       [(== expr 'cdr) (matcho ([args ((a . d))])
 			      (== val d))]
-      [(trace-goal null (== expr 'null?) ;(== args val)
-
-	(disj (conj (=/= args '(())) (== val #f))
-	      (conj (== args '(())) (== val #t))))]))
+      [(== expr 'null?) (disj (conj (=/= args '(())) (== val #f))
+			      (conj (== args '(())) (== val #t)))]))
 
   (define (evalo-and e* env val)
     (conde
@@ -161,11 +159,12 @@
 		  (list-of-symbolso d))))
   
   (define (evalo-listo expr env val)
-    (conde
-      [(== expr '()) (== val '())]
-      [(matcho ([expr (e . es)]
-		[val (v . vs)])
-	       ;(printfo "eval listo~%")
-	       (evalo e env v)
-	       (evalo-listo es env vs))]))
+    (trace-goal proper-listo
+     (conde
+       [(== expr '()) (== val '())]
+       [(matcho ([expr (e . es)]
+		 [val (v . vs)])
+					;(printfo "eval listo~%")
+		(evalo e env v)
+		(evalo-listo es env vs))])))
 )

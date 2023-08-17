@@ -81,9 +81,10 @@
 				  (f 1)) '(1 . 1))))
 
 ;;8362 - disj that contains the bad matcho 8385  8383- disj should succeed but fails
-#;
+
+    #;
     (display (trace-run (body)
-			(prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
+			(prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (proper-listo (lookup) (proper-listo (lookup) (proper-listo)))))))
 			       (absento '(1 . 1) body)
 			       (absento 1 body)
 			       ;;(== body '(cons x x))
@@ -131,15 +132,15 @@
 
     
     ;;(display (run 1 (q) (evalo q '() q)))
+
 #;
     (run 1 (body)
-      (prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
-	     (absento '(1 . 1) body)
-	     (absento 1 body)
-	     ;;(== body '(cons x x))
-	     ;;(== body (list 'cons 'x vars))
-	     ;;(== body `(cons . vars))
-	     
-	     (evalo `(letrec ([f (lambda (x) ,body)])
-		       (f 1)) '(1 . 1))))
+;      (absento '(1 . 1) body)
+      (absento 1 body)
+      ;;(== body '(cons x x))
+      ;;(== body (list 'cons 'x vars))
+      ;;(== body `(cons . vars))
+      
+      (evalo `(letrec ([f (lambda (x) ,body)])
+		(f 1)) '(1 . 1)))
     ))
