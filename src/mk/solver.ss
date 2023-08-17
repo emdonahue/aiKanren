@@ -249,7 +249,7 @@ x    (exclusive-cond
 		      (org-display unified unified-lhs unified-rhs)
 		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
 			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-				   (conj-memp simplified-lhs ==?))) ;TODO should this check simplified or disunified?
+				   (conj-memp simplified-lhs ==?))) ; Only need to check simplified since any non succeed recheck will force a recheck
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
 
