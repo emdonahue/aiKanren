@@ -242,14 +242,14 @@ x    (exclusive-cond
 		    (org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
 		    (let ([disunified
 			   (conj conjs (conj
-					(if (not (or (succeed? unified-lhs) (fail? unified-rhs)))
+					(if (not (or (succeed? unified-lhs) (succeed? unified-rhs)))
 					    (conj d (disj lhs rhs))
 					    (disj (if (succeed? unified-lhs) lhs (conj d lhs))
-						  (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
+						  (if (succeed? unified-rhs) rhs (conj d rhs)))) disjs))])
 		      (org-display unified unified-lhs unified-rhs)
 		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
 			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-				   (conj-memp simplified-lhs ==?)))
+				   (conj-memp simplified-lhs ==?))) ;TODO should this check simplified or disunified?
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
 
