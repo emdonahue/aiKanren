@@ -125,7 +125,7 @@
 		      (let*-values ([(simplified-rhs recheck-rhs) (simplify-unification (disj-rhs g) s)]
 				    [(rhs) (conj simplified-rhs recheck-rhs)])
 			
-			(if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
+			(if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
 				(and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
 				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
 			    (values succeed (disj-factorized lhs rhs))
@@ -147,8 +147,9 @@
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(procedure? g) (values succeed g)]
      [(matcho? g)
-      (let-values ([(normalized vars) (mini-reify-normalized s (matcho-out-vars g))])
-       (let ([g (normalize-matcho vars (matcho-in-vars g) (matcho-goal g))])
+      (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
+		   [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
+       (let ([g (normalize-matcho out-vars in-vars (matcho-goal g))])
 	 (cond
 	  [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
 	  [(and normalized (not (null? (matcho-out-vars g)))) (values g succeed)]
@@ -206,7 +207,7 @@
 		 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
 		       (pretty-print c))
 		 (let ([val-or-goal (substitution-ref (state-substitution s) v)]) ; Since all attributed vars should be normalized, we don't need walk - we can look them up directly in the substitution.
-		   #;
+
 		   (when (not (goal? val-or-goal))
 		     (pretty-print v)
 		     (pretty-print val-or-goal)

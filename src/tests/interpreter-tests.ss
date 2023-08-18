@@ -133,14 +133,15 @@
     
     ;;(display (run 1 (q) (evalo q '() q)))
 
-#;
-    (run 1 (body)
-;      (absento '(1 . 1) body)
-      (absento 1 body)
-      ;;(== body '(cons x x))
-      ;;(== body (list 'cons 'x vars))
-      ;;(== body `(cons . vars))
+    ;;27719 - pconstraint should be rechecked but is normalized
+    #;
+(org-trace    (display (run 1 (body)
+		(absento '(1 . 1) body)
+		(absento 1 body)
+		;;(== body '(cons x x))
+		;;(== body (list 'cons 'x vars))
+		;;(== body `(cons . vars))
       
-      (evalo `(letrec ([f (lambda (x) ,body)])
-		(f 1)) '(1 . 1)))
+		(evalo `(letrec ([f (lambda (x) ,body)])
+			  (f 1)) '(1 . 1)))))
     ))

@@ -50,7 +50,9 @@
       (tassert "reduce == & ==!&==?" (simplify-unification (disj (== x1 2) (== x2 3)) s) (list succeed (== x2 3)))
       (tassert "reduce == & ==?&==?" (simplify-unification (disj (== x2 2) (== x2 3)) s) (list succeed (disj (== x2 2) (== x2 3))))
       (tassert "reduce == & matcho|unsatisfiable" (simplify-unification (disj (matcho ([x1 (a . d)]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) s-pair) (list succeed (conj (== x2 1) (== x3 2))))
-      (tassert "reduce == & =/=|unsatisfiable|undecidable" (simplify-unification (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) s) (list succeed (disj (=/= x2 2) (== x2 2)))))
+      (tassert "reduce == & =/=|unsatisfiable|undecidable" (simplify-unification (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) s) (list succeed (disj (=/= x2 2) (== x2 2))))
+      (tassert "reduce == simplifies matcho in vars" (simplify-unification (values-ref (simplify-unification (matcho ([x1 (a . d)] [x2 (b . c)])) s-pair) 1) `((,x3 . ,x4))) (lambda (g) (and (matcho? (cadr g)) (equal? (list x2) (matcho-out-vars (cadr g))) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x4))))))
+      (exit))
 
     ;; === DISEQUALITY ===
     (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list succeed fail succeed (=/= x1 1)))
