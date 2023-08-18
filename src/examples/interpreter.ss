@@ -24,7 +24,7 @@
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (trace-conde
-	[quote (evalo-quote expr env val)]
+	;[quote (evalo-quote expr env val)]
 	[literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
 	[lookup (symbolo expr) (lookupo expr env val)]
 	[lambda (evalo-lambda expr env val)]

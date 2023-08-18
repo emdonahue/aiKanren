@@ -124,8 +124,14 @@
     
 					;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
 
-
-
+(parameterize ([reify-constraints #f])
+ (pretty-print (run1 (body)
+		     ;(absento '(1 . 1) body)
+		     (absento 1 body)
+		     (evalo '(f 1) `((f . (rec . (lambda (x) ,body))) . ,initial-env) '(1 . 1)))
+	       #;
+	       (evalo `(letrec ([f (lambda (x) ,body)]) ;
+	       (f 1)) '(1 . 1))))
     
     #;
     (tassert "evalo quine" (run 5 (y) (evalo y y)) 1)

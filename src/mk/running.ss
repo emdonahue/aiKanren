@@ -28,7 +28,7 @@
     (let ([r (runner-step r)])
       (cond
        [(runner-null? r) (values (void) failure r)]
-       [(runner-pair? r) (values (reify (runner-car r) (runner-query r)) (runner-car r) r)]
+       [(runner-pair? r) (values ((if (reify-constraints) reify reify-var) (runner-car r) (runner-query r)) (runner-car r) r)]
        [else (runner-next r)])))
   
   (define (runner-take n r)
@@ -38,7 +38,7 @@
 	  (if (failure? state) '() (cons (cons reified state) (runner-take (fx1- n) r))))))
 
   (define (runner-dfs q g s n depth)
-    (map (lambda (s) (reify s q))
+    (map (lambda (s) ((if (reify-constraints) reify reify-var) s q))
 	 (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
 	   (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
 
@@ -47,4 +47,4 @@
 		  (parameterize ([org-tracing (trace-goals)])
 		    (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])
       (cert (list? answers))
-      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers)))))
+      (map (lambda (ans) (list ((if (reify-constraints) reify reify-var) (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers)))))
