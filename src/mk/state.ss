@@ -159,7 +159,7 @@
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
   
   (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
-    (if (null? vars) (values g succeed)
+    (if (null? vars) (values g succeed) 
 	(let ([walked (mini-walk s (car vars))])
 	  (if (eq? (car vars) walked)
 	      (simplify-unification/pconstraint g s (cdr vars)) ;TODO make == simplifier for pconstraints check for new vars
