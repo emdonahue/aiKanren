@@ -143,7 +143,7 @@
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (if (succeed? recheck) (values (noto simplified) succeed)
 		      (values succeed (noto (conj simplified recheck)))))]
-     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g))]
+     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(procedure? g) (values succeed g)]
      [(matcho? g)
@@ -158,11 +158,12 @@
 	  [else (values succeed g)])))]
      [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
   
-  (define (simplify-unification/pconstraint g s vars) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
-    (if (null? vars) (values g succeed) 
-	(let ([walked (mini-walk s (car vars))])
+  (define (simplify-unification/pconstraint g s vars normalized) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
+    (if (null? vars)
+	(if normalized (values g succeed) (values succeed g)) 
+	(let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
 	  (if (eq? (car vars) walked)
-	      (simplify-unification/pconstraint g s (cdr vars)) ;TODO make == simplifier for pconstraints check for new vars
+	      (simplify-unification/pconstraint g s (cdr vars) (and normalized normalized-var)) ;TODO make == simplifier for pconstraints check for new vars
 	      (simplify-unification ((pconstraint-procedure g) (car vars) walked g succeed (pconstraint-data g)) s))))
 #;
     (values succeed (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)))

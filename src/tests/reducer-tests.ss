@@ -32,8 +32,8 @@
       (tassert "reduce == & not satisfied" (simplify-unification (noto (numbero x1)) s) (list fail succeed))
       (tassert "reduce == & unsatisfiable" (simplify-unification (symbolo x1) s) (list fail fail))
       (tassert "reduce == & not unsatisfiable" (simplify-unification (noto (symbolo x1)) s) (list succeed succeed))
-      (tassert "reduce == & undecidable" (simplify-unification (symbolo x2) s) (list (symbolo x2) succeed))
-      (tassert "reduce == & not undecidable" (simplify-unification (noto (symbolo x2)) s) (list (noto (symbolo x2)) succeed))
+      (tassert "reduce == & undecidable" (simplify-unification (symbolo x2) s) (list succeed (symbolo x2)))
+      (tassert "reduce == & not undecidable" (simplify-unification (noto (symbolo x2)) s) (list succeed (noto (symbolo x2))))
       (tassert "reduce ==f & undecidable" (simplify-unification (symbolo x1) s-free) (list (symbolo x2) succeed))
       (tassert "reduce ==f & not undecidable" (simplify-unification (noto (symbolo x1)) s-free) (list (noto (symbolo x2)) succeed))
 
