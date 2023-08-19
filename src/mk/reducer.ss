@@ -2,5 +2,5 @@
 (library (reducer)
   (export reduce)
   (import (chezscheme))
-
+  ;;TODO simplify with negated pconstraints as well
   (define (reduce g u)) 3)

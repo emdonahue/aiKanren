@@ -203,9 +203,14 @@
     ;; === NOTO ===
 
     (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
+    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) (matcho ([x1 (a . d)]))) (noto (numbero x1))) (list (conj (disj (disj (=/= x1 1) (=/= x1 2)) (matcho ([x1 (a . d)]))) (numbero x1))))
 
     ;; === PCONSTRAINT ===
     (tassert "pconstraint rechecks if not normalized" (run1 (x1 x2) (disj (conj (numbero x1) (numbero x2)) (symbolo x1)) (== x2 2) (== x1 1)) '(1 2))
+    ;;(tassert "pconstraint does not return constraints as normalized commits" (run1 (x1) (disj (=/= x1 1) (matcho ([x1 (a . d)]))) (disj (noto (pairo x1)) (=/= x1 1))) 1)
+    (tassert "pconstraint does not return constraints as normalized commits" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (noto (pairo x1))) 1)
+
+
     
     ;; === MATCHO ===
 ;;(tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)

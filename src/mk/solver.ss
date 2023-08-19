@@ -31,16 +31,20 @@
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
 	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed)])
+
+	  (when (not (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
+	  (printf "c ~s~%p ~s~%g ~s~%" c p g))
+	  (cert (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
 	  (if (succeed? p) ; If there are no pending constraints, all committed constraints must be fully normalized (non disj) so we can simply store them and continue.
 	      (solve-constraint ctn (store-constraint s (noto c)) succeed (conj committed (noto c)) pending)
-	      (solve-constraint (disj (noto c) (noto p)) s succeed committed pending))
+	      (solve-constraint (disj (noto c) (noto p)) s ctn committed pending))
 	  #;
-	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow?
-		 [h (noto h)]
-		 [gh (disj g h)])
-	    (org-display g h gh)
-	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
-		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
+	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow? ;
+	  [h (noto h)]			;
+	  [gh (disj g h)])		;
+	  (org-display g h gh)		;
+	  (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further ;
+	  (solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
 
   #;
     (define (solve-noto g s ctn committed pending)
@@ -191,17 +195,18 @@ x    (exclusive-cond
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
 	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
-		   (cond
-			 [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
-			 [(goal? val) (let-values ([(g simplified recheck p)
-						    (simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
-						     val ((pconstraint-procedure g) var var^ succeed succeed (pconstraint-data g)))])
-					(if (succeed? g) (solve-constraint ctn s succeed committed pending)
-					    (if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
-						(solve-pconstraint p (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
-								   (conj recheck ctn) committed pending (cons var^ vs)))))]
-			 [else (solve-pconstraint ((pconstraint-procedure g) var^ val succeed succeed (pconstraint-data g))
-						  s ctn committed pending (cons var^ vs))])))))]))
+		   (cond 
+		    [(eq? var val) (solve-pconstraint g s ctn committed pending (cons var^ vs))] ; Ignore free vars. There should be no ground terms in pconstraint vars list.
+		    [(var? val) (solve-pconstraint (pconstraint-rebind-var g var^ val) s ctn committed pending (cons var^ vs))] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings.
+		    [(goal? val) (let-values ([(g simplified recheck p)
+					       (simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
+						val ((pconstraint-procedure g) var var^ succeed succeed (pconstraint-data g)))])
+				   (if (succeed? g) (solve-constraint ctn s succeed committed pending)
+				       (if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
+					   (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
+							      (conj recheck ctn) committed pending (cons var^ vs)))))]
+		    [else (solve-pconstraint ((pconstraint-procedure g) var^ val succeed succeed (pconstraint-data g))
+					     s ctn committed pending (cons var^ vs))])))))]))
 
   (define simplify-pconstraint
     (org-case-lambda simplify-pconstraint

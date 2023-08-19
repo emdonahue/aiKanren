@@ -66,11 +66,15 @@
     (cert (list? vars) (procedure? procedure))
     (make-pconstraint vars procedure data))
 
-  (define (pconstraint-rebind-var g v)
+  (define pconstraint-rebind-var
     ;; Moves a pconstraint from one var to another
-    (pconstraint (cons v (cdr (pconstraint-vars g)))
-		 (pconstraint-procedure g)
-		 (pconstraint-data g)))
+    (case-lambda
+      [(g v) (pconstraint (cons v (cdr (pconstraint-vars g)))
+			  (pconstraint-procedure g)
+			  (pconstraint-data g))]
+      [(g v v^) (pconstraint (cons v^ (remq v (pconstraint-vars g)))
+			     (pconstraint-procedure g)
+			     (pconstraint-data g))]))
 
   (define (pconstraint-check p var val)
     (cert (memq var (pconstraint-vars p)))

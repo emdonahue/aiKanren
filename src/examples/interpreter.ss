@@ -24,13 +24,14 @@
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (trace-conde
-	;[quote (evalo-quote expr env val)]
+	[quote (evalo-quote expr env val)]
 	[literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
 	[lookup (symbolo expr) (lookupo expr env val)]
 	[lambda (evalo-lambda expr env val)]
 	[apply (evalo-apply expr env val)]
 	[letrec (evalo-letrec expr env val)]
-	[if (evalo-if expr env val)])]))
+	[if (evalo-if expr env val)]
+	)]))
 
   (define synthesizeo
     ;; TODO quote/literal only needed if atoms in the output do not appear in the input
@@ -99,7 +100,7 @@
 		    (extend-env params rands env env
 				(lambda (env^) (evalo body env^ val)))]))]
 	      [(matcho ([closure ('prim . prim-id)])
-		       (trace-goal prim (evalo-prim prim-id args val))
+		       (evalo-prim prim-id args val)
 		       (displayo prim-id rands args val env)
 		       (evalo-listo rands env args)
 		       )])))) ;(trace-goal eval-prim-args (displayo prim-id rands args val env))
@@ -112,19 +113,19 @@
 	    ))
   
   (define (evalo-prim expr args val)
-    (conde
+    (trace-conde
       
       #;
       [(matcho ([expr (and . e*)])
 	       (not-in-envo 'and env)
 	       (evalo-and e* env val))]
-      [(== expr 'cons) (matcho ([args (a d)]
+      [cons (== expr 'cons) (matcho ([args (a d)]
 				[val (a . d)]))]
-      [(== expr 'car) (matcho ([args ((a . d))])
+      [car (== expr 'car) (matcho ([args ((a . d))])
 			      (== val a))]
-      [(== expr 'cdr) (matcho ([args ((a . d))])
+      [cdr (== expr 'cdr) (matcho ([args ((a . d))])
 			      (== val d))]
-      [(== expr 'null?) (disj (conj (=/= args '(())) (== val #f))
+      [null (== expr 'null?) (disj (conj (=/= args '(())) (== val #f))
 			      (conj (== args '(())) (== val #t)))]))
 
   (define (evalo-and e* env val)

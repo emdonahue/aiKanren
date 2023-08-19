@@ -69,7 +69,17 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
 
-
+    #;
+    (parameterize ([trace-goals #t]
+		   [reify-constraints #f])
+ (pretty-print (trace-run (body)
+			  (absento 1 body)
+			  #;
+			  (== body `(('(closure ;
+			  (lambda () (closure (lambda a '(1 . 1)) b)) ;
+			  c))))
+			  (evalo '(f 1) `((f . (rec . (lambda (x) ,body))) . ,initial-env) '(1 . 1)))))
+    
 #;
     (display (trace-run (body)
 			(absento '(1 . 1) body)
@@ -123,9 +133,9 @@
     __)
     
 					;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
-
+#;
 (parameterize ([reify-constraints #f])
- (pretty-print (run1 (body)
+  (pretty-print (run1 (body)
 		     ;(absento '(1 . 1) body)
 		     (absento 1 body)
 		     (evalo '(f 1) `((f . (rec . (lambda (x) ,body))) . ,initial-env) '(1 . 1)))

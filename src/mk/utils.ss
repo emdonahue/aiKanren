@@ -31,7 +31,7 @@
       [(_ message ...) (assertion-violation (string-append (string-append (symbol->string 'message) " ") ...) "Not Yet Implemented")]))
 
   ;; === ASSERTIONS ===
-  (define-syntax cert ;TODO have cert test conditions individually and print the failing condition
+  (define-syntax cert
     (syntax-rules () ;;TODO update cert to produce nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
       [(_ assertion ...) (when (zero? (optimize-level)) (assert assertion) ...)]))
 
