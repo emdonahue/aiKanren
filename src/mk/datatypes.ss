@@ -72,9 +72,10 @@
       [(g v) (pconstraint (cons v (cdr (pconstraint-vars g)))
 			  (pconstraint-procedure g)
 			  (pconstraint-data g))]
-      [(g v v^) (pconstraint (cons v^ (remq v (pconstraint-vars g)))
-			     (pconstraint-procedure g)
-			     (pconstraint-data g))]))
+      [(g v v^) (if (eq? v v^) g
+		    (pconstraint (cons v^ (remq v (pconstraint-vars g)))
+				 (pconstraint-procedure g)
+				 (pconstraint-data g)))]))
 
   (define (pconstraint-check p var val)
     (cert (memq var (pconstraint-vars p)))
