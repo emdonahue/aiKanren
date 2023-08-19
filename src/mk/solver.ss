@@ -199,8 +199,7 @@ x    (exclusive-cond
 		    (cond 
 		     [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn committed pending vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
 		     [(goal? val) (let-values ([(g simplified recheck p)
-						(simplify-pconstraint ;TODO we dont need to create a new pconstraint before reducing since now the reducer takes all the vars
-						 val (pconstraint-rebind-var g var var^))])
+						(simplify-pconstraint val (pconstraint-rebind-var g var var^))])
 				    (if (succeed? g) (solve-constraint ctn s succeed committed pending)
 					(if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 					    (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?

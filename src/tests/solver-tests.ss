@@ -7,6 +7,7 @@
     (define x2 (make-var 2))
     (define x3 (make-var 3))
     (define x4 (make-var 4))
+    (define matcho-x1 (matcho ([x1 (a . d)])))
 
     ;; === CON/DISJUNCTION ===
     (tassert "conj fail first" (conj fail succeed) fail)
@@ -203,7 +204,8 @@
     ;; === NOTO ===
 
     (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
-    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) (matcho ([x1 (a . d)]))) (noto (numbero x1))) (list (conj (disj (disj (=/= x1 1) (=/= x1 2)) (matcho ([x1 (a . d)]))) (numbero x1))))
+    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))))
+    
 
     ;; === PCONSTRAINT ===
     (tassert "pconstraint rechecks if not normalized" (run1 (x1 x2) (disj (conj (numbero x1) (numbero x2)) (symbolo x1)) (== x2 2) (== x1 1)) '(1 2))
