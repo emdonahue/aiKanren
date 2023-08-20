@@ -31,7 +31,7 @@
   (define (solve-noto g s ctn committed pending)
     (if (==? g) (solve-=/= g s ctn committed pending)
 	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed)])
-
+	  (org-display c p s^)
 	  (when (not (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
 	  (printf "c ~s~%p ~s~%g ~s~%" c p g))
 	  (cert (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))

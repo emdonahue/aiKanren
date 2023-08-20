@@ -8,6 +8,8 @@
     (define x3 (make-var 3))
     (define x4 (make-var 4))
     (define matcho-x1 (matcho ([x1 (a . d)])))
+    (define matcho-x1-x2 (matcho ([x1 (a . d)] [x2 (b . c)])))
+    (define matcho-x3-x2 (make-matcho (list x3 x2) '() #f))
 
     ;; === CON/DISJUNCTION ===
     (tassert "conj fail first" (conj fail succeed) fail)
@@ -121,6 +123,9 @@
     (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (constraint (disj* (=/= x1 1) (=/= x1 1))) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj only walks 1st disjunct if no ==" (run1 (x1 x2) (== x2 2) (constrain (conde [(=/= x1 1)] [(=/= x2 2)]))) (list (disj (=/= x1 1) (=/= x2 2)) 2))
+
+    ;; === STORE ===
+    (tassert "normalized constraints removed when further solved" (run1 (x1 x2 x3) (disj (conj (make-matcho (list x1 x2) '() #f) (== x1 x3)) (=/= x1 1))) (list (disj (=/= x1 1) (conj (== x1 x2) matcho-x3-x2) ) x2 x3))
     
     ;; === DISEQUALITY ===
 
@@ -204,7 +209,9 @@
     ;; === NOTO ===
 
     (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
-    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))))
+    ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
+    (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (disj (== x1 1) (== x2 2)))
+
     
 
     ;; === PCONSTRAINT ===
@@ -217,6 +224,5 @@
     ;; === MATCHO ===
 ;;(tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)
     (tassert "matcho doesn't overwrite =/=" (run1 (x1) (=/= x1 '(())) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
-;;    (tassert "matcho doesnt double count itself in disj simplification" (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (disj (matcho ([x1 (a . d)]) (=/= a d)) (=/= x1 1))) 1)
   
     ))
