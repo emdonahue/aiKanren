@@ -19,9 +19,8 @@
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values committed pending s)
-			       (solve-constraint resolve s succeed succeed committed pending)
-			       #;
-			       (let-values ([(c p s) (solve-constraint 'resolve s succeed committed pending)])
+			       ;;(solve-constraint resolve s succeed succeed committed pending)
+			       (let-values ([(c p s) (solve-constraint resolve s succeed succeed committed pending)])
 				 (if (failure? s) (values fail fail failure)
 				     (values succeed succeed s))))
 			   (solve-constraint ctn s succeed resolve committed pending))]
