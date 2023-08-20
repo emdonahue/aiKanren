@@ -5,66 +5,53 @@
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
+    (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed succeed)])
       (store-constraint s pending)))
 
-  (org-define (solve-constraint g s ctn committed pending)
+  (org-define (solve-constraint g s ctn resolve committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> committed pending state-or-failure?
     (if (failure? s) (values fail fail failure)
 	(exclusive-cond
 	 [(fail? g) (values fail fail failure)]
-	 [(succeed? g) (if (succeed? ctn) (values committed pending s) (solve-constraint ctn s succeed committed pending))]
-	 [#f (if (succeed? ctn)
-		 (if (succeed? 'recheck)
-		     (values committed pending s)
-		     (let-values ([(c p s) (solve-constraint 'resolve s succeed committed pending)])
-		       (if (failure? s) (values fail fail failure)
-			   (values succeed succeed s))))
-		 (solve-constraint ctn s succeed committed pending))]
-	 [(==? g) (solve-== g s ctn committed pending)]
-	 [(noto? g) (solve-noto (noto-goal g) s ctn committed pending)]
-	 [(disj? g) (solve-disj g s ctn committed pending)]
-	 [(conde? g) (solve-constraint (conde->disj g) s ctn committed pending)]
-	 [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) committed pending)]
-	 [(constraint? g) (solve-constraint (constraint-goal g) s ctn committed pending)]
+	 ;;[(succeed? g) (if (succeed? ctn) (values committed pending s) (solve-constraint ctn s succeed committed pending))]
+
+	 [(succeed? g) (if (succeed? ctn)
+			   (if (succeed? resolve)
+			       (values committed pending s)
+			       (solve-constraint resolve s succeed succeed committed pending)
+			       #;
+			       (let-values ([(c p s) (solve-constraint 'resolve s succeed committed pending)])
+				 (if (failure? s) (values fail fail failure)
+				     (values succeed succeed s))))
+			   (solve-constraint ctn s succeed resolve committed pending))]
+	 [(==? g) (solve-== g s ctn resolve committed pending)]
+	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve committed pending)]
+	 [(disj? g) (solve-disj g s ctn resolve committed pending)]
+	 [(conde? g) (solve-constraint (conde->disj g) s ctn resolve committed pending)]
+	 [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) resolve committed pending)]
+	 [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve committed pending)]
 	 [(fresh? g) (let-values ([(g s p) (g s empty-package)])
-		       (solve-constraint g s ctn committed pending))]
-	 [(matcho? g) (solve-matcho g s ctn committed pending)]
-	 [(pconstraint? g) (solve-pconstraint g s ctn committed pending)]
-	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn committed pending)]
+		       (solve-constraint g s ctn resolve committed pending))]
+	 [(matcho? g) (solve-matcho g s ctn resolve committed pending)]
+	 [(pconstraint? g) (solve-pconstraint g s ctn resolve committed pending)]
+	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve committed pending)]
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
-  (define (solve-noto g s ctn committed pending)
-    (if (==? g) (solve-=/= g s ctn committed pending)
-	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed)])
+  (define (solve-noto g s ctn resolve committed pending)
+    (if (==? g) (solve-=/= g s ctn resolve committed pending)
+	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed succeed)])
 	  (org-display c p s^)
 	  (when (not (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
 	  (printf "c ~s~%p ~s~%g ~s~%" c p g))
 	  (cert (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
 	  (if (succeed? p) ; If there are no pending constraints, all committed constraints must be fully normalized (non disj) so we can simply store them and continue.
-	      (solve-constraint ctn (store-constraint s (noto c)) succeed (conj committed (noto c)) pending)
-	      (solve-constraint (disj (noto c) (noto p)) s ctn committed pending))
-	  #;
-	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow? ;
-	  [h (noto h)]			;
-	  [gh (disj g h)])		;
-	  (org-display g h gh)		;
-	  (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further ;
-	  (solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
+	      (solve-constraint ctn (store-constraint s (noto c)) succeed resolve (conj committed (noto c)) pending)
+	      (solve-constraint (disj (noto c) (noto p)) s ctn resolve committed pending)))))
 
-  #;
-    (define (solve-noto g s ctn committed pending)
-    (if (==? g) (solve-=/= g s ctn committed pending)
-	(let-values ([(g h s^) (solve-constraint g s succeed committed pending)])
-	  (let* ([g (noto g)] ;TODO should solve noto solve the positive goal with ctn and then simply transform the result somehow?
-		 [h (noto h)]
-		 [gh (disj g h)])
-	    (org-display g h gh)
-	    (if (fail? gh) (values fail fail failure) ;TODO scrutinize precisely which goals must be returned and which may solve further
-		(solve-constraint ctn (store-constraint s gh) succeed (conj committed gh) pending))))))
 
-  (org-define (solve-== g s ctn committed pending)
+
+  (org-define (solve-== g s ctn resolve committed pending)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO is it possible to use the delta on == as a minisubstitution and totally ignore the full substitution when checking constraints? maybe we only have to start doing walks when we reach the simplification level where vars wont be in lowest terms
     ;;TODO quick replace extended vars in constraints looked up during unify and check for immediate failures
@@ -78,7 +65,7 @@
       (cond
        [(fail? bindings) (values fail fail failure)]
        ;; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
-       [(or (null? bindings) (null? (cdr bindings))) (occurs-check bindings simplified recheck s ctn committed pending)] ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
+       [(or (null? bindings) (null? (cdr bindings))) (occurs-check bindings simplified recheck s ctn resolve committed pending)] ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
        [else
 	(let-values ([(simplified/simplified simplified/recheck) (simplify-unification simplified bindings)])
 	        (org-display simplified/simplified simplified/recheck)
@@ -87,12 +74,12 @@
 		(if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
 		    (occurs-check bindings simplified/simplified
 				  (conj simplified/recheck (conj recheck/simplified recheck/recheck))
-				  s ctn committed pending)))))])))
+				  s ctn resolve committed pending)))))])))
 
-  (define (occurs-check bindings simplified recheck s ctn committed pending)
+  (define (occurs-check bindings simplified recheck s ctn resolve committed pending)
     (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
 	(solve-constraint
-	 recheck (store-constraint s simplified) ctn (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
+	 recheck (store-constraint s simplified) ctn resolve (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
 
   (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
@@ -106,16 +93,16 @@
 	  (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
      [else #f]))
 
-  (org-define (solve-=/= g s ctn committed pending)
+  (org-define (solve-=/= g s ctn resolve committed pending)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
 	      ;;TODO can we just add the =/= disjunction directly to the state and let the solver deal with it? might have to report it as added rather than pending once the two constraint return system is in place
     (cert (==? g)) ; -> goal? state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y
-      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
-	  (if (disj? g) (solve-constraint g s ctn committed pending) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
+      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
+	  (if (disj? g) (solve-constraint g s ctn resolve committed pending) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
 	   (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-	     (if (fail? unified) (solve-constraint ctn s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
-		 (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn (conj committed g) pending)))))))
+	     (if (fail? unified) (solve-constraint ctn resolve s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
+		 (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn resolve (conj committed g) pending)))))))
 
   (org-define (simplify-=/= g x y d)
     ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
@@ -171,24 +158,24 @@ x    (exclusive-cond
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
 
-  (org-define (solve-matcho g s ctn committed pending)
+  (org-define (solve-matcho g s ctn resolve committed pending)
     (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
-	  (solve-constraint g s ctn committed pending)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
+	  (solve-constraint g s ctn resolve committed pending)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
 	(let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
 	  ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
 	  (if (var? v) ; If first out-var is free,
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho.
-		(solve-constraint ctn (store-constraint s m) succeed (conj committed m) pending)) ; Otherwise, keep looking for a free var.
+		(solve-constraint ctn resolve (store-constraint s m) succeed (conj committed m) pending)) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
-	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn committed pending)))))
+	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve committed pending)))))
 
-  (org-define (solve-disj g s ctn committed pending) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
-    (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn succeed succeed)])
+  (org-define (solve-disj g s ctn resolve committed pending) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
+    (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn resolve succeed succeed)])
       (let* ([lhs (conj c-lhs p-lhs)])
-	(if (fail? lhs) (solve-constraint (disj-rhs g) s ctn committed pending)
+	(if (fail? lhs) (solve-constraint (disj-rhs g) s ctn resolve committed pending)
 	    (let*-values ([(c-rhs p-rhs s-rhs)
-			   (if (or (not (lazy-solver)) (conj-memp lhs ==?)) (solve-constraint (disj-rhs g) s ctn succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
+			   (if (or (not (lazy-solver)) (conj-memp lhs ==?)) (solve-constraint (disj-rhs g) s ctn resolve succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
 			       (values succeed (conj (disj-rhs g) ctn) s))]
 			  [(rhs) (conj c-rhs p-rhs)])
 	      (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
@@ -196,22 +183,23 @@ x    (exclusive-cond
 
   (define solve-pconstraint
     (org-case-lambda solve-pconstraint
-      [(g s ctn committed pending) (solve-pconstraint g s ctn committed pending '())]
-      [(g s ctn committed pending vs) ;-> goal? state?
-       (if (not (pconstraint? g)) (solve-constraint g s ctn committed pending)
+      [(g s ctn resolve committed pending) (solve-pconstraint g s ctn resolve committed pending '())]
+      [(g s ctn resolve committed pending vs) ;-> goal? state?
+       (cert (goal? g) (state? s) (goal? ctn) (goal? resolve) (goal? committed) (goal? pending) (list? vs))
+       (if (not (pconstraint? g)) (solve-constraint g s ctn resolve committed pending)
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
-	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed (conj committed g) pending) ; All vars walked. Store constraint.
+	     (if (not var) (solve-constraint ctn (store-constraint s g) succeed resolve (conj committed g) pending) ; All vars walked. Store constraint.
 		 (let-values ([(var^ val) (walk-var-val s var)])
 		   (let ([vs (cons var^ vs)])
 		    (cond 
-		     [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn committed pending vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
+		     [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn resolve committed pending vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
 		     [(goal? val) (let-values ([(g simplified recheck p)
 						(simplify-pconstraint val (pconstraint-rebind-var g var var^))])
-				    (if (succeed? g) (solve-constraint ctn s succeed committed pending)
+				    (if (succeed? g) (solve-constraint ctn resolve s succeed committed pending)
 					(if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 					    (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
-							       (conj recheck ctn) committed pending vs))))]
-		     [else (solve-pconstraint (pconstraint-check g var^ val) s ctn committed pending vs)]))))))]))
+							       (conj recheck ctn) resolve committed pending vs))))]
+		     [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve committed pending vs)]))))))]))
 
   (define simplify-pconstraint
     (org-case-lambda simplify-pconstraint
