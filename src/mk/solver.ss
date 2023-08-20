@@ -15,6 +15,13 @@
 	(exclusive-cond
 	 [(fail? g) (values fail fail failure)]
 	 [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
+	 [#f (if (succeed? conjs)
+		 (if (succeed? 'recheck)
+		     (values committed pending s)
+		     (let-values ([(c p s) (solve-constraint 'resolve s succeed committed pending)])
+		       (if (failure? s) (values fail fail failure)
+			   (values succeed succeed s))))
+		 (solve-constraint conjs s succeed committed pending))]
 	 [(==? g) (solve-== g s conjs committed pending)]
 	 [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
 	 [(disj? g) (solve-disj g s conjs committed pending)]
