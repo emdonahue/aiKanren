@@ -21,8 +21,9 @@
 			       (values committed pending s)
 			       ;;(solve-constraint resolve s succeed succeed committed pending)
 			       (let-values ([(c p s) (solve-constraint resolve s succeed succeed committed pending)])
+				 (cert (succeed? p)) ;TODO pending constraints should be stored in the state but not added to the continuation constraints
 				 (if (failure? s) (values fail fail failure)
-				     (values succeed succeed s))))
+				     (values committed pending s))))
 			   (solve-constraint ctn s succeed resolve committed pending))]
 	 [(==? g) (solve-== g s ctn resolve committed pending)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve committed pending)]
