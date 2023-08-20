@@ -8,31 +8,31 @@
     (let-values ([(committed pending s) (solve-constraint g s succeed succeed succeed)])
       (store-constraint s pending)))
 
-  (org-define (solve-constraint g s conjs committed pending)
+  (org-define (solve-constraint g s ctn committed pending)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
-    (cert (goal? g) (state-or-failure? s) (goal? conjs)) ; -> committed pending state-or-failure?
+    (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> committed pending state-or-failure?
     (if (failure? s) (values fail fail failure)
 	(exclusive-cond
 	 [(fail? g) (values fail fail failure)]
-	 [(succeed? g) (if (succeed? conjs) (values committed pending s) (solve-constraint conjs s succeed committed pending))]
-	 [#f (if (succeed? conjs)
+	 [(succeed? g) (if (succeed? ctn) (values committed pending s) (solve-constraint ctn s succeed committed pending))]
+	 [#f (if (succeed? ctn)
 		 (if (succeed? 'recheck)
 		     (values committed pending s)
 		     (let-values ([(c p s) (solve-constraint 'resolve s succeed committed pending)])
 		       (if (failure? s) (values fail fail failure)
 			   (values succeed succeed s))))
-		 (solve-constraint conjs s succeed committed pending))]
-	 [(==? g) (solve-== g s conjs committed pending)]
-	 [(noto? g) (solve-noto (noto-goal g) s conjs committed pending)]
-	 [(disj? g) (solve-disj g s conjs committed pending)]
-	 [(conde? g) (solve-constraint (conde->disj g) s conjs committed pending)]
-	 [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) conjs) committed pending)]
-	 [(constraint? g) (solve-constraint (constraint-goal g) s conjs committed pending)]
+		 (solve-constraint ctn s succeed committed pending))]
+	 [(==? g) (solve-== g s ctn committed pending)]
+	 [(noto? g) (solve-noto (noto-goal g) s ctn committed pending)]
+	 [(disj? g) (solve-disj g s ctn committed pending)]
+	 [(conde? g) (solve-constraint (conde->disj g) s ctn committed pending)]
+	 [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) committed pending)]
+	 [(constraint? g) (solve-constraint (constraint-goal g) s ctn committed pending)]
 	 [(fresh? g) (let-values ([(g s p) (g s empty-package)])
-		       (solve-constraint g s conjs committed pending))]
-	 [(matcho? g) (solve-matcho g s conjs committed pending)]
-	 [(pconstraint? g) (solve-pconstraint g s conjs committed pending)]
-	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s conjs committed pending)]
+		       (solve-constraint g s ctn committed pending))]
+	 [(matcho? g) (solve-matcho g s ctn committed pending)]
+	 [(pconstraint? g) (solve-pconstraint g s ctn committed pending)]
+	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn committed pending)]
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
   (define (solve-noto g s ctn committed pending)
