@@ -101,7 +101,7 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 	  (if (disj? g) (solve-constraint g s ctn resolve committed pending) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
 	   (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-	     (if (fail? unified) (solve-constraint ctn resolve s succeed committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
+	     (if (fail? unified) (solve-constraint ctn s succeed resolve committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
 		 (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn resolve (conj committed g) pending)))))))
 
   (org-define (simplify-=/= g x y d)
@@ -166,7 +166,7 @@ x    (exclusive-cond
 	  ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
 	  (if (var? v) ; If first out-var is free,
 	      (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho.
-		(solve-constraint ctn resolve (store-constraint s m) succeed (conj committed m) pending)) ; Otherwise, keep looking for a free var.
+		(solve-constraint ctn (store-constraint s m) succeed resolve (conj committed m) pending)) ; Otherwise, keep looking for a free var.
 	      ;;TODO just operate on the list for matcho solving
 	      (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve committed pending)))))
 
@@ -195,7 +195,7 @@ x    (exclusive-cond
 		     [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn resolve committed pending vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
 		     [(goal? val) (let-values ([(g simplified recheck p)
 						(simplify-pconstraint val (pconstraint-rebind-var g var var^))])
-				    (if (succeed? g) (solve-constraint ctn resolve s succeed committed pending)
+				    (if (succeed? g) (solve-constraint ctn s succeed resolve committed pending)
 					(if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 					    (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
 							       (conj recheck ctn) resolve committed pending vs))))]
