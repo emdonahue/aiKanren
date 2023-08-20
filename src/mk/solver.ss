@@ -183,7 +183,7 @@ x    (exclusive-cond
   (define solve-pconstraint
     (org-case-lambda solve-pconstraint
       [(g s ctn resolve committed pending) (solve-pconstraint g s ctn resolve committed pending '())]
-      [(g s ctn resolve committed pending vs) ;-> goal? state?
+      [(g s ctn resolve committed pending vs) ; -> committed pending state?
        (cert (goal? g) (state? s) (goal? ctn) (goal? resolve) (goal? committed) (goal? pending) (list? vs))
        (if (not (pconstraint? g)) (solve-constraint g s ctn resolve committed pending)
 	   (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
@@ -197,7 +197,7 @@ x    (exclusive-cond
 				    (if (succeed? g) (solve-constraint ctn s succeed resolve committed pending)
 					(if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 					    (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
-							       (conj recheck ctn) resolve committed pending vs))))]
+							       ctn (conj recheck resolve) committed pending vs))))]
 		     [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve committed pending vs)]))))))]))
 
   (define simplify-pconstraint
