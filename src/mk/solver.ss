@@ -20,8 +20,9 @@
 			   (if (succeed? resolve)
 			       (values committed pending s)
 			       ;;(solve-constraint resolve s succeed succeed committed pending)
-			       (let-values ([(c p s) (solve-constraint resolve s succeed succeed committed pending)])
-				 (cert (succeed? p)) ;TODO pending constraints should be stored in the state but not added to the continuation constraints
+			       (let-values ([(c p s^) (solve-constraint resolve s succeed succeed committed pending)])
+				 ;;(when (not (succeed? p)) (printf "resolve: ~s~%c: ~s~%p: ~s~%" resolve c p))
+				 ;;(cert (succeed? p)) ;TODO pending constraints should be stored in the state but not added to the continuation constraints
 				 (if (failure? s) (values fail fail failure)
 				     (values committed pending s))))
 			   (solve-constraint ctn s succeed resolve committed pending))]

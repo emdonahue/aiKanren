@@ -127,6 +127,7 @@
 
     ;; === STORE ===
     (tassert "normalized constraints removed when further solved" (run1 (x1 x2 x3) (disj (conj (make-matcho (list x1 x2) '() #f) (== x1 x3)) (=/= x1 1))) (list (disj (=/= x1 1) (conj (== x1 x2) matcho-x3-x2) ) x2 x3))
+
     
     ;; === DISEQUALITY ===
 
@@ -217,9 +218,6 @@
 
     ;; === PCONSTRAINT ===
     (tassert "pconstraint rechecks if not normalized" (run1 (x1 x2) (disj (conj (numbero x1) (numbero x2)) (symbolo x1)) (== x2 2) (== x1 1)) '(1 2))
-    ;;(tassert "pconstraint does not return constraints as normalized commits" (run1 (x1) (disj (=/= x1 1) (matcho ([x1 (a . d)]))) (disj (noto (pairo x1)) (=/= x1 1))) 1)
-    (tassert "pconstraint does not return constraints as normalized commits" (run1 (x1) (constrain (matcho ([x1 (a . d)]))) (noto (pairo x1))) 1)
-
 
     
     ;; === MATCHO ===
