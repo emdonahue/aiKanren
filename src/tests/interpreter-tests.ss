@@ -69,6 +69,12 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
 
+    (tassert "synthesize cons"
+	     (run1 (body)
+		   (absento 1 body)
+		   (evalo `(letrec ([f (lambda (x) ,body)])
+			     (f 1)) '(1 . 1))) '(cons x x))
+
     #;
     (parameterize ([trace-goals #t]
 		   [reify-constraints #f])
