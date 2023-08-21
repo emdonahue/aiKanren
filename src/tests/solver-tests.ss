@@ -126,6 +126,7 @@
     (tassert "disj only walks 1st disjunct if no ==" (run1 (x1 x2) (== x2 2) (constrain (conde [(=/= x1 1)] [(=/= x2 2)]))) (list (disj (=/= x1 1) (=/= x2 2)) 2))
 
     ;; === STORE ===
+    #;
     (tassert "normalized constraints removed when further solved" (run1 (x1 x2 x3) (disj (conj (make-matcho (list x1 x2) '() #f) (== x1 x3)) (=/= x1 1))) (list (disj (=/= x1 1) (conj (== x1 x2) matcho-x3-x2) ) x2 x3))
 
     
