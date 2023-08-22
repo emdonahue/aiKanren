@@ -32,8 +32,11 @@
 
   ;; === ASSERTIONS ===
   (define-syntax cert
-    (syntax-rules () ;;TODO update cert to produce nothing when compiled at optimization level 3 and ditch the entire assertion trimming mechanism. need to also account for profiling though, so maybe disable them with a parameter as well
-      [(_ assertion ...) (when (zero? (optimize-level)) (assert assertion) ...)]))
+    (if (zero? (optimize-level))
+	(syntax-rules ()
+	  [(_ assertion ...) (assert assertion) ...])
+	(syntax-rules ()
+	  [(_ assertion ...) (void)])))
 
   ;; === COMMENTING ===
   (define-syntax comment
