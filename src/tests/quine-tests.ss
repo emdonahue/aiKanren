@@ -26,9 +26,9 @@
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (display (parameterize ([trace-goals #f]) (trace-run () (evalo q q)))))
 
-    #;
-    (trace-run (q) (prove ((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
-			  (evalo q q)))
+#;
+(parameterize ([lazy-solver #f])    (pretty-print (trace-run (q) (prove ((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
+					 (evalo q q)))))
     
     ;;((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
 
@@ -181,4 +181,6 @@
  (not-in-envo))) (eval-proper-list))) (not-in-envo))))))) (evalo q q)))
     
     (tassert "quine synthesis" (run1 (q) (evalo q q)) list?)
-    (tassert "quine synthesis correct structure" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)))
+    (tassert "quine synthesis correct structure" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
+
+    ))

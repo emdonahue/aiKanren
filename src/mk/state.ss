@@ -64,7 +64,7 @@
     (org-case-lambda unify
       [(s x y) (unify s x y '())]
       [(s x y bindings)
-       (cert (state? s)) ; -> bindings(goal?) constraints(goal? state?
+       (cert (state? s)) ; -> bindings simplified recheck state
        (let-values ([(x-var x) (walk-var-val s x)]
 		    [(y-var y) (walk-var-val s y)])
 	 (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index

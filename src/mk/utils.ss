@@ -98,20 +98,26 @@
 	  val) ...)]))
   
   (define-syntax org-lambda ;TODO make org-lambda check for optimization and remove itself to improve performance with debugging infrastructure in place
-    (syntax-rules ()
-      [(_ (arg ...) body0 body ...)
-       (org-lambda lambda (_ name (arg ...) body0 body ...))]
-      [(_ name (arg ...) body0 body ...)
-       (lambda (arg ...)
-	 (org-print-header `name)
-	 (if (fx= (org-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
-	  (parameterize ([org-depth (fx1+ (org-depth))])
-	    (org-print-header "arguments")
-	    (org-print-item 'arg arg) ...
-	    (let ([return (call-with-values (lambda () body0 body ...) list)])
-	      (org-print-header "return")
-	      (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
-	      (apply values return)))))]))
+    (if (zero? (optimize-level))
+     (syntax-rules ()
+       [(_ (arg ...) body0 body ...)
+	(org-lambda lambda (_ name (arg ...) body0 body ...))]
+       [(_ name (arg ...) body0 body ...)
+	(lambda (arg ...)
+	  (org-print-header `name)
+	  (if (fx= (org-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
+	      (parameterize ([org-depth (fx1+ (org-depth))])
+		(org-print-header "arguments")
+		(org-print-item 'arg arg) ...
+		(let ([return (call-with-values (lambda () body0 body ...) list)])
+		  (org-print-header "return")
+		  (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
+		  (apply values return)))))])
+     (syntax-rules ()
+       [(_ (arg ...) body0 body ...)
+	(lambda (arg ...) body0 body ...)]
+       [(_ name (arg ...) body0 body ...)
+	(lambda (arg ...) body0 body ...)])))
 
   (define-syntax org-case-lambda
     (syntax-rules ()

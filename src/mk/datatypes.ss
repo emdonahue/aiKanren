@@ -329,8 +329,9 @@
      [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
      [else #f]))
 
-  (define (disj-factorize lhs rhs)
+  (org-define (disj-factorize lhs rhs)
     (let ([intersection (conj-intersect lhs rhs)])
+      (org-display intersection)
       (values (conj-filter intersection (lambda (c) (not (disj? c))))
 	      (conj-filter intersection disj?)
 	      (conj-diff lhs intersection)
