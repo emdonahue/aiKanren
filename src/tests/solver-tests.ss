@@ -226,6 +226,11 @@
     (tassert "matcho doesn't overwrite =/=" (run1 (x1) (=/= x1 '(())) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
 
     ;; === REDUCTIONS ===
-    (tassert "reduce == simplifies =/=" (run1 (x1 x2) (constrain (== x1 x2) (=/= x2 1))) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "reduce == simplifies =/=" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "reduce == simplifies =/= ctn" (run1 (x1 x2) (constrain (== x1 x2) (=/= x2 1))) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "reduce == simplifies =/= inverse" (run1 (x1 x2) (constrain (== x1 x2) (=/= 1 x2))) (list (=/= x2 1) (=/= x2 1)))
+    (tassert "reduce == =/= fail" (run1 (x1 x2) (constrain (== x1 x2) (=/= x1 x2))) (void))
+    (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
+    (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constrain (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
   
     ))
