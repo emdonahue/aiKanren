@@ -34,7 +34,7 @@
   (define-syntax cert
     (if (zero? (optimize-level))
 	(syntax-rules ()
-	  [(_ assertion ...) (assert assertion) ...])
+	  [(_ assertion ...) (begin (assert assertion) ...)])
 	(syntax-rules ()
 	  [(_ assertion ...) (void)])))
 

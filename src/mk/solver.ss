@@ -69,14 +69,11 @@
        ;; TODO we only need to resimplify if bindings contains a free-free pair (otherwise all individual simplifications are already complete
        [(or (null? bindings) (null? (cdr bindings))) (occurs-check bindings simplified recheck s ctn resolve committed pending)] ; If there is only one binding, it was simplified during unification. We only need to re-simplify if multiple bindings may influence one another.
        [else
-	(let-values ([(simplified/simplified simplified/recheck) (simplify-unification simplified bindings)])
-	        (org-display simplified/simplified simplified/recheck)
-	  (if (or (fail? simplified/simplified) (fail? simplified/recheck)) (values fail fail failure)
-	      (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
-		(if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
-		    (occurs-check bindings simplified/simplified
-				  (conj simplified/recheck (conj recheck/simplified recheck/recheck))
-				  s ctn resolve committed pending)))))])))
+	(let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
+	  (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
+	      (occurs-check bindings simplified
+			    (conj recheck/simplified recheck/recheck)
+			    s ctn resolve committed pending)))])))
 
   (define (occurs-check bindings simplified recheck s ctn resolve committed pending)
     (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
