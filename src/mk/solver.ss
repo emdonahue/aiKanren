@@ -72,6 +72,7 @@
 	(let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
 	  (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
 	      (let-values ([(ctn/simplified ctn/recheck) (simplify-unification ctn bindings)])
+		(org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
 	       (occurs-check bindings (conj simplified (conj recheck/simplified ctn/simplified))
 			     recheck/recheck
 			     s ctn/recheck resolve committed pending))))])))

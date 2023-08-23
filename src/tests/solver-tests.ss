@@ -53,7 +53,7 @@
 
     (tassert "eq? variables must not unify when constrained" (run1 (x1) (=/= x1 1) (== x1 x1)) (=/= x1 1))
     (tassert "eq? variables must not disunify when constrained" (run1 (x1) (=/= x1 1) (=/= x1 x1)) (void))
-
+    
     ;; === ATTRIBUTED VARIABLES ===
 
     (tassert "disequalities attribute only to first var" (run1 (x1 x2) (=/= (cons x1 x2) '(1 . 2))) (list (disj (=/= x1 1) (=/= x2 2)) x2))
@@ -224,5 +224,8 @@
     ;; === MATCHO ===
 ;;(tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)
     (tassert "matcho doesn't overwrite =/=" (run1 (x1) (=/= x1 '(())) (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+
+    ;; === REDUCTIONS ===
+    (tassert "reduce == simplifies =/=" (run1 (x1 x2) (constrain (== x1 x2) (=/= x2 1))) (list (=/= x2 1) (=/= x2 1)))
   
     ))
