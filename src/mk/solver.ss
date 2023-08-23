@@ -19,7 +19,7 @@
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values committed pending s)
-			       (let-values ([(c p s^) (solve-constraint resolve s succeed succeed committed pending)])
+			       (let-values ([(c p s) (solve-constraint resolve s succeed succeed committed pending)])
 				 (org-display c p)
 				 (if (failure? s) (values fail fail failure)
 				     (values committed pending s))))
@@ -62,8 +62,8 @@
 		  (org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
 		  (if (or (fail? ctn/simplified) (fail? ctn/recheck)) (values fail fail failure)
 		      (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
-			  (solve-constraint recheck/recheck (store-constraint s (conj simplified (conj recheck/simplified ctn/simplified)))
-					    ctn/recheck resolve
+			  (solve-constraint succeed (store-constraint s (conj simplified (conj recheck/simplified ctn/simplified)))
+					    ctn/recheck (conj recheck/recheck resolve)
 					    (conj committed
 						  (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))))))))
 
