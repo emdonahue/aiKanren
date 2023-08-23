@@ -73,9 +73,10 @@
 	  (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail fail failure)
 	      (let-values ([(ctn/simplified ctn/recheck) (simplify-unification ctn bindings)])
 		(org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
-	       (occurs-check bindings (conj simplified (conj recheck/simplified ctn/simplified))
-			     recheck/recheck
-			     s ctn/recheck resolve committed pending))))])))
+		(if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
+		 (occurs-check bindings (conj simplified (conj recheck/simplified ctn/simplified))
+			       recheck/recheck
+			       s ctn/recheck resolve committed pending)))))])))
 
   (define (occurs-check bindings simplified recheck s ctn resolve committed pending)
     (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure)
