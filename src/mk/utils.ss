@@ -91,14 +91,17 @@
       (apply printf args)))
   
   (define-syntax org-display
-    (syntax-rules ()
-      [(_ expr ...)
-       (begin
-	(let ([val expr])
-	  (when (org-tracing)
-	    (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
-	    (org-print-item 'expr val))
-	  val) ...)]))
+    (if (zero? (optimize-level))
+	(syntax-rules ()
+	  [(_ expr ...)
+	   (begin
+	     (let ([val expr])
+	       (when (org-tracing)
+		 (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
+		 (org-print-item 'expr val))
+	       val) ...)])
+	(syntax-rules ()
+	  [(_ expr ...) (begin expr ...)])))
   
   (define-syntax org-lambda ;TODO make org-lambda check for optimization and remove itself to improve performance with debugging infrastructure in place
     (if (zero? (optimize-level))

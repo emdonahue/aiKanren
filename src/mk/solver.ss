@@ -19,11 +19,8 @@
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values committed pending s)
-			       ;;(solve-constraint resolve s succeed succeed committed pending)
 			       (let-values ([(c p s^) (solve-constraint resolve s succeed succeed committed pending)])
 				 (org-display c p)
-				 ;;(when (not (succeed? p)) (printf "resolve: ~s~%c: ~s~%p: ~s~%" resolve c p))
-				 ;;(cert (succeed? p)) ;TODO pending constraints should be stored in the state but not added to the continuation constraints
 				 (if (failure? s) (values fail fail failure)
 				     (values committed pending s))))
 			   (solve-constraint ctn s succeed resolve committed pending))]
@@ -40,7 +37,7 @@
 	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve committed pending)]
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
-  (define (solve-noto g s ctn resolve committed pending)
+  (org-define (solve-noto g s ctn resolve committed pending)
     (if (==? g) (solve-=/= g s ctn resolve committed pending)
 	(let-values ([(c p s^) (solve-constraint g s succeed succeed succeed succeed)])
 	  (org-display c p s^)
