@@ -146,6 +146,7 @@
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(procedure? g) (values succeed g)]
+     [(conde? g) (simplify-unification (conde->disj g) s)]
      [(matcho? g)
       (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
 		   [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
