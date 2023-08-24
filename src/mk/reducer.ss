@@ -11,6 +11,17 @@
 		  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
 		      (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c s)])
 			(values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c s)]
+			      [(lhs) (conj simplified-lhs recheck-lhs)])
+		  (if (succeed? lhs) (values succeed succeed)
+		      (let*-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c s)]
+				    [(rhs) (conj simplified-rhs recheck-rhs)])
+			
+			(if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
+				(and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
+				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
+			    (values succeed (disj-factorized lhs rhs))
+			    (values (disj-factorized lhs rhs) succeed)))))]
      #;
      [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (simplify-unification (conj-lhs g) s)])
 		  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
@@ -29,17 +40,6 @@
     (cert (goal? g) (goal? c) (mini-substitution? s))
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
-     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c s)]
-			      [(lhs) (conj simplified-lhs recheck-lhs)])
-		  (if (succeed? lhs) (values succeed succeed)
-		      (let*-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c s)]
-				    [(rhs) (conj simplified-rhs recheck-rhs)])
-			
-			(if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
-				(and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
-			    (values succeed (disj-factorized lhs rhs))
-			    (values (disj-factorized lhs rhs) succeed)))))]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
 		(values simplified recheck))]
      [(noto? g) (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c s)])
