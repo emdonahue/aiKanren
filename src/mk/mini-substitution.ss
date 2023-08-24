@@ -14,7 +14,8 @@
 	v))
 
   (define (mini-simplify s x y simplified recheck)
-    (cert (list? s) (goal? simplified) (goal? recheck)) ; -> state-or-failure?
+    ;; Unifier that sorts bindings by normalized and unnormalized
+    (cert (list? s) (goal? simplified) (goal? recheck)) ; -> mini-substitution simplified-==s recheck-==s
     (let-values ([(x-normalized x) (mini-walk-normalized s x)]
 		 [(y-normalized y) (mini-walk-normalized s y)])
       (let ([normalized (and x-normalized y-normalized)])

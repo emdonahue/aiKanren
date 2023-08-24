@@ -114,7 +114,9 @@
   (org-define (simplify-unification g s)
     (cert (goal? g))
     (exclusive-cond
-     [(or (fail? g) (succeed? g)) (reduce g succeed s)]
+     [(or (fail? g) (succeed? g)) (reduce-constraint g (== (make-var 0) 1) s)]
+     #;
+     [(conj? g) (reduce g (== (make-var 0) 1) s)]
      [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (simplify-unification (conj-lhs g) s)])
 		  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
 		   (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
@@ -130,14 +132,12 @@
 				     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
 			    (values succeed (disj-factorized lhs rhs))
 			    (values (disj-factorized lhs rhs) succeed)))))]
-     [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
-		(values simplified recheck))]
+     
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (if (succeed? recheck) (values (noto simplified) succeed)
 		      (values succeed (noto (conj simplified recheck)))))]
      [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
-     [(procedure? g) (values succeed g)]
      [(conde? g) (simplify-unification (conde->disj g) s)]
      [(matcho? g)
       (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
@@ -149,7 +149,7 @@
 	  [(null? (matcho-out-vars g)) (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
 					 (simplify-unification g s))] ; TODO should we thread the real state when expanding matcho while simplifying ==?
 	  [else (values succeed g)])))]
-     [else (assertion-violation 'simplify-unification "Unrecognized constraint type" g)]))
+     [else (reduce-constraint g (== (make-var 0) 1) s)]))
   
   (define (simplify-unification/pconstraint g s vars normalized) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
     (if (null? vars)
