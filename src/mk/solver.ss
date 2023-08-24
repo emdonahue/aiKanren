@@ -22,7 +22,7 @@
 			       (let-values ([(c p s) (solve-constraint resolve s succeed succeed committed pending)])
 				 (org-display c p)
 				 (if (failure? s) (values fail fail failure)
-				     (values committed pending s))))
+				     (values committed pending (store-constraint s p)))))
 			   (solve-constraint ctn s succeed resolve committed pending))]
 	 [(==? g) (solve-== g s ctn resolve committed pending)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve committed pending)]
@@ -54,6 +54,7 @@
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
 	      ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
+	      ;; TODO can we simplify committed/pending as well and simplify already committed constraints from lower in the computation?
     (let-values ([(bindings simplified recheck s) (unify s (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
       (if (fail? bindings) (values fail fail failure)
 	  (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
