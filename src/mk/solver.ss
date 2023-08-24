@@ -102,7 +102,7 @@
 		(if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 		    (if (disj? g) (solve-constraint g s ctn resolve committed pending) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
 			(let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-			  (if (fail? unified) (solve-constraint ctn s succeed resolve committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
+			  (if (succeed? unified) (solve-constraint ctn s succeed resolve committed pending) ; If the constraints entail =/=, skip the rest and continue with ctn.
 			      (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn resolve (conj committed g) pending)))))))
 
   (org-define (simplify-=/= g x y d)
@@ -113,26 +113,31 @@
 	      ;; 4) The final disequality constraint x=/=y. If it is already entailed by our simplifications of g, just return succeed. This will be conjoined to the constraint from #2 when adding to the store.
 	      (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
 	      x    (exclusive-cond
-		    [(succeed? g) (values succeed succeed succeed d)] ; If no constraints on x, add succeed back to the store.
+		    [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
 		    [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
 				    [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
 			       (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
 				(exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
-				 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
-				 [(eq? s s^) (values succeed fail succeed d)] ; == same as =/= => =/= unsatisfiable
+				 [(failure? s^) (values succeed g succeed d)] ; == different from =/= => =/= satisfied
+				 [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
 				 [else (values g g succeed d)])))] ; free vars => =/= undecidable
-		    [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
-		    [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail g succeed d) ; Check that y could be a pair.
+		    [(pconstraint? g) (if (pconstraint-attributed? g x) (values (noto (pconstraint-check g x y)) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
+		    [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
 				     (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
 		    [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
-				 (cert (succeed? recheck)) ; noto only wraps primitive goals, which should never need rechecking on their own
+				 (cert (succeed? recheck)) ; noto only wraps primitive goals since its a =/=, which should never need rechecking on their own
 				 (values (noto unified) (noto disunified) recheck d))]
+
+		    ;; if =/= in a conj => skip
+		    ;; if =/= in a disj => dont skip
+		    ;; if =/= not in a disj, ski ok
+		    ;; cant be in both conj and disj??
 		    [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/= (conj-lhs g) x y d)])
-				 (if (fail? unified) (values fail disunified-lhs recheck-lhs d) ; If unified fails, we can throw the =/= away, so abort early.
+				 (if (succeed? unified) (values succeed disunified-lhs recheck-lhs d) ; If unified fails, we can throw the =/= away, so abort early.
 				     (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/= (conj-rhs g) x y d)])
 				       (values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
 		    [(disj? g) (simplify-=/=-disj g x y d)]
-		    [(fail? g) (values fail fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
+		    [(fail? g) (values succeed fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
 		    [(constraint? g) (simplify-=/= (constraint-goal g) x y d)]
 		    [(procedure? g) (nyi simplify-=/= proceedure)]
 		    [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
@@ -146,14 +151,14 @@
 			 (simplify-=/= (disj-rhs g) x y d)]
 			[(disunified-rhs) (conj simplified-rhs recheck-rhs)])
 	    (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
-		(let ([unified (disj unified-lhs unified-rhs)])
+		(let ([unified (conj unified-lhs unified-rhs)])
 		  (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
 		    (let ([disunified
 			   (conj conjs (conj
-					(if (not (or (fail? unified-lhs) (fail? unified-rhs)))
+					(if (not (or (succeed? unified-lhs) (succeed? unified-rhs)))
 					    (conj d (disj lhs rhs))
-					    (disj (if (fail? unified-lhs) lhs (conj d lhs))
-						  (if (fail? unified-rhs) rhs (conj d rhs)))) disjs))])
+					    (disj (if (succeed? unified-lhs) lhs (conj d lhs))
+						  (if (succeed? unified-rhs) rhs (conj d rhs)))) disjs))])
 		      (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
 			      (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
 				   (conj-memp simplified-lhs ==?)))
