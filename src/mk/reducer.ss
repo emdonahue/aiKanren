@@ -5,6 +5,7 @@
   ;;TODO simplify with negated pconstraints as well
 
   (define (reduce-constraint g c s)
+    (cert (goal? g) (goal? c) (mini-substitution? s)) ; -> simplified recheck
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
      [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c s)])
@@ -28,7 +29,9 @@
 		      (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
      (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
 
-     
+     [(noto? g) (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c s)])
+		  (if (succeed? recheck) (values (noto simplified) succeed)
+		      (values succeed (noto (conj simplified recheck)))))]
      [(constraint? g) (reduce-constraint (constraint-goal g) c s)]
      [(procedure? g) (reduce-constraint (g empty-state empty-package) c s)]
      [(conde? g) (reduce-constraint (conde->disj g) c s)]
@@ -41,10 +44,7 @@
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
-		(values simplified recheck))]
-     [(noto? g) (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c s)])
-		  (if (succeed? recheck) (values (noto simplified) succeed)
-		      (values succeed (noto (conj simplified recheck)))))]
+		(values simplified recheck))]     
      [(matcho? g) (reduce-==/matcho g c s)]
      [(pconstraint? g) (reduce-==/pconstraint g c s (pconstraint-vars g) #t)]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))

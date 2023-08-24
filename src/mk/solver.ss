@@ -1,6 +1,6 @@
 (library (solver) ; Constraint solving
   (export run-constraint simplify-=/= simplify-pconstraint)
-  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution))
+  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer))
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
@@ -97,8 +97,7 @@
 
   (org-define (solve-=/= g s ctn resolve committed pending)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
-	      ;;TODO can we just add the =/= disjunction directly to the state and let the solver deal with it? might have to report it as added rather than pending once the two constraint return system is in place
-	      (cert (==? g))		; -> goal? state?
+	      (cert (==? g)) ; -> committed pending state
 	      (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y
 		(if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve committed pending) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 		    (if (disj? g) (solve-constraint g s ctn resolve committed pending) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
@@ -117,10 +116,11 @@
 		    [(succeed? g) (values succeed succeed succeed d)] ; If no constraints on x, add succeed back to the store.
 		    [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
 				    [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
-			       (exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
-				[(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
-				[(eq? s s^) (values succeed fail succeed d)] ; == same as =/= => =/= unsatisfiable
-				[else (values g g succeed d)]))] ; free vars => =/= undecidable
+			       (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
+				(exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
+				 [(failure? s^) (values fail g succeed d)] ; == different from =/= => =/= satisfied
+				 [(eq? s s^) (values succeed fail succeed d)] ; == same as =/= => =/= unsatisfiable
+				 [else (values g g succeed d)])))] ; free vars => =/= undecidable
 		    [(pconstraint? g) (if (pconstraint-attributed? g x) (values (pconstraint-check g x y) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
 		    [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values fail g succeed d) ; Check that y could be a pair.
 				     (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
