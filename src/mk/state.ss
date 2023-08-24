@@ -1,6 +1,6 @@
 (library (state) ; Main state object that holds substitution & constraints
   (export reify reify-var instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var walk-var-val extend unbind-constraint simplify-unification) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils) (mini-substitution))
+  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils) (mini-substitution) (reducer))
 
   (define unbound succeed) ; Internal placeholder for unbound variables in the substitution.
   (define unbound? succeed?) ;TODO replace unbound with success as null element in state
@@ -114,7 +114,7 @@
   (org-define (simplify-unification g s)
     (cert (goal? g))
     (exclusive-cond
-     [(or (fail? g) (succeed? g)) (values g g)]
+     [(or (fail? g) (succeed? g)) (reduce g succeed s)]
      [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (simplify-unification (conj-lhs g) s)])
 		  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
 		   (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
