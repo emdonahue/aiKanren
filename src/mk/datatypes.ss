@@ -48,6 +48,9 @@
   ;; === VAR ===
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
   (define var make-var)
+  (define (var< x y)
+    (cert (var? x) (var? y))
+    (fx< (var-id x) (var-id y)))
 
   ;; === CONSTRAINT STORE ===
   (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
@@ -152,8 +155,9 @@
   (define (== x y)
     (cond
      [(or (eq? x __) (eq? y __)) succeed]
-     [(or (var? x) (var? y)) (make-== x y)] ;TODO == should put vars first so it has a better chance of simplifying in the ctn
      [(equal? x y) succeed]
+     [(var? x) (if (var? y) (if (var< x y) (make-== x y) (make-== y x)) (make-== x y))]
+     [(var? y) (make-== y x)]
      [(and (pair? x) (pair? y)) (make-== x y)] ;TODO the double pair case for == should factorize into a conj of ==. this can then simplify the unifier's order checking
      [else fail]))
   

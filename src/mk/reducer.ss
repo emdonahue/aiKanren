@@ -23,7 +23,18 @@
   (define (reduce-== g c s)
     (exclusive-cond
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
-		(values simplified recheck))])
-    )
+		(values simplified recheck))]
+     [(pconstraint? g) (reduce-==/pconstraint g c s (pconstraint-vars g) #t)]
+     [else (assertion-violation reduce-== "Unrecognized constraint type" g)]))
+
+  (define (reduce-==/pconstraint g c s vars normalized)
+    (if (null? vars)
+	(if normalized (values g succeed) (values succeed g)) 
+	(let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
+	  (if (eq? (car vars) walked)
+	      (reduce-==/pconstraint g c s (cdr vars) (and normalized normalized-var))
+	      (reduce-== ((pconstraint-procedure g) (car vars) walked g succeed (pconstraint-data g)) c s))))
+    #;
+    (values succeed (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)))
 
   )
