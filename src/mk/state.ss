@@ -136,7 +136,7 @@
      [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
 		  (if (succeed? recheck) (values (noto simplified) succeed)
 		      (values succeed (noto (conj simplified recheck)))))]
-     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
+;;     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
      [(constraint? g) (simplify-unification (constraint-goal g) s)]
      [(conde? g) (simplify-unification (conde->disj g) s)]
      [(matcho? g)

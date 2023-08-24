@@ -158,7 +158,7 @@
      [(equal? x y) succeed]
      [(var? x) (if (var? y) (if (var< x y) (make-== x y) (make-== y x)) (make-== x y))]
      [(var? y) (make-== y x)]
-     [(and (pair? x) (pair? y)) (make-== x y)] ;TODO the double pair case for == should factorize into a conj of ==. this can then simplify the unifier's order checking
+     [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
   
   (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.

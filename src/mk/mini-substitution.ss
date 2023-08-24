@@ -1,11 +1,13 @@
 (library (mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution?)
   (import (chezscheme) (datatypes) (utils))
 
   (define (->mini-substitution g)
     (cert (==? g))
     (list (cons (==-lhs g) (==-rhs g))))
 
+  (define (mini-substitution? s) (and (list? s) (for-all (lambda (b) (and (pair? b) (var? (car b)))) s)))
+  
   (define (mini-walk s v)
     (cert (list? s))
     (if (var? v)
