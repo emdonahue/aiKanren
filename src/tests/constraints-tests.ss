@@ -191,7 +191,7 @@
 
 					;(org-trace (parameterize ([lazy-solver #f])    (tassert "duplicate absento simplifies down to duplicate matchos" (cadr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3)))) 1)))
     ;1298
-    ;(org-trace    (pretty-print (car (parameterize ([lazy-solver #f]) (run1 (a b c z) (absento 88 z) (absento 99 z) (constrain (== z (cons a b)) (== b (cons c 1))))))))
+;;    (org-trace    (pretty-print (car (parameterize ([lazy-solver #f]) (run1 (a b c z) (absento 88 z) (absento 99 z) (constrain (== z (cons a b)) (== b (cons c 1))))))))
     #;
     (let* ([ ab (absento 100 (make-var 1))]
 	   [abm (disj-rhs (conj-rhs ab))]
