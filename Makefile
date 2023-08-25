@@ -67,7 +67,7 @@ doc:
 	echo '## Not Yet Implemented' >> README.md
 	grep -nr --exclude=Makefile --exclude=utils.ss -e '(nyi' * | sed -E 's/^([^:]+:[^:]+):.*\(nyi([^)]*)\).*/- \2 (\1)/g' >> README.md
 	echo '## TODO' >> README.md
-	grep -nr --exclude=Makefile -e 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 (\1)/' >> README.md
+	grep -nr --exclude=Makefile -e 'TODO' * | sed -E 's/^([^:]+:[^:]+):.*TODO (.*)/- \2 ([\1](https://github.com/emdonahue/aiKanren/blob/main/\1))/' >> README.md
 
 test:
 	@TESTSUITE=$$(mktemp); \
