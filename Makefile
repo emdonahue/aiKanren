@@ -65,7 +65,7 @@ repl: # Boot up a REPL preloaded with aiKanren
 doc:
 	sed -i -n '1,/^## Documentation/ p' README.md
 	echo '## Not Yet Implemented' >> README.md
-	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 (([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2)))|g' >> README.md
+	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> README.md
 	echo '## TODO' >> README.md
 	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> README.md
 

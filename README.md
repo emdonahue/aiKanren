@@ -3,7 +3,7 @@ A miniKanren implementation designed to serve as a platform for AI research comb
 
 ## Documentation
 ## Not Yet Implemented
--  simplify-=/= proceedure (([src/mk/solver.ss:142](https://github.com/emdonahue/aiKanren/blob/main/src/mk/solver.ss#L142)))
+-  simplify-=/= proceedure ([src/mk/solver.ss:142](https://github.com/emdonahue/aiKanren/blob/main/src/mk/solver.ss#L142))
 ## TODO
 - can we get guarded goal functionality by an == constraint and a schedule that when run unifies the guarded variables thereby triggering the unification? ([src/mk/aikanren.ss:1](https://github.com/emdonahue/aiKanren/blob/main/src/mk/aikanren.ss#L1))
 - do == and =/= automatically simplify when merged because we run constraints on the state not the substitution when reducing? ([src/mk/aikanren.ss:2](https://github.com/emdonahue/aiKanren/blob/main/src/mk/aikanren.ss#L2))
