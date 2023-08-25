@@ -112,8 +112,8 @@
 	      ;; 3) g simplified under x=/=y, but only conjuncts that might be unnormalized. We must re-check these with the full solver.
 	      ;; 4) The final disequality constraint x=/=y. If it is already entailed by our simplifications of g, just return succeed. This will be conjoined to the constraint from #2 when adding to the store.
 	      (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
-	      x    (exclusive-cond
-		    [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
+	      (exclusive-cond
+	       [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
 		    [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
 				    [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
 			       (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
