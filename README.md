@@ -1,5 +1,5 @@
 # aiKanren
-A miniKanren implementation designed to serve as a platform for AI research combining logical and probabilistic reasoning.
+A performant miniKanren implementation designed to serve as a platform for AI research combining logical and probabilistic reasoning.
 
 ## Documentation
 ## Not Yet Implemented
