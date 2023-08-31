@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo)
+  (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo filtero)
   (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho) (utils))
   
   (define (booleano v)
@@ -112,4 +112,14 @@
        (noto (pairo term))
        (matcho absento ([term (a . d)])
 	       (absento absent a)
-	       (absento absent d))))))
+	       (absento absent d)))))
+
+  (define (filtero f xxs o)
+    (conde
+      [(== xxs '()) (== o '())]
+      [(matcho ([xxs (x . xs)])
+	       (let ([x^ (f x)])
+		 (conde
+		   [x^ (matcho ([o (o0 . os)]) (== x o) (filtero f xs os))]
+		   [(noto x^) (filtero f xs o)])))]))
+  )

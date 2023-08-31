@@ -2,7 +2,7 @@
 ;;TODO test multi-success disj that should succeed instead of suspending as constraint. maybe normalize before starting constraint walk. maybe already handled by normalizing resulting constraint
 (library (constraints-tests)
   (export run-constraints-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state))
+  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state) (constraints))
 
   (define (forever x)
     (fresh (y) (forever x)))
@@ -324,4 +324,8 @@
 					; ; ; ; ; ; ;
     (pretty-print			; ; ;
     (check-constraints			; ; ;
-    (check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))))
+    (check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
+
+    (tassert "filtero null" (run* (q) (filtero (lambda (x) succeed) '() q)) '(()))
+
+    ))
