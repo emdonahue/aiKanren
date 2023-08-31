@@ -329,5 +329,8 @@
     (tassert "filtero null" (run* (q) (filtero (lambda (x) succeed) '() q)) '(()))
     (tassert "filtero succeed" (run* (q) (filtero (lambda (x) succeed) '(1 2 3) q)) '((1 2 3)))
     (tassert "filtero fail" (run* (q) (filtero (lambda (x) fail) '(1 2 3) q)) '(()))
+    (tassert "filtero ==" (run* (q) (filtero (lambda (x) (== x 2)) '(1 2 3) q)) '((2)))
+    (tassert "filtero |" (run* (q) (filtero (lambda (x) (disj (== x 2) (== x 3))) '(1 2 3) q)) '((2 3)))
+;;    (tassert "filtero free" (run* (q x) (filtero (lambda (x) (disj (== x 2) (== x 3))) `(1 ,x 3) q) (=/= x 3)) '((2 3)))
 
     ))

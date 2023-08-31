@@ -115,11 +115,11 @@
 	       (absento absent d)))))
 
   (define (filtero f xxs oos)
-    (conde
-      [(== xxs '()) (== oos '())]
-      [(matcho ([xxs (x . xs)])
-	       (let ([x^ (f x)])
-		 (conde
-		   [x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
-		   [(noto x^) (filtero f xs oos)])))]))
+    (disj
+      [conj (== xxs '()) (== oos '())]
+      (matcho ([xxs (x . xs)])
+	      (let ([x^ (f x)])
+		(disj
+		  [conj x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
+		  [conj (noto x^) (filtero f xs oos)])))))
   )
