@@ -327,5 +327,7 @@
     (check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
 
     (tassert "filtero null" (run* (q) (filtero (lambda (x) succeed) '() q)) '(()))
+    (tassert "filtero succeed" (run* (q) (filtero (lambda (x) succeed) '(1 2 3) q)) '((1 2 3)))
+    (tassert "filtero fail" (run* (q) (filtero (lambda (x) fail) '(1 2 3) q)) '(()))
 
     ))
