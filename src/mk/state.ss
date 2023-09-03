@@ -199,7 +199,13 @@
   
   (org-define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
-    ;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed. 
+					;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
+    (let ([g (substitution-ref (state-substitution s) (car vs))])
+      (cert (goal? g))
+      (fold-left (lambda (s v)
+		   (let ([g (substitution-ref (state-substitution s) v)])
+		     (extend s v (conj g c)))) (extend s (car vs) (conj g c)) (cdr vs)))
+#;    
     (fold-left (lambda (s v)
 		 #;
 		 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
@@ -210,10 +216,6 @@
 		     (pretty-print v)
 		     (pretty-print val-or-goal)
 		     (pretty-print (walk s v))
-		     #;
-		     (let ([ms (goal-memp c matcho?)])
-		       (pretty-print (list (list-ref ms 3) (list-ref ms 4) (equal? (matcho-goal (list-ref ms 3)) (matcho-goal (list-ref ms 6)))))
-		       (pretty-print ms))
 		     (pretty-print c)
 		     (pretty-print s)
 		     
