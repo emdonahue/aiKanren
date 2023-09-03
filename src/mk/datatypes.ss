@@ -13,7 +13,7 @@
 	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  constraint constraint? constraint-goal set-constraint-goal proxy proxy-constraint? proxy-constraint-id
+	  constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
 	  goal? goal-memp
 	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
@@ -87,10 +87,10 @@
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
 
-  (define-structure (proxy-constraint id))
-  (define (proxy id)
-    (cert (number? id))
-    (make-proxy-constraint id))
+  (define-structure (proxy var))
+  (define (proxy v)
+    (cert (var? v))
+    (make-proxy v))
 
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
@@ -185,7 +185,7 @@
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (proxy-constraint? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (proxy? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
 
   (define goal-memp
     (case-lambda

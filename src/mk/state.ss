@@ -204,7 +204,7 @@
       (cert (goal? g))
       (fold-left (lambda (s v)
 		   (let ([g (substitution-ref (state-substitution s) v)])
-		     (extend s v (conj g (proxy (var-id (car vs))))))) (extend s (car vs) (conj g c)) (cdr vs)))
+		     (extend s v (conj g (proxy (car vs)))))) (extend s (car vs) (conj g c)) (cdr vs)))
 #;    
     (fold-left (lambda (s v)
 		 #;

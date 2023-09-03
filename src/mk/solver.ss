@@ -34,7 +34,10 @@
 		       (solve-constraint g s ctn resolve committed pending))]
 	 [(matcho? g) (solve-matcho g s ctn resolve committed pending)]
 	 [(pconstraint? g) (solve-pconstraint g s ctn resolve committed pending)]
-	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve committed pending)]
+	 [(proxy? g) (let-values ([(v c) (walk-var-val s (proxy-var g))])
+		       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve committed pending)
+			   (solve-constraint succeed s ctn resolve committed pending)))]
+	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve committed pending)] ;TODO can we remove trace-goal from general solver 
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
   (org-define (solve-noto g s ctn resolve committed pending)
@@ -140,6 +143,7 @@
 		    [(fail? g) (values succeed fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
 		    [(constraint? g) (simplify-=/= (constraint-goal g) x y d)]
 		    [(procedure? g) (nyi simplify-=/= proceedure)]
+		    [(proxy? g) (values g succeed g d)]
 		    [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   (define (simplify-=/=-disj g x y d)
