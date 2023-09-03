@@ -13,7 +13,7 @@
 	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  constraint constraint? constraint-goal set-constraint-goal proxy proxy-constraint? proxy-constraint-constraint
+	  constraint constraint? constraint-goal set-constraint-goal proxy proxy-constraint? proxy-constraint-id
 	  goal? goal-memp
 	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
@@ -22,7 +22,7 @@
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq?
+	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
 	  make-noto noto? noto-goal
 	  __
 	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
@@ -87,10 +87,10 @@
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
 
-  (define-structure (proxy-constraint constraint))
-  (define (proxy g)
-    (cert (goal? g))
-    (make-proxy-constraint g))
+  (define-structure (proxy-constraint id))
+  (define (proxy id)
+    (cert (number? id))
+    (make-proxy-constraint id))
 
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
@@ -172,6 +172,11 @@
 
   (define (expand-matcho g s p)
     ((matcho-goal g) s p (matcho-in-vars g)))
+
+  (define (simplify-matcho g)
+    (if (and (matcho? g) (null? (matcho-out-vars g)))
+	(let-values ([(_ g s p) (expand-matcho g empty-state empty-package)]) g)
+	g))
 
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))

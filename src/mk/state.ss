@@ -15,8 +15,7 @@
 	[(pair? v) (cons (reify s (car v) vs) (reify s (cdr v) vs))]
 	[(var? v)
 	 (if (memq v vs) v
-	     (let* ([w (walk s v)]
-		    [w (if (proxy-constraint? w) (proxy-constraint-constraint w) w)])
+	     (let* ([w (walk s v)])
 	    (if (var? w) w (reify s w (cons v vs)))))]
 	[else v])]))
 
