@@ -30,7 +30,7 @@
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
-  (define lazy-solver (make-parameter #t))
+  (define lazy-solver (make-parameter #f))
   (define reify-constraints (make-parameter #t))
   
   ;; === RUNNER ===
