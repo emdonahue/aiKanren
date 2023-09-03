@@ -47,7 +47,7 @@
 		(values simplified recheck))]     
      [(matcho? g) (reduce-==/matcho g c s)]
      [(pconstraint? g) (reduce-==/pconstraint g c s (pconstraint-vars g) #t)]
-     [(proxy? g) (values succeed g)]
+     [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
   (define (reduce-==/matcho g c s)

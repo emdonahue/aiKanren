@@ -1,5 +1,5 @@
 (library (mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution?)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized?)
   (import (chezscheme) (datatypes) (utils))
 
   (define (->mini-substitution g)
