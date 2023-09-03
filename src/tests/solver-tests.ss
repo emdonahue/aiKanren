@@ -67,11 +67,11 @@
 
     ;; Multi variable
     (tassert "attribute ~x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (== x2 2)))
-	     (list (disj (== x1 1) (== x2 2)) (disj (== x1 1) (== x2 2)))) 
+	     (list (proxy 2) (disj (== x1 1) (== x2 2)))) 
     (tassert "attribute x1=>x2, ~x2=>x1" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 1) (== x2 2)))) (list 1 x2))
     (tassert "attribute x1=>x2, x2=>x1" (run1 (x1 x2 x3) (disj (conj (== x1 1) (== x2 2)) (== x3 3)))
-	     (list (disj (conj (== x1 1) (== x2 2)) (== x3 3))
-		   (disj (conj (== x1 1) (== x2 2)) (== x3 3))
+	     (list (proxy 3)
+		   (proxy 3)
 		   (disj (conj (== x1 1) (== x2 2)) (== x3 3))))
     (tassert "attribute == =/=" (run1 (x1 x2) (disj (== x1 1) (=/= x2 2)))
 	     (list x1 (disj (=/= x2 2) (== x1 1))))
@@ -84,8 +84,8 @@
 	     (list (disj (=/= x1 1) (== x2 2)) x2))
     
     (tassert "attribute x1:x1=1=>x2=2, x3:x3~3=>x2=2, x2:x2~2=>x3=3" (run1 (x1 x2 x3) (disj (conj (=/= x1 1) (== x3 3)) (== x2 2)))
-	     (list (disj (conj (=/= x1 1) (== x3 3)) (== x2 2))
-		   (disj (conj (=/= x1 1) (== x3 3)) (== x2 2))
+	     (list (proxy 3)
+		   (proxy 3)
 		   (disj (conj (=/= x1 1) (== x3 3)) (== x2 2))))
 
     ;; Multi variable with fresh
@@ -110,7 +110,7 @@
     (tassert "constraint == ==|==|=="
 	     (run1 (x1 x2 x3) (constrain (== x3 1))
 		   (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3)))))
-	     (list (disj (disj (== x1 1) (== x2 1)) (== x1 x3))
+	     (list (proxy 2)
 		   (disj (disj (== x1 1) (== x2 1)) (== x1 x3)) 1))
     (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
@@ -119,7 +119,7 @@
 					    (constrain (== x2 1)))
 	     (list (disj* (=/= x1 1) (=/= x2 1)) 1)) 
     (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4)))))
-	     (list (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) x3 1))
+	     (list (proxy 2) (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) x3 1))
     (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
     (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (constraint (disj* (=/= x1 1) (=/= x1 1))) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
