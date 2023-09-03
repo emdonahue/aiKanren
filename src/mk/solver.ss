@@ -284,7 +284,7 @@
 	       [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
 	       [(==? g) (extend s (==-lhs g) (==-rhs g))]
 	       [else ; All other constraints get assigned to their attributed variables.
-		(state-add-constraint s g (attributed-vars g))]))
+		(state-add-constraint s g (list-sort (lambda (v1 v2) (fx> (var-id v1) (var-id v2))) (attributed-vars g)))]))
 
   (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
