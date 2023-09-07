@@ -26,7 +26,7 @@
 	  (let* ([expected expected!]
 		 [received-values (call-with-values (lambda () received!) list)]
 		 [received-handled (call-with-values (lambda () (apply handler received-values)) list)]
-		 [received (if (fx= 1 (length received-values)) (car received-values) received-values)])
+		 [received (if (fx= 1 (length received-handled)) (car received-handled) received-handled)])
 	    (when (and (not (equal? expected received)) (or (not (procedure? expected)) (not (expected received))))
 	      (failed (fx1+ (failed)))
 	      (parameterize ([pretty-initial-indent 10]

@@ -91,31 +91,38 @@
 	(conde
 	  [(== t '())]
 	  [(== t 1)]
-	  [(== t (car vars))]
+	  [(== t (make-mk-var 0))]
 	  [(== t 2)]
-	  [(== t (cadr vars))]
-	  [(matcho ([t (a . d)]) (mk-term a (fx1- depth)) (mk-term d (fx1- depth)))])))
+	  [(== t (make-mk-var 1))]
+	  [(matcho ([t (a . d)]) (mk-term/presento a (fx1- depth)) (mk-term/presento d (fx1- depth)))])))
 
   (define (present? v t)
     (cond
      [(eq? v t) #t]
      [(pair? t) (or (present? v (car t)) (present? v (cdr t)))]
+     ;[(==? t) (or (present? v (==-lhs t)) (present? v (==-lhs t)))]
      [else #f]))
+
+  (define (handle-run g) (run1 () g))
   
   (define (run-absento-tests)
     (for-each
      (lambda (t)
+       ;(printf "~s ~s ~s~%" (cadr vars) t (present? (cadr vars) t))
        (if (present? (cadr vars) t)
 	   (begin
-	     (tassert "generative presento free succeed" (run1 () (presento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) '())
-	     (tassert "generative absento free fail" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void)))
+	     (tassert "generative presento free succeed" (run1 () (presento (cadr vars) t) (== (car vars) 1)) '())
+	     (tassert "generative absento free fail" (run1 () (absento (cadr vars) t) (== (car vars) 1)) (void)))
 	   (begin
-	     (tassert "generative presento free fail" (run1 () (presento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void))
-	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) '())))
+	     (tassert "generative presento free fail"
+		      t
+		      (lambda (t)
+			(run1 () (presento (cadr vars) t) (== (car vars) 1) (== (cadr vars) 3))) (void))
+	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) t) (== (car vars) 1)) '())))
        (if (present? 2 t)
-	   (tassert "generative presento ground" (run1 () (presento 2 (compile-mk/term t))) '())
+	   (tassert "generative presento ground" (run1 () (presento 2 t)) '())
 	   (void)))
-     (run* (q) (mk-term/presento q 3)))
+     (map compile-mk/term (run* (q) (mk-term/presento q 3))))
     )
 
   )
