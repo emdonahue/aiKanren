@@ -93,14 +93,17 @@
   
   (define (extend-var s x y bindings)
     ;; Insert a new binding between x and y into the substitution.
-    (values (cons (cons x y) bindings) succeed succeed (extend s x y)))
+    (if (occurs-check/binding s x y) (values fail fail fail failure)
+     (values (cons (cons x y) bindings) succeed succeed (extend s x y))))
 
   (org-define (extend-constraint s var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
     (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
       (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
-	  (values (cons (cons var val) bindings) simplified recheck (extend s var val)))))
+	  (if (occurs-check/binding s var val)
+	      (values fail fail fail failure)
+	      (values (cons (cons var val) bindings) simplified recheck (extend s var val))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
@@ -109,6 +112,19 @@
      s (sbral-set-ref
 	(state-substitution s)
 	(fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
+
+  (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
+    ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
+    ;; TODO add a non occurs check =!= or ==!
+    ;; Returns #t if it detects a cyclic unification.
+    ;;TODO remove double occurs check
+    (cert (state? s) (var? v))
+    (exclusive-cond
+     [(eq? v term) #t]	    ; term is already walked by normalized ==s
+     [(pair? term)
+      (or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
+	  (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
+     [else #f]))
 
   (org-define (simplify-unification g s)
     (cert (goal? g))
@@ -180,13 +196,13 @@
   (define (disunify-binding s x-var x y-var y) ; if x-var and y-var are both vars, x-var has a lower index
 	      (cert (state? s)) ; -> goal?(disequality) goal?(constraint)
     (cond
-     [(goal? x) (values (=/= x-var (if (goal? y) y-var y)) x)] ; Return the constraint on x to recheck for possible == to commit.
+     [(goal? x) (extend/disunify s x-var (if (goal? y) y-var y) fail x)] ; Return the constraint on x to recheck for possible == to commit.
      [(goal? y) (if (var? x)
-		    (values (=/= x y-var) succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. If a constraint that might unify could be solved by x=/=y, it would already be attributed to x. Therefore, we only need to add the x=/=y constraint. There is nothing to recheck.
-		    (values (=/= y-var x) y))] ; Since x is a value here, treat y like the dominant constraint and simplify it.
+		    (extend/disunify s x y-var fail succeed) ; x is older so it controls the constraints that may pertain to x=/=y. This is a function of the disunifier assigning x=/=y goals to x. If a constraint that might unify could be solved by x=/=y, it would already be attributed to x. Therefore, we only need to add the x=/=y constraint. There is nothing to recheck.
+		    (extend/disunify s y-var x fail y))] ; Since x is a value here, treat y like the dominant constraint and simplify it.
      [(eq? x y) (values fail fail)]
-     [(var? x) (values (=/= x y) succeed)]
-     [(var? y) (values (=/= y x) succeed)]
+     [(var? x) (extend/disunify s x y fail succeed)]
+     [(var? y) (extend/disunify s y x fail succeed)]
      [(and (pair? x) (pair? y))
       (let-values ([(lhs c) (disunify s (car x) (car y))])
 	(exclusive-cond
@@ -194,6 +210,10 @@
 	 [(fail? lhs) (disunify s (cdr x) (cdr y))]
 	 [else (values (disj lhs (=/= (cdr x) (cdr y))) c)]))]
      [else (values succeed succeed)]))
+
+  (define (extend/disunify s x y d c)
+    (if (occurs-check/binding s x y) (values succeed succeed)
+     (values (disj (=/= x y) d) c)))
   
   ;; === CONSTRAINTS ===
   

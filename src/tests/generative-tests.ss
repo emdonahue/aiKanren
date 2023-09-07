@@ -95,7 +95,7 @@
   (define (run-absento-tests)
     (for-each
      (lambda (t)
-       (printf "~s~%" t)
+       ;;(printf "~s~%" t)
        (if (present? (cadr vars) t)
 	   (begin
 	     (tassert "generative presento free succeed" (run1 () (presento (cadr vars) t)) '())
@@ -104,20 +104,26 @@
 	     (tassert "generative not-presento free fail" (run1 () (noto (presento (cadr vars) t)) (== (car vars) 1)) (void)))
 	   (begin
 	     (tassert "generative presento free fail" (run1 () (presento (cadr vars) t) (== (car vars) 1) (== (cadr vars) 3)) (void)) ; Since x2 is free, we don't know it's not in the term just because we don't see it. The value it eventually unifies with might be in the term.
-	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) t) (== (car vars) 1)) '())))
+	     (tassert "generative not absento free fail" (run1 () (noto (absento (cadr vars) t)) (== (car vars) 1) (== (cadr vars) 3)) (void))
+	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) t) (== (car vars) 1)) '())
+	     (tassert "generative not presento free succeed" (run1 () (noto (presento (cadr vars) t)) (== (car vars) 1)) '())))
        (if (present? 2 t)
 	   (begin
 	     (tassert "generative presento ground succeed" (run1 () (presento 2 t)) '())
-	     (tassert "generative absento ground fail" (run1 () (absento 2 t)) (void)))
+	     (tassert "generative not absento ground succeed" (run1 () (noto (absento 2 t))) '())
+	     (tassert "generative absento ground fail" (run1 () (absento 2 t)) (void))
+	     (tassert "generative not-presento ground fail" (run1 () (noto (presento 2 t))) (void)))
 	   (begin
 	     (tassert "generative presento ground fail" (run1 () (presento 2 t) (== (car vars) 1) (== (cadr vars) 3)) (void))
-	     (tassert "generative absento ground succeed" (run1 () (absento 2 t)) '()))))
+	     (tassert "generative not absento ground fail" (run1 () (noto (absento 2 t)) (== (car vars) 1) (== (cadr vars) 3)) (void))
+	     (tassert "generative absento ground succeed" (run1 () (absento 2 t)) '())
+	     (tassert "generative not presento ground succeed" (run1 () (noto (presento 2 t))) '()))))
      (map compile-mk/term (run* (q) (mk-term/presento q 3))))
     )
 
   (define (run-generative-tests)
-    (void)
-;;    (run-absento-tests)
+    
+    (run-absento-tests)
     ;;    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
     ;;(display (length (run* (q) (mk-expression q max-expr-depth))))
 					;(pretty-print (run 100 (q) (mk-expression q max-expr-depth)))
@@ -126,4 +132,6 @@
 	       [i 0])
       (let-values ([(a s r) (runner-next r)])
 	(when (eq? (mod i 100000) 0) (printf "~s: ~s~%" i a))
-    (loop r (fx1+ i))))))
+    (loop r (fx1+ i))))
+
+    (void)))
