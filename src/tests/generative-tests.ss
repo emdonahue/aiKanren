@@ -114,7 +114,7 @@
        (if (present? 2 t)
 	   (tassert "generative presento ground" (run1 () (presento 2 (compile-mk/term t))) '())
 	   (void)))
-     (run* (q) (mk-term/presento q 2)))
+     (run* (q) (mk-term/presento q 3)))
     )
 
   )
