@@ -107,10 +107,11 @@
      (lambda (t)
        (if (present? (cadr vars) t)
 	   (begin
-	     (tassert "generative presento free" (run1 () (presento (cadr vars) (compile-mk/term t))) '())
-	     (tassert "generative absento free" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void))
-	     (tassert "generative presento bound" (run1 () (presento 2 (compile-mk/term t)) (== (cadr vars) 2)) '()))
-	   (void))
+	     (tassert "generative presento free succeed" (run1 () (presento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) '())
+	     (tassert "generative absento free fail" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void)))
+	   (begin
+	     (tassert "generative presento free fail" (run1 () (presento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void))
+	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) '())))
        (if (present? 2 t)
 	   (tassert "generative presento ground" (run1 () (presento 2 (compile-mk/term t))) '())
 	   (void)))
