@@ -75,7 +75,7 @@
      [else t]))
   
   (define (run-generative-tests)
-    #f
+    (run-absento-tests)
     ;;    (for-each run-mk (run* (q) (mk-expression q max-expr-depth)))
     ;;(display (length (run* (q) (mk-expression q max-expr-depth))))
 					;(pretty-print (run 100 (q) (mk-expression q max-expr-depth)))
@@ -84,6 +84,37 @@
 	       [i 0])
       (let-values ([(a s r) (runner-next r)])
 	(when (eq? (mod i 100000) 0) (printf "~s: ~s~%" i a))
-	(loop r (fx1+ i)))))
+    (loop r (fx1+ i)))))
+
+  (define (mk-term/presento t depth)
+    (if (zero? depth) fail
+	(conde
+	  [(== t '())]
+	  [(== t 1)]
+	  [(== t (car vars))]
+	  [(== t 2)]
+	  [(== t (cadr vars))]
+	  [(matcho ([t (a . d)]) (mk-term a (fx1- depth)) (mk-term d (fx1- depth)))])))
+
+  (define (present? v t)
+    (cond
+     [(eq? v t) #t]
+     [(pair? t) (or (present? v (car t)) (present? v (cdr t)))]
+     [else #f]))
+  
+  (define (run-absento-tests)
+    (for-each
+     (lambda (t)
+       (if (present? (cadr vars) t)
+	   (begin
+	     (tassert "generative presento free" (run1 () (presento (cadr vars) (compile-mk/term t))) '())
+	     (tassert "generative absento free" (run1 () (absento (cadr vars) (compile-mk/term t)) (== (car vars) 1)) (void))
+	     (tassert "generative presento bound" (run1 () (presento 2 (compile-mk/term t)) (== (cadr vars) 2)) '()))
+	   (void))
+       (if (present? 2 t)
+	   (tassert "generative presento ground" (run1 () (presento 2 (compile-mk/term t))) '())
+	   (void)))
+     (run* (q) (mk-term/presento q 2)))
+    )
 
   )

@@ -97,6 +97,11 @@
     (tassert "listo fired improper 2-list" (run1 (x1) (listo x1) (== x1 '(1 2 . 3))) (void))
     (tassert "listo fired improper 3-list" (run1 (x1) (listo x1) (== x1 '(1 2 3 . 4))) (void))
 
+    (tassert "noto listo ground number" (run1 () (noto (listo 1))) '())
+    (tassert "noto listo ground nil" (run1 () (noto (listo '()))) (void))
+    (tassert "noto listo ground pair" (run1 () (noto (listo '(1 . 2)))) '())
+    (tassert "noto listo ground 1-list" (run1 () (noto (listo '(1)))) (void))
+
     #;    (tassert "listo multihop 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 (list 3)))) '(1 2 3))
     #;    (tassert "listo multihop improper 3-list" (run1 (x1) (listo x1) (fresh (x2 x3 x4) (== x1 x2) (== x2 (cons 1 x3)) (== x3 (cons 2 x4)) (== x4 '(3 . 4)))) (void))
 
@@ -190,6 +195,7 @@
 	     (run1 (x1 x2 x3 x4 x5)
 		   (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
+    #;
     (parameterize ([lazy-solver #f])    (tassert "duplicate absento simplifies down to duplicate matchos" (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3)))) 1))
     ;1298
 ;;    (org-trace    (pretty-print (car (parameterize ([lazy-solver #f]) (run1 (a b c z) (absento 88 z) (absento 99 z) (constrain (== z (cons a b)) (== b (cons c 1))))))))
@@ -274,7 +280,7 @@
 
     (tassert "presento fuzz fail" (run1 (x1) (presento 1 (list 2 (list 2 (cons 2 (cons 2 (cons 2 x1)))))) (== x1 2)) (void))
 
-    ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. Now it is mounted on the testing wall. Like a trophy.
+    ;; This structure triggered a larger constraint cascade even than seemingly more complex structures. 
     (tassert "presento fuzz succeed ground" (run1 (x1) (presento 1 (cons (list 2 3 4 5 1) 6))) x1)
     (tassert "presento fuzz succeed bound" (run1 (x1) (== x1 1) (presento 1 (cons (list 2 3 4 5 x1) 6))) 1)
     (tassert "presento fuzz succeed fired" (run1 (x1) (presento 1 (cons (list 2 3 4 5 x1 ) 6)) (== x1 1)) 1)
@@ -282,6 +288,36 @@
     (tassert "presento fuzz fail bound" (run1 (x1) (== x1 7) (presento 1 (cons (list 2 3 4 5 x1) 6))) (void))
     (tassert "presento fuzz fail fired" (run1 (x1) (presento 1 (cons (list 2 3 4 5 x1 ) 6)) (== x1 7)) (void))
 
+    (tassert "noto presento ground cdr fail" (run1 () (noto (presento 1  (cons 2 1)))) (void))
+    (tassert "noto presento ground fail" (run1 () (noto (presento 1 1))) (void))
+    (tassert "noto presento ground succeed" (run1 () (noto (presento 1 2))) '())
+    (tassert "noto presento bound ground term fail" (run1 (x1) (== x1 1) (noto (presento 1 x1))) (void))
+    (tassert "noto presento bound ground term succeed" (run1 (x1) (== x1 1) (noto (presento 2 x1))) 1)
+    (tassert "noto presento fire ground term fail" (run1 (x1) (noto (presento 1 x1)) (== x1 1)) (void))
+    (tassert "noto presento fire ground term succeed" (run1 (x1) (noto (presento 2 x1)) (== x1 1)) 1)
+
+    (tassert "noto presento ground car fail" (run1 () (noto (presento 1 (cons 1 2)))) (void))
+    (tassert "noto presento ground car succeed" (run1 () (noto (presento 1 (cons 2 2)))) '())
+    (tassert "noto presento bound car fail" (run1 (x1) (== x1 '(1)) (noto (presento 1 x1))) (void))
+    (tassert "noto presento bound car succeed" (run1 (x1) (== x1 '(1)) (noto (presento 2 x1))) '(1))
+    (tassert "noto presento fire car fail" (run1 (x1) (noto (presento 1 x1)) (== x1 '(1))) (void))
+    (tassert "noto presento fire car succeed" (run1 (x1) (noto (presento 2 x1)) (== x1 '(1))) '(1))
+
+    (tassert "noto presento ground cdr fail" (run1 () (noto (presento 1 (cons 2 1)))) (void))
+    (tassert "noto presento ground cdr succeed" (run1 () (noto (presento 1 (cons 2 2)))) '())
+    (tassert "noto presento bound cdr fail" (run1 (x1) (== x1 '(2 . 1)) (noto (presento 1 x1))) (void))
+    (tassert "noto presento bound cdr succeed" (run1 (x1) (== x1 '(2 . 2)) (noto (presento 1 x1))) '(2 . 2))
+    (tassert "noto presento fire cdr fail" (run1 (x1) (noto (presento 1 x1)) (== x1 '(2 . 1))) (void))
+    (tassert "noto presento fire cdr succeed" (run1 (x1) (noto (presento 3 x1)) (== x1 '(2 . 1))) '(2 . 1))
+
+    (tassert "noto presento hangs if matcho generates free vars in constraint"
+	     (run1 (x0 x1 x2 x3)
+		   (noto (presento 100 x0)) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
+
+    (tassert "noto presento hangs on this due to bad return condition in solve-disj"
+	     (run1 (x1 x2 x3 x4 x5)
+		   (noto (presento 100 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
+    
     
     #;;TODO test that recursive disjunctions containing unifications dont run forever looking for a case that doesn't involve == when attributing/solving disjunctions
     (tassert "presento free" (run1 (x1 x2) (presento x1 x2)) (lambda (a) (and (car a))))

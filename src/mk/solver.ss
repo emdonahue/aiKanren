@@ -183,14 +183,14 @@
 
   (org-define (solve-disj g s ctn resolve committed pending) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
 	      (let-values ([(c-lhs p-lhs s-lhs) (solve-constraint (disj-lhs g) s ctn resolve succeed succeed)])
-		(let* ([lhs (conj c-lhs p-lhs)])
+		(let ([lhs (conj c-lhs p-lhs)])
 		  (if (fail? lhs) (solve-constraint (disj-rhs g) s ctn resolve committed pending)
-		      (let*-values ([(c-rhs p-rhs s-rhs)
+		      (let-values ([(c-rhs p-rhs s-rhs)
 				     (if (or (not (lazy-solver)) (conj-memp lhs ==?)) (solve-constraint (disj-rhs g) s ctn resolve succeed succeed) ;TODO deal with non left branching disjs that may be created dynamically by =/= or matcho. fundamentally we have to thread information from the first disj through to others and treat them linearly
-					 (values succeed (conj (disj-rhs g) ctn) s))]
-				    [(rhs) (conj c-rhs p-rhs)])
-			(if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
-			    (values committed (conj pending (disj-factorized lhs rhs)) s)))))))
+					 (values succeed (conj (disj-rhs g) ctn) s))])
+			(let ([rhs (conj c-rhs p-rhs)])
+			 (if (fail? rhs) (values (conj committed c-lhs) (conj pending p-lhs) s-lhs)
+			     (values committed (conj pending (disj-factorized lhs rhs)) s))))))))
 
   (define solve-pconstraint
     (org-case-lambda solve-pconstraint
