@@ -91,6 +91,8 @@
     ;; TODO add a non occurs check =!= or ==!
     ;; Returns #t if it detects a cyclic unification.
     (cert (state? s) (var? v))
+    #f
+    #;
     (exclusive-cond
      [(eq? v term) #t]	    ; term is already walked by normalized ==s
      [(pair? term)

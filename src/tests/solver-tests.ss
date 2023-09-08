@@ -107,22 +107,25 @@
     (tassert "constraint == ==|fail" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 2))))) '(1 2))
     (tassert "constraint == ==|succeed" (run1 (x1 x2) (constrain (== x1 1)) (constrain (conde ((== x2 2)) ((== x1 1))))) (list 1 x2))
     (tassert "constraint == ==|succeed(out)" (run1 (x1 x2 x3) (constrain (== x1 1)) (constrain (== x3 3) (conde ((== x2 2)) ((== x1 1))))) (list 1 x2 3))
-    (tassert "constraint == ==|==|=="
-	     (run1 (x1 x2 x3) (constrain (== x3 1))
-		   (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3)))))
-	     (list (disj (disj (== x1 1) (== x2 1)) (== x1 x3)) (proxy x1) 1))
+    (parameterize ([lazy-solver #t])
+     (tassert "constraint == ==|==|=="
+	      (run1 (x1 x2 x3) (constrain (== x3 1))
+		    (constrain (conde ((== x1 x3)) ((== x2 x3)) ((== x1 x3)))))
+	      (list (disj (disj (== x1 1) (== x2 1)) (== x1 x3)) (proxy x1) 1)))
     (tassert "constraint ==|== ==" (run1 (x1) (constrain (conde ((== x1 1)) ((== x1 2)))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==" (run1 (x1) (constrain (disj* (=/= x1 1) (=/= x1 2))) (constrain (== x1 1))) 1)
     (tassert "constraint =/=|=/= ==2" (run1 (x1 x2) ; =/= dont need to simplify, so just apply the == and move on
 					    (constrain (disj* (=/= x1 1) (=/= x2 1)))
 					    (constrain (== x2 1)))
-	     (list (disj* (=/= x1 1) (=/= x2 1)) 1)) 
-    (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4)))))
-	     (list (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) (proxy x1) x3 1))
+	     (list (disj* (=/= x1 1) (=/= x2 1)) 1))
+    (parameterize ([lazy-solver #t])
+     (tassert "constraint simplification lvl 2" (run1 (x1 x2 x3 x4) (constrain (== x4 1)) (constrain (conde ((== x1 x4)) ((== x2 x4)) ((== x3 x4)))))
+	      (list (disj (disj (== x1 1) (== x2 1)) (== x3 x4)) (proxy x1) x3 1)))
     (tassert "constraint =/=* fails &== failing all =/=" (run1 (x1 x2) (== x1 1) (== x2 2) (constrain (=/= (cons x1 x2) '(1 . 2)))) (void))
     (tassert "disj head disj preserves ctn" (run1 (x1 x2) (constrain (disj* (constraint (disj* (=/= x1 1) (=/= x1 1))) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
     (tassert "disj preserves ctn" (run1 (x1 x2) (constrain (disj* (=/= x1 1) (=/= x1 1) (== x1 1)) (== x2 2)) (== x1 1)) '(1 2))
-    (tassert "disj only walks 1st disjunct if no ==" (run1 (x1 x2) (== x2 2) (constrain (conde [(=/= x1 1)] [(=/= x2 2)]))) (list (disj (=/= x1 1) (=/= x2 2)) 2))
+    (parameterize ([lazy-solver #t])
+     (tassert "disj only walks 1st disjunct if no ==" (run1 (x1 x2) (== x2 2) (constrain (conde [(=/= x1 1)] [(=/= x2 2)]))) (list (disj (=/= x1 1) (=/= x2 2)) 2)))
 
     ;; === STORE ===
     #;
