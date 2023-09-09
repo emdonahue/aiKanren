@@ -195,8 +195,8 @@
 	     (run1 (x1 x2 x3 x4 x5)
 		   (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
-    #;
-    (parameterize ([lazy-solver #f])    (tassert "duplicate absento simplifies down to duplicate matchos" (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3)))) 1))
+
+    (pretty-print (tassert "duplicate absento simplifies down to duplicate matchos" (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3)))) 1))
     ;1298
 ;;    (org-trace    (pretty-print (car (parameterize ([lazy-solver #f]) (run1 (a b c z) (absento 88 z) (absento 99 z) (constrain (== z (cons a b)) (== b (cons c 1))))))))
     #;
