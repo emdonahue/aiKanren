@@ -104,7 +104,7 @@
 	     (tassert "generative not-presento free fail" (run1 () (noto (presento (cadr vars) t)) (== (car vars) 1)) (void)))
 	   (begin
 	     (tassert "generative presento free fail" (run1 () (presento (cadr vars) t) (== (car vars) 1) (== (cadr vars) 3)) (void)) ; Since x2 is free, we don't know it's not in the term just because we don't see it. The value it eventually unifies with might be in the term.
-	     (tassert "generative not absento free fail" (run1 () (noto (absento (cadr vars) t)) (== (car vars) 1) (== (cadr vars) 3)) (void))
+	     (tassert "generative not absento free fail" t (lambda (t) (run1 () (noto (absento (cadr vars) t)) (== (car vars) 1) (== (cadr vars) 3))) (void))
 	     (tassert "generative absento free succeed" (run1 () (absento (cadr vars) t) (== (car vars) 1)) '())
 	     (tassert "generative not presento free succeed" (run1 () (noto (presento (cadr vars) t)) (== (car vars) 1)) '())))
        (if (present? 2 t)

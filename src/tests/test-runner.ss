@@ -19,6 +19,10 @@
        (with-exception-handler
 	(lambda (e)
 	  (printf "Exception in ~s~%" title)
+	  (unless (eq? noop-handler handler)
+		  (printf "Generated: ")
+		  (pretty-print (let ([received-values (call-with-values (lambda () received!) list)])
+				  (if (fx= 1 (length received-values)) (car received-values) received-values))))
 	  (failed (fx1+ (failed)))
 	  (raise e))
 	(lambda ()

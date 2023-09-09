@@ -47,6 +47,8 @@
 	  (when (not (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
 	  (printf "c ~s~%p ~s~%g ~s~%" c p g))
 	  (cert (or (reify-constraints) (and (not (conj-memp c matcho?)) (not (conj-memp p matcho?)))))
+	  (solve-constraint succeed (store-constraint s (conj (disj (noto c) (noto p)) ctn)) ctn resolve (conj committed (conj (disj (noto c) (noto p)) ctn)) pending)
+	  #;
 	  (if (succeed? p) ; If there are no pending constraints, all committed constraints must be fully normalized (non disj) so we can simply store them and continue.
 	      (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj committed (noto c)) pending)
 	      (solve-constraint succeed s (conj (disj (noto c) (noto p)) ctn) resolve committed pending)))))
