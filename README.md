@@ -46,7 +46,6 @@ Because the 'conjunction passing' style of the interpreter executes both subgoal
 Moreover, that proof can be copied and pasted back into the trace interpreter to constrain the search to only follow that path using the `prove` goal:
 
 ```scheme
-```scheme
 (trace-run (q) (prove proof ...))
 ```
 
