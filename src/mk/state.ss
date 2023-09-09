@@ -221,6 +221,11 @@
     (cert (state? s) (goal? c) (list? vs))
 					;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
     (let ([g (substitution-ref (state-substitution s) (car vs))])
+      (when (not (goal? g))
+	(pretty-print g)
+	(pretty-print (car vs))
+	(pretty-print c)
+	(pretty-print s))
       (cert (goal? g))
       (fold-left (lambda (s v)
 		   (let ([g (substitution-ref (state-substitution s) v)])

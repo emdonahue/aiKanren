@@ -56,6 +56,7 @@
       (let ([g (normalize-matcho out-vars in-vars (matcho-goal g))])
 	(cond
 	 [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
+	 [(not (matcho? g)) (reduce-constraint g c s)]
 	 [(null? (matcho-out-vars g)) (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
 					(reduce-constraint g c s))] ; TODO should we thread the real state when expanding matcho while reducing ==?
 	 [normalized (values g succeed)]

@@ -167,8 +167,11 @@
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (cert (not (and (null? out) (null? in))))
-    (if (or (null? out) (var? (car out))) (make-matcho out in proc)
-	(if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)))
+    (exclusive-cond
+     [(null? out)
+      (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
+     [(var? (car out)) (make-matcho out in proc)]
+     [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
 
   (define (expand-matcho g s p)
     ((matcho-goal g) s p (matcho-in-vars g)))
