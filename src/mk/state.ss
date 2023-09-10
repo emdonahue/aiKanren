@@ -94,7 +94,7 @@
   (define (extend-var s d x y bindings)
     ;; Insert a new binding between x and y into the substitution.
     (if (occurs-check/binding s x y) (values fail fail fail failure fail)
-     (values (cons (cons x y) bindings) succeed succeed (extend s x y) d)))
+     (values (cons (cons x y) bindings) succeed succeed (extend s x y) (conj d (== x y)))))
 
   (org-define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
@@ -103,7 +103,7 @@
       (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure fail) ; (if (succeed? val-c) s (unbind-constraint s val))
 	  (if (occurs-check/binding s var val)
 	      (values fail fail fail failure fail)
-	      (values (cons (cons var val) bindings) simplified recheck (extend s var val) d)))))
+	      (values (cons (cons var val) bindings) simplified recheck (extend s var val) (conj d (== var val)))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.

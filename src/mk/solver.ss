@@ -59,7 +59,8 @@
     (let-values ([(bindings simplified recheck s delta) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
       (if (fail? bindings) (values fail failure)
 	  (solve-constraint succeed (store-constraint s simplified) ctn (conj recheck resolve)
-					(conj delta (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)))
+			    delta)
+	  ;;(conj delta (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))
 	  #;;;TODO revisit simplifying == once all unifications have been made
 	  (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
 	    (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail failure)
