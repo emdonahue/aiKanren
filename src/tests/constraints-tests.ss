@@ -15,45 +15,45 @@
     (define stale (lambda (s p) (cert #f))) ; Fresh that should never be expanded
 
     ;; === VARID ===
-    (let ([s (run1-state (x1) (constrain (== x1 1)))])
+    (let ([s (run1-state (x1) (constraint (== x1 1)))])
       (tassert "constraint == store" (reify s x1) 1)
       (tassert "constraint == vid" (state-varid s) 2))
     #;
-    (let ([s (run1-state (x1) (constrain (fresh (x2) (== x1 1))))]) ;
+    (let ([s (run1-state (x1) (constraint (fresh (x2) (== x1 1))))]) ;
     (tassert "constraint frash == store" (reify s x1) 1) ;
     (tassert "constraint fresh == vid" (state-varid s) 3))
-    (let ([s (run1-state (x1 x2) (constrain (== x1 1) (== x2 2)))])
+    (let ([s (run1-state (x1 x2) (constraint (== x1 1) (== x2 2)))])
       (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
       (tassert "constraint conj == vid" (state-varid s) 3))
-    (let ([s (run1-state (x1) (constrain fail (== x1 1)))])
+    (let ([s (run1-state (x1) (constraint fail (== x1 1)))])
       (tassert "constraint bind fail" s failure))
     #;
-    (let ([s (run1-state (x1) (constrain (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
+    (let ([s (run1-state (x1) (constraint (== x1 1) (fresh (x2) (fresh (x3) (== x1 1)))))]) ;
     (tassert "constraint bind store" (reify s x1) 1) ;
     (tassert "constraint bind vid" (state-varid s) 2))
-    (let ([s (run1-state (x1) (constrain (conde [succeed] [succeed])))])
+    (let ([s (run1-state (x1) (constraint (conde [succeed] [succeed])))])
       (tassert "constraint disj succeed store" (reify s x1) x1)
       (tassert "constraint disj succeed vid" (state-varid s) 2))
 
     #;
     (tassert "constraint disj =="
-	     (run1 (x1 x2) (constrain (conde [(== x2 1)] [(== x2 2)]))
-		   (constrain (conde [(== x1 1)] [(== x1 2)]))
+	     (run1 (x1 x2) (constraint (conde [(== x2 1)] [(== x2 2)]))
+		   (constraint (conde [(== x1 1)] [(== x1 2)]))
 		   (== x2 2))
     (list (disj* (== x1 1) (== x1 2)) 2))
     #;
-    (tassert "constraint disj lazy" (run1 (x1) (constrain (conde [(== x1 1)] [(== x1 2)] [stale]))) (disj* (== x1 1) (== x1 2) stale))
+    (tassert "constraint disj lazy" (run1 (x1) (constraint (conde [(== x1 1)] [(== x1 2)] [stale]))) (disj* (== x1 1) (== x1 2) stale))
 
 
     #;
-    (let ([s (run1-state (x1) (constrain (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))]) ;
+    (let ([s (run1-state (x1) (constraint (fresh (x2) succeed) (conde [(fresh (x3 x4) succeed)] [stale])))]) ;
     (tassert "constraint conj disj store" (reify s x1) x1) ;
     (tassert "constraint conj disj vid" (state-varid s) 2))
 
 
     #;
     (tassert "constraint disj conj"
-	     (run1 (x1 x2) (constrain (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
+	     (run1 (x1 x2) (constraint (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
 	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
 		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
 
@@ -153,7 +153,7 @@
 
     (tassert "not symbolo fire fail" (run1 (x1) (noto (symbolo x1)) (== x1 'symbol)) (void))
     (tassert "not symbolo fire succeed" (run1 (x1) (noto (symbolo x1)) (== x1 42)) 42)
-    (tassert "noto does not mangle ctn" (run1 (x1) (constrain (noto (symbolo x1)) (matcho ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
+    (tassert "noto does not mangle ctn" (run1 (x1) (constraint (noto (symbolo x1)) (matcho ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
 
     (tassert "symbolo-symbolo succeed" (run1 (x1) (symbolo x1) (symbolo x1)) (symbolo x1))
     (tassert "symbolo-numbero fail" (run1 (x1) (symbolo x1) (numbero x1)) (void))

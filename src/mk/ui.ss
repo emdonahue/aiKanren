@@ -3,7 +3,7 @@
 	  run-states run*-states run1-state
 	  run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
 	  runner
-	  fresh exist constrain conde
+	  fresh exist constraint conde
 	  trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
   
@@ -123,9 +123,9 @@
 	 (parameterize ([trace-query (list q ...)])
 	     (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth)))]))
 
-   (define-syntax constrain
+   (define-syntax constraint
      (syntax-rules ()
-       [(_ g ...) (constraint (conj* g ...))]))
+       [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))])) ;TODO try applying constraint immediately when applied
   
   ;; === UTILITIES ===
 

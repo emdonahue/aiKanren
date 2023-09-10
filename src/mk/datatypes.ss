@@ -13,7 +13,7 @@
 	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
 	  empty-substitution
 	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
+	  make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
 	  goal? goal-memp
 	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
@@ -57,8 +57,6 @@
   (define empty-constraint-store (make-constraint-store '()))
 
   (define-structure (constraint goal))
-  (define (constraint g)
-    (if (or (fail? g) (succeed? g)) g (make-constraint g)))
   (define (set-constraint-goal c g)
     (cert (constraint? c) (goal? g))
     (let ([c (vector-copy c)])

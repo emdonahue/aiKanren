@@ -44,8 +44,8 @@
   (define (run-mk g)
     (let* ([c (compile-mk g)]
 	   [goal (run* (x y z) c)]
-	   [constraint (run* (x y z) (constrain c))]
-	   [goal+constraint (run* (x y z) (constrain c) c)])
+	   [constraint (run* (x y z) (constraint c))]
+	   [goal+constraint (run* (x y z) (constraint c) c)])
 					;(printf "~s~%~s~%~s~%" goal constraint goal+constraint)
       (unless (answers-equal? goal constraint goal+constraint)
 	(tassert "Generated test" (list goal constraint goal+constraint) #f))))

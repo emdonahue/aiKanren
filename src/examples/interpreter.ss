@@ -25,7 +25,7 @@
       [(expr env val)
        (trace-conde
 	[quote (evalo-quote expr env val)]
-	[literal (constrain (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
+	[literal (constraint (conde [(numbero expr)] [(booleano expr)])) (== expr val)]
 	[lookup (symbolo expr) (lookupo expr env val)]
 	[lambda (evalo-lambda expr env val)]
 	[apply (evalo-apply expr env val)]
@@ -72,7 +72,7 @@
       (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
 	      ;(printfo "eval lambda~%")
 	      (== `(closure (lambda ,args ,body) ,env) val)
-	      (constrain
+	      (constraint
 	       (conde
 		 [(symbolo args)]
 		 [(for-eacho (lambda (x) (symbolo x)) args)])))
