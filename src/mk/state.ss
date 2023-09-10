@@ -99,11 +99,18 @@
   (org-define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
-    (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
-      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure fail) ; (if (succeed? val-c) s (unbind-constraint s val))
-	  (if (occurs-check/binding s var val)
-	      (values fail fail fail failure fail)
-	      (values (cons (cons var val) bindings) simplified recheck (extend s var val) (conj d (== var val)))))))
+    (when (not (equal? (conj-diff d var-c) d))
+      (org-display (conj-diff d var-c)))
+    (let-values ([(committed pending) (conj-partition (lambda (g) (conj-memq g d)) var-c)])
+     (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
+       (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure fail) ; (if (succeed? val-c) s (unbind-constraint s val))
+
+	   ;; remove var-c constraints from delta
+	   ;; add simplified constraints back to delta
+	   ;; return separate 
+	   (if (occurs-check/binding s var val)
+	       (values fail fail fail failure fail)
+	       (values (cons (cons var val) bindings) simplified recheck (extend s var val) (conj d (== var val))))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.

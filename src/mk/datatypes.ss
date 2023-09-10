@@ -18,7 +18,7 @@
 	  succeed fail succeed? fail?
 	  make-== == ==? ==-lhs ==-rhs
 	  fresh? make-exist exist? exist-procedure
-	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-intersect ;TODO replace conj-car/cdr with lhs/rhs
+	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
 	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
 	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
 	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
@@ -290,6 +290,10 @@
     (if (conj? c) (or (conj-member e (conj-lhs c)) (conj-member e (conj-rhs c)))
 	(equal? c e)))
 
+  (define (conj-memq e c)
+    (if (conj? c) (or (conj-memq e (conj-lhs c)) (conj-memq e (conj-rhs c)))
+	(eq? c e)))
+
   (define (conj-memp c p)
     (if (conj? c)
 	(or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
@@ -303,6 +307,12 @@
       (if (conj? (conj-rhs cs))
 	  (conj-fold p lhs (conj-rhs cs))
 	  (p lhs (conj-rhs cs)))))
+
+  (define (conj-partition p cs)
+    (if (conj? cs) (let-values ([(lhs-t lhs-f) (conj-partition p (conj-lhs cs))]
+				[(rhs-t rhs-f) (conj-partition p (conj-rhs cs))])
+		     (values (conj lhs-t rhs-t) (conj lhs-f rhs-f)))
+	(if (p cs) (values cs succeed) (values succeed cs))))
 
   ;; DISJ
   (define (disj lhs rhs) ;TODO convert constructor fns to constructed params of structure  
