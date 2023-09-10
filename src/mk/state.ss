@@ -99,7 +99,7 @@
   (org-define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
-    (let-values ([(committed pending) (conj-partition (lambda (g) (conj-memq g d)) var-c)])
+    (let-values ([(pending committed) (conj-partition (lambda (g) (conj-member g d)) var-c)])
       (let-values ([(committed/simplified committed/recheck) (simplify-unification committed (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
 	(if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
 	 (let-values ([(pending/simplified pending/recheck) (simplify-unification pending (list (cons var val)))])
