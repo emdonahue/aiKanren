@@ -231,7 +231,7 @@
     ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
     (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (proxy x1)))
     (tassert "absento failed because matcho wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
-    (tassert "repeatedly solved constraints deduplicate" (run1 (x1 x2) (constraint (=/= x1 1) (== x1 x2))) 1)
+    (tassert "repeatedly solved constraints deduplicate" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1))) (disj (conj (=/= x2 1) (== x1 x2)) (== x1 1)))
 
     ;; === PCONSTRAINT ===
     (tassert "pconstraint rechecks if not normalized" (run1 (x1 x2) (disj (conj (numbero x1) (numbero x2)) (symbolo x1)) (== x2 2) (== x1 1)) '(1 2))

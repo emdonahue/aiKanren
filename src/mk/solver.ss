@@ -1,12 +1,11 @@
-(library (solver) ; Constraint solving
+(library (solver) ; Central logic of the constraint solver
   (export run-constraint simplify-=/= simplify-pconstraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer))
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(committed s) (solve-constraint g s succeed succeed succeed)])
-      s))
+    (let-values ([(committed s) (solve-constraint g s succeed succeed succeed)]) s))
 
   (org-define (solve-constraint g s ctn resolve committed)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
@@ -65,42 +64,13 @@
 	  (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
 	    (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail failure)
 		(let-values ([(ctn/simplified ctn/recheck) (simplify-unification ctn bindings)])
-		  (org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
+		  ;;(org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
 		  (if (or (fail? ctn/simplified) (fail? ctn/recheck)) (values fail failure)
-		      (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail failure)
-			  (solve-constraint succeed (store-constraint s (conj simplified (conj recheck/simplified ctn/simplified)))
-					    ctn/recheck (conj recheck/recheck resolve)
-					    (conj committed
-						  (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)))))))))))
+		      (solve-constraint succeed (store-constraint s (conj simplified (conj recheck/simplified ctn/simplified)))
+					ctn/recheck (conj recheck/recheck resolve)
+					(conj committed
+					      (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))))))))))
 
-		 #;
-  (occurs-check bindings (conj simplified (conj recheck/simplified ctn/simplified)) ;
-  recheck/recheck			;
-  s ctn/recheck resolve committed pending)
-  
-  (define (occurs-check bindings simplified recheck s ctn resolve committed)
-    (solve-constraint recheck (store-constraint s simplified) ctn resolve
-		      (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))))
-
-  #;
-  (define (occurs-check bindings simplified recheck s ctn resolve committed pending) ;
-  (if (not (for-all (lambda (b) (not (occurs-check/binding s (car b) (cdr b)))) bindings)) (values fail fail failure) ;
-  (solve-constraint recheck (store-constraint s simplified) ctn resolve ;
-  (conj committed (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings)) pending)))
-
-  (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
-    ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
-    ;; TODO add a non occurs check =!= or ==!
-    ;; Returns #t if it detects a cyclic unification.
-    (cert (state? s) (var? v))
-    #f
-    #;
-    (exclusive-cond
-     [(eq? v term) #t]	    ; term is already walked by normalized ==s
-     [(pair? term)
-      (or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
-	  (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
-     [else #f]))
 
   (org-define (solve-=/= g s ctn resolve committed)
 	      ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
