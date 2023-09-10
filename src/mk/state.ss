@@ -110,7 +110,7 @@
 	       ;; return separate 
 	       (if (occurs-check/binding s var val)
 		   (values fail fail fail fail fail failure)
-		   (values (cons (cons var val) bindings) (conj committed/simplified pending/simplified) committed/recheck pending/recheck (conj d (== var val)) (extend s var val)))))))))
+		   (values (cons (cons var val) bindings) (conj committed/simplified pending/simplified) committed/recheck pending/recheck (conj (conj (conj-diff d pending) pending/simplified) (== var val)) (extend s var val)))))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
