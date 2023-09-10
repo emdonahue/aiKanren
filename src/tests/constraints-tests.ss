@@ -165,6 +165,7 @@
     ;;(tassert "pluso ground 1" (run1 () (pluso 42)) '())
 
     ;; === ABSENTO ===
+
     (tassert "absento ground cdr fail" (run1 () (absento 1  (cons 2 1))) (void))
     (tassert "absento ground fail" (run1 () (absento 1 1)) (void))
     (tassert "absento ground succeed" (run1 () (absento 1 2)) '())
@@ -196,66 +197,24 @@
 		   (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
 
-    (pretty-print (tassert "duplicate absento simplifies down to duplicate matchos" (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3)))) 1))
-    ;1298
-;;    (org-trace    (pretty-print (car (parameterize ([lazy-solver #f]) (run1 (a b c z) (absento 88 z) (absento 99 z) (constrain (== z (cons a b)) (== b (cons c 1))))))))
-    #;
-    (let* ([ ab (absento 100 (make-var 1))]
-	   [abm (disj-rhs (conj-rhs ab))]
-	   [abm2 (make-matcho (matcho-out-vars abm) (matcho-in-vars abm) (matcho-goal abm))])
-      (pretty-print abm)
-      (pretty-print abm2)
-          (pretty-print (equal? abm abm2)))
-
-;;    (exit)
-
-;    (exit)
-
-;    (display "start")
-#;
-    (run1 (x0 x1 x2)
-	  (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) )
-;    (display "END")
-
-
-					;(display (run1 (x1) (=/= x1 #t) (booleano x1)))
-					;(display (run1 (x1) (booleano x1) (=/= x1 #t)))
-    ;;(display "START\n\n")
-    ;;(display (run1-state (x1) (constrain (=/= x1 1) (disj* (== x1 1) (== x1 2)) )))
-
-
-
-
+    (tassert "duplicate absento simplifies down to duplicate matchos"
+	     (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3))))
+	     (lambda (g)
+	       (let ([m21 (disj-rhs (conj-rhs (conj-lhs (car g))))]
+		     [m22 (conj-rhs (conj-rhs (car g)))]
+		     [m31 (disj-rhs (conj-rhs (conj-lhs (cadr g))))]
+		     [m32 (conj-rhs (conj-rhs (cadr g)))])
+		 (equal? g (list
+			    (conj (conj (=/= x2 1) (disj (conj (=/= x2 2) (noto (pairo x2))) m21))
+				  (disj (noto (pairo x2)) m22))
+			    (conj (conj (=/= x3 1) (disj (conj (=/= x3 2) (noto (pairo x3))) m31))
+				  (disj (noto (pairo x3)) m32)))))))
 
     ;; === PRESENTO ===
 
-    ;; #(disj (#(== #(var 1) 1) #<procedure at constraints.ss:509>))
     (tassert "presento unbound term succeed" (run1 (x1) (presento 1 x1) (== x1 1)) 1)
     (tassert "presento unbound term fail" (run1 (x1) (presento 1 x1) (== x1 2)) (void))
     (tassert "presento unbound term" (run1 (x1) (presento 1 x1)) (lambda (a) (and (disj? a) (matcho? (disj-lhs a)) (equal? (disj-rhs a) (== x1 1)))))
-    #;
-    (let* ([c (presento (cons x1 2) 1)]	; ; ;
-    [s (run1 (x1) c )])			; ; ;
-    ;; #(disj (#(== #(var 2) 1) #<procedure at constraints.ss:509> #(constraint #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>))))) ; ; ;
-    (tassert "presento unbound car succeed" (run1 (x1) c (== x1 1)) 1) ; ; ;
-    (tassert "presento unbound car fail" (run1 (x1) c (== x1 2)) (void)) ; ; ;
-    (tassert "presento unbound car"	; ; ;
-    s (disj* (== x2 1) ; car is not 1	; ; ;
-    (cadr (disj-disjuncts s)) ; car is not recursive pair ; ; ;
-    (make-constraint ; cdr		; ; ;
-    (disj* (== x3 1) ; cdr is not 1	; ; ;
-    (cadr (disj-disjuncts ; cdr is not recursive pair ; ; ;
-    (constraint-goal (list-ref (disj-disjuncts s) 2)))))))))
-    #;
-    (let* ([c (presento (cons 2 x1) 1)]	; ; ;
-    [s (run1 (x1)  c)])			; ; ;
-    ;; #(disj (#(== #(var 3) 1) #<procedure at constraints.ss:509>)) ; ; ;
-    (tassert "presento unbound cdr succeed" (run1 (x1) c (== x1 1)) 1) ; ; ;
-    (tassert "presento unbound cdr fail" (run1 (x1) c (== x1 2)) (void)) ; ; ;
-    (tassert "presento unbound cdr"	; ; ;
-    s (disj* (== x3 1) ; cdr is not 1	; ; ;
-    (cadr ; car is not recursive pair	; ; ;
-    (disj-disjuncts s)))))
 
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 1 2)) (void))
@@ -330,45 +289,14 @@
 
 
 
-
-
-
-
-
-    ;;(pretty-print (run-constraint (conj* (=/= (cons x1 x2) '(1 . 2)) (== x2 2)) (run-constraint (disj* (== x1 1) (== x1 2)) empty-state)))
-
-    ;;(pretty-print (values-ref (run-dfs (disj* (== x1 1) (== x1 2)) empty-state succeed) 0))
-
-					;(tassert "dfs == & ==" (reify (values-ref (run-dfs (conj* (== x1 1) (== x2 2)) empty-state '() succeed) 1) (cons x1 x2)) '(1 . 2))
-					; (tassert "dfs == constrained =/=" (values-ref (run-dfs (== x1 1) empty-state (list (cons x1 (=/= x1 1))) succeed) 1) failure)
-
-
-
-    ;;code for inspecting presento constraints
-    #;
-    (let ([c (run1 (x1) (presento (cons (list 2 3 4 5 x1 ) 6) 1))] ; ; ;
-    [s (unify empty-state x1 1)])	; ; ;
-    ;;(pretty-print c)		;	; ;
-    ;;(pretty-print s)		;	; ;
-;      (pretty-print c)			; ; ; ; ; ; ;
- ;     (pretty-print (list-values (simplify-constraint c s))) ; ; ; ; ; ; ;
-    #;					; ; ;
-    (pretty-print (car  (disj-disjuncts c))) ; ; ;
-					; ; ; ; ; ; ;
-    #;					; ; ;
-    (pretty-print			; ; ;
-    (check-constraints (state-add-constraint s x1 c) (== x1 1) )) ; ; ;
-					; ; ; ; ; ; ;
-    (pretty-print			; ; ;
-    (check-constraints			; ; ;
-    (check-constraints (state-add-constraint s x1 c) (== x1 1) ) (== (make-var 4) 2))))
+    ;; === FILTERO ===
 
     (tassert "filtero null" (run* (q) (filtero (lambda (x) succeed) '() q)) '(()))
     (tassert "filtero succeed" (run* (q) (filtero (lambda (x) succeed) '(1 2 3) q)) '((1 2 3)))
     (tassert "filtero fail" (run* (q) (filtero (lambda (x) fail) '(1 2 3) q)) '(()))
     (tassert "filtero ==" (run* (q) (filtero (lambda (x) (== x 2)) '(1 2 3) q)) '((2)))
     (tassert "filtero |" (run* (q) (filtero (lambda (x) (disj (== x 2) (== x 3))) '(1 2 3) q)) '((2 3)))
-    #;
+#;
     (parameterize ([lazy-solver #f])
       (tassert "filtero free" (run* (q x) (filtero (lambda (x) (disj (== x 2) (== x 3))) `(1 ,x 3) q) (== x 3)) '((3 3))))
     
