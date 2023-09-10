@@ -13,15 +13,12 @@
     (if (failure? s) (values fail failure)
 	(exclusive-cond
 	 [(fail? g) (values fail failure)]
-	 ;;[(succeed? g) (if (succeed? ctn) (values delta pending s) (solve-constraint ctn s succeed delta pending))]
-
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values delta s)
-			       (let-values ([(c s) (solve-constraint resolve s succeed succeed delta)])
-				 (org-display c)
+			       (let-values ([(d s) (solve-constraint resolve s succeed succeed delta)])
 				 (if (failure? s) (values fail failure)
-				     (values delta s))))
+				     (values delta s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
 			   (solve-constraint ctn s succeed resolve delta))]
 	 [(==? g) (solve-== g s ctn resolve delta)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
