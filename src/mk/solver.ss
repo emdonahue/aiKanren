@@ -56,9 +56,9 @@
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
 	      ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
 	      ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
-    (let-values ([(bindings simplified recheck delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
+    (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
       (if (fail? bindings) (values fail failure)
-	  (solve-constraint succeed (store-constraint s simplified) ctn (conj recheck resolve)
+	  (solve-constraint succeed (store-constraint s simplified) ctn (conj (conj committed pending) resolve)
 			    delta)
 	  ;;(conj delta (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))
 	  #;;;TODO revisit simplifying == once all unifications have been made

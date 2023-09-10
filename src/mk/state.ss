@@ -74,9 +74,9 @@
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed succeed d s) (extend-constraint s d x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
+	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed succeed succeed d s) (extend-constraint s d x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
 	    (extend-constraint s d x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
-       [(eq? x y) (values bindings succeed succeed d s)]
+       [(eq? x y) (values bindings succeed succeed succeed d s)]
        [(goal? y) (if (var? x)
 		      (extend-constraint s d x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
 		      (extend-constraint s d y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
@@ -84,33 +84,33 @@
        [(var? y) (extend-var s d y x bindings)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
-	    ([(bindings simplified recheck d s) (unify s d (car x) (car y) bindings)])
+	    ([(bindings simplified committed pending d s) (unify s d (car x) (car y) bindings)])
 	  (if (fail? bindings)
-	      (values fail fail fail fail failure)
-	      (let-values ([(bindings simplified^ recheck^ d s) (unify s d (cdr x) (cdr y) bindings)])
-		(values bindings (conj simplified simplified^) (conj recheck recheck^) d s))))] ;TODO unify should simplify constraints together as it conjoins them, or perhaps in solve-== after they have all been normalized
-       [else (values fail fail fail fail failure)]))
+	      (values fail fail fail fail fail failure)
+	      (let-values ([(bindings simplified^ committed^ pending^ d s) (unify s d (cdr x) (cdr y) bindings)])
+		(values bindings (conj simplified simplified^) (conj committed committed^) (conj pending pending^) d s))))] ;TODO unify should simplify constraints together as it conjoins them, or perhaps in solve-== after they have all been normalized
+       [else (values fail fail fail fail fail failure)]))
   
   (define (extend-var s d x y bindings)
     ;; Insert a new binding between x and y into the substitution.
-    (if (occurs-check/binding s x y) (values fail fail fail fail failure)
-     (values (cons (cons x y) bindings) succeed succeed (conj d (== x y)) (extend s x y))))
+    (if (occurs-check/binding s x y) (values fail fail fail fail fail failure)
+     (values (cons (cons x y) bindings) succeed succeed succeed (conj d (== x y)) (extend s x y))))
 
   (org-define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
     (let-values ([(committed pending) (conj-partition (lambda (g) (conj-memq g d)) var-c)])
       (let-values ([(committed/simplified committed/recheck) (simplify-unification committed (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
-	(if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+	(if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
 	 (let-values ([(pending/simplified pending/recheck) (simplify-unification pending (list (cons var val)))])
-	   (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+	   (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
 
 	       ;; remove var-c constraints from delta
 	       ;; add simplified constraints back to delta
 	       ;; return separate 
 	       (if (occurs-check/binding s var val)
-		   (values fail fail fail fail failure)
-		   (values (cons (cons var val) bindings) (conj committed/simplified pending/simplified) (conj committed/recheck pending/recheck) (conj d (== var val)) (extend s var val)))))))))
+		   (values fail fail fail fail fail failure)
+		   (values (cons (cons var val) bindings) (conj committed/simplified pending/simplified) committed/recheck pending/recheck (conj d (== var val)) (extend s var val)))))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
