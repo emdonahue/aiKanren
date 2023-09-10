@@ -61,49 +61,49 @@
   (define unify ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
     (org-case-lambda unify
-      [(s x y) (unify s x y '())]
-      [(s x y bindings)
+      [(s d x y) (unify s d x y '())]
+      [(s d x y bindings)
        (cert (state? s)) ; -> bindings simplified recheck state
        (let-values ([(x-var x) (walk-var-val s x)]
 		    [(y-var y) (walk-var-val s y)])
 	 (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index
-	     (unify-binding s y-var y x-var x bindings)
-	     (unify-binding s x-var x y-var y bindings)))]))
+	     (unify-binding s d y-var y x-var x bindings)
+	     (unify-binding s d x-var x y-var y bindings)))]))
 
-  (org-define (unify-binding s x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
+  (org-define (unify-binding s d x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
-	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed succeed s) (extend-constraint s x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
-	    (extend-constraint s x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
-       [(eq? x y) (values bindings succeed succeed s)]
+	(if (goal? y) (if (eq? x-var y-var) (values bindings succeed succeed s d) (extend-constraint s d x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
+	    (extend-constraint s d x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
+       [(eq? x y) (values bindings succeed succeed s d)]
        [(goal? y) (if (var? x)
-		      (extend-constraint s x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
-		      (extend-constraint s y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
-       [(var? x) (extend-var s x y bindings)]
-       [(var? y) (extend-var s y x bindings)]
+		      (extend-constraint s d x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
+		      (extend-constraint s d y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
+       [(var? x) (extend-var s d x y bindings)]
+       [(var? y) (extend-var s d y x bindings)]
        [(and (pair? x) (pair? y)) ;TODO test whether eq checking the returned terms and just returning the pair as is without consing a new one boosts performance in unify
 	(let-values
-	    ([(bindings simplified recheck s) (unify s (car x) (car y) bindings)])
+	    ([(bindings simplified recheck s d) (unify s d (car x) (car y) bindings)])
 	  (if (fail? bindings)
-	      (values fail fail fail failure)
-	      (let-values ([(bindings simplified^ recheck^ s) (unify s (cdr x) (cdr y) bindings)])
-		(values bindings (conj simplified simplified^) (conj recheck recheck^) s))))] ;TODO unify should simplify constraints together as it conjoins them, or perhaps in solve-== after they have all been normalized
-       [else (values fail fail fail failure)]))
+	      (values fail fail fail failure fail)
+	      (let-values ([(bindings simplified^ recheck^ s d) (unify s d (cdr x) (cdr y) bindings)])
+		(values bindings (conj simplified simplified^) (conj recheck recheck^) s d))))] ;TODO unify should simplify constraints together as it conjoins them, or perhaps in solve-== after they have all been normalized
+       [else (values fail fail fail failure fail)]))
   
-  (define (extend-var s x y bindings)
+  (define (extend-var s d x y bindings)
     ;; Insert a new binding between x and y into the substitution.
-    (if (occurs-check/binding s x y) (values fail fail fail failure)
-     (values (cons (cons x y) bindings) succeed succeed (extend s x y))))
+    (if (occurs-check/binding s x y) (values fail fail fail failure fail)
+     (values (cons (cons x y) bindings) succeed succeed (extend s x y) d)))
 
-  (org-define (extend-constraint s var val var-c val-c bindings)
+  (org-define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
     (let-values ([(simplified recheck) (simplify-unification var-c (list (cons var val)))]) ;TODO return val constraint to simplify it with potentially other bindings and also unbind its var?
-      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+      (if (or (fail? simplified) (fail? recheck)) (values fail fail fail failure fail) ; (if (succeed? val-c) s (unbind-constraint s val))
 	  (if (occurs-check/binding s var val)
-	      (values fail fail fail failure)
-	      (values (cons (cons var val) bindings) simplified recheck (extend s var val))))))
+	      (values fail fail fail failure fail)
+	      (values (cons (cons var val) bindings) simplified recheck (extend s var val) d)))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
