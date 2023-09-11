@@ -157,7 +157,7 @@
 			;;TODO just operate on the list for matcho solving
 			(solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve delta)))))
 
-  (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
+  (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints	      
 	      (let-values ([(c-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
 		(let ([lhs c-lhs])
 		  (exclusive-cond
