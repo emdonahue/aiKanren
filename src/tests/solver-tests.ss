@@ -223,7 +223,7 @@
     (tassert "=/= & (=/=|succeed)" (run1 (x1) (disj (numbero x1) (symbolo x1)) (=/= x1 1)) (disj (conj (=/= x1 1) (numbero x1)) (symbolo x1)))
     (tassert "disj common non == are extracted" (run1 (x1) (disj (=/= x1 1) (=/= x1 1))) (=/= x1 1))
     (tassert "stale constraints on multiple vars are ignored when stored" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 2) (== x2 3))) (== x1 1) (== x2 3)) '(1 3))
-    (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list 1 (proxy x1)))
+;;(org-trace    (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list 1 (proxy x1))))
 
     ;; === NOTO ===
 

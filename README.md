@@ -3,7 +3,7 @@ A performant miniKanren implementation designed to serve as a platform for AI re
 ## Quick Start
 In lieu of more extensive documentation, this section clarifies some differences from previous miniKanren systems for those already broadly familiar with miniKanren.
 
-`make test` runs the tests. `make lib` compiles the library into a wpo in the lib subdirectory. You can open a repl to experiment with using `make repl'. Run benchmarks with `make bench`.
+`make test` runs the tests. `make` compiles the library into a wpo in the lib subdirectory, which is only necessary if you want to compile your program with whole program optimization including this library. You can open a repl to experiment with using `make repl'. Run benchmarks with `make bench`.
 
 To import the library in script mode for development, import `(aikanren)` and run your program with:
 

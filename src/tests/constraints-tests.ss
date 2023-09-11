@@ -70,7 +70,7 @@
     (tassert "booleano fired t" (run1 (x1) (booleano x1) (== x1 #t)) #t)
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
-    (tassert "boolano unsatisfiable with all-diff" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x2 x3) (=/= x1 x3) (booleano x1) (booleano x2) (booleano x3)) (void)) ; TODO to allow =/= to suspend on single variable, disj must put proxies on any vars that would be touched by its disjuncts so they can rerun the disjunction
+    (tassert "booleano unsatisfiable with all-diff" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x2 x3) (=/= x1 x3) (booleano x1) (booleano x2) (booleano x3)) (void)) ; TODO to allow =/= to suspend on single variable, disj must put proxies on any vars that would be touched by its disjuncts so they can rerun the disjunction
 
     ;; === LISTO ===
 
