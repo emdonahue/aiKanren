@@ -16,10 +16,15 @@
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values delta s)
-			       (let-values ([(d s) (solve-constraint resolve s succeed succeed delta)])
+			       (let-values ([(d s)
+					     (if (conj? resolve)
+						 (solve-constraint (conj-lhs resolve) s succeed (conj-rhs resolve) delta)
+						 (solve-constraint resolve s succeed succeed delta))])
 				 (if (failure? s) (values fail failure)
 				     (values delta s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
-			   (solve-constraint ctn s succeed resolve delta))]
+			   (if (conj? ctn)
+			       (solve-constraint (conj-lhs ctn) s (conj-rhs ctn) resolve delta)
+			       (solve-constraint ctn s succeed resolve delta)))]
 	 [(==? g) (solve-== g s ctn resolve delta)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
 	 [(disj? g) (solve-disj g s ctn resolve delta)]
@@ -80,8 +85,9 @@
 		(if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
 		    (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
 			(let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
+			  (org-display unified disunified recheck diseq)
 			  (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
-			      (solve-constraint recheck (extend s (=/=-lhs g) (conj diseq disunified)) ctn resolve (conj delta g))))))))
+			      (solve-constraint succeed (store-constraint (extend s (=/=-lhs g) disunified) diseq) ctn (conj recheck resolve) (conj delta g))))))))
 
   (org-define (simplify-=/= g x y d)
 	      ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
@@ -287,7 +293,8 @@
 				    (values vars unifies))]
 		       [(==? g)
 			(cert (var? (==-lhs g)))
-			(values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
+			(let ([vs (if (and (var? (==-rhs g)) (not (memq (==-rhs g) vs))) (cons (==-rhs g) vs) vs)])
+			  (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t))]
 		       [(matcho? g)
 			(values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
 		       [(pconstraint? g)

@@ -70,6 +70,7 @@
     (tassert "booleano fired t" (run1 (x1) (booleano x1) (== x1 #t)) #t)
     (tassert "booleano fired f" (run1 (x1) (booleano x1) (== x1 #f)) #f)
     (tassert "booleano fired undecidable fail" (run1 (x1) (booleano x1) (== x1 'undecidable)) (void))
+(org-trace    (tassert "boolano unsatisfiable with diff" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x2 x3) (=/= x1 x3) (booleano x1) (booleano x2) (booleano x3)) (void)))
 
     ;; === LISTO ===
 
