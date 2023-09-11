@@ -16,15 +16,10 @@
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
 			       (values delta s)
-			       (let-values ([(d s)
-					     (if (conj? resolve)
-						 (solve-constraint (conj-lhs resolve) s succeed (conj-rhs resolve) delta)
-						 (solve-constraint resolve s succeed succeed delta))])
+			       (let-values ([(d s) (solve-constraint resolve s succeed succeed delta)])
 				 (if (failure? s) (values fail failure)
 				     (values delta s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
-			   (if (conj? ctn)
-			       (solve-constraint (conj-lhs ctn) s (conj-rhs ctn) resolve delta)
-			       (solve-constraint ctn s succeed resolve delta)))]
+			   (solve-constraint ctn s succeed resolve delta))]
 	 [(==? g) (solve-== g s ctn resolve delta)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
 	 [(disj? g) (solve-disj g s ctn resolve delta)]
@@ -171,7 +166,8 @@
 		   [else (let-values ([(c-rhs s-rhs) (solve-constraint (disj-rhs g) s succeed succeed succeed)])
 			   (let* ([rhs c-rhs]
 				  [lhs-rhs (disj-factorized lhs rhs)])
-			     (solve-constraint succeed (store-constraint s lhs-rhs) ctn resolve (conj delta lhs-rhs))
+			     (if (fail? rhs) (solve-constraint succeed s-lhs ctn resolve (conj delta c-lhs))
+				 (solve-constraint succeed (store-constraint s lhs-rhs) ctn resolve (conj delta lhs-rhs)))
 			     #;
 			 (if (fail? rhs) (values (conj delta c-lhs) (conj pending p-lhs) s-lhs)
 			     (values delta (conj pending (disj-factorized lhs rhs)) s))))]))))
@@ -289,10 +285,17 @@
 		       [(conj? g) (call-with-values
 				      (lambda () (attributed-vars (conj-cdr g) vs unifies))
 				    (lambda (vs unifies) (attributed-vars (conj-car g) vs unifies)))]
-		       [(noto? g) (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
-				    (values vars unifies))]
+		       [(noto? g)
+			(if (==? (noto-goal g))
+			    (let ([vs (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs))) (cons (==-rhs (noto-goal g)) vs) vs)])
+			     (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
+			       (values vars unifies)))
+			    (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
+			      (values vars unifies)))]
 		       [(==? g)
 			(cert (var? (==-lhs g)))
+			(values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)
+			#;
 			(let ([vs (if (and (var? (==-rhs g)) (not (memq (==-rhs g) vs))) (cons (==-rhs g) vs) vs)])
 			  (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t))]
 		       [(matcho? g)
