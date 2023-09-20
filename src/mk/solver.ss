@@ -5,20 +5,20 @@
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(delta s) (solve-constraint g s succeed succeed succeed)]) s))
+    (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)]) s))
 
   (org-define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> delta pending state-or-failure?
-    (if (failure? s) (values fail failure)
+    (if (failure? s) (values fail fail failure)
 	(exclusive-cond
-	 [(fail? g) (values fail failure)]
+	 [(fail? g) (values fail fail failure)]
 	 [(succeed? g) (if (succeed? ctn)
 			   (if (succeed? resolve)
-			       (values delta s)
-			       (let-values ([(d s) (solve-constraint resolve s succeed succeed delta)])
-				 (if (failure? s) (values fail failure)
-				     (values delta s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
+			       (values delta succeed s)
+			       (let-values ([(resolved re-resolved s) (solve-constraint resolve s succeed succeed delta)])
+				 (if (failure? s) (values fail fail failure)
+				     (values delta (conj resolved re-resolved) s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
 			   (solve-constraint ctn s succeed resolve delta))]
 	 [(==? g) (solve-== g s ctn resolve delta)]
 	 [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
@@ -38,7 +38,7 @@
 
   (org-define (solve-noto g s ctn resolve delta)
     (if (==? g) (solve-=/= g s ctn resolve delta)
-	(let-values ([(c s^) (solve-constraint g s succeed succeed succeed)])
+	(let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
 	  (org-display c s^)
 	  (when (not (or (reify-constraints) (not (conj-memp c matcho?))))
 	  (printf "c ~s~%g ~s~%" c g))
@@ -57,7 +57,7 @@
 	      ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
 	      ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
     (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
-      (if (fail? bindings) (values fail failure)
+      (if (fail? bindings) (values fail fail failure)
 	  (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
 			    delta)
 	  ;;(conj delta (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))
@@ -158,19 +158,14 @@
 			(solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve delta)))))
 
   (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints	      
-	      (let-values ([(c-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
-		(let ([lhs c-lhs])
-		  (exclusive-cond
-		   [(fail? lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
-;;		   [(succeed? lhs) (solve-constraint succeed s ctn resolve delta pending)]
-		   [else (let-values ([(c-rhs s-rhs) (solve-constraint (disj-rhs g) s succeed succeed succeed)])
-			   (let* ([rhs c-rhs]
-				  [lhs-rhs (disj-factorized lhs rhs)])
-			     (if (fail? rhs) (solve-constraint succeed s-lhs ctn resolve (conj delta c-lhs))
-				 (solve-constraint succeed (store-constraint s lhs-rhs) ctn resolve (conj delta lhs-rhs)))
-			     #;
-			 (if (fail? rhs) (values (conj delta c-lhs) (conj pending p-lhs) s-lhs)
-			     (values delta (conj pending (disj-factorized lhs rhs)) s))))]))))
+	      (let-values ([(d-lhs r-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
+		(exclusive-cond
+		 [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
+		 [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)]
+		 [else (let-values ([(d-rhs r-rhs s-rhs) (solve-constraint (disj-rhs g) s succeed succeed succeed)])
+			 (if (fail? d-rhs) (solve-constraint succeed s-lhs ctn resolve (conj delta d-lhs))
+			  (let ([d (disj-factorized d-lhs d-rhs)])
+			    (solve-constraint succeed (store-constraint s d) ctn resolve (conj delta d)))))])))
 
   (define solve-pconstraint
     (org-case-lambda solve-pconstraint
@@ -187,7 +182,7 @@
 				     [(goal? val) (let-values ([(g simplified recheck p)
 								(simplify-pconstraint val (pconstraint-rebind-var g var var^))])
 						    (if (succeed? g) (solve-constraint ctn s succeed resolve delta)
-							(if (or (fail? simplified) (fail? recheck)) (values fail failure)
+							(if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
 							    (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
 									       ctn (conj recheck resolve) delta vs))))]
 				     [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve delta vs)]))))))]))
@@ -292,7 +287,7 @@
 			       (values vars unifies)))
 			    (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
 			      (values vars unifies)))]
-		       [(==? g)
+		       [(==? g) ;TODO test whether == must attribute to both vars like =/=
 			(cert (var? (==-lhs g)))
 			(values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)
 			#;
