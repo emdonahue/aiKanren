@@ -4,7 +4,7 @@ SHELL := /bin/bash
 SRC = $(wildcard src/mk/*.ss)
 PRE = $(SRC:src/mk/%=build/preprocessed/%)
 PRO = $(SRC:src/mk/%=build/profiled/%)
-OBJ = $(PRE:build/preprocessed/%.ss=build/object/%.so)
+OBJ = $(SRC:src/mk/%.ss=build/%.so)
 OBJSRC = $(OBJ:.so=.ss)
 
 default: lib/aikanren.wpo lib/aikanren.so
@@ -12,22 +12,12 @@ default: lib/aikanren.wpo lib/aikanren.so
 clean:
 	rm -rf lib build profile benchmarks
 
-lib/aikanren.wpo lib/aikanren.so &: $(OBJ)
+lib/aikanren.wpo lib/aikanren.so &: $(SRC)
 # Source file directory must come before object directory, but need both for wpo.
-	mkdir -p lib
-	echo '(generate-wpo-files #t) (compile-whole-library "build/object/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/object --compile-imported-libraries --optimize-level 3
-
-build/preprocessed/%.ss: src/mk/%.ss
-# Strip out the assertions and generate new source files as a preprocessing step. Assertions are assumed to be on their own lines.
-	mkdir -p build/preprocessed
-
-build/object/%.so: $(OBJSRC)
-# Compile each library separately before compiling them all together as a whole library object file.
-	echo '(generate-wpo-files #t) (compile-library "'$(@:build/object/%.so=build/preprocessed/%.ss)'" "'$@'")' | scheme -q --libdirs build/object --compile-imported-libraries --optimize-level 3
-build/object/%.ss: build/preprocessed/%.ss
-# Chez likes to have src and obj in same directory, so we need to copy a set of src files specially for the compiler so it doesn't mix up the performance instrumented and non-performance-instrumented object files.
-	mkdir -p build/object
-	cp $< $@
+	mkdir -p lib build/optimized
+	cp -f src/mk/* build/optimized
+	echo '(generate-wpo-files #t) (compile-library "build/optimized/aikanren.ss")' | scheme -q --libdirs build/optimized --compile-imported-libraries --optimize-level 3
+	echo '(generate-wpo-files #t) (compile-whole-library "build/optimized/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/optimized --compile-imported-libraries --optimize-level 3
 
 profile: profile/profile.html
 # Builds an html heatmap of function calls for optimization purposes.
@@ -45,15 +35,17 @@ rebench:
 # If you don't believe the numbers bench gave you, re-roll until your optimization wins!
 	rm -f benchmarks/bench
 	make bench
+benchtest: build/benchmarks.so
+	scheme --program build/benchmarks.so
 benchmarks/bench: build/benchmarks.so
 	mkdir -p benchmarks
 	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
 	scheme --program build/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
-build/benchmarks.so: lib/aikanren.wpo $(wildcard src/benchmarks/*) $(OBJ)
+build/benchmarks.so: lib/aikanren.wpo $(wildcard src/benchmarks/*) $(wildcard src/mk/*)
 	mkdir -p build/benchmarks
-	cp -fr src/benchmarks/* src/examples/* build/benchmarks
-	echo '(generate-wpo-files #t) (compile-program "build/benchmarks/benchmarks.ss")' | scheme -q --libdirs 'build/object:build/benchmarks' --compile-imported-libraries --optimize-level 3
-	echo '(compile-whole-program "build/benchmarks/benchmarks.wpo" "build/benchmarks.so")' | scheme -q --libdirs 'build/object:build/benchmarks' --compile-imported-libraries --optimize-level 3
+	cp -f src/benchmarks/* src/examples/* build/benchmarks
+	echo '(generate-wpo-files #t) (compile-program "build/benchmarks/benchmarks.ss")' | scheme -q --libdirs 'build/optimized:build/benchmarks' --compile-imported-libraries --optimize-level 3
+	echo '(compile-whole-program "build/benchmarks/benchmarks.wpo" "build/benchmarks.so")' | scheme -q --libdirs 'build/optimized:build/benchmarks' --compile-imported-libraries --optimize-level 3
 
 repl: # Boot up a REPL preloaded with aiKanren
 	REPLBOOT=$$(mktemp); \

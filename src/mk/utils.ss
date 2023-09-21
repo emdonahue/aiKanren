@@ -32,7 +32,7 @@
 
   ;; === ASSERTIONS ===
   (define-syntax cert
-    (if (zero? (optimize-level))
+    (if (or #t (zero? (optimize-level)))
 	(syntax-rules ()
 	  [(_ assertion ...) (begin (assert assertion) ...)])
 	(syntax-rules ()
@@ -91,7 +91,7 @@
       (apply printf args)))
   
   (define-syntax org-display
-    (if (zero? (optimize-level))
+    (if (or #t (zero? (optimize-level)))
 	(syntax-rules ()
 	  [(_ expr ...)
 	   (begin
@@ -104,7 +104,7 @@
 	  [(_ expr ...) (begin expr ...)])))
   
   (define-syntax org-lambda ;TODO make org-lambda check for optimization and remove itself to improve performance with debugging infrastructure in place
-    (if (zero? (optimize-level))
+    (if (or #t (zero? (optimize-level)))
      (syntax-rules ()
        [(_ (arg ...) body0 body ...)
 	(org-lambda lambda (_ name (arg ...) body0 body ...))]
