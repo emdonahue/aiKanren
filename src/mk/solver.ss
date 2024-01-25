@@ -162,6 +162,8 @@
 		(exclusive-cond
 		 [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
 		 [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)]
+		 [else (solve-constraint succeed (store-constraint s (disj d-lhs (disj-rhs g))) ctn resolve (conj delta (disj d-lhs (disj-rhs g))))]
+		 #;
 		 [else (let-values ([(d-rhs r-rhs s-rhs) (solve-constraint (disj-rhs g) s succeed succeed succeed)])
 			 (if (fail? d-rhs) (solve-constraint succeed s-lhs ctn resolve (conj delta d-lhs))
 			  (let ([d (disj-factorized d-lhs d-rhs)])
@@ -273,6 +275,8 @@
 		      (cert (goal? g))
 		      (exclusive-cond
 		       [(succeed? g) (values vs unifies)]
+		       [(disj? g) (attributed-vars (disj-car g) vs unifies)]
+		       #;
 		       [(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)]) ;TODO do we need to check for recheckable matchos when attributing disj?
 				    (if (conj-memp (disj-car g) ==?) ; Disjunct 2 normalized iff 1 contains no ==
 					(attributed-vars (disj-car (disj-cdr g)) lhs #t)
