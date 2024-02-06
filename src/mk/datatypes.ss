@@ -172,6 +172,7 @@
      [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
 
   (define (expand-matcho g s p)
+    ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
     ((matcho-goal g) s p (matcho-in-vars g)))
 
   (define (simplify-matcho g)
