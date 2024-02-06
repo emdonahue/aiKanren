@@ -107,7 +107,6 @@
     (tassert "constraint == succeed|==" (run1 (x1 x2) (constraint (== x1 1)) (constraint (conde ((== x1 1)) ((== x2 2))))) (list 1 x2))
 
 
-    ;(trace-run (x1 x2) (constraint (== x1 1)) (constraint (conde ((== x2 2)) ((== x1 2)))))
     (tassert "constraint == ==|fail" (run1 (x1 x2) (constraint (== x1 1)) (constraint (conde ((== x2 2)) ((== x1 2))))) (list 1 (disj (== x2 2) (== x1 2))))
     (tassert "constraint == ==|succeed" (run1 (x1 x2) (constraint (== x1 1)) (constraint (conde ((== x2 2)) ((== x1 1))))) (list 1 (disj (== x2 2) (== x1 1))))
     (tassert "constraint == ==|succeed(out)" (run1 (x1 x2 x3) (constraint (== x1 1)) (constraint (== x3 3) (conde ((== x2 2)) ((== x1 1))))) (list 1 (disj (== x2 2) (== x1 1)) 3))
@@ -230,9 +229,6 @@
     (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list (conj (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) x2))
 
     ;; === NOTO ===
-
-    (trace-run (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2)))))
-    (exit)
     (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
     ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
     (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (proxy x1)))

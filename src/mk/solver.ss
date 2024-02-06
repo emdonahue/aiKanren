@@ -36,18 +36,25 @@
 	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve delta)] ;TODO can we remove trace-goal from general solver 
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
-  (org-define (solve-noto g s ctn resolve delta)
-    (if (==? g) (solve-=/= g s ctn resolve delta)
-	(let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
-	  (org-display c s^)
-	  (when (not (or (reify-constraints) (not (conj-memp c matcho?))))
+  (define (solve-noto g s ctn resolve delta)
+    (exclusive-cond
+     [(==? g) (solve-=/= g s ctn resolve delta)]
+     [(matcho? g)
+      (let-values ([(g s expanded?) (presolve-matcho g s)])
+	(if expanded?
+	    (solve-constraint (noto g) s ctn resolve delta)
+	    (solve-constraint succeed (store-constraint s (noto g)) ctn resolve (conj delta (noto g)))))]
+     [else 
+      (let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
+	(org-display c s^)
+	(when (not (or (reify-constraints) (not (conj-memp c matcho?))))
 	  (printf "c ~s~%g ~s~%" c g))
-	  (cert (or (reify-constraints) (not (conj-memp c matcho?))))
-	  (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)))
-	  #;
-	  (if (succeed? p) ; If there are no pending constraints, all delta constraints must be fully normalized (non disj) so we can simply store them and continue.
-	      (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)) pending)
-	      (solve-constraint succeed s (conj (disj (noto c) (noto p)) ctn) resolve delta pending)))))
+	(cert (or (reify-constraints) (not (conj-memp c matcho?))))
+	(solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)))
+	#;
+	(if (succeed? p) ; If there are no pending constraints, all delta constraints must be fully normalized (non disj) so we can simply store them and continue. ;
+	(solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)) pending) ;
+	(solve-constraint succeed s (conj (disj (noto c) (noto p)) ctn) resolve delta pending)))]))
 
 
 
@@ -161,10 +168,11 @@
     ;; Simplify matcho using s, but do not solve the contained constraint if matcho simplifies completely.
     (cert (goal? g) (state? s)) ; -> constraint? simplified-completely?
     (if (null? (matcho-out-vars g))
-	(values (expand-matcho g s empty-package) #t)
+	(let-values ([(_ g s p) (expand-matcho g s empty-package)])
+	 (values g s #t))
 	(let ([v (walk-var s (car (matcho-out-vars g)))])
 	  (if (var? v)
-	      (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) #f)
+	      (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
 	      (presolve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
   (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints	      
