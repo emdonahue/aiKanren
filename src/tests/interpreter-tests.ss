@@ -16,9 +16,9 @@
     (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
     (tassert "evalo cdr" (evalo '(cdr (cons 42 43))) 43)
 ;    (display    (trace-run (q) (evalo '(null? 42) q)))
-    (tassert "evalo null? number" (evalo '(null? 42)) #f)
+    (tassert "evalo null? number" (run1 () (evalo '(null? 42) #f)) '())
     (tassert "evalo null? empty" (evalo '(null? '())) #t)
-    (tassert "evalo null? pair" (evalo '(null? (cons 42 43))) #f)
+    (tassert "evalo null? number" (run1 () (evalo '(null? (cons 42 43)) #f)) '())
 
     (tassert "evalo if true" (evalo '(if #t 1 2)) 1)
     (tassert "evalo if false" (evalo '(if #f 1 2)) 2)

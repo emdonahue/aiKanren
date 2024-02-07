@@ -113,7 +113,7 @@
     (tassert "finite domain ground succeed 3" (run1 () (finite-domain 3 '(1 2 3))) '())
     (tassert "finite domain ground fail 3" (run1 () (finite-domain 4 '(1 2 3))) (void))
 
-    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (disj (== x1 2) (== x1 3)) (== x1 1)))
+    (tassert "finite domain free" (run1 (x1) (finite-domain x1 '(1 2 3))) (disj (== x1 1) (disj (== x1 2) (== x1 3))))
 
     (tassert "finite domain bound succeed" (run1 (x1) (== x1 2) (finite-domain x1 '(1 2 3))) 2)
     (tassert "finite domain bound fail" (run1 (x1) (== x1 4) (finite-domain x1 '(1 2 3))) (void))
@@ -215,7 +215,7 @@
 
     (tassert "presento unbound term succeed" (run1 (x1) (presento 1 x1) (== x1 1)) 1)
     (tassert "presento unbound term fail" (run1 (x1) (presento 1 x1) (== x1 2)) (void))
-    (tassert "presento unbound term" (run1 (x1) (presento 1 x1)) (lambda (a) (and (disj? a) (matcho? (disj-lhs a)) (equal? (disj-rhs a) (== x1 1)))))
+    (tassert "presento unbound term" (run1 (x1) (presento 1 x1)) (lambda (a) (and (disj? a) (equal? (disj-lhs a) (== x1 1)) (matcho? (disj-rhs a)))))
 
     (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
     (tassert "presento ground fail" (run1 () (presento 1 2)) (void))

@@ -36,11 +36,11 @@
 	 [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve delta)] ;TODO can we remove trace-goal from general solver 
 	 [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
-  (define (solve-noto g s ctn resolve delta)
+  (org-define (solve-noto g s ctn resolve delta)
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
      [(matcho? g)
-      (let-values ([(g s expanded?) (presolve-matcho g s)])
+      (let-values ([(g s^ expanded?) (presolve-matcho g s)]) ; Presolve never changes s, but may return failure (which noto negates back to s), so ignore returned s^.
 	(if expanded?
 	    (solve-constraint (noto g) s ctn resolve delta)
 	    (solve-constraint succeed (store-constraint s (noto g)) ctn resolve (conj delta (noto g)))))]
