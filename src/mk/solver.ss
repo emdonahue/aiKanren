@@ -152,7 +152,7 @@
 			  (values unified succeed disunified succeed)
 			  (values unified disunified succeed succeed))))))))))
 
-  (org-define (solve-matcho g s ctn resolve delta)
+  (org-define (solve-matcho g s ctn resolve delta) ;TODO rebase solve-matcho on presolve-matcho
 	      (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
 		  (let-values ([(_ g s p) (expand-matcho g s empty-package)])
 		    (solve-constraint g s ctn resolve delta)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks

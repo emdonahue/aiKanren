@@ -31,4 +31,5 @@
     (tassert "==-c | ==-c attributes" (run1 (x1 x2) (constraint (disj* (== x1 1) (== x2 2)))) (list (disj (== x1 1) (== x2 2)) (proxy x1)))
     (tassert "== factored out of disj" (run1 (x1) (disj (== x1 1) (== x1 1))) 1) ;TODO consider adding back in common factor extraction to disjunction
     (tassert "== factored out of nested disj" (run1 (x1 x2) (== x2 2) (disj (conj (== x2 2) (disj (== x1 1) (== x1 1))) (== x2 3))) '(1 2))
+    (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (proxy x1)))
     ))

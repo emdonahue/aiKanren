@@ -231,7 +231,7 @@
     ;; === NOTO ===
     (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
     ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 (x1) (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
-    (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (proxy x1)))
+    (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) x2))
     (tassert "absento failed because matcho wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
     (tassert "repeatedly solved constraints deduplicate" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1))) (list (disj (conj (=/= x2 1) (== x1 x2)) (== x1 1)) (proxy x1)))
 
@@ -251,6 +251,6 @@
     (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
     (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
     (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([x1 (a . b)]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
-    (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (conj (proxy x1) (disj (== x2 2) (== x2 3)))))
+    (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
     ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==
     ))
