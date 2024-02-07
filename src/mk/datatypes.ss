@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export lazy-solver reify-constraints
+  (export lazy-solver reify-constraints expand-disjunctions
 	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
 	  package? empty-package
 	  var make-var var? var-id set-var-id!
@@ -32,6 +32,7 @@
   ;; === RUNTIME PARAMETERS ===
   (define lazy-solver (make-parameter #f))
   (define reify-constraints (make-parameter #t))
+  (define expand-disjunctions (make-parameter #f))
   
   ;; === RUNNER ===
   (define-structure (runner stream query package))

@@ -28,7 +28,10 @@
     (let ([r (runner-step r)])
       (cond
        [(runner-null? r) (values (void) failure r)]
-       [(runner-pair? r) (values ((if (reify-constraints) reify reify-var) (runner-car r) (runner-query r)) (runner-car r) r)]
+       [(runner-pair? r)
+	(if (expand-disjunctions)
+	    (nyi "expand disj")
+	    (values ((if (reify-constraints) reify reify-var) (runner-car r) (runner-query r)) (runner-car r) r))]
        [else (runner-next r)])))
   
   (define (runner-take n r)
