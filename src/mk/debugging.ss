@@ -1,6 +1,6 @@
 (library (debugging)
   (export printfo displayo noopo
-	  print-substitution print-reification
+	  print-substitution
 	  walk-substitution)
   (import (chezscheme) (datatypes) (sbral) (state) (utils))
 
