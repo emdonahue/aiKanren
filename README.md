@@ -1,5 +1,8 @@
 # aiKanren
 A performant miniKanren implementation designed to serve as a platform for AI research combining logical and probabilistic reasoning.
+## NB
+This repository implements the paper [Goals as Constraints: Writing miniKanren Constraints in miniKanren](https://dash.harvard.edu/bitstream/handle/1/37377201/tr.pdf?sequence=1&isAllowed=y). If you use this repository in your research, please cite that paper.
+
 ## Quick Start
 In lieu of more extensive documentation, this section clarifies some differences from previous miniKanren systems for those already broadly familiar with miniKanren.
 
