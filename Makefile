@@ -57,15 +57,15 @@ repl: # Boot up a REPL preloaded with aiKanren
 doc:
 	echo '# Documentation' > DOCUMENTATION.md
 	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
-		echo '-  '$${fns[-1]} >> DOCUMENTATION.md; \
+		echo '-  ['$${fns[-1]}'](#'$${fns[-1]}')' >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
-			echo -e ' - ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
+			echo ' - ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
 		done \
 	done
 	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
 		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
-			echo '### '$$f'\n```scheme' >> DOCUMENTATION.md; \
+			echo -e '### '$$f'\n```scheme' >> DOCUMENTATION.md; \
 			sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/* | grep -e 'define' -e ';' >> DOCUMENTATION.md; \
 			echo '```' >> DOCUMENTATION.md; \
 		done \
