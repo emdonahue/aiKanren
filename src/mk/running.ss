@@ -1,5 +1,5 @@
 (library (running)
-  (export runner-next runner-step runner-take runner-dfs trace-runner)
+  (export runner-next runner-step runner-take runner-dfs trace-runner) ;TODO expose more of the runner interface
   (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (tracing))
 
   (define (runner-null? r)

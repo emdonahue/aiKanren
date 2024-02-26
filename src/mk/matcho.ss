@@ -60,7 +60,12 @@
 	   (conj* body ...))]
 	[else fail])]))
   
-  (define-syntax (matcho bindings) ; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
+  (define-syntax (matcho bindings) ; A pattern-matching equivalent for fresh.
+    ;; (matcho ([x (a . 1)] [y ('b . c)] ...) ...)
+    ;; The above form destructures the input variables x and y, ensuring that (== (cdr x) 1) and (== (car y) 'b) and then binding a and c to the car and cdr of x and y respectively. a and b may then be accessed like normal let bindings within the scope of the wrapped goals.
+    ;; In this implementation, the vast majority of fresh calls are better implemented as matcho calls. In addition to instantiating fresh variables and suspending the search as needed, matcho offers a convenient syntax for destructuring input terms---which is the most common use case for fresh---and performs various optimizations while doing so.
+
+    ;; TODO specialize matcho for constraints vs goal & let interpreter decide implementation. constraint never needs to make fresh vars, goal doesn't need to know which vars are free (just whether)
     ;; TODO can we fire matcho immediately if its structural recursion instead of waiting on a conjunct ahead of it that may be all free? reordering conjuncts
 
     (define extract-vars

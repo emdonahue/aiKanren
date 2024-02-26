@@ -1,10 +1,27 @@
 # Documentation
+-  [Run](#Run)
+	- [run](#run)
+	- [run*](#run*)
+	- [run1](#run1)
+	- [run-states](#run-states)
+	- [run*-states](#run*-states)
+	- [run1-state](#run1-state)
+	- [run-dfs](#run-dfs)
+	- [run*-dfs](#run*-dfs)
+	- [run**-dfs](#run**-dfs)
+	- [run1-dfs](#run1-dfs)
+	- [run1*-dfs](#run1*-dfs)
+	- [runner](#runner)
+	- [runner-next](#runner-next)
 -  [Goals](#Goals)
+	- [constraint](#constraint)
 	- [succeed](#succeed)
 	- [fail](#fail)
 	- [==](#==)
 	- [conde](#conde)
 	- [fresh](#fresh)
+	- [exist](#exist)
+	- [matcho](#matcho)
 -  [Constraints](#Constraints)
 	- [conj](#conj)
 	- [disj](#disj)
@@ -41,7 +58,79 @@
 	- [var](#var)
 -  [Parameters](#Parameters)
 	- [reify-constraints](#reify-constraints)
+## Run
+### run
+```scheme
+ (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+   ;; (run n (q ...) g ...)
+```
+### run*
+```scheme
+ (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+   ;; (run n (q ...) g ...)
+```
+### run1
+```scheme
+ (define-syntax run1 ; Returns the first answer
+   ;; (run1 (q ...) g ...)
+```
+### run-states
+```scheme
+   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
+```
+### run*-states
+```scheme
+   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
+```
+### run1-state
+```scheme
+   (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
+```
+### run-dfs
+```scheme
+   (define-syntax run-dfs ; Depth-first search based run equivalent. 
+     ;; (run-dfs n depth (q ...) g ...)
+     ;; Returns the first n answers, limited to a max search depth of depth.
+```
+### run*-dfs
+```scheme
+   (define-syntax run-dfs ; Depth-first search based run equivalent. 
+     ;; (run-dfs n depth (q ...) g ...)
+     ;; Returns the first n answers, limited to a max search depth of depth.
+```
+### run**-dfs
+```scheme
+   (define-syntax run-dfs ; Depth-first search based run equivalent. 
+     ;; (run-dfs n depth (q ...) g ...)
+     ;; Returns the first n answers, limited to a max search depth of depth.
+```
+### run1-dfs
+```scheme
+   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
+     ;; (run-dfs depth (q ...) g ...)
+```
+### run1*-dfs
+```scheme
+   (define-syntax run-dfs ; Depth-first search based run equivalent. 
+     ;; (run-dfs n depth (q ...) g ...)
+     ;; Returns the first n answers, limited to a max search depth of depth.
+   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
+     ;; (run-dfs depth (q ...) g ...)
+```
+### runner
+```scheme
+ (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
+   ;; (runner (q ...) g ...)
+```
+### runner-next
+```scheme
+  (define (runner-next r)
+```
 ## Goals
+### constraint
+```scheme
+   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint. 
+```
 ### succeed
 ```scheme
   (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
@@ -62,6 +151,17 @@
 ```scheme
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...) 
+```
+### exist
+```scheme
+ (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+```
+### matcho
+```scheme
+  (define-syntax (matcho bindings) ; A pattern-matching equivalent for fresh.
+    ;; (matcho ([x (a . 1)] [y ('b . c)] ...) ...)
+    ;; The above form destructures the input variables x and y, ensuring that (== (cdr x) 1) and (== (car y) 'b) and then binding a and c to the car and cdr of x and y respectively. a and b may then be accessed like normal let bindings within the scope of the wrapped goals.
+    ;; In this implementation, the vast majority of fresh calls are better implemented as matcho calls. In addition to instantiating fresh variables and suspending the search as needed, matcho offers a convenient syntax for destructuring input terms---which is the most common use case for fresh---and performs various optimizations while doing so.
 ```
 ## Constraints
 ### conj

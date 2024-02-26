@@ -24,7 +24,7 @@
      [(_ c0 c ...)
       (conde-disj (conde c0) (conde c ...))]))
  
- (define-syntax exist
+ (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
    (syntax-rules ()
      [(_ () g0 g ...) (conj* g0 g ...)]
      [(_ (q ...) g ...)
@@ -34,7 +34,8 @@
 	  (state-varid state) varid (q ...)
 	  (values (conj* g ...) (set-state-varid state varid) p))))]))
 
- (define-syntax runner
+ (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
+   ;; (runner (q ...) g ...)
     (syntax-rules ()
       [(_ () g ...)
        (top-level-runner empty-state '() (conj* g ...))]
@@ -47,37 +48,42 @@
 	(state-varid empty-state) varid (q0 q ...)
 	(top-level-runner (set-state-varid empty-state varid) (list q0 q ...) (conj* g ...)))]))
   
-  (define-syntax run
+ (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+   ;; (run n (q ...) g ...)
     (syntax-rules ()
       [(_ n (q ...) g ...)
        (map car (runner-take n (runner (q ...) g ...)))]))
 
-  (define-syntax run*
+ (define-syntax run* ; Returns all answers.
+   ;; (run (q ...) g ...)
     (syntax-rules ()
       [(_ (q ...) g ...) (run -1 (q ...) g ...)]))
   
-   (define-syntax run1
+ (define-syntax run1 ; Returns the first answer
+   ;; (run1 (q ...) g ...)
     (syntax-rules ()
       [(_ (q ...) g ...)
        (let ([ans (run 1 (q ...) g ...)])
 	 (if (null? ans) (void) (car ans)))]))
 
-   (define-syntax run-states
+   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
     (syntax-rules ()
       [(_ n (q ...) g ...)
        (map cdr (runner-take n (runner (q ...) g ...)))]))
 
-   (define-syntax run*-states
+   (define-syntax run*-states ; Equivalent to run*, but returns state objects for further processing.
     (syntax-rules ()
       ((_ (q ...) g ...) (run-states -1 (q ...) g ...))))
 
-   (define-syntax run1-state 
+   (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
     (syntax-rules ()
       ((_ (q ...) g ...)
        (let ([ans (run-states 1 (q ...) g ...)])
 	 (if (null? ans) failure (car ans))))))
 
-   (define-syntax run-dfs
+   (define-syntax run-dfs ; Depth-first search based run equivalent. 
+     ;; (run-dfs n depth (q ...) g ...)
+     ;; Returns the first n answers, limited to a max search depth of depth.
      (syntax-rules ()
        [(_ n depth () g ...)
 	(runner-dfs '() (conj* g ...) (set-state-varid empty-state varid) n depth)]
@@ -90,21 +96,22 @@
 	 (state-varid empty-state) varid (q ...)
 	 (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
 
-   (define-syntax run1-dfs
+   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
+     ;; (run-dfs depth (q ...) g ...)
      (syntax-rules ()
        [(_ depth (q ...) g ...)
 	(let ([answers (run-dfs 1 depth (q ...) g ...)])
 	  (if (null? answers) (void) (car answers)))]))
 
-   (define-syntax run1*-dfs
+   (define-syntax run1*-dfs ; Similar to run-dfs, but returns one answer with infinite depth.
      (syntax-rules ()
        [(_ (q ...) g ...) (run1-dfs -1 (q ...) g ...)]))
 
-   (define-syntax run*-dfs
+   (define-syntax run*-dfs ; Similar to run-dfs, but returns all answers at given depth.
      (syntax-rules ()
        [(_ depth (q ...) g ...) (run-dfs -1 depth (q ...) g ...)]))
 
-   (define-syntax run**-dfs
+   (define-syntax run**-dfs ; Similar to run-dfs, but returns all answers with infinite depth.
      (syntax-rules ()
        [(_ (q ...) g ...) (run*-dfs -1 (q ...) g ...)]))
 
@@ -129,7 +136,7 @@
 	 (parameterize ([trace-query (list q ...)])
 	     (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth)))]))
 
-   (define-syntax constraint
+   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint. 
      (syntax-rules ()
        [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))])) ;TODO try applying constraint immediately when applied
   
