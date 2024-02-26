@@ -2,18 +2,19 @@
   (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo filtero)
   (import (chezscheme) (datatypes) (ui) (negation) (state) (matcho) (utils))
   
-  (define (booleano v)
+  (define (booleano v) ; Constrains a term to be either #t or #f.
     (disj (== v #t) (== v #f)))
 
   (define (finite-domain v ds) ;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
     (cert (list? ds))
     (apply disj* (map (lambda (d) (== v d)) ds)))
 
-  (define (==> antecedent consequent) ;TODO try ==> as =/=|== in case =/= might be more efficient for attribution/
+  (define (==> antecedent consequent) ; Simple implication. Equivalent to (disj (noto antecedent) consequent).
     (cert (goal? antecedent) (goal? consequent))
+    ;TODO try ==> as =/=|== in case =/= might be more efficient for attribution/
     (disj (noto antecedent) consequent))
   
-  (define (typeo v t?)
+  (define (typeo v t?) ; Constrains v to be of type t?, where t? is a type predicate.
     (if (var? v) (pconstraint (list v) type t?) (if (t? v) succeed fail)))
 
   (define (type var val reducer reducee t?)
@@ -47,13 +48,13 @@
      [(pconstraint? c) (if (eq? (pconstraint-type c) 'typeo) (if (eq? (pconstraint-procedure c) t?) succeed fail) c)]
      [else c]))
 
-  (define (symbolo v)
+  (define (symbolo v) ; Constrains v to be a symbol.
     (typeo v symbol?))
 
-  (define (numbero v)
+  (define (numbero v) ; Constrains v to be a pair.
     (typeo v number?))
   
-  (define (pairo v)
+  (define (pairo v) ; Constrains v to be a pair.
     (typeo v pair?))
 
 
@@ -97,7 +98,7 @@
        ))
     )
 
-  (define (presento present term)
+  (define (presento present term) ; Constrains term so that it must contain present. Logical negation of absento.
     (disj
      (== term present)
      (matcho presento ([term (a . d)])
@@ -105,8 +106,9 @@
 	      (presento present a)
 	      (presento present d)))))
 
-  (define (absento absent term) ;TODO create defconstraint that tags any matchos returned with the function pointer so they can dedup themselves
+  (define (absento absent term) ; Constrains term so that absent cannot appear anywhere within it. Logical negation of presento.
     (conj*
+     ;TODO create defconstraint that tags any matchos returned with the function pointer so they can dedup themselves
       (=/= term absent)
       (disj
        (noto (pairo term))
@@ -114,12 +116,11 @@
 	       (absento absent a)
 	       (absento absent d)))))
 
-  (define (filtero f xxs oos)
+  (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
     (disj
       [conj (== xxs '()) (== oos '())]
       (matcho ([xxs (x . xs)])
 	      (let ([x^ (f x)])
 		(disj
 		  [conj x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
-		  [conj (noto x^) (filtero f xs oos)])))))
-  )
+		  [conj (noto x^) (filtero f xs oos)]))))))

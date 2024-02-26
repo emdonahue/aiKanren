@@ -7,17 +7,19 @@
 	  trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
   
- (define-syntax fresh ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-   (syntax-rules ()
-     [(_ () g0 g ...) (conj* g0 g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
-     [(_ (q ...) g ...)
-      (lambda (state p)
-	(fresh-vars
-	 (state-varid state) varid (q ...)
-	 (values (conj* g ...) (set-state-varid state varid) p)))]))
+  (define-syntax fresh ; Introduce fresh variables.
+    ;; (fresh (x y z) ...) 
+    (syntax-rules ()
+      [(_ () g0 g ...) (conj* g0 g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
+      [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+       (lambda (state p)
+	 (fresh-vars
+	  (state-varid state) varid (q ...)
+	  (values (conj* g ...) (set-state-varid state varid) p)))]))
 
- (define-syntax conde ;TODO make conde do fail checks syntactically
-   (syntax-rules ()
+ (define-syntax conde ; Nondeterministic branching.
+   
+   (syntax-rules () ;TODO make conde do fail checks syntactically
      [(_ (g ...)) (conj* g ...)]
      [(_ c0 c ...)
       (conde-disj (conde c0) (conde c ...))]))
@@ -106,7 +108,11 @@
      (syntax-rules ()
        [(_ (q ...) g ...) (run*-dfs -1 (q ...) g ...)]))
 
-   (define-syntax trace-run
+   (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
+     ;; (trace-run (q) g ...)
+     ;; (trace-run max-depth (q) g ...)
+     ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
+     
      (syntax-rules ()
        [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
        [(_ depth () g ...)

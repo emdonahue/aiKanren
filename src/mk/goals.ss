@@ -1,5 +1,5 @@
 ;;TODO replace assert #f with useful error messages
-(library (goals)
+(library (goals) ; Deals with the pure search aspects without constraints.
   (export run-goal run-goal-dfs stream-step)
   (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
 

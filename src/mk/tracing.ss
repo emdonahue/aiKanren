@@ -5,20 +5,25 @@
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f))
-  (define trace-proof-goals (make-parameter #t))
-  (define trace-goals (make-parameter #t))
+  (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
+  (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
   (define-structure (trace-answer theorem proof state))
 
   ;; === INTERFACE ===
   
-  (define-syntax trace-goal ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
+  (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
+    ;; (trace-goal name goals...)
+    ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>.
+    
     (syntax-rules ()
+      ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
       [(_ name goals ...)
        (if (trace-query)
 	   (make-trace-goal 'name '(goals ...) (conj* goals ...))
 	   (conj* goals ...))]))
   
-  (define-syntax trace-conde
+  (define-syntax trace-conde ; Equivalent to conde but each branch begins with a name and implicitly instantiates a trace-goal.
+    ;; (trace-conde [name1 g1 ...] [name2 g2 ...] ...)
     (syntax-rules ()
       [(_ (name g ...))
        (trace-goal name g ...)]

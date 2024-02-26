@@ -55,10 +55,17 @@ repl: # Boot up a REPL preloaded with aiKanren
 
 
 doc:
-#	sed -i -n '1,/^## Documentation/ p' README.md
-	echo '## Not Yet Implemented' >> TODO.md
+	echo '# Documentation' > DOCUMENTATION.md
+	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
+		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
+		for f in $${fns[@]::$${#fns[@]}-2}; do \
+			echo '### '$$f >> DOCUMENTATION.md; \
+			sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/* | grep -e 'define' -e ';' >> DOCUMENTATION.md; \
+		done \
+	done
+	echo '# Not Yet Implemented' > TODO.md
 	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
-	echo '## TODO' >> TODO.md
+	echo '# TODO' >> TODO.md
 	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
