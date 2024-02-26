@@ -59,7 +59,7 @@ doc:
 	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
 		echo '-  '$${fns[-1]} >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
-			echo ' - ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
+			echo -e ' - ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
 		done \
 	done
 	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
