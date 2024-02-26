@@ -11,7 +11,7 @@ This section clarifies some differences from previous miniKanren systems for tho
 To import the library in script mode for development, import `(aikanren)` and run your program with:
 
 ```scheme
-scheme --libdirs aikanren/src/mk --script myprogram.ss
+scheme --libdirs aiKanren/src/mk --script myprogram.ss
 ```
 
 The most important difference from other miniKanren implementations is that `fresh` is rarely used. In most cases, when fresh is being used to destructure a list term, `matcho` can be used instead. `matcho` is a binding form used like so:
