@@ -5,8 +5,9 @@
   (define (booleano v) ; Constrains a term to be either #t or #f.
     (disj (== v #t) (== v #f)))
 
-  (define (finite-domain v ds) ;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
+  (define (finite-domain v ds) ; Constrains v to be one of the elements of ds. ds may contain logic variables.
     (cert (list? ds))
+    ;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
     (apply disj* (map (lambda (d) (== v d)) ds)))
 
   (define (==> antecedent consequent) ; Simple implication. Equivalent to (disj (noto antecedent) consequent).

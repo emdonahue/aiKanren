@@ -56,5 +56,8 @@ This makes it possible to test the behavior of the search down a particular bran
 
 Examples can be found in tracing-tests.ss.
 
+## DOCUMENTATION
+A complete API extracted from source comments can be viewed [here](DOCUMENTATION.md).
+
 ## TODO
 A complete list of TODO items extracted from the source can be viewed [here](TODO.md).
