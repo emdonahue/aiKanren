@@ -3,6 +3,7 @@
 ;; TODO bool is just true or false. does this automatically gel with =/= of the other one?
 ;; TODO we can get finite domain like ability to actually generate the answers by popping the constraint and treating it as a goal
 ;;TODO test whether optimize level works for whole library
+;; TODO unify indentation to tabs. remove spaces
 (library (aikanren)
   (export
    run run* run1 run-states run*-states run1-state run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs runner runner-next ; Run

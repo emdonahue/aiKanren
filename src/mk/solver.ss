@@ -175,7 +175,7 @@
 	      (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
 	      (presolve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
-  (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints	      
+  (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
 	      (let-values ([(d-lhs r-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
 		(exclusive-cond
 		 [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
