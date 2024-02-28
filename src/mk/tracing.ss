@@ -14,9 +14,8 @@
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
     ;; (trace-goal name goals...)
     ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>.
-    
     (syntax-rules ()
-      ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
+					;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
       [(_ name goals ...)
        (if (trace-query)
 	   (make-trace-goal 'name '(goals ...) (conj* goals ...))
