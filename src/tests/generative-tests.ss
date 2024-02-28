@@ -95,7 +95,7 @@
   (define (run-absento-tests)
     (for-each
      (lambda (t)
-       ;;(printf "~s~%" t)
+       ;(printf "~s~%" t)
        (if (present? (cadr vars) t)
 	   (begin
 	     (tassert "generative presento free succeed" (run1 () (presento (cadr vars) t)) '())

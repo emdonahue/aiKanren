@@ -32,7 +32,7 @@
 
   ;; === ASSERTIONS ===
   (define-syntax cert
-    (if (or #t (zero? (optimize-level)))
+    (if (or #t (zero? (optimize-level))) ;TODO optimize away assert and debug print
 	(syntax-rules ()
 	  [(_ assertion ...) (begin (assert assertion) ...)])
 	(syntax-rules ()

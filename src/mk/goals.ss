@@ -10,32 +10,37 @@
     ;;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
     ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances. might work if tracing goals just mutate rather than shadow params
     ;;TODO if convert search to cps, can we use the results of walk to simplify the ctn and decide not to walk some of its goals?
-    (case-lambda
+    (org-case-lambda run-goal
      [(g s p) (run-goal g s p succeed)]
-     [(g s p c) (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
+     [(g s p ctn) (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
       (exclusive-cond
+       [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))]
+       [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))]
+       #;
        [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 		    (bind (conj-cdr g) s p))]
        [(fresh? g) (let-values ([(g s^ p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		     (suspend g s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
-       [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count?
-		       (lambda () ((exist-procedure g) s p))
-		     run-goal)]
+       #;
+       [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count? ;
+       (lambda () ((exist-procedure g) s p)) ;
+       run-goal)]
+       [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)]) (run-goal g s p ctn))] ; TODO do freshes that dont change the state preserve low varid count?
        [(conde? g) (let*-values
-		       ([(lhs p) (run-goal (conde-lhs g) s p)]
-			[(rhs p) (run-goal (conde-rhs g) s p)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
+		       ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
+			[(rhs p) (run-goal (conde-rhs g) s p ctn)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
 		     (values (mplus lhs rhs) p))]
        [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
 		      (if structurally-recursive?
-			  (suspend g s^ p s);(run-goal g s^ p)
-			  (suspend g s^ p s))
+			  (suspend (conj g ctn) s^ p s) ;(run-goal g s^ p)
+			  (suspend (conj g ctn) s^ p s))
 		      #;
-		      (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, 
-		      (run-goal g s^ p) ; so continue running aggressively on this branch.
+		      (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, ;
+		      (run-goal g s^ p) ; so continue running aggressively on this branch. ;
 		      (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
-       [(trace-goal? g) (run-goal (trace-goal-goal g) s p)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
+       [(trace-goal? g) (run-goal (trace-goal-goal g) s p ctn)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
-       [else (values (run-constraint g s) p)])]))
+       [else (run-goal ctn (run-constraint g s) p)])]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
