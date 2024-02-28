@@ -56,19 +56,6 @@
      [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
-  (define (bind g s p) ;TODO consider making bind cps
-    ;; Applies g to all states in s.
-    (cert (goal? g) (stream? s) (package? p)) ; -> goal? stream? package?
-    (exclusive-cond
-     [(failure? s) (values failure p)]
-     [(state? s) (run-goal g s p)]
-     [(or (bind? s) (mplus? s)) (values (make-bind g s) p)]
-     [(answers? s) (let*-values
-		       ([(lhs p) (run-goal g (answers-car s) p)]
-			[(rhs p) (bind g (answers-cdr s) p)])
-		     (values (mplus lhs rhs) p))]
-     [else (assertion-violation 'bind "Unrecognized stream type" s)]))
-
   (define (suspend g s^ p s)
     (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
     (exclusive-cond
@@ -106,8 +93,10 @@
       (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
        [(failure? s) (values s p)]
        [(state? s) (values s p)]
-       [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)])
-		    (bind (bind-goal s) s^ p))]
+       #;
+       [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)]) ;
+       (bind (bind-goal s) s^ p))]
+       [(bind? s) (run-goal (bind-goal s) (bind-stream s) p)]
        [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		     (values (mplus (mplus-rhs s) lhs) p))]
        [(answers? s) (values (answers-cdr s) p)]
