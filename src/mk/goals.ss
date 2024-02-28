@@ -12,15 +12,17 @@
     ;;TODO if convert search to cps, can we use the results of walk to simplify the ctn and decide not to walk some of its goals?
     (org-case-lambda run-goal
      [(g s p) (run-goal g s p succeed)]
-     [(g s p ctn) (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?
+     [(g s p ctn)
+      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?      
       (exclusive-cond
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))]
+       [(failure? s) (values failure p)]
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))]
        #;
        [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
 		    (bind (conj-cdr g) s p))]
        [(fresh? g) (let-values ([(g s^ p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
-		     (suspend g s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
+		     (suspend (conj g ctn) s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
        #;
        [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count? ;
        (lambda () ((exist-procedure g) s p)) ;

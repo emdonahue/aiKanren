@@ -7,6 +7,7 @@
     (tassert "evalo-quine quote" (evalo '(quote 42)) 42)
     (tassert "evalo-quine shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
 
+    
     (tassert "evalo-quine lookup val" (evalo-env 'x '((x . 42))) 42)
 
     (tassert "evalo-quine list empty" (evalo '(list)) '())
@@ -16,6 +17,8 @@
 
 
     (tassert "evalo-quine apply lambda" (evalo '((lambda (x) x) (quote 42))) 42)
+
+    
     (tassert "evalo-quine apply var" (evalo-env '(x '42) `((x . ,(evalo '(lambda (x) x))))) 42)
 
     (tassert "evalo-quine lambda list" (evalo '((lambda (x) (list x)) '42)) '(42))
