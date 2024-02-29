@@ -13,20 +13,12 @@
     (org-case-lambda run-goal
      [(g s p) (run-goal g s p succeed)]
      [(g s p ctn)
-      (cert (goal? g) (state-or-failure? s) (package? p)) ; -> stream? package?      
+      (cert (goal? g) (or (fail? g) (state? s)) (package? p)) ; -> stream? package?      
       (exclusive-cond
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))]
-       [(failure? s) (values failure p)]
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))]
-       #;
-       [(conj? g) (let-values ([(s p) (run-goal (conj-car g) s p)])
-		    (bind (conj-cdr g) s p))]
        [(fresh? g) (let-values ([(g s^ p) (g s p)]) ; TODO do freshes that dont change the state preserve low varid count?
 		     (suspend (conj g ctn) s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
-       #;
-       [(exist? g) (call-with-values ; TODO do freshes that dont change the state preserve low varid count? ;
-       (lambda () ((exist-procedure g) s p)) ;
-       run-goal)]
        [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)]) (run-goal g s p ctn))] ; TODO do freshes that dont change the state preserve low varid count?
        [(conde? g) (let*-values
 		       ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
@@ -42,7 +34,8 @@
 		      (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
        [(trace-goal? g) (run-goal (trace-goal-goal g) s p ctn)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
-       [else (run-goal ctn (run-constraint g s) p)])]))
+       [else (let ([s (run-constraint g s)])
+	       (if (failure? s) (values failure p) (run-goal ctn s p)))])]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
@@ -61,7 +54,7 @@
     (exclusive-cond
      [(fail? g) (values failure p)]
      [(succeed? g) (values s p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them.
-     [else (values (make-bind g s^) p)]))
+     [else (values (make-suspended g s^) p)]))
 
   ;; === DEPTH FIRST INTERPRETER ===
 
@@ -94,9 +87,9 @@
        [(failure? s) (values s p)]
        [(state? s) (values s p)]
        #;
-       [(bind? s) (let-values ([(s^ p) (stream-step (bind-stream s) p)]) ;
-       (bind (bind-goal s) s^ p))]
-       [(bind? s) (run-goal (bind-goal s) (bind-stream s) p)]
+       [(suspended? s) (let-values ([(s^ p) (stream-step (suspended-stream s) p)]) ;
+       (suspended (suspended-goal s) s^ p))]
+       [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] ;TODO rename suspended to suspended
        [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
 		     (values (mplus (mplus-rhs s) lhs) p))]
        [(answers? s) (values (answers-cdr s) p)]

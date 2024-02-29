@@ -154,4 +154,4 @@
 	  (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
 
     (define (top-level-runner state query conjuncts)
-      (make-runner (make-bind conjuncts state) query empty-package)))
+      (make-runner (make-suspended conjuncts state) query empty-package)))

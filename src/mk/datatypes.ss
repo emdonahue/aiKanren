@@ -6,7 +6,7 @@
 	  var make-var var? var-id set-var-id!
 	  stream?
 	  failure failure?
-	  make-bind bind? bind-goal bind-stream
+	  make-suspended suspended? suspended-goal suspended-state
 	  make-mplus mplus? mplus-lhs mplus-rhs
 	  make-answers answers? answers-car answers-cdr
 	  answer? state-or-failure?
@@ -136,13 +136,13 @@
   (define (failure? s) (eq? s failure))
   
   (define-structure (mplus lhs rhs))
-  (define-structure (bind goal stream))
+  (define-structure (suspended goal state))
   (define-structure (answers car cdr))
 
   (define answer? state?)
   
   (define (stream? s)
-    (or (failure? s) (mplus? s) (bind? s) (bind? s) (answer? s) (answers? s)))
+    (or (failure? s) (mplus? s) (suspended? s) (answer? s) (answers? s)))
   
   ;; === GOALS ===
   (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
