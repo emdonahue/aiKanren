@@ -14,7 +14,7 @@
     (cert (constraint-store? s) (var? v) (goal? c))
     (let ([b (get-constraint-binding s v)])
       (if b (update-constraint s b (conj (cdr b) c))
-	  (insert-constraint s v c))))
+          (insert-constraint s v c))))
 
   (define (get-constraint-binding s v)
     ;; Since we are working with an a-list, we can cheat and work directly on the pairs rather than abstracting the store entirely in terms of variable key and constraint value.
@@ -37,5 +37,5 @@
     (cert (constraint-store? s))
     (cert (constraint-store? s))
     (if (not (var? v)) v
-	(let ([c (get-constraint s v)])
-	  (if (succeed? c) v c)))))
+        (let ([c (get-constraint s v)])
+          (if (succeed? c) v c)))))

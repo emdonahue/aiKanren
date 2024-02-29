@@ -36,7 +36,7 @@
     (tassert "mplus answers lhs" (run* (x1) (conde [(conde [(== x1 1)] [(== x1 3)])] [(== x1 2)])) '(1 3 2))
     
     (tassert "mplus mplus" (run* (x1) (conde [(conde [(fresh (x2) (== x1 1))] [(fresh (x2) (== x1 3))])]
-					     [(conde [(fresh (x2) (== x1 2))] [(fresh (x2) (== x1 4))])])) '(1 3 2 4))
+                                             [(conde [(fresh (x2) (== x1 2))] [(fresh (x2) (== x1 4))])])) '(1 3 2 4))
     ;; TODO determine whether bind should halt after every fresh or only those that generate mplus/binds
     (tassert "mplus answer rhs" (run* (x1) (conde [(fresh (x2) (== x1 2))] [(== x1 1)])) '(2 1))
     (tassert "mplus answers rhs" (run* (x1) (conde [(fresh (x2) (== x1 3))] [(conde [(== x1 1)] [(== x1 2)])])) '(3 1 2))
@@ -58,6 +58,6 @@
     (tassert "occurs check deep rhs" (run1 (x1 x2) (== x2 (list x1)) (== x1 (cons 1 x2))) (void))
     ;;(tassert "reify cyclic" (run1 (x1) (== x1 (cons x1 x1))) (cons x1 x1)) ;TODO test reify cyclic once unsound unification implemented
 
-    (tassert "trivial fresh does not extend substitution" (state-varid (run1-state (x1) (fresh (x2) succeed))) 2);TODO make 
+    (tassert "trivial fresh does not extend substitution" (state-varid (run1-state (x1) (fresh (x2) succeed))) 2)
     
     ))

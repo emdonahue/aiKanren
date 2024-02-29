@@ -1,10 +1,10 @@
 ;; Utilities for working with multiple value returns
 (library (utils)
   (export with-values values-car values->list values-ref
-	  cert
-	  comment
-	  org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing org-if
-	  nyi)
+          cert
+          comment
+          org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing org-if
+          nyi)
   (import (chezscheme))
 
   ;; === VALUES ===
@@ -33,10 +33,10 @@
   ;; === ASSERTIONS ===
   (define-syntax cert
     (if (zero? (optimize-level))
-	(syntax-rules ()
-	  [(_ assertion ...) (begin (assert assertion) ...)])
-	(syntax-rules ()
-	  [(_ assertion ...) (void)])))
+        (syntax-rules ()
+          [(_ assertion ...) (begin (assert assertion) ...)])
+        (syntax-rules ()
+          [(_ assertion ...) (void)])))
 
   ;; === COMMENTING ===
   (define-syntax comment
@@ -58,13 +58,13 @@
     (syntax-rules ()
       [(_ body ...)
        (parameterize ([org-tracing #t])
-	 body ...)]))
+         body ...)]))
 
   (define-syntax org-untrace
     (syntax-rules ()
       [(_ body ...)
        (parameterize ([org-tracing #f])
-	 body ...)]))
+         body ...)]))
 
   (define (org-print-header header)
     (when (org-tracing)
@@ -76,14 +76,14 @@
     (case-lambda
       [(value)
        (when (org-tracing)
-	 (pretty-print value))]
+         (pretty-print value))]
       [(name value)
        (when (org-tracing)
-	 (printf " - ~a: " name)
-	 (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-string-output-port (lambda (port) (write 'name port)))))]
-			[pretty-standard-indent 0])
-	   (pretty-print value))
-	 (printf "~%"))]))
+         (printf " - ~a: " name)
+         (parameterize ([pretty-initial-indent (+ 4 (string-length (call-with-string-output-port (lambda (port) (write 'name port)))))]
+                        [pretty-standard-indent 0])
+           (pretty-print value))
+         (printf "~%"))]))
 
   (define (org-printf . args)
     (when (org-tracing)
@@ -92,38 +92,38 @@
   
   (define-syntax org-display
     (if (zero? (optimize-level))
-	(syntax-rules ()
-	  [(_ expr ...)
-	   (begin
-	     (let ([val expr])
-	       (when (org-tracing)
-		 (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
-		 (org-print-item 'expr val))
-	       val) ...)])
-	(syntax-rules ()
-	  [(_ expr ...) (begin expr ...)])))
+        (syntax-rules ()
+          [(_ expr ...)
+           (begin
+             (let ([val expr])
+               (when (org-tracing)
+                 (when (not (is-logging)) (org-print-header "logging") (is-logging #t))
+                 (org-print-item 'expr val))
+               val) ...)])
+        (syntax-rules ()
+          [(_ expr ...) (begin expr ...)])))
   
   (define-syntax org-lambda ;TODO make org-lambda check for optimization and remove itself to improve performance with debugging infrastructure in place
     (if (zero? (optimize-level))
      (syntax-rules ()
        [(_ (arg ...) body0 body ...)
-	(org-lambda lambda (_ name (arg ...) body0 body ...))]
+        (org-lambda lambda (_ name (arg ...) body0 body ...))]
        [(_ name (arg ...) body0 body ...)
-	(lambda (arg ...)
-	  (org-print-header `name)
-	  (if (fx= (org-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
-	      (parameterize ([org-depth (fx1+ (org-depth))])
-		(org-print-header "arguments")
-		(org-print-item 'arg arg) ...
-		(let ([return (call-with-values (lambda () body0 body ...) list)])
-		  (org-print-header "return")
-		  (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
-		  (apply values return)))))])
+        (lambda (arg ...)
+          (org-print-header `name)
+          (if (fx= (org-depth) (org-max-depth)) (assertion-violation 'name "org-max-depth reached")
+              (parameterize ([org-depth (fx1+ (org-depth))])
+                (org-print-header "arguments")
+                (org-print-item 'arg arg) ...
+                (let ([return (call-with-values (lambda () body0 body ...) list)])
+                  (org-print-header "return")
+                  (for-each (lambda (i r) (org-print-item (number->string i) r)) (enumerate return) return)
+                  (apply values return)))))])
      (syntax-rules ()
        [(_ (arg ...) body0 body ...)
-	(lambda (arg ...) body0 body ...)]
+        (lambda (arg ...) body0 body ...)]
        [(_ name (arg ...) body0 body ...)
-	(lambda (arg ...) body0 body ...)])))
+        (lambda (arg ...) body0 body ...)])))
 
   (define-syntax org-case-lambda
     (syntax-rules ()
@@ -131,7 +131,7 @@
        (org-case-lambda case-lambda [(arg ...) body ...] ...)]
       [(_ name [(arg ...) body ...] ...)
        (case-lambda
-	 [(arg ...) ((org-lambda name (arg ...) body ...) arg ...)] ...)]))
+         [(arg ...) ((org-lambda name (arg ...) body ...) arg ...)] ...)]))
   
   (define-syntax org-cond
     (syntax-rules (else)
@@ -139,15 +139,15 @@
        (org-cond cond (head body ...) ...)]
       [(_ name (head body ...) ...)
        (cond
-	[head ((org-lambda name (branch) body ...) 'head)] ...)]))
+        [head ((org-lambda name (branch) body ...) 'head)] ...)]))
 
   (define-syntax org-if
     (syntax-rules ()
       [(_ test t f) (org-if if test t f)]
       [(_ name test t f)
        (if test
-	   ((org-lambda name (branch) t) 'true)
-	   ((org-lambda name (branch) f) 'false))]))
+           ((org-lambda name (branch) t) 'true)
+           ((org-lambda name (branch) f) 'false))]))
 
   (define-syntax org-exclusive-cond (identifier-syntax org-cond))
   

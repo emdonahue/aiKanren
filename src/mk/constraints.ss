@@ -22,21 +22,21 @@
     (exclusive-cond
      [(succeed? reducee) (typeo val t?)]
      [(pconstraint? reducee) (if (eq? type (pconstraint-procedure reducee))
-			   (values fail fail succeed) ; The solver checks equality, so non equal typeos must fail.
-			   (values reducer reducee succeed))]
+                           (values fail fail succeed) ; The solver checks equality, so non equal typeos must fail.
+                           (values reducer reducee succeed))]
      [(matcho? reducee) (exclusive-cond
-			 [(eq? pair? t?) (values succeed reducee succeed)]
-			 [(or (eq? symbol? t?) (eq? number? t?)) (values fail fail succeed)] ;TODO do constraints need to manage recheck individually or is that just for matcho and disj?
-			 [else (values reducer reducee succeed)])]
+                         [(eq? pair? t?) (values succeed reducee succeed)]
+                         [(or (eq? symbol? t?) (eq? number? t?)) (values fail fail succeed)] ;TODO do constraints need to manage recheck individually or is that just for matcho and disj?
+                         [else (values reducer reducee succeed)])]
      [else (assertion-violation 'typeo "Unrecognized constraint type" reducee)]))
 
   #;
   (define (simplify-typeo c v t?)
     (cert (goal? c) (var? v))
     (let ([t (conj-memp c (lambda (t)
-			    (and (pconstraint? t)
-				 (eq? typeo (pconstraint-procedure t))
-				 (eq? v (car (pconstraint-vars t))))))])
+                            (and (pconstraint? t)
+                                 (eq? typeo (pconstraint-procedure t))
+                                 (eq? v (car (pconstraint-vars t))))))])
       (if t (if (eq? t? (pconstraint-data t)) succeed fail) (typeo v t?)))
     #;;TODO have typeo simplify == not simply succeed or fail
     (exclusive-cond
@@ -62,11 +62,11 @@
   #;
   (define (pluso sum . summands)
     (if (null? summands) succeed
-	(let ([vars (filter var? (cons sum summands))])
-	  (pconstraint
-	   (list-head vars 2)
-	   (lambda (s)
-	     )))))
+        (let ([vars (filter var? (cons sum summands))])
+          (pconstraint
+           (list-head vars 2)
+           (lambda (s)
+             )))))
 
   #;
   (define (pluso-sum vars sum summands))
@@ -103,9 +103,9 @@
     (disj
      (== term present)
      (matcho presento ([term (a . d)])
-	     (disj
-	      (presento present a)
-	      (presento present d)))))
+             (disj
+              (presento present a)
+              (presento present d)))))
 
   (define (absento absent term) ; Constrains term so that absent cannot appear anywhere within it. Logical negation of presento.
     (conj*
@@ -114,14 +114,14 @@
       (disj
        (noto (pairo term))
        (matcho absento ([term (a . d)])
-	       (absento absent a)
-	       (absento absent d)))))
+               (absento absent a)
+               (absento absent d)))))
 
   (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
     (disj
       [conj (== xxs '()) (== oos '())]
       (matcho ([xxs (x . xs)])
-	      (let ([x^ (f x)])
-		(disj
-		  [conj x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
-		  [conj (noto x^) (filtero f xs oos)]))))))
+              (let ([x^ (f x)])
+                (disj
+                  [conj x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
+                  [conj (noto x^) (filtero f xs oos)]))))))

@@ -14,14 +14,14 @@
   (define (sbral-cons e s)
     ;; If the first two existing trees are equal in size, merge them into a balanced binary tree with the new element as root.
     (if (fx= (sbral-tree-length s) (sbral-tree-length (sbral-rest s)))
-	(let* ([rest (sbral-rest s)]
-	       [tlen (fx1+ (fx+ (sbral-tree-length s) (sbral-tree-length rest)))])
-	  (make-sbral	   
-	   (fx+ tlen (sbral-length (sbral-rest rest)))
-	   (make-sbral-tree tlen e (sbral-tree s) (sbral-tree rest))
-	   (sbral-rest rest)))
-	;; Otherwise, just tack the new element onto the front as a 1-depth tree.
-	(make-sbral (fx1+ (sbral-length s)) e s)))
+        (let* ([rest (sbral-rest s)]
+               [tlen (fx1+ (fx+ (sbral-tree-length s) (sbral-tree-length rest)))])
+          (make-sbral           
+           (fx+ tlen (sbral-length (sbral-rest rest)))
+           (make-sbral-tree tlen e (sbral-tree s) (sbral-tree rest))
+           (sbral-rest rest)))
+        ;; Otherwise, just tack the new element onto the front as a 1-depth tree.
+        (make-sbral (fx1+ (sbral-length s)) e s)))
 
   (define (sbral-ref s n default) ;TODO can sbral reference walk back up the list on the return from the recursion and rerecurse into nodes it visits along the way because early vars will always point to later vars?
     (cond
@@ -38,8 +38,8 @@
 
   (define (_sbral-set-ref s n elt)
     (if (fx< n (sbral-tree-length s))
-	(make-sbral (sbral-length s) (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-rest s))
-	(make-sbral (sbral-length s) (sbral-tree s) (_sbral-set-ref (sbral-rest s) (fx- n (sbral-tree-length s)) elt))))
+        (make-sbral (sbral-length s) (sbral-tree-set-ref (sbral-tree s) n elt) (sbral-rest s))
+        (make-sbral (sbral-length s) (sbral-tree s) (_sbral-set-ref (sbral-rest s) (fx- n (sbral-tree-length s)) elt))))
 
   (define (sbral-tree-length s)
     ;; sbral->number; Length of the initial tree of sbral s.
@@ -59,19 +59,19 @@
      [(zero? n) (sbral-tree-set-value t elt)]
      [(fx< n (fxquotient (fx1+ (sbral-tree-size t)) 2))
       (make-sbral-tree (sbral-tree-size t) (sbral-tree-root t)
-		       (sbral-tree-set-ref (sbral-tree-left t) (fx1- n) elt)
-		       (sbral-tree-right t))]
+                       (sbral-tree-set-ref (sbral-tree-left t) (fx1- n) elt)
+                       (sbral-tree-right t))]
      [else
       (make-sbral-tree (sbral-tree-size t) (sbral-tree-root t) (sbral-tree-left t)
-		       (sbral-tree-set-ref (sbral-tree-right t) (fx- n (fxquotient (fx1+ (sbral-tree-size t)) 2)) elt))]))
+                       (sbral-tree-set-ref (sbral-tree-right t) (fx- n (fxquotient (fx1+ (sbral-tree-size t)) 2)) elt))]))
 
   (define (sbral-tree-value t)
     (if (sbral-tree? t) (sbral-tree-root t) t))
   
   (define (sbral-tree-set-value t elt)
     (if (sbral-tree? t)
-	(make-sbral-tree (sbral-tree-size t) elt (sbral-tree-left t) (sbral-tree-right t))
-	elt))
+        (make-sbral-tree (sbral-tree-size t) elt (sbral-tree-left t) (sbral-tree-right t))
+        elt))
 
   ;; === DEBUGGING ===
   (define (sbral->alist s) ; TODO optimize sbral->alist/sbral->list

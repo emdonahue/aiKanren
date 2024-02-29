@@ -37,9 +37,9 @@
 
     #;
     (tassert "constraint disj =="
-	     (run1 (x1 x2) (constraint (conde [(== x2 1)] [(== x2 2)]))
-		   (constraint (conde [(== x1 1)] [(== x1 2)]))
-		   (== x2 2))
+             (run1 (x1 x2) (constraint (conde [(== x2 1)] [(== x2 2)]))
+                   (constraint (conde [(== x1 1)] [(== x1 2)]))
+                   (== x2 2))
     (list (disj* (== x1 1) (== x1 2)) 2))
     #;
     (tassert "constraint disj lazy" (run1 (x1) (constraint (conde [(== x1 1)] [(== x1 2)] [stale]))) (disj* (== x1 1) (== x1 2) stale))
@@ -53,9 +53,9 @@
 
     #;
     (tassert "constraint disj conj"
-	     (run1 (x1 x2) (constraint (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
-	     (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
-		   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
+             (run1 (x1 x2) (constraint (conde [(== x1 1) (== x2 1)] [(== x1 2) (== x2 2)])))
+             (list (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))
+                   (disj* (conj* (== x1 1) (== x2 1)) (conj* (== x1 2) (== x2 2)))))
 
     ;; === BOOLEANO ===
 
@@ -190,26 +190,26 @@
     (tassert "absento fire cdr succeed" (run1 (x1) (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
 
     (tassert "absento hangs if matcho generates free vars in constraint"
-	     (run1 (x0 x1 x2 x3)
-		   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
+             (run1 (x0 x1 x2 x3)
+                   (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
     (tassert "absento hangs on this due to bad return condition in solve-disj"
-	     (run1 (x1 x2 x3 x4 x5)
-		   (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
+             (run1 (x1 x2 x3 x4 x5)
+                   (absento 100 x1) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
 
     (tassert "duplicate absento simplifies down to duplicate matchos"
-	     (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3))))
-	     (lambda (g)
-	       (let ([m21 (disj-rhs (conj-rhs (conj-lhs (car g))))]
-		     [m22 (conj-rhs (conj-rhs (car g)))]
-		     [m31 (disj-rhs (conj-rhs (conj-lhs (cadr g))))]
-		     [m32 (conj-rhs (conj-rhs (cadr g)))])
-		 (equal? g (list
-			    (conj (conj (=/= x2 1) (disj (conj (=/= x2 2) (noto (pairo x2))) m21))
-				  (disj (noto (pairo x2)) m22))
-			    (conj (conj (=/= x3 1) (disj (conj (=/= x3 2) (noto (pairo x3))) m31))
-				  (disj (noto (pairo x3)) m32)))))))
+             (cdr (run1 (x1 x2 x3) (absento 1 x1) (absento 2 x1) (== x1 (cons x2 x3))))
+             (lambda (g)
+               (let ([m21 (disj-rhs (conj-rhs (conj-lhs (car g))))]
+                     [m22 (conj-rhs (conj-rhs (car g)))]
+                     [m31 (disj-rhs (conj-rhs (conj-lhs (cadr g))))]
+                     [m32 (conj-rhs (conj-rhs (cadr g)))])
+                 (equal? g (list
+                            (conj (conj (=/= x2 1) (disj (conj (=/= x2 2) (noto (pairo x2))) m21))
+                                  (disj (noto (pairo x2)) m22))
+                            (conj (conj (=/= x3 1) (disj (conj (=/= x3 2) (noto (pairo x3))) m31))
+                                  (disj (noto (pairo x3)) m32)))))))
 
     ;; === PRESENTO ===
 
@@ -271,12 +271,12 @@
     (tassert "noto presento fire cdr succeed" (run1 (x1) (noto (presento 3 x1)) (== x1 '(2 . 1))) '(2 . 1))
 
     (tassert "noto presento hangs if matcho generates free vars in constraint"
-	     (run1 (x0 x1 x2 x3)
-		   (noto (presento 100 x0)) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
+             (run1 (x0 x1 x2 x3)
+                   (noto (presento 100 x0)) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
     (tassert "noto presento hangs on this due to bad return condition in solve-disj"
-	     (run1 (x1 x2 x3 x4 x5)
-		   (noto (presento 100 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
+             (run1 (x1 x2 x3 x4 x5)
+                   (noto (presento 100 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
     (tassert "noto presento found by generative test" (run1 (x1 x2) (noto (presento x2 `((,x2) ,x1 . ,x1))) (== x1 1)) (void))
    

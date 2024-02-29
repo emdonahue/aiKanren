@@ -31,7 +31,7 @@
 
 #;
 (parameterize ([lazy-solver #f])    (pretty-print (trace-run (q) (prove ((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
-					 (evalo q q)))))
+                                         (evalo q q)))))
     
     ;;((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list))) (not-in-envo))) (eval-proper-list))) (not-in-envo)))))))
 
@@ -82,27 +82,27 @@
     (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
 
     (tassert "evalo append null"
-	     (evalo '(letrec ([append (lambda (lhs rhs)
-					(if (null? lhs) rhs
-					    (cons (car lhs) (append (cdr lhs) rhs))))])
-		       (append '() '()))) '())
+             (evalo '(letrec ([append (lambda (lhs rhs)
+                                        (if (null? lhs) rhs
+                                            (cons (car lhs) (append (cdr lhs) rhs))))])
+                       (append '() '()))) '())
     (tassert "evalo append lhs null"
-	     (evalo '(letrec ([append (lambda (lhs rhs)
-					(if (null? lhs) rhs
-					    (cons (car lhs) (append (cdr lhs) rhs))))])
-		       (append '() '(1 2)))) '(1 2))
+             (evalo '(letrec ([append (lambda (lhs rhs)
+                                        (if (null? lhs) rhs
+                                            (cons (car lhs) (append (cdr lhs) rhs))))])
+                       (append '() '(1 2)))) '(1 2))
 
     (tassert "evalo append recursive 1"
-	     (evalo '(letrec ([append (lambda (lhs rhs)
-					(if (null? lhs) rhs
-					    (cons (car lhs) (append (cdr lhs) rhs))))])
-		       (append '(1) '(2 3)))) '(1 2 3))
+             (evalo '(letrec ([append (lambda (lhs rhs)
+                                        (if (null? lhs) rhs
+                                            (cons (car lhs) (append (cdr lhs) rhs))))])
+                       (append '(1) '(2 3)))) '(1 2 3))
 
     (tassert "evalo append recursive"
-	     (evalo '(letrec ([append (lambda (lhs rhs)
-					(if (null? lhs) rhs
-					    (cons (car lhs) (append (cdr lhs) rhs))))])
-		       (append '(1 2 3) '(4 5 6)))) '(1 2 3 4 5 6))
+             (evalo '(letrec ([append (lambda (lhs rhs)
+                                        (if (null? lhs) rhs
+                                            (cons (car lhs) (append (cdr lhs) rhs))))])
+                       (append '(1 2 3) '(4 5 6)))) '(1 2 3 4 5 6))
     
     (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
       (tassert "evalo quine" (evalo q) q))
@@ -110,35 +110,35 @@
 
 #;
     (display (trace-run (body)
-			(absento '(1 . 1) body)
-			(absento 1 body)
-		(== body '(cons x x))
-		;(== body (list 'cons 'x vars))
-		;;(== body `(cons . vars))
-			(evalo `(letrec ([f (lambda (x) ,body)])
-				  (f 1)) '(1 . 1))))
+                        (absento '(1 . 1) body)
+                        (absento 1 body)
+                (== body '(cons x x))
+                ;(== body (list 'cons 'x vars))
+                ;;(== body `(cons . vars))
+                        (evalo `(letrec ([f (lambda (x) ,body)])
+                                  (f 1)) '(1 . 1))))
 
 ;;8362 - disj that contains the bad matcho 8385  8383- disj should succeed but fails
 #;
     (display (trace-run (body)
-			(prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
-			       (absento '(1 . 1) body)
-			       (absento 1 body)
-			       ;;(== body '(cons x x))
-			       ;;(== body (list 'cons 'x vars))
-			       ;;(== body `(cons . vars))
-			       
-			       (evalo `(letrec ([f (lambda (x) ,body)])
-					 (f 1)) '(1 . 1)))))
+                        (prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
+                               (absento '(1 . 1) body)
+                               (absento 1 body)
+                               ;;(== body '(cons x x))
+                               ;;(== body (list 'cons 'x vars))
+                               ;;(== body `(cons . vars))
+                               
+                               (evalo `(letrec ([f (lambda (x) ,body)])
+                                         (f 1)) '(1 . 1)))))
     
-					;((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
+                                        ;((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
 
     #;
     (display (run 1 (body)
     (absento '(1 . 1) body)
     (absento 1 body)
     ;;(== body '(cons x x))
-					;(== body (list 'cons 'x vars)) ;
+                                        ;(== body (list 'cons 'x vars)) ;
     ;;(== body `(cons . vars))
     (evalo `(letrec ([f (lambda (x) ,body)])
     (f 1)) '(1 . 1))))
@@ -147,7 +147,7 @@
     #;
     (run 1 (body)
     (absento '(1 . 1) body)
-    ;;	       (== body '(cons x x))
+    ;;               (== body '(cons x x))
     (evalo `(letrec ([f (lambda (x) ,body)])
     (f 1)) '(1 . 1)))
 
@@ -159,7 +159,7 @@
     [apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)]))
     __)
     
-					;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
+                                        ;    (tassert "synthesize cons" (synthesizeo '([(1 1) . (1 . 1)])) 1)
 
 
 
@@ -172,14 +172,14 @@
 #;
     (run 1 (body)
       (prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))
-	     (absento '(1 . 1) body)
-	     (absento 1 body)
-	     ;;(== body '(cons x x))
-	     ;;(== body (list 'cons 'x vars))
-	     ;;(== body `(cons . vars))
-	     
-	     (evalo `(letrec ([f (lambda (x) ,body)])
-		       (f 1)) '(1 . 1))))
+             (absento '(1 . 1) body)
+             (absento 1 body)
+             ;;(== body '(cons x x))
+             ;;(== body (list 'cons 'x vars))
+             ;;(== body `(cons . vars))
+             
+             (evalo `(letrec ([f (lambda (x) ,body)])
+                       (f 1)) '(1 . 1))))
     ))
  (not-in-envo))) (eval-proper-list))) (not-in-envo))))))) (evalo q q)))
     

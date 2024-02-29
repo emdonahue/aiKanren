@@ -1,32 +1,32 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
   (export lazy-solver reify-constraints expand-disjunctions
-	  make-runner runner? runner-stream runner-query runner-package set-runner-stream
-	  package? empty-package
-	  var make-var var? var-id set-var-id!
-	  stream?
-	  failure failure?
-	  make-suspended suspended? suspended-goal suspended-state
-	  make-mplus mplus? mplus-lhs mplus-rhs
-	  make-answers answers? answers-car answers-cdr
-	  answer? state-or-failure?
-	  empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
-	  empty-substitution
-	  make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-	  make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
-	  goal? goal-memp
-	  succeed fail succeed? fail?
-	  make-== == ==? ==-lhs ==-rhs
-	  fresh? make-exist exist? exist-procedure
-	  make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
-	  make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
-	  conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
-	  pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-	  make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
-	  make-noto noto? noto-goal
-	  __
-	  make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
-	  prove proof-goal? proof-goal-goal proof-goal-proof)
+          make-runner runner? runner-stream runner-query runner-package set-runner-stream
+          package? empty-package
+          var make-var var? var-id set-var-id!
+          stream?
+          failure failure?
+          make-suspended suspended? suspended-goal suspended-state
+          make-mplus mplus? mplus-lhs mplus-rhs
+          make-answers answers? answers-car answers-cdr
+          state-or-failure?
+          empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
+          empty-substitution
+          make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
+          make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
+          goal? goal-memp
+          succeed fail succeed? fail?
+          make-== == ==? ==-lhs ==-rhs
+          fresh? make-exist exist? exist-procedure
+          make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
+          make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
+          conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
+          pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
+          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
+          make-noto noto? noto-goal
+          __
+          make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
+          prove proof-goal? proof-goal-goal proof-goal-proof)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
@@ -75,12 +75,12 @@
     ;; Moves a pconstraint from one var to another
     (case-lambda
       [(g v) (pconstraint (cons v (cdr (pconstraint-vars g)))
-			  (pconstraint-procedure g)
-			  (pconstraint-data g))]
+                          (pconstraint-procedure g)
+                          (pconstraint-data g))]
       [(g v v^) (if (eq? v v^) g
-		    (pconstraint (cons v^ (remq v (pconstraint-vars g)))
-				 (pconstraint-procedure g)
-				 (pconstraint-data g)))]))
+                    (pconstraint (cons v^ (remq v (pconstraint-vars g)))
+                                 (pconstraint-procedure g)
+                                 (pconstraint-data g)))]))
 
   (define (pconstraint-check p var val)
     (cert (memq var (pconstraint-vars p)))
@@ -103,14 +103,14 @@
 
   (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
     (if (not (failure? substitution))
-	(let ([s (vector-copy s)])
-	  (set-state-substitution! s substitution) s) substitution))
+        (let ([s (vector-copy s)])
+          (set-state-substitution! s substitution) s) substitution))
 
   (define (set-state-constraints s c)
     (cert (state? s) (constraint-store? c))
     (if (not (failure? c))
-	(let ([s (vector-copy s)])
-	  (set-state-constraints! s c) s) c))
+        (let ([s (vector-copy s)])
+          (set-state-constraints! s c) s) c))
   (define (state-extend-store s g)
     (make-state (state-substitution s) (cons g (state-constraints s)) (state-pseudocounts s) (state-varid s)))
   
@@ -123,8 +123,8 @@
     ;;TODO remove set-state-varid
     (cert (state? s) (number? v) (fx<= (state-varid s) v))
     (if (fx= (state-varid s) v) s
-	(let ([s (vector-copy s)])
-	  (set-state-varid! s v) s)))
+        (let ([s (vector-copy s)])
+          (set-state-varid! s v) s)))
 
   (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
 
@@ -139,10 +139,8 @@
   (define-structure (suspended goal state))
   (define-structure (answers car cdr))
 
-  (define answer? state?)
-  
   (define (stream? s)
-    (or (failure? s) (mplus? s) (suspended? s) (answer? s) (answers? s)))
+    (or (failure? s) (mplus? s) (suspended? s) (state? s) (answers? s)))
   
   ;; === GOALS ===
   (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
@@ -184,8 +182,8 @@
 
   (define (simplify-matcho g)
     (if (and (matcho? g) (null? (matcho-out-vars g)))
-	(let-values ([(_ g s p) (expand-matcho g empty-state empty-package)]) g)
-	g))
+        (let-values ([(_ g s p) (expand-matcho g empty-state empty-package)]) g)
+        g))
 
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))
@@ -201,19 +199,19 @@
       [(g p) (goal-memp g  p '())]
       [(g p gs)
        (cond
-	[(p g) (cons g gs)]
-	[(conj? g) (let ([gs (goal-memp (conj-rhs g) p gs)])
-		     (goal-memp (conj-lhs g) p gs))]
-	[(disj? g) (let ([gs (goal-memp (disj-rhs g) p gs)])
-		     (goal-memp (disj-lhs g) p gs))]
-	[else gs])]))
+        [(p g) (cons g gs)]
+        [(conj? g) (let ([gs (goal-memp (conj-rhs g) p gs)])
+                     (goal-memp (conj-lhs g) p gs))]
+        [(disj? g) (let ([gs (goal-memp (disj-rhs g) p gs)])
+                     (goal-memp (disj-lhs g) p gs))]
+        [else gs])]))
 
   #;
   (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed
     (syntax-rules ()
       [(_ goal (predicate body ...) ...)
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
-	 clauses ...)]))
+         clauses ...)]))
 
   (define-structure (conde lhs rhs))
 
@@ -221,14 +219,14 @@
 
   (define (conde-car g)
     (if (conde? g)
-	(conde-car (conde-lhs g))
-	g))
+        (conde-car (conde-lhs g))
+        g))
 
   (define (conde-cdr g)
     (if (conde? g)
-	(let ([lhs (conde-cdr (conde-lhs g))])
-	  (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
-	fail))
+        (let ([lhs (conde-cdr (conde-lhs g))])
+          (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
+        fail))
   
   (define (conde-disj x y)
     ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
@@ -266,11 +264,11 @@
       [(_ lhs rhs ...) (conj lhs (conj* rhs ...))
        #;
        (let ([l lhs])
-	 (if (fail? l) fail
-	     (let ([r (conj* rhs ...)])
-	       (cond
-		[(fail? r) r]
-		[else (make-conj l r)]))))]))
+         (if (fail? l) fail
+             (let ([r (conj* rhs ...)])
+               (cond
+                [(fail? r) r]
+                [else (make-conj l r)]))))]))
 
   #;
   (define (conj* . conjs)
@@ -286,46 +284,46 @@
 
   (define (conj-filter c p)
     (if (conj? c)
-	(conj
-	 (conj-filter (conj-lhs c) p)
-	 (conj-filter (conj-rhs c) p))
-	(if (p c) c succeed)))
+        (conj
+         (conj-filter (conj-lhs c) p)
+         (conj-filter (conj-rhs c) p))
+        (if (p c) c succeed)))
 
   (define (conj-diff c d)
     (if (conj? c) (conj (conj-diff (conj-lhs c) d) (conj-diff (conj-rhs c) d))
-	(if (conj-member c d) succeed c)))
+        (if (conj-member c d) succeed c)))
 
   (define (conj-intersect c d)
     (if (conj? c) (conj (conj-intersect (conj-lhs c) d) (conj-intersect (conj-rhs c) d))
-	(if (conj-member c d) c succeed)))
+        (if (conj-member c d) c succeed)))
 
   (define (conj-member e c)
     (if (conj? c) (or (conj-member e (conj-lhs c)) (conj-member e (conj-rhs c)))
-	(equal? c e)))
+        (equal? c e)))
 
   (define (conj-memq e c)
     (if (conj? c) (or (conj-memq e (conj-lhs c)) (conj-memq e (conj-rhs c)))
-	(eq? c e)))
+        (eq? c e)))
 
   (define (conj-memp c p)
     (if (conj? c)
-	(or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
-	(if (p c) c #f)))
+        (or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
+        (if (p c) c #f)))
   
   (define (conj-fold p s cs) ;TODO is conj-fold ever used?
     (cert (procedure? p) (conj? cs))
     (let ([lhs (if (conj? (conj-lhs cs))
-		   (conj-fold p s (conj-lhs cs))
-		   (p s (conj-lhs cs)))])
+                   (conj-fold p s (conj-lhs cs))
+                   (p s (conj-lhs cs)))])
       (if (conj? (conj-rhs cs))
-	  (conj-fold p lhs (conj-rhs cs))
-	  (p lhs (conj-rhs cs)))))
+          (conj-fold p lhs (conj-rhs cs))
+          (p lhs (conj-rhs cs)))))
 
   (define (conj-partition p cs)
     (if (conj? cs) (let-values ([(lhs-t lhs-f) (conj-partition p (conj-lhs cs))]
-				[(rhs-t rhs-f) (conj-partition p (conj-rhs cs))])
-		     (values (conj lhs-t rhs-t) (conj lhs-f rhs-f)))
-	(if (p cs) (values cs succeed) (values succeed cs))))
+                                [(rhs-t rhs-f) (conj-partition p (conj-rhs cs))])
+                     (values (conj lhs-t rhs-t) (conj lhs-f rhs-f)))
+        (if (p cs) (values cs succeed) (values succeed cs))))
 
   ;; DISJ
   (define (disj lhs rhs) ; Logical disjunction between constraints.
@@ -343,13 +341,13 @@
 
   (define (disj-car g)
     (if (disj? g)
-	(disj-car (disj-lhs g))
-	g))
+        (disj-car (disj-lhs g))
+        g))
 
   (define (disj-cdr g) ;TODO microbenchmark disj cdr that looks ahead instead of using base case to check for non disj
     (if (disj? g)
-	(disj (disj-cdr (disj-lhs g)) (disj-rhs g))
-	fail))
+        (disj (disj-cdr (disj-lhs g)) (disj-rhs g))
+        fail))
 
   (define conde->disj
     ;; Inverts conde from right-branching to left-branching to allow for optimizations in solve-disj
@@ -368,9 +366,9 @@
     (let ([intersection (conj-intersect lhs rhs)])
       (org-display intersection)
       (values (conj-filter intersection (lambda (c) (not (disj? c))))
-	      (conj-filter intersection disj?)
-	      (conj-diff lhs intersection)
-	      (conj-diff rhs intersection))))
+              (conj-filter intersection disj?)
+              (conj-diff lhs intersection)
+              (conj-diff rhs intersection))))
 
   (define (disj-factorized lhs rhs)
     (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])

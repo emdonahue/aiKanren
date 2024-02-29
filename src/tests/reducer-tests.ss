@@ -12,8 +12,8 @@
     ;; === EQUALITY ===
 
     (let ([s (list (cons x1 1))]
-	  [s-free (list (cons x1 x2))]
-	  [s-pair (list (cons x1 (cons x2 x3)))])
+          [s-free (list (cons x1 x2))]
+          [s-pair (list (cons x1 (cons x2 x3)))])
       
       (tassert "reduce == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
       (tassert "reduce == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
