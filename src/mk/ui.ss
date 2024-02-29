@@ -54,10 +54,7 @@
       [(_ n (q ...) g ...)
        (map car (runner-take n (runner (q ...) g ...)))]))
 
- (define-syntax run* ; Returns all answers.
-   ;; (run (q ...) g ...)
-    (syntax-rules ()
-      [(_ (q ...) g ...) (run -1 (q ...) g ...)]))
+
   
  (define-syntax run1 ; Returns the first answer
    ;; (run1 (q ...) g ...)
@@ -86,7 +83,7 @@
      ;; Returns the first n answers, limited to a max search depth of depth.
      (syntax-rules ()
        [(_ n depth () g ...)
-	(runner-dfs '() (conj* g ...) (set-state-varid empty-state varid) n depth)]
+	(runner-dfs '() (conj* g ...) empty-state n depth)]
        [(_ n depth (q) g ...)
 	(fresh-vars
 	 (state-varid empty-state) varid (q)
@@ -96,6 +93,11 @@
 	 (state-varid empty-state) varid (q ...)
 	 (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
 
+    (define-syntax run* ; Returns all answers using a depth-first search.
+      (syntax-rules ()
+	[(_ (q ...) g ...)
+	 (run-dfs -1 -1 (q ...) g ...)]))
+   
    (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
      ;; (run-dfs depth (q ...) g ...)
      (syntax-rules ()
