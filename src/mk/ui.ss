@@ -1,7 +1,7 @@
 (library (ui) ;TODO refactor this library into 'vars' and other
   (export run run* run1
-          run-states run*-states run1-state
-          run-dfs run*-dfs run**-dfs run1-dfs run1*-dfs
+          run-states run1-state
+          run-dfs run1-dfs
           runner
           fresh exist constraint conde
           trace-run)
@@ -39,34 +39,30 @@
     (syntax-rules ()
       [(_ () g ...)
        (top-level-runner empty-state '() (conj* g ...))]
-      [(_ (q) g ...)
+      [(_ (q ...) g ...)
+       (fresh-vars
+        (state-varid empty-state) varid (q ...)
+        (top-level-runner (set-state-varid empty-state varid) (list q ...) (conj* g ...)))]
+      [(_ q g ...)
        (fresh-vars
         (state-varid empty-state) varid (q)
-        (top-level-runner (set-state-varid empty-state varid) q (conj* g ...)))]
-      [(_ (q0 q ...) g ...)
-       (fresh-vars
-        (state-varid empty-state) varid (q0 q ...)
-        (top-level-runner (set-state-varid empty-state varid) (list q0 q ...) (conj* g ...)))]))
+        (top-level-runner (set-state-varid empty-state varid) q (conj* g ...)))]))
   
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
-      [(_ n (q ...) g ...)
-       (map car (runner-take n (runner (q ...) g ...)))]))
+      [(_ n q g ...)
+       (map car (runner-take n (runner q g ...)))]))
   
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
     (syntax-rules ()
-      [(_ (q ...) g ...)
-       (let ([ans (run 1 (q ...) g ...)])
+      [(_ q g ...)
+       (let ([ans (run 1 q g ...)])
          (if (null? ans) (void) (car ans)))]))
 
    (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
     (syntax-rules ()
       [(_ n (q ...) g ...)
        (map cdr (runner-take n (runner (q ...) g ...)))]))
-
-   (define-syntax run*-states ; Equivalent to run*, but returns state objects for further processing.
-    (syntax-rules ()
-      ((_ (q ...) g ...) (run-states -1 (q ...) g ...))))
 
    (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
     (syntax-rules ()
@@ -80,38 +76,26 @@
      (syntax-rules ()
        [(_ n depth () g ...)
         (runner-dfs '() (conj* g ...) empty-state n depth)]
-       [(_ n depth (q) g ...)
-        (fresh-vars
-         (state-varid empty-state) varid (q)
-         (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]
        [(_ n depth (q ...) g ...)
         (fresh-vars
          (state-varid empty-state) varid (q ...)
-         (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]))
+         (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]
+       [(_ n depth q g ...)
+        (fresh-vars
+         (state-varid empty-state) varid (q)
+         (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]))
 
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()
-        [(_ (q ...) g ...)
-         (run-dfs -1 -1 (q ...) g ...)]))
+        [(_ q g ...)
+         (run-dfs -1 -1 q g ...)]))
    
-   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
-     ;; (run-dfs depth (q ...) g ...)
+   (define-syntax run1-dfs ; Returns one answer from a dfs search at any depth. Equivalent to (run-dfs 1 -1 ...).
+     ;; (run1-dfs depth (q ...) g ...)
      (syntax-rules ()
-       [(_ depth (q ...) g ...)
-        (let ([answers (run-dfs 1 depth (q ...) g ...)])
+       [(_ q g ...)
+        (let ([answers (run-dfs 1 -1 q g ...)])
           (if (null? answers) (void) (car answers)))]))
-
-   (define-syntax run1*-dfs ; Similar to run-dfs, but returns one answer with infinite depth.
-     (syntax-rules ()
-       [(_ (q ...) g ...) (run1-dfs -1 (q ...) g ...)]))
-
-   (define-syntax run*-dfs ; Similar to run-dfs, but returns all answers at given depth.
-     (syntax-rules ()
-       [(_ depth (q ...) g ...) (run-dfs -1 depth (q ...) g ...)]))
-
-   (define-syntax run**-dfs ; Similar to run-dfs, but returns all answers with infinite depth.
-     (syntax-rules ()
-       [(_ (q ...) g ...) (run*-dfs -1 (q ...) g ...)]))
 
    (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
      ;; (trace-run (q) g ...)
