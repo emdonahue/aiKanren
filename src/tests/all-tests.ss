@@ -7,10 +7,11 @@
     (run-mini-substitution-tests)
     (run-state-tests)
     (run-goal-tests)
+    (run-reducer-tests)
     #;
     (
     
-     (run-reducer-tests)
+    
      (run-solver-tests)
      (run-matcho-tests)
      (run-negation-tests)
