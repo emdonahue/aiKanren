@@ -70,7 +70,7 @@
       (tassert "evalo quine" (evalo q) q))
 
     (tassert "synthesize duplicate ground"
-             (run1 (body)
+             (run1 body
                    (absento 1 body)
                    (evalo `(letrec ([f (lambda (x) ,body)])
                              (f 1)) '(1 . 1))) '(cons x x))

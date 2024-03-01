@@ -4,7 +4,7 @@
   
   (define evalo
     (case-lambda
-      [(expr) (run1 (val) (evalo expr val))]
+      [(expr) (run1 val (evalo expr val))]
       [(expr val) (evalo expr '() val)]
       [(expr env val)
        (trace-goal evalo
@@ -17,7 +17,7 @@
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
-    (run1 (val) (evalo expr env val)))
+    (run1 val (evalo expr env val)))
   
   (define (eval-quote expr env val)
     (trace-goal eval-quote

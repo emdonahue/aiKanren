@@ -20,7 +20,7 @@
   
   (define evalo
     (case-lambda
-      [(expr) (run1 (val) (evalo expr val))]
+      [(expr) (run1 val (evalo expr val))]
       [(expr val) (evalo expr initial-env val)]
       [(expr env val)
        (trace-conde
@@ -37,7 +37,7 @@
     ;; TODO quote/literal only needed if atoms in the output do not appear in the input
     (case-lambda
       [(examples)
-       (run1 (body)
+       (run1 body
              (exist (input output)
                     (absento 1 body)
                     ;(absento 2 body)
@@ -50,7 +50,7 @@
 
   (define (evalo-env expr env)
     ;; Forward direction evalo of expr in env not containing initial-env.
-    (run1 (val) (evalo expr env val)))
+    (run1 val (evalo expr env val)))
   
   (define (evalo-quote expr env val)
     (fresh ()
