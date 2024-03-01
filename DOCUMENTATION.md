@@ -3,14 +3,6 @@
 	- [run](#run)
 	- [run*](#run*)
 	- [run1](#run1)
-	- [run-states](#run-states)
-	- [run*-states](#run*-states)
-	- [run1-state](#run1-state)
-	- [run-dfs](#run-dfs)
-	- [run*-dfs](#run*-dfs)
-	- [run**-dfs](#run**-dfs)
-	- [run1-dfs](#run1-dfs)
-	- [run1*-dfs](#run1*-dfs)
 	- [runner](#runner)
 	- [runner-next](#runner-next)
 -  [Goals](#Goals)
@@ -62,60 +54,14 @@
 ### run
 ```scheme
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
-   ;; (run n (q ...) g ...)
 ```
 ### run*
 ```scheme
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
-   ;; (run n (q ...) g ...)
 ```
 ### run1
 ```scheme
- (define-syntax run1 ; Returns the first answer
-   ;; (run1 (q ...) g ...)
-```
-### run-states
-```scheme
-   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
-```
-### run*-states
-```scheme
-   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
-```
-### run1-state
-```scheme
-   (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
-```
-### run-dfs
-```scheme
-   (define-syntax run-dfs ; Depth-first search based run equivalent. 
-     ;; (run-dfs n depth (q ...) g ...)
-     ;; Returns the first n answers, limited to a max search depth of depth.
-```
-### run*-dfs
-```scheme
-   (define-syntax run-dfs ; Depth-first search based run equivalent. 
-     ;; (run-dfs n depth (q ...) g ...)
-     ;; Returns the first n answers, limited to a max search depth of depth.
-```
-### run**-dfs
-```scheme
-   (define-syntax run-dfs ; Depth-first search based run equivalent. 
-     ;; (run-dfs n depth (q ...) g ...)
-     ;; Returns the first n answers, limited to a max search depth of depth.
-```
-### run1-dfs
-```scheme
-   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
-     ;; (run-dfs depth (q ...) g ...)
-```
-### run1*-dfs
-```scheme
-   (define-syntax run-dfs ; Depth-first search based run equivalent. 
-     ;; (run-dfs n depth (q ...) g ...)
-     ;; Returns the first n answers, limited to a max search depth of depth.
-   (define-syntax run1-dfs ; Similar to run-dfs, but returns 1 answer.
-     ;; (run-dfs depth (q ...) g ...)
+ (define-syntax run1 ; Returns the first answer instead of a list of answers.
 ```
 ### runner
 ```scheme
