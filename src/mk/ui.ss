@@ -38,6 +38,9 @@
       [(_ () g ...)
        (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q ...) g ...)
+       (f2 empty-state start-state (q ...)
+           (top-level-runner start-state (list q ...) (conj* g ...)))
+       #;
        (fresh-vars
         (state-varid empty-state) varid (q ...)
         (top-level-runner (set-state-varid empty-state varid) (list q ...) (conj* g ...)))]
@@ -141,5 +144,14 @@
               [intermediate-varid (fx1+ start-varid)])
           (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
 
+
+   (define-syntax f2
+     (syntax-rules ()
+       [(_ start-state end-state (q ...) body ...)
+        (let* ([vid (fx1- (state-varid start-state))]
+               [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
+               [end-state (begin (set! vid (fx1+ vid)) (set-state-varid start-state vid))])
+          body ...)]))
+   
     (define (top-level-runner state query conjuncts)
       (make-runner (make-suspended conjuncts state) query empty-package)))
