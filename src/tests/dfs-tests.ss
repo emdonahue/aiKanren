@@ -2,7 +2,7 @@
   (export run-dfs-tests)
   (import (chezscheme) (test-runner) (aikanren) (utils) (datatypes))
 
-  (define (run-dfs-tests)
+  (define (run-dfs-tests) ; TODO consider making max depth a parameter and then just passing it in in the macros so we dont have to keep accessing a parameter, though we can try accessing the param directly and see if that affects performance
     (tassert "dfs ==" (run1-dfs x1 (== x1 1)) 1)
     (tassert "dfs == & ==" (run1-dfs (x1 x2) (== x1 1) (== x2 2)) '(1 2))
     (tassert "dfs == & == depth 1" (run-dfs 1 -1 (x1 x2) (== x1 1) (== x2 2)) '((1 2)))

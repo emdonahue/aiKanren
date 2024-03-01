@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export lazy-solver reify-constraints expand-disjunctions
+  (export lazy-solver reify-constraints expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-runner runner? runner-stream runner-query runner-package set-runner-stream
           package? empty-package
           var make-var var? var-id set-var-id!
@@ -31,10 +31,36 @@
 
   ;; === RUNTIME PARAMETERS ===
   (define lazy-solver (make-parameter #f)) ;;TODO remove lazy solver
+  
   (define reify-constraints ; If #f, constraints are not printed during reification. Situationally useful when dealing with very large constraints.
     ; Default: #t
     (make-parameter #t))
+  
+  (define search-strategy/interleaving 'interleaving)
+  (define search-strategy/dfs 'dfs)
+  (define search-strategy ; Specifies the search strategy used by run. May be 'interleaving or 'dfs.
+    ; Default: 'interleaving.
+    (make-parameter search-strategy/interleaving
+                    (lambda (s)
+                      (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs))
+                        (assertion-violation 'answer-type "Unrecognized search strategy" s))
+                      s)))
+  
   (define expand-disjunctions (make-parameter #f))
+  
+  (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
+    ; Default: -1 (infinite depth).
+    (make-parameter -1))
+
+  (define answer-type/reified 'reified)
+  (define answer-type/state 'state)
+  (define answer-type ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation.
+    ; Default: 'reified
+    (make-parameter answer-type/reified
+                    (lambda (t)
+                      (unless (or (eq? t answer-type/reified) (eq? t answer-type/state))
+                        (assertion-violation 'answer-type "Unrecognized answer type" t))
+                      t)))
   
   ;; === RUNNER ===
   (define-structure (runner stream query package))

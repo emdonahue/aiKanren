@@ -6,7 +6,7 @@
 ;; TODO unify indentation to tabs. remove spaces
 (library (aikanren)
   (export
-   run run* run1 run-states run1-state run-dfs run1-dfs runner runner-next ; Run
+   run run* run1 runner runner-next ; Run
    constraint succeed fail == conde fresh exist matcho ; Goals
    conj disj noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
    membero appendo assoco asspo for-eacho ; List

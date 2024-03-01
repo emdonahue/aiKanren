@@ -1,7 +1,5 @@
 (library (ui) ;TODO refactor this library into 'vars' and other
   (export run run* run1
-          run-states run1-state
-          run-dfs run1-dfs
           runner
           fresh exist constraint conde
           trace-run)
@@ -59,17 +57,20 @@
        (let ([ans (run 1 q g ...)])
          (if (null? ans) (void) (car ans)))]))
 
+ #;
    (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
     (syntax-rules ()
       [(_ n (q ...) g ...)
        (map cdr (runner-take n (runner (q ...) g ...)))]))
 
+ #;
    (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
     (syntax-rules ()
       ((_ (q ...) g ...)
        (let ([ans (run-states 1 (q ...) g ...)])
          (if (null? ans) failure (car ans))))))
 
+ #;
    (define-syntax run-dfs ; Depth-first search based run equivalent. 
      ;; (run-dfs n depth (q ...) g ...)
      ;; Returns the first n answers, limited to a max search depth of depth.
@@ -88,8 +89,10 @@
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()
         [(_ q g ...)
-         (run-dfs -1 -1 q g ...)]))
-   
+         (parameterize ([search-strategy search-strategy/dfs])
+          (run -1 q g ...))]))
+
+    #;
    (define-syntax run1-dfs ; Returns one answer from a dfs search at any depth. Equivalent to (run-dfs 1 -1 ...).
      ;; (run1-dfs depth (q ...) g ...)
      (syntax-rules ()
