@@ -11,7 +11,7 @@
       [(_ () g0 g ...) (conj* g0 g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
       [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
        (lambda (state p)
-         (f2 state end-state (q ...)
+         (fresh-vars state end-state (q ...)
              (values (conj* g ...) end-state p)))]))
 
  (define-syntax conde ; Nondeterministic branching.
@@ -27,9 +27,8 @@
      [(_ (q ...) g ...)
       (make-exist
        (lambda (state p)
-         (fresh-vars
-          (state-varid state) varid (q ...)
-          (values (conj* g ...) (set-state-varid state varid) p))))]))
+         (fresh-vars state start-state (q ...)
+          (values (conj* g ...) start-state p))))]))
 
  (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
    ;; (runner (q ...) g ...)
@@ -37,10 +36,10 @@
       [(_ () g ...)
        (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q ...) g ...)
-       (f2 empty-state start-state (q ...)
+       (fresh-vars empty-state start-state (q ...)
            (top-level-runner start-state (list q ...) (conj* g ...)))]
       [(_ q g ...)
-       (f2 empty-state start-state (q)
+       (fresh-vars empty-state start-state (q)
            (top-level-runner start-state q (conj* g ...)))]))
   
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
@@ -77,13 +76,11 @@
        [(_ n depth () g ...)
         (runner-dfs '() (conj* g ...) empty-state n depth)]
        [(_ n depth (q ...) g ...)
-        (fresh-vars
-         (state-varid empty-state) varid (q ...)
-         (runner-dfs (list q ...) (conj* g ...) (set-state-varid empty-state varid) n depth))]
+        (fresh-vars empty-state start-state (q ...)
+         (runner-dfs (list q ...) (conj* g ...) start-state n depth))]
        [(_ n depth q g ...)
-        (fresh-vars
-         (state-varid empty-state) varid (q)
-         (runner-dfs q (conj* g ...) (set-state-varid empty-state varid) n depth))]))
+        (fresh-vars empty-state start-state (q)
+         (runner-dfs q (conj* g ...) start-state n depth))]))
 
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()
@@ -111,15 +108,15 @@
         (parameterize ([trace-query '()])
           (trace-runner '() (conj* g ...) empty-state -1))]
        [(_ depth (q) g ...)
-        (fresh-vars
-         (state-varid empty-state) varid (q)
+        (fresh-vars empty-state start-state (q)
+
          (parameterize ([trace-query q])
-             (trace-runner q (conj* g ...) (set-state-varid empty-state varid) depth)))]
+             (trace-runner q (conj* g ...) start-state depth)))]
        [(_ depth (q ...) g ...)
         (fresh-vars
-         (state-varid empty-state) varid (q ...)
+         empty-state start-state (q ...)
          (parameterize ([trace-query (list q ...)])
-             (trace-runner (list q ...) (conj* g ...) (set-state-varid empty-state varid) depth)))]))
+             (trace-runner (list q ...) (conj* g ...) start-state depth)))]))
 
    (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint. 
      (syntax-rules ()
@@ -127,24 +124,12 @@
   
   ;; === UTILITIES ===
 
-   (define-syntax fresh-vars ;TODO make fresh-vars non-recursive ala matcho
-     (syntax-rules ()
-       [(_ start-varid end-varid (q) body ...)
-        (let ([q (make-var start-varid)]
-              [end-varid (fx1+ start-varid)])
-          body ...)]
-       [(_ start-varid end-varid (q0 q ...) body ...)
-        (let ([q0 (make-var start-varid)]
-              [intermediate-varid (fx1+ start-varid)])
-          (fresh-vars intermediate-varid end-varid (q ...) body ...))]))
-
-
-   (define-syntax f2
+   (define-syntax fresh-vars
      (syntax-rules ()
        [(_ start-state end-state (q ...) body ...)
-        (let* ([vid (fx1- (state-varid start-state))]
+        (let* ([vid (state-varid start-state)]
                [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
-               [end-state (begin (set! vid (fx1+ vid)) (set-state-varid start-state vid))])
+               [end-state (set-state-varid start-state vid)])
           body ...)]))
    
     (define (top-level-runner state query conjuncts)

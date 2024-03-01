@@ -100,6 +100,6 @@
     ;;(tassert "reify cyclic" (run1 x1 (== x1 (cons x1 x1))) (cons x1 x1)) ;TODO test reify cyclic once unsound unification implemented
 
     (parameterize ([answer-type answer-type/state])
-      (tassert "trivial fresh does not extend substitution" (state-varid (run1 x1 (fresh (x2) succeed))) 2))
+      (tassert "trivial fresh does not extend substitution" (state-varid (run1 x1 (fresh (x2) succeed))) 1))
     
     ))

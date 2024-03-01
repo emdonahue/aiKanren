@@ -126,7 +126,7 @@
   
   ;; === STATE ===
   (define-structure (state substitution constraints pseudocounts varid))
-  (define empty-state (make-state empty-substitution empty-constraint-store #f 1))
+  (define empty-state (make-state empty-substitution empty-constraint-store #f 0))
 
   (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
     (if (not (failure? substitution))
