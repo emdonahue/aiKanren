@@ -11,9 +11,8 @@
       [(_ () g0 g ...) (conj* g0 g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
       [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
        (lambda (state p)
-         (fresh-vars
-          (state-varid state) varid (q ...)
-          (values (conj* g ...) (set-state-varid state varid) p)))]))
+         (f2 state end-state (q ...)
+             (values (conj* g ...) end-state p)))]))
 
  (define-syntax conde ; Nondeterministic branching.
    
@@ -39,15 +38,10 @@
        (top-level-runner empty-state '() (conj* g ...))]
       [(_ (q ...) g ...)
        (f2 empty-state start-state (q ...)
-           (top-level-runner start-state (list q ...) (conj* g ...)))
-       #;
-       (fresh-vars
-        (state-varid empty-state) varid (q ...)
-        (top-level-runner (set-state-varid empty-state varid) (list q ...) (conj* g ...)))]
+           (top-level-runner start-state (list q ...) (conj* g ...)))]
       [(_ q g ...)
-       (fresh-vars
-        (state-varid empty-state) varid (q)
-        (top-level-runner (set-state-varid empty-state varid) q (conj* g ...)))]))
+       (f2 empty-state start-state (q)
+           (top-level-runner start-state q (conj* g ...)))]))
   
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
