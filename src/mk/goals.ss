@@ -17,9 +17,8 @@
       (exclusive-cond
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))] ; If the ctn is empty, we're done. Otherwise, now we run it.
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))] ; Run the lhs while pushing the rhs onto the continuation.
-       [(fresh? g) (let-values ([(g s^ p) (g s p)])
+       [(procedure? g) (let-values ([(g s^ p) (g s p)])
                      (run-goal g s^ p ctn))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
-       [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)]) (run-goal g s p ctn))] 
        [(conde? g) (let*-values
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.

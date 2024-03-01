@@ -96,7 +96,8 @@
 ### fresh
 ```scheme
   (define-syntax fresh ; Introduce fresh variables.
-    ;; (fresh (x y z) ...) 
+    ;; (fresh (x y z) ...)
+    ;; Can be run with an empty variable list to simply suspend the search at that point. 
 ```
 ### exist
 ```scheme

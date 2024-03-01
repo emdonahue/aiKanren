@@ -6,7 +6,8 @@
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
   
   (define-syntax fresh ; Introduce fresh variables.
-    ;; (fresh (x y z) ...) 
+    ;; (fresh (x y z) ...)
+    ;; Can be run with an empty variable list to simply suspend the search at that point. 
     (syntax-rules ()
       [(_ () g0 g ...) (suspend (conj* g0 g ...))]
       [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
@@ -28,10 +29,9 @@
    (syntax-rules ()
      [(_ () g0 g ...) (conj* g0 g ...)]
      [(_ (q ...) g ...)
-      (make-exist
-       (lambda (state p)
-         (fresh-vars state start-state (q ...)
-          (values (conj* g ...) start-state p))))]))
+      (lambda (start-state p)
+        (fresh-vars start-state end-state (q ...)
+                    (values (conj* g ...) end-state p)))]))
 
  (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
    ;; (runner (q ...) g ...)
