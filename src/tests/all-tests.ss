@@ -8,15 +8,17 @@
     (run-state-tests)
     (run-goal-tests)
     (run-reducer-tests)
+    (run-solver-tests)
+    (run-matcho-tests)
+    (run-negation-tests)
+    (run-dfs-tests)
+    (run-constraints-tests)
+    ;(run-listo-tests)
     #;
     (
-    
-    
-     (run-solver-tests)
-     (run-matcho-tests)
-     (run-negation-tests)
-     (run-dfs-tests)
-     (run-constraints-tests)
+     
+     
+    (run-constraints-tests)
      (run-listo-tests)
      (run-tracing-tests)
      (run-generative-tests)

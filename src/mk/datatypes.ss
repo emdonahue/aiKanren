@@ -43,14 +43,15 @@
     (make-parameter search-strategy/interleaving
                     (lambda (s)
                       (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs))
-                        (assertion-violation 'answer-type "Unrecognized search strategy" s))
+                        (assertion-violation 'answer-type "Unrecognized search-strategy" s))
                       s)))
   
   (define expand-disjunctions (make-parameter #f))
   
   (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
     ; Default: -1 (infinite depth).
-    (make-parameter -1))
+    (make-parameter -1
+                    (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
 
   (define answer-type/reified 'reified)
   (define answer-type/state 'state)
@@ -59,7 +60,7 @@
     (make-parameter answer-type/reified
                     (lambda (t)
                       (unless (or (eq? t answer-type/reified) (eq? t answer-type/state))
-                        (assertion-violation 'answer-type "Unrecognized answer type" t))
+                        (assertion-violation 'answer-type "Unrecognized answer-type" t))
                       t)))
   
   ;; === RUNNER ===

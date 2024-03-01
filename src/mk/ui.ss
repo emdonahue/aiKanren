@@ -91,7 +91,8 @@
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()
         [(_ q g ...)
-         (parameterize ([search-strategy search-strategy/dfs])
+         (parameterize ([search-strategy search-strategy/dfs]
+                        [max-depth -1])
           (run -1 q g ...))]))
 
     #;
