@@ -50,7 +50,7 @@
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)
-           (map (if (eq? answer-type answer-type/reified) car cdr) (runner-take n (runner q g ...)))
+           (map (if (eq? (answer-type) answer-type/reified) car cdr) (runner-take n (runner q g ...)))
            (run-dfs n (max-depth) q g ...))]))
   
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
