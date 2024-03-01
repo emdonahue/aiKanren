@@ -17,13 +17,14 @@
       (exclusive-cond
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))] ; If the ctn is empty, we're done. Otherwise, now we run it.
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))] ; Run the lhs while pushing the rhs onto the continuation.
-       [(procedure? g) (let-values ([(g s^ p) (g s p)])
-                     (run-goal g s^ p ctn))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
-       [(conde? g) (let*-values
+       [(procedure? g) (let-values ([(g s p) (g s p)])
+                     (run-goal g s p ctn))] ; Any procedure that accepts and returns a goal, state, and package can be considered a goal. Fresh and exist are implemented in terms of such procedures.
+       [(conde? g) (let*-values ; Although states are per branch, package is global and must be threaded through lhs and rhs.
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
-                        [(rhs p) (run-goal (conde-rhs g) s p ctn)]) ; Although states are independent per branch, package is global and must be threaded through lhs and rhs.
+                        [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
-       [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
+       [(matcho? g) (let-values ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
+                        ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) 
                       (if structurally-recursive?
                           (suspendm (conj g ctn) s^ p s) ;(run-goal g s^ p)
                           (suspendm (conj g ctn) s^ p s))
@@ -62,24 +63,23 @@
 
   (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
     ;;TODO if we put run-goal-dfs in a parameter the tracing system will have a callback fn and we can trace without modifying the dfs
-    (cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
-     [(failure? s) (values n answers p)]
-     [(succeed? g) (if (succeed? ctn)
-                       (values (fx1- n) (cons s answers) p)
-                       (run-goal-dfs ctn s p n depth answers succeed))]
-     [(zero? depth) (values n answers p)]
-     [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
-     [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
-                   (if (zero? num-remaining) (values num-remaining answers p)
-                       (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
-     [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                    (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-                   (run-goal-dfs g s p n depth answers ctn))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
-                   (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-     [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
-     [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))
+    (if (zero? depth) (values n answers p)
+     (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
+      [(failure? s) (values n answers p)]
+      [(succeed? g) (if (succeed? ctn)
+                        (values (fx1- n) (cons s answers) p)
+                        (run-goal-dfs ctn s p n depth answers succeed))]
+      [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
+      [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
+                    (if (zero? num-remaining) (values num-remaining answers p)
+                        (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
+      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+                     (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+      [(procedure? g) (let-values ([(g s p) (g s p)])
+                        (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+      [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
+      [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
+      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))
   
   ;; === STREAMS ===
   
