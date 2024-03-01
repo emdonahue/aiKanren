@@ -49,7 +49,9 @@
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
       [(_ n q g ...)
-       (map car (runner-take n (runner q g ...)))]))
+       (if (eq? (search-strategy) search-strategy/interleaving)
+           (map car (runner-take n (runner q g ...)))
+           (run-dfs n (max-depth) q g ...))]))
   
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
     (syntax-rules ()
@@ -70,7 +72,7 @@
        (let ([ans (run-states 1 (q ...) g ...)])
          (if (null? ans) failure (car ans))))))
 
- #;
+
    (define-syntax run-dfs ; Depth-first search based run equivalent. 
      ;; (run-dfs n depth (q ...) g ...)
      ;; Returns the first n answers, limited to a max search depth of depth.
