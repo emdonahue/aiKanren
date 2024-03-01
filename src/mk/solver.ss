@@ -28,6 +28,7 @@
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
          [(fresh? g) (let-values ([(g s p) (g s empty-package)])
                        (solve-constraint g s ctn resolve delta))]
+         [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
          [(proxy? g) (let-values ([(v c) (walk-var-val s (proxy-var g))])

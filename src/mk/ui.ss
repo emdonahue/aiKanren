@@ -12,7 +12,11 @@
       [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
        (lambda (state p)
          (fresh-vars state end-state (q ...)
-             (values (conj* g ...) end-state p)))]))
+                     (let ([expanded-goal (conj* g ...)])
+                       (exclusive-cond
+                        [(fail? expanded-goal) (values fail failure p)]
+                        [(succeed? expanded-goal) (values succeed state p)]
+                        [else (values (make-suspend expanded-goal) end-state p)]))))]))
 
  (define-syntax conde ; Nondeterministic branching.
    

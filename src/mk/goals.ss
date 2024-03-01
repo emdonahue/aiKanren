@@ -18,7 +18,7 @@
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))] ; If the ctn is empty, we're done. Otherwise, now we run it.
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))] ; Run the lhs while pushing the rhs onto the continuation.
        [(fresh? g) (let-values ([(g s^ p) (g s p)])
-                     (suspend (conj g ctn) s^ p s))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
+                     (run-goal g s^ p ctn))] ;TODO separate suspended into its own constraint and treat procedures as ad hoc goals to be run immediately. ad hoc goals that already guarantee normal form can simply return succeed and the new state/package
        [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)]) (run-goal g s p ctn))] 
        [(conde? g) (let*-values
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
@@ -32,6 +32,7 @@
                       (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, ;
                       (run-goal g s^ p) ; so continue running aggressively on this branch. ;
                       (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
+       [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        [(trace-goal? g) (run-goal (trace-goal-goal g) s p ctn)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.
