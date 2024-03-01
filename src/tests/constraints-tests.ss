@@ -18,15 +18,15 @@
     (parameterize ([answer-type answer-type/state])
      (let ([s (run1 (x1) (constraint (== x1 1)))])
        (tassert "constraint == store" (reify s x1) 1)
-       (tassert "constraint == vid" (state-varid s) 2))
+       (tassert "constraint == vid" (state-varid s) 1))
      (let ([s (run1 (x1 x2) (constraint (== x1 1) (== x2 2)))])
        (tassert "constraint conj == store" (reify s (cons x1 x2)) (cons 1 2))
-       (tassert "constraint conj == vid" (state-varid s) 3))
+       (tassert "constraint conj == vid" (state-varid s) 2))
      (let ([s (run1 (x1) (constraint fail (== x1 1)))])
        (tassert "constraint bind fail" s (void)))
      (let ([s (run1 (x1) (constraint (conde [succeed] [succeed])))])
        (tassert "constraint disj succeed store" (reify s x1) x1)
-       (tassert "constraint disj succeed vid" (state-varid s) 2)))
+       (tassert "constraint disj succeed vid" (state-varid s) 1)))
 
     ;; === BOOLEANO ===
 
