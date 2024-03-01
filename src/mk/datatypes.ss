@@ -17,7 +17,7 @@
           goal? goal-memp
           succeed fail succeed? fail?
           make-== == ==? ==-lhs ==-rhs
-          fresh? make-exist exist? exist-procedure make-suspend suspend? suspend-goal
+          fresh? make-exist exist? exist-procedure suspend suspend? suspend-goal
           make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
@@ -182,6 +182,9 @@
   (define-structure (noto goal)) ; Negated goal
   (define-structure (exist procedure))
   (define-structure (suspend goal))
+  (define (suspend g)
+    (cert (goal? g))
+    (if (or (succeed? g) (fail? g)) g (make-suspend g)))
 
   (define (== x y) ; Implements unification between terms.
     (cond

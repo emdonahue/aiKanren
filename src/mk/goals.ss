@@ -26,8 +26,8 @@
                      (values (mplus lhs rhs) p))]
        [(matcho? g) (let-values ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
                       (if structurally-recursive?
-                          (suspend (conj g ctn) s^ p s) ;(run-goal g s^ p)
-                          (suspend (conj g ctn) s^ p s))
+                          (suspendm (conj g ctn) s^ p s) ;(run-goal g s^ p)
+                          (suspendm (conj g ctn) s^ p s))
                       #;
                       (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, ;
                       (run-goal g s^ p) ; so continue running aggressively on this branch. ;
@@ -50,7 +50,8 @@
      [(answers? rhs) (make-answers (answers-car rhs) (mplus lhs (answers-cdr rhs)))]
      [else (make-mplus lhs rhs)]))
 
-  (define (suspend g s^ p s)
+
+  (define (suspendm g s^ p s)
     ;; Suspends the goal g as a suspended stream. Used by fresh etc to pass control to other search branches.
     (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
     (exclusive-cond

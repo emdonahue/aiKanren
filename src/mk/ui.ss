@@ -8,15 +8,14 @@
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...) 
     (syntax-rules ()
-      [(_ () g0 g ...) (conj* g0 g ...)] ; No reason to suspend if not creating new vars, since computation will be finite.
+      [(_ () g0 g ...) (suspend (conj* g0 g ...))]
       [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-       (lambda (state p)
-         (fresh-vars state end-state (q ...)
+       (lambda (start-state p)
+         (fresh-vars start-state end-state (q ...)
                      (let ([expanded-goal (conj* g ...)])
-                       (exclusive-cond
-                        [(fail? expanded-goal) (values fail failure p)]
-                        [(succeed? expanded-goal) (values succeed state p)]
-                        [else (values (make-suspend expanded-goal) end-state p)]))))]))
+                       (if (succeed? expanded-goal) 
+                           (values succeed start-state p) ; If fresh succeeds trivially, there is no need to preserve the new variable ids, so just return the old state.
+                           (values (suspend expanded-goal) end-state p)))))]))
 
  (define-syntax conde ; Nondeterministic branching.
    
