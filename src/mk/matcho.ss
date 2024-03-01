@@ -48,8 +48,8 @@
                [(var? out-var)
                 (values
                  #f
-                 (let ([p-car (make-var (state-varid state))]
-                       [p-cdr (make-var (fx1+ (state-varid state)))])
+                 (let ([p-car (make-var (fx1+ (state-varid state)))]
+                       [p-cdr (make-var (fx+ 2 (state-varid state)))])
                    (conj* (== out-var (cons p-car p-cdr)) body ...))
                  (if (var? out-var) (set-state-varid state (fx+ 2 (state-varid state))) state)
                  package)]
@@ -114,7 +114,7 @@
                                   state (fold-left
                                          (lambda (id v)
                                            (if (and (var? v) (zero? (var-id v))) 
-                                               (begin (set-var-id! v id) (fx1+ id)) id))
+                                               (begin (set-var-id! v (fx1+ id)) (fx1+ id)) id))
                                          (state-varid state) (list in-var ...)))
                                  package)))))]) label)))])))
 
