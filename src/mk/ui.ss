@@ -4,22 +4,13 @@
           fresh exist constraint conde
           trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
-
-  (define-syntax instantiate-vars
-    (syntax-rules ()
-      [(_ start-state end-state q expanded-goal g body ...)
-       (fresh-vars start-state intermediate-state q
-                   (let* ([expanded-goal g]
-                          [end-state (if (succeed? expanded-goal) start-state intermediate-state)])
-                     body ...
-                       ))]))
   
   (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (instantiate-vars start-state end-state q expanded-goal (conj* g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values expanded-goal end-state p)))]))
+         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+                           (values end-goal end-state p)))]))
   
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...)
@@ -153,6 +144,14 @@
           body ...)]
        [(_ start-state end-state q body ...)
         (fresh-vars start-state end-state (q) body ...)]))
+
+   (define-syntax instantiate-vars
+     (syntax-rules ()
+       [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
+        (fresh-vars start-state intermediate-state q
+                    (let* ([end-goal start-goal]
+                           [end-state (if (succeed? end-goal) start-state intermediate-state)])
+                      body ...))]))
 
    (define-syntax vars->list
      (syntax-rules ()
