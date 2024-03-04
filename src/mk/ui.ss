@@ -5,22 +5,35 @@
           trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
 
+  (define-syntax instantiate-vars
+    (syntax-rules ()
+      [(_ start-state end-state q expanded-goal g body ...)
+       (fresh-vars start-state intermediate-state q
+                   (let* ([expanded-goal g]
+                          [end-state (if (succeed? expanded-goal) start-state intermediate-state)])
+                     body ...
+                       ))]))
+  
   (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (fresh-vars start-state end-state q
-                     (let ([expanded-goal (conj* g ...)])
-                       (if (succeed? expanded-goal)
-                           (values succeed start-state p)
-                           (values expanded-goal end-state p)))))]))
+         (instantiate-vars start-state end-state q expanded-goal (conj* g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+                           (values expanded-goal end-state p)))]))
   
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...)
     ;; Can be run with an empty variable list to simply suspend the search at that point. 
     (syntax-rules ()
+      #;
+      [(_ q g ...)
+       (lambda (start-state p)
+        (let-values ([(g s p) (exist q g ...)])
+          (values (suspend g) s p)))]
+
       [(_ () g0 g ...) (suspend (conj* g0 g ...))]
-      [(_ (q ...) g ...) ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+
+      [(_ (q ...) g ...) 
        (lambda (start-state p)
          (fresh-vars start-state end-state (q ...)
                      (let ([expanded-goal (conj* g ...)])

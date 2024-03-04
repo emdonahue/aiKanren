@@ -18,7 +18,7 @@
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))] ; If the ctn is empty, we're done. Otherwise, now we run it.
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))] ; Run the lhs while pushing the rhs onto the continuation.
        [(procedure? g) (let-values ([(g s p) (g s p)])
-                     (run-goal g s p ctn))] ; Any procedure that accepts and returns a goal, state, and package can be considered a goal. Fresh and exist are implemented in terms of such procedures.
+                     (run-goal g s p ctn))] ; Any procedure that accepts a state and package and returns a goal, state, and package can be considered a goal. Fresh and exist are implemented in terms of such procedures.
        [(conde? g) (let*-values ; Although states are per branch, package is global and must be threaded through lhs and rhs.
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
