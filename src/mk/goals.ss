@@ -47,7 +47,6 @@
   ;; === DEPTH FIRST INTERPRETER ===
 
   (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
-    ;;TODO if we put run-goal-dfs in a parameter the tracing system will have a callback fn and we can trace without modifying the dfs
     (if (zero? depth) (values n answers p)
         (if (failure? s) (values n answers p)
          (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
@@ -63,7 +62,6 @@
           [(procedure? g) (let-values ([(g s p) (g s p)])
                             (run-goal-dfs g s p n (fx1- depth) answers ctn))]
           [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
-          [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
           [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))))
   
   ;; === STREAMS ===
