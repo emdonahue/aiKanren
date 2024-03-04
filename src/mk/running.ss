@@ -27,31 +27,20 @@
      [(state+stream? (lazy-run-stream r)) (state+stream-state (lazy-run-stream r))]
      [else (void)]))
 
-  (define (lazy-run-cdr2 r)
+  (define (lazy-run-cdr* r)
     ; Applies lazy-run-cdr as often as needed until either lazy-run-null? or lazy-run-car? are true. Does not advance a stream that has a waiting answer or is exhausted.
     (cert (lazy-run? r))
-    (if (or (lazy-run-null? r) (lazy-run-car? r)) r (lazy-run-cdr2 (lazy-run-cdr r))))
-  
-  (define (lazy-run-cdr* r)
-    (cert (lazy-run? r))
-    (let ([r (lazy-run-cdr r)])
-      (exclusive-cond
-       [(lazy-run-null? r) (values (void) failure r)]
-       [(lazy-run-car? r)
-        (if (expand-disjunctions)
-            (nyi "expand disj")
-            (values ((if (reify-constraints) reify reify-var) (lazy-run-car r) (lazy-run-query r)) (lazy-run-car r) r))]
-       [else (lazy-run-cdr* r)])))
+    (if (or (lazy-run-null? r) (lazy-run-car? r)) r (lazy-run-cdr* (lazy-run-cdr r))))
   
   (define (lazy-run-take n r)
     (cert (lazy-run? r))
     (if (zero? n) '()
-        (let ([r (lazy-run-cdr2 r)])
+        (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
               (cons (if (eq? (answer-type) answer-type/reified)
                         (reify (lazy-run-car r) (lazy-run-query r))
                         (lazy-run-car r))
-                    (lazy-run-take (fx1- n) r))))))
+                    (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
 
   (define (lazy-run-dfs q g s n depth)
     (map (lambda (s) ((if (reify-constraints) reify reify-var) s q))
