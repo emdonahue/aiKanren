@@ -6,7 +6,7 @@
           var make-var var? var-id set-var-id! fresh-vars instantiate-vars vars->list
           stream?
           failure failure?
-          make-suspended suspended? suspended-goal suspended-state
+          make-suspended suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           state-or-failure?
@@ -178,6 +178,12 @@
   
   (define-structure (mplus lhs rhs))
   (define-structure (suspended goal state))
+  (define (suspended g s s^)
+    (cert (goal? g) (state? s))
+    (exclusive-cond
+     [(fail? g) failure]
+     [(succeed? g) s]     
+     [else (make-suspended g s^)]))
   (define-structure (state+stream state stream))
 
   (define (stream? s)

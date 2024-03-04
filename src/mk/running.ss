@@ -1,4 +1,4 @@
-(library (running)
+(library (running) ; Manages the top level search behaviors and primary user interface.
   (export run run* run1
           lazy-run
           fresh exist constraint conde
@@ -65,9 +65,8 @@
   (define (lazy-run-cdr r)
                                         ; Advances the stream by one step. This may not yield an answer if the resulting stream is still indeterminate. Use lazy-run-car? to test whether the stream has an answer.
     (cert (lazy-run? r))
-    (if (state? (lazy-run-stream r)) (make-lazy-run failure (lazy-run-query r) (lazy-run-package r)) 
-        (let-values ([(s p) (stream-step (lazy-run-stream r) (lazy-run-package r))])
-          (make-lazy-run s (lazy-run-query r) p))))
+    (let-values ([(s p) (stream-step (lazy-run-stream r) (lazy-run-package r))])
+      (make-lazy-run s (lazy-run-query r) p)))
   
   (define (lazy-run-car? r)
                                         ; Tests whether the stream has a currently available answer that can be retrieved with lazy-run-car.

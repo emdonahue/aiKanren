@@ -24,14 +24,8 @@
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
        [(matcho? g) (let-values ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
-                        ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) 
-                      (if structurally-recursive?
-                          (suspendm (conj g ctn) s^ p s) ;(run-goal g s^ p)
-                          (suspendm (conj g ctn) s^ p s))
-                      #;
-                      (if (and #f structurally-recursive?) ; If any vars are non-free, there is structurally recursive information to exploit, ;
-                      (run-goal g s^ p) ; so continue running aggressively on this branch. ;
-                      (suspend g s^ p s)))] ; Otherwise suspend like a normal fresh.
+                        ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ; TODO If any vars are non-free, there is structurally recursive information to exploit, so continue running aggressively on this branch. Otherwise suspend like a normal fresh.
+                      (values (suspended (conj g ctn) s s^) p))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        [(trace-goal? g) (run-goal (trace-goal-goal g) s p ctn)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
@@ -50,14 +44,6 @@
      [(state+stream? rhs) (make-state+stream (state+stream-state rhs) (mplus lhs (state+stream-stream rhs)))]
      [else (make-mplus lhs rhs)]))
 
-
-  (define (suspendm g s^ p s)
-    ;; Suspends the goal g as a suspended stream. Used by fresh etc to pass control to other search branches.
-    (cert (goal? g) (state-or-failure? s^) (package? p) (state? s))
-    (exclusive-cond
-     [(fail? g) (values failure p)]
-     [(succeed? g) (values s p)] ; Trivial successes can throw away any var ids reserved for fresh vars, as the substitution will never see them. Therefore, return old state s.
-     [else (values (make-suspended g s^) p)]))
 
   ;; === DEPTH FIRST INTERPRETER ===
 
@@ -87,11 +73,8 @@
     (cert (stream? s) (package? p)) ; -> goal? stream? package?
     (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
      [(failure? s) (values s p)]
-     [(state? s) (values s p)]
-     #;
-     [(suspended? s) (let-values ([(s^ p) (stream-step (suspended-stream s) p)]) ;
-     (suspended (suspended-goal s) s^ p))]
-     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] ;TODO rename suspended to suspended
+     [(state? s) (values failure p)]
+     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] 
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
                    (values (mplus (mplus-rhs s) lhs) p))]
      [(state+stream? s) (values (state+stream-stream s) p)]
