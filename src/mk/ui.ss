@@ -4,6 +4,16 @@
           fresh exist constraint conde
           trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
+
+  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+    (syntax-rules ()
+      [(_ q g ...)
+       (lambda (start-state p)
+         (fresh-vars start-state end-state q
+                     (let ([expanded-goal (conj* g ...)])
+                       (if (succeed? expanded-goal)
+                           (values succeed start-state p)
+                           (values expanded-goal end-state p)))))]))
   
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...)
@@ -24,14 +34,6 @@
      [(_ (g ...)) (conj* g ...)]
      [(_ c0 c ...)
       (conde-disj (conde c0) (conde c ...))]))
- 
- (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
-   (syntax-rules ()
-     [(_ () g0 g ...) (conj* g0 g ...)]
-     [(_ (q ...) g ...)
-      (lambda (start-state p)
-        (fresh-vars start-state end-state (q ...)
-                    (values (conj* g ...) end-state p)))]))
 
  (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
    ;; (runner (q ...) g ...)
@@ -129,11 +131,21 @@
 
    (define-syntax fresh-vars
      (syntax-rules ()
+       [(_ start-state end-state '() body ...)
+        (let ([end-state start-state]) body ...)]
        [(_ start-state end-state (q ...) body ...)
         (let* ([vid (state-varid start-state)]
                [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
                [end-state (set-state-varid start-state vid)])
-          body ...)]))
+          body ...)]
+       [(_ start-state end-state q body ...)
+        (fresh-vars start-state end-state (q) body ...)]))
+
+   (define-syntax vars->list
+     (syntax-rules ()
+       [(_ ()) '()]
+       [(_ (q ...)) (list q ...)]
+       [(_ q) (list q)]))
    
     (define (top-level-runner state query conjuncts)
       (make-runner (make-suspended conjuncts state) query empty-package)))
