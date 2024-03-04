@@ -27,7 +27,6 @@
                         ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ; TODO If any vars are non-free, there is structurally recursive information to exploit, so continue running aggressively on this branch. Otherwise suspend like a normal fresh.
                       (values (suspended (conj g ctn) s s^) p))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
-       [(trace-goal? g) (run-goal (trace-goal-goal g) s p ctn)] ;TODO move trace-goal to a procedure that checks for tracing params and only returns trace goal objects if tracing, otherwise noop and can remove from non tracing interpreters
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.
                (if (failure? s) (values failure p) (run-goal ctn s p)))])]))
@@ -64,6 +63,7 @@
           [(procedure? g) (let-values ([(g s p) (g s p)])
                             (run-goal-dfs g s p n (fx1- depth) answers ctn))]
           [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
+          [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
           [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))))
   
   ;; === STREAMS ===
