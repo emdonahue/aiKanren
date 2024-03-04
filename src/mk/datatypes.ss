@@ -8,7 +8,7 @@
           failure failure?
           make-suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
-          make-state+stream state+stream? state+stream-car state+stream-cdr
+          make-state+stream state+stream? state+stream-state state+stream-stream
           state-or-failure?
           empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
           empty-substitution
@@ -164,7 +164,7 @@
   
   (define-structure (mplus lhs rhs))
   (define-structure (suspended goal state))
-  (define-structure (state+stream car cdr))
+  (define-structure (state+stream state stream))
 
   (define (stream? s)
     (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s)))

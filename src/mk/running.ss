@@ -20,7 +20,7 @@
     (cert (runner? r))
     (cond
      [(state? (runner-stream r)) (runner-stream r)]
-     [(state+stream? (runner-stream r)) (state+stream-car (runner-stream r))]
+     [(state+stream? (runner-stream r)) (state+stream-state (runner-stream r))]
      [else failure]))
   
   (define (runner-next r)

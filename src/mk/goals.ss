@@ -45,9 +45,9 @@
      [(failure? lhs) rhs]
      [(failure? rhs) lhs]
      [(state? lhs) (make-state+stream lhs rhs)] ; Float answers to the front of the tree
-     [(state+stream? lhs) (make-state+stream (state+stream-car lhs) (mplus rhs (state+stream-cdr lhs)))]
+     [(state+stream? lhs) (make-state+stream (state+stream-state lhs) (mplus rhs (state+stream-stream lhs)))]
      [(state? rhs) (make-state+stream rhs lhs)]
-     [(state+stream? rhs) (make-state+stream (state+stream-car rhs) (mplus lhs (state+stream-cdr rhs)))]
+     [(state+stream? rhs) (make-state+stream (state+stream-state rhs) (mplus lhs (state+stream-stream rhs)))]
      [else (make-mplus lhs rhs)]))
 
 
@@ -94,5 +94,5 @@
      [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] ;TODO rename suspended to suspended
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
                    (values (mplus (mplus-rhs s) lhs) p))]
-     [(state+stream? s) (values (state+stream-cdr s) p)]
+     [(state+stream? s) (values (state+stream-stream s) p)]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))) 
