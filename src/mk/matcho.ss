@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair)
-  (import (chezscheme) (datatypes) (mini-substitution) (ui) (state) (utils))
+  (import (chezscheme) (datatypes) (mini-substitution) (state) (utils))
   
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
