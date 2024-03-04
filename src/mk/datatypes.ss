@@ -3,7 +3,7 @@
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
-          var make-var var? var-id set-var-id! fresh-vars instantiate-vars vars->list
+          var make-var var? var-id set-var-id! fresh-vars vars->list
           stream?
           failure failure?
           make-suspended suspended suspended? suspended-goal suspended-state
@@ -86,19 +86,11 @@
       [(_ [(end-state end-goal) (start-state (start-goal ...) (q ...))] body ...)
        (let* ([vid (state-varid start-state)]
               [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
-              [end-state (set-state-varid start-state vid)]
-              [end-goal (conj* start-goal ...)])
+              [end-goal (conj* start-goal ...)]
+              [end-state (if (succeed? end-goal) start-state (set-state-varid start-state vid))])
          body ...)]
       [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...)
        (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
-
-  (define-syntax instantiate-vars ; Builds a new state and fresh variables, but throws them away if the body goals succeed trivially.
-    (syntax-rules () ;TODO merge with fresh vars
-      [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...)
-       (fresh-vars [(intermediate-state end-goal) (start-state (start-goal ...) q)]
-                   (let (
-                          [end-state (if (succeed? end-goal) start-state intermediate-state)])
-                     body ...))]))
 
   (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
     (syntax-rules ()
@@ -222,7 +214,7 @@
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+         (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
                            (values end-goal end-state p)))]))
 
   (define-syntax fresh ; Introduce fresh variables.
@@ -231,7 +223,7 @@
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+         (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
                            (values (suspend end-goal) end-state p)))]))
 
   (define-syntax conde ; Nondeterministic branching.
