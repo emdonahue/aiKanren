@@ -50,21 +50,21 @@
   (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
     ;;TODO if we put run-goal-dfs in a parameter the tracing system will have a callback fn and we can trace without modifying the dfs
     (if (zero? depth) (values n answers p)
-     (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
-      [(failure? s) (values n answers p)]
-      [(succeed? g) (if (succeed? ctn)
-                        (values (fx1- n) (cons s answers) p)
-                        (run-goal-dfs ctn s p n depth answers succeed))]
-      [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
-      [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
-                    (if (zero? num-remaining) (values num-remaining answers p)
-                        (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
-      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                     (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-      [(procedure? g) (let-values ([(g s p) (g s p)])
-                        (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-      [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
-      [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))
+        (if (failure? s) (values n answers p)
+         (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
+          [(succeed? g) (if (succeed? ctn)
+                            (values (fx1- n) (cons s answers) p)
+                            (run-goal-dfs ctn s p n depth answers succeed))]
+          [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
+          [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
+                        (if (zero? num-remaining) (values num-remaining answers p)
+                            (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
+          [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+                         (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+          [(procedure? g) (let-values ([(g s p) (g s p)])
+                            (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+          [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
+          [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))))
   
   ;; === STREAMS ===
   
