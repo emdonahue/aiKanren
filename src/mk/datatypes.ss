@@ -79,21 +79,24 @@
 
   (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
     (syntax-rules ()
-      [(_ [end-state (start-state '())] body ...)
-       (let ([end-state start-state]) body ...)]
-      [(_ [end-state (start-state (q ...))] body ...)
+      [(_ [(end-state end-goal) (start-state (start-goal ...) ())] body ...)
+       (let ([end-state start-state]
+             [end-goal (conj* start-goal ...)])
+         body ...)]
+      [(_ [(end-state end-goal) (start-state (start-goal ...) (q ...))] body ...)
        (let* ([vid (state-varid start-state)]
               [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
-              [end-state (set-state-varid start-state vid)])
+              [end-state (set-state-varid start-state vid)]
+              [end-goal (conj* start-goal ...)])
          body ...)]
-      [(_ [end-state (start-state q)] body ...)
-       (fresh-vars [end-state (start-state (q))] body ...)]))
+      [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...)
+       (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
 
   (define-syntax instantiate-vars ; Builds a new state and fresh variables, but throws them away if the body goals succeed trivially.
     (syntax-rules () ;TODO merge with fresh vars
-      [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
-       (fresh-vars [intermediate-state (start-state q)]
-                   (let* ([end-goal start-goal]
+      [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...)
+       (fresh-vars [(intermediate-state end-goal) (start-state (start-goal ...) q)]
+                   (let (
                           [end-state (if (succeed? end-goal) start-state intermediate-state)])
                      body ...))]))
 
@@ -219,7 +222,7 @@
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+         (instantiate-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
                            (values end-goal end-state p)))]))
 
   (define-syntax fresh ; Introduce fresh variables.
@@ -228,7 +231,7 @@
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+         (instantiate-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
                            (values (suspend end-goal) end-state p)))]))
 
   (define-syntax conde ; Nondeterministic branching.

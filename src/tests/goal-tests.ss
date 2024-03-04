@@ -27,6 +27,7 @@
     (tassert "run disj 3 empty states" (run -1 () (conde [(== 1 1)] [(== 2 2)] [(== 3 3)])) '(() () ()))
     (tassert "run disj 3 unifications" (run -1 q (conde [(== q 1)] [(== q 2)] [(== q 3)])) '(1 2 3)) 
     (tassert "fresh" (run -1 q (fresh (x1) (== q x1) (== x1 1))) '(1))
+    (tassert "empty fresh" (run -1 q (fresh () (== q 1))) '(1))
 
     (tassert "run* conj two bindings" (run* (q r) (== q 1) (== r 2)) '((1 2)))
     (tassert "run* disj 2 empty states" (run* () (conde [(== 1 1)] [(== 2 2)])) '(() ()))

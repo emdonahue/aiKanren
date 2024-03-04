@@ -12,16 +12,16 @@
     ;; (lazy-run (q ...) g ...)
     (syntax-rules ()
       [(_ q g ...)
-       (fresh-vars [start-state (empty-state q)]
-                   (make-lazy-run (make-suspended (conj* g ...) start-state) (vars->list q) empty-package))]))
+       (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
+                   (make-lazy-run (make-suspended start-goal start-state) (vars->list q) empty-package))]))
 
   (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)
            (lazy-run-take n (lazy-run q g ...))
-           (fresh-vars [start-state (empty-state q)]
-                       (lazy-run-dfs (vars->list q) (conj* g ...) start-state n (max-depth)))
+           (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
+                       (lazy-run-dfs (vars->list q) start-goal start-state n (max-depth)))
            )]))
 
   (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
@@ -47,15 +47,16 @@
        (parameterize ([trace-query '()])
          (trace-lazy-run '() (conj* g ...) empty-state -1))]
       [(_ depth (q) g ...)
-       (fresh-vars [start-state (empty-state (q))]
-
-                   (parameterize ([trace-query q])
-                     (trace-lazy-run q (conj* g ...) start-state depth)))]
+       (parameterize ([trace-query #t])
+        (fresh-vars [(start-state start-goal) (empty-state (g ...) (q))]
+                    (parameterize ([trace-query q])
+                      (trace-lazy-run q start-goal start-state depth))))]
       [(_ depth (q ...) g ...)
-       (fresh-vars
-        [start-state (empty-state (q ...))]         
-        (parameterize ([trace-query (list q ...)])
-          (trace-lazy-run (list q ...) (conj* g ...) start-state depth)))]))
+       (parameterize ([trace-query #t])
+         (fresh-vars
+          [(start-state start-goal) (empty-state (g ...) (q ...))]         
+          (parameterize ([trace-query (list q ...)])
+            (trace-lazy-run (list q ...) start-goal start-state depth))))]))
   
   (define (lazy-run-null? r)
                                         ; Tests whether the stream is completely exhausted of answers.
