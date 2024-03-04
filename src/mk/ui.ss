@@ -38,28 +38,16 @@
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)
-           ;(map (if (eq? (answer-type) answer-type/reified) car cdr) (lazy-run-take n (lazy-run q g ...)))
            (lazy-run-take n (lazy-run q g ...))
-           (run-dfs n (max-depth) q g ...))]))
+           (fresh-vars [start-state (empty-state q)]
+                       (lazy-run-dfs (vars->list q) (conj* g ...) start-state n (max-depth)))
+           )]))
 
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
     (syntax-rules ()
       [(_ q g ...)
        (let ([ans (run 1 q g ...)])
          (if (null? ans) (void) (car ans)))]))
-
-   (define-syntax run-dfs ; Depth-first search based run equivalent.
-     ;; (run-dfs n depth (q ...) g ...)
-     ;; Returns the first n answers, limited to a max search depth of depth.
-     (syntax-rules ()
-       [(_ n depth () g ...)
-        (lazy-run-dfs '() (conj* g ...) empty-state n depth)]
-       [(_ n depth (q ...) g ...)
-        (fresh-vars [start-state (empty-state (q ...))]
-         (lazy-run-dfs (list q ...) (conj* g ...) start-state n depth))]
-       [(_ n depth q g ...)
-        (fresh-vars [start-state (empty-state (q))]
-         (lazy-run-dfs q (conj* g ...) start-state n depth))]))
 
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()

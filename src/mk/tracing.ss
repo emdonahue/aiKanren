@@ -74,7 +74,7 @@
                     (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
                    (trace-run-goal g s p n depth answers proof theorem ctn))]
-     [(fresh? g) (let-values ([(g s p) (g s p)])
+     [(procedure? g) (let-values ([(g s p) (g s p)])
                    (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
      [(untrace-goal? g)

@@ -17,7 +17,7 @@
           goal? goal-memp
           succeed fail succeed? fail?
           make-== == ==? ==-lhs ==-rhs
-          fresh? make-exist exist? exist-procedure suspend suspend? suspend-goal
+          make-exist exist? exist-procedure suspend suspend? suspend-goal
           make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
@@ -189,8 +189,9 @@
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
   
-  (define fresh? procedure?) ; Fresh goals are currently represented by their raw continuation.
+  
 
+  
   (define-structure (matcho out-vars in-vars goal))
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
@@ -217,7 +218,7 @@
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
-    (or (matcho? g) (fresh? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
 
   (define goal-memp
     (case-lambda

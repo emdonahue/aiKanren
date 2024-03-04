@@ -26,7 +26,7 @@
          [(conde? g) (solve-constraint (conde->disj g) s ctn resolve delta)]
          [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) resolve delta)]
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
-         [(fresh? g) (let-values ([(g s p) (g s empty-package)])
+         [(procedure? g) (let-values ([(g s p) (g s empty-package)])
                        (solve-constraint g s ctn resolve delta))]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
