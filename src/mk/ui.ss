@@ -31,7 +31,7 @@
    ;; (runner (q ...) g ...)
    (syntax-rules ()
       [(_ q g ...)
-       (fresh-vars empty-state start-state q
+       (fresh-vars [start-state (empty-state q)]
            (top-level-runner start-state (vars->list q) (conj* g ...)))]))
 
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
@@ -47,20 +47,6 @@
        (let ([ans (run 1 q g ...)])
          (if (null? ans) (void) (car ans)))]))
 
- #;
-   (define-syntax run-states ; Equivalent to run, but returns state objects for further processing.
-    (syntax-rules ()
-      [(_ n (q ...) g ...)
-       (map cdr (runner-take n (runner (q ...) g ...)))]))
-
- #;
-   (define-syntax run1-state ; Equivalent to run1, but returns state objects for further processing.
-    (syntax-rules ()
-      ((_ (q ...) g ...)
-       (let ([ans (run-states 1 (q ...) g ...)])
-         (if (null? ans) failure (car ans))))))
-
-
    (define-syntax run-dfs ; Depth-first search based run equivalent.
      ;; (run-dfs n depth (q ...) g ...)
      ;; Returns the first n answers, limited to a max search depth of depth.
@@ -68,10 +54,10 @@
        [(_ n depth () g ...)
         (runner-dfs '() (conj* g ...) empty-state n depth)]
        [(_ n depth (q ...) g ...)
-        (fresh-vars empty-state start-state (q ...)
+        (fresh-vars [start-state (empty-state (q ...))]
          (runner-dfs (list q ...) (conj* g ...) start-state n depth))]
        [(_ n depth q g ...)
-        (fresh-vars empty-state start-state (q)
+        (fresh-vars [start-state (empty-state (q))]
          (runner-dfs q (conj* g ...) start-state n depth))]))
 
     (define-syntax run* ; Returns all answers using a depth-first search.
@@ -80,14 +66,6 @@
          (parameterize ([search-strategy search-strategy/dfs]
                         [max-depth -1])
           (run -1 q g ...))]))
-
-    #;
-   (define-syntax run1-dfs ; Returns one answer from a dfs search at any depth. Equivalent to (run-dfs 1 -1 ...).
-     ;; (run1-dfs depth (q ...) g ...)
-     (syntax-rules ()
-       [(_ q g ...)
-        (let ([answers (run-dfs 1 -1 q g ...)])
-          (if (null? answers) (void) (car answers)))]))
 
    (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
      ;; (trace-run (q) g ...)
@@ -100,13 +78,13 @@
         (parameterize ([trace-query '()])
           (trace-runner '() (conj* g ...) empty-state -1))]
        [(_ depth (q) g ...)
-        (fresh-vars empty-state start-state (q)
+        (fresh-vars [start-state (empty-state (q))]
 
          (parameterize ([trace-query q])
              (trace-runner q (conj* g ...) start-state depth)))]
        [(_ depth (q ...) g ...)
         (fresh-vars
-         empty-state start-state (q ...)
+         [start-state (empty-state (q ...))]         
          (parameterize ([trace-query (list q ...)])
              (trace-runner (list q ...) (conj* g ...) start-state depth)))]))
 
@@ -118,20 +96,20 @@
 
    (define-syntax fresh-vars
      (syntax-rules ()
-       [(_ start-state end-state '() body ...)
+       [(_ [end-state (start-state '())] body ...)
         (let ([end-state start-state]) body ...)]
-       [(_ start-state end-state (q ...) body ...)
+       [(_ [end-state (start-state (q ...))] body ...)
         (let* ([vid (state-varid start-state)]
                [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
                [end-state (set-state-varid start-state vid)])
           body ...)]
-       [(_ start-state end-state q body ...)
-        (fresh-vars start-state end-state (q) body ...)]))
+       [(_ [end-state (start-state q)] body ...)
+        (fresh-vars [end-state (start-state (q))] body ...)]))
 
    (define-syntax instantiate-vars
      (syntax-rules ()
        [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
-        (fresh-vars start-state intermediate-state q
+        (fresh-vars [intermediate-state (start-state q)]
                     (let* ([end-goal start-goal]
                            [end-state (if (succeed? end-goal) start-state intermediate-state)])
                       body ...))]))
@@ -143,4 +121,5 @@
        [(_ q) q]))
 
     (define (top-level-runner state query conjuncts)
-      (make-runner (make-suspended conjuncts state) query empty-package)))
+      (make-runner (make-suspended conjuncts state) query empty-package))
+)
