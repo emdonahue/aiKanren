@@ -32,13 +32,14 @@
    (syntax-rules ()
       [(_ q g ...)
        (fresh-vars [start-state (empty-state q)]
-           (top-level-runner start-state (vars->list q) (conj* g ...)))]))
+                   (make-lazy-run (make-suspended (conj* g ...) start-state) (vars->list q) empty-package))]))
 
  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)
-           (map (if (eq? (answer-type) answer-type/reified) car cdr) (lazy-run-take n (lazy-run q g ...)))
+           ;(map (if (eq? (answer-type) answer-type/reified) car cdr) (lazy-run-take n (lazy-run q g ...)))
+           (lazy-run-take n (lazy-run q g ...))
            (run-dfs n (max-depth) q g ...))]))
 
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
@@ -94,7 +95,7 @@
 
   ;; === UTILITIES ===
 
-   (define-syntax fresh-vars
+   (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
      (syntax-rules ()
        [(_ [end-state (start-state '())] body ...)
         (let ([end-state start-state]) body ...)]
@@ -106,20 +107,16 @@
        [(_ [end-state (start-state q)] body ...)
         (fresh-vars [end-state (start-state (q))] body ...)]))
 
-   (define-syntax instantiate-vars
-     (syntax-rules ()
+   (define-syntax instantiate-vars ; Builds a new state and fresh variables, but throws them away if the body goals succeed trivially.
+     (syntax-rules () ;TODO merge with fresh vars
        [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
         (fresh-vars [intermediate-state (start-state q)]
                     (let* ([end-goal start-goal]
                            [end-state (if (succeed? end-goal) start-state intermediate-state)])
                       body ...))]))
 
-   (define-syntax vars->list
+   (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
      (syntax-rules ()
        [(_ ()) '()]
        [(_ (q ...)) (list q ...)]
-       [(_ q) q]))
-
-    (define (top-level-runner state query conjuncts)
-      (make-lazy-run (make-suspended conjuncts state) query empty-package))
-)
+       [(_ q) q])))

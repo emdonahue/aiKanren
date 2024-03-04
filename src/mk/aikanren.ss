@@ -6,7 +6,8 @@
 ;; TODO unify indentation to tabs. remove spaces
 (library (aikanren)
   (export
-   run run* run1 lazy-run lazy-run-next ; Run
+   run run* run1 ; Run
+   lazy-run lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-cdr* ; Lazy-Run
    constraint succeed fail == conde fresh exist matcho ; Goals
    conj disj noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
    membero appendo assoco asspo for-eacho ; List
