@@ -1,51 +1,51 @@
 (library (running)
-  (export runner-next runner-step runner-take runner-dfs trace-runner) ;TODO expose more of the runner interface
+  (export lazy-run-next lazy-run-step lazy-run-take lazy-run-dfs trace-lazy-run) ;TODO expose more of the lazy-run interface
   (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (tracing))
 
-  (define (runner-null? r)
-    (cert (runner? r))
-    (failure? (runner-stream r)))
+  (define (lazy-run-null? r)
+    (cert (lazy-run? r))
+    (failure? (lazy-run-stream r)))
   
-  (define (runner-step r)
-    (cert (runner? r))
-    (if (state? (runner-stream r)) (make-runner failure (runner-query r) (runner-package r))
-     (let-values ([(s p) (stream-step (runner-stream r) (runner-package r))])
-       (make-runner s (runner-query r) p))))
+  (define (lazy-run-step r)
+    (cert (lazy-run? r))
+    (if (state? (lazy-run-stream r)) (make-lazy-run failure (lazy-run-query r) (lazy-run-package r))
+     (let-values ([(s p) (stream-step (lazy-run-stream r) (lazy-run-package r))])
+       (make-lazy-run s (lazy-run-query r) p))))
   
-  (define (runner-pair? r)
-    (cert (runner? r))
-    (not (failure? (runner-car r))))
+  (define (lazy-run-pair? r)
+    (cert (lazy-run? r))
+    (not (failure? (lazy-run-car r))))
   
-  (define (runner-car r)
-    (cert (runner? r))
+  (define (lazy-run-car r)
+    (cert (lazy-run? r))
     (cond
-     [(state? (runner-stream r)) (runner-stream r)]
-     [(state+stream? (runner-stream r)) (state+stream-state (runner-stream r))]
+     [(state? (lazy-run-stream r)) (lazy-run-stream r)]
+     [(state+stream? (lazy-run-stream r)) (state+stream-state (lazy-run-stream r))]
      [else failure]))
   
-  (define (runner-next r)
-    (cert (runner? r))
-    (let ([r (runner-step r)])
+  (define (lazy-run-next r)
+    (cert (lazy-run? r))
+    (let ([r (lazy-run-step r)])
       (cond
-       [(runner-null? r) (values (void) failure r)]
-       [(runner-pair? r)
+       [(lazy-run-null? r) (values (void) failure r)]
+       [(lazy-run-pair? r)
         (if (expand-disjunctions)
             (nyi "expand disj")
-            (values ((if (reify-constraints) reify reify-var) (runner-car r) (runner-query r)) (runner-car r) r))]
-       [else (runner-next r)])))
+            (values ((if (reify-constraints) reify reify-var) (lazy-run-car r) (lazy-run-query r)) (lazy-run-car r) r))]
+       [else (lazy-run-next r)])))
   
-  (define (runner-take n r)
-    (cert (runner? r))
+  (define (lazy-run-take n r)
+    (cert (lazy-run? r))
     (if (zero? n) '()
-        (let-values ([(reified state r) (runner-next r)])
-          (if (failure? state) '() (cons (cons reified state) (runner-take (fx1- n) r))))))
+        (let-values ([(reified state r) (lazy-run-next r)])
+          (if (failure? state) '() (cons (cons reified state) (lazy-run-take (fx1- n) r))))))
 
-  (define (runner-dfs q g s n depth)
+  (define (lazy-run-dfs q g s n depth)
     (map (lambda (s) ((if (reify-constraints) reify reify-var) s q))
          (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
            (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
 
-  (define (trace-runner q g s depth)
+  (define (trace-lazy-run q g s depth)
     (let-values ([(num-remaining answers p)
                   (parameterize ([org-tracing (trace-goals)])
                     (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])

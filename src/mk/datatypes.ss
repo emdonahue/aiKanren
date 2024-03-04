@@ -1,7 +1,7 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
   (export lazy-solver reify-constraints expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
-          make-runner runner? runner-stream runner-query runner-package set-runner-stream
+          make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
           var make-var var? var-id set-var-id!
           stream?
@@ -64,12 +64,12 @@
                       t)))
   
   ;; === RUNNER ===
-  (define-structure (runner stream query package))
+  (define-structure (lazy-run stream query package))
   
-  (define (set-runner-stream r s)
-    (cert (runner? r) (not (runner? s)))
+  (define (set-lazy-run-stream r s)
+    (cert (lazy-run? r) (not (lazy-run? s)))
     (let ([r (vector-copy r)])
-      (set-runner-stream! r s) r))
+      (set-lazy-run-stream! r s) r))
 
   ;; === PACKAGE ===  
   (define-structure (package tables))

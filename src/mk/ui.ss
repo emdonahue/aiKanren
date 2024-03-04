@@ -1,6 +1,6 @@
 (library (ui) ;TODO refactor this library into 'vars' and other
   (export run run* run1
-          runner
+          lazy-run
           fresh exist constraint conde
           trace-run)
   (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
@@ -27,8 +27,8 @@
      [(_ c0 c ...)
       (conde-disj (conde c0) (conde c ...))]))
 
- (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
-   ;; (runner (q ...) g ...)
+ (define-syntax lazy-run ; Returns a lazy-run object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
+   ;; (lazy-run (q ...) g ...)
    (syntax-rules ()
       [(_ q g ...)
        (fresh-vars [start-state (empty-state q)]
@@ -38,7 +38,7 @@
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)
-           (map (if (eq? (answer-type) answer-type/reified) car cdr) (runner-take n (runner q g ...)))
+           (map (if (eq? (answer-type) answer-type/reified) car cdr) (lazy-run-take n (lazy-run q g ...)))
            (run-dfs n (max-depth) q g ...))]))
 
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
@@ -52,13 +52,13 @@
      ;; Returns the first n answers, limited to a max search depth of depth.
      (syntax-rules ()
        [(_ n depth () g ...)
-        (runner-dfs '() (conj* g ...) empty-state n depth)]
+        (lazy-run-dfs '() (conj* g ...) empty-state n depth)]
        [(_ n depth (q ...) g ...)
         (fresh-vars [start-state (empty-state (q ...))]
-         (runner-dfs (list q ...) (conj* g ...) start-state n depth))]
+         (lazy-run-dfs (list q ...) (conj* g ...) start-state n depth))]
        [(_ n depth q g ...)
         (fresh-vars [start-state (empty-state (q))]
-         (runner-dfs q (conj* g ...) start-state n depth))]))
+         (lazy-run-dfs q (conj* g ...) start-state n depth))]))
 
     (define-syntax run* ; Returns all answers using a depth-first search.
       (syntax-rules ()
@@ -76,17 +76,17 @@
        [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
        [(_ depth () g ...)
         (parameterize ([trace-query '()])
-          (trace-runner '() (conj* g ...) empty-state -1))]
+          (trace-lazy-run '() (conj* g ...) empty-state -1))]
        [(_ depth (q) g ...)
         (fresh-vars [start-state (empty-state (q))]
 
          (parameterize ([trace-query q])
-             (trace-runner q (conj* g ...) start-state depth)))]
+             (trace-lazy-run q (conj* g ...) start-state depth)))]
        [(_ depth (q ...) g ...)
         (fresh-vars
          [start-state (empty-state (q ...))]         
          (parameterize ([trace-query (list q ...)])
-             (trace-runner (list q ...) (conj* g ...) start-state depth)))]))
+             (trace-lazy-run (list q ...) (conj* g ...) start-state depth)))]))
 
    (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
      (syntax-rules ()
@@ -121,5 +121,5 @@
        [(_ q) q]))
 
     (define (top-level-runner state query conjuncts)
-      (make-runner (make-suspended conjuncts state) query empty-package))
+      (make-lazy-run (make-suspended conjuncts state) query empty-package))
 )
