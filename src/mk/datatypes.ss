@@ -8,7 +8,7 @@
           failure failure?
           make-suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
-          make-answers answers? answers-car answers-cdr
+          make-state+stream state+stream? state+stream-car state+stream-cdr
           state-or-failure?
           empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
           empty-substitution
@@ -164,10 +164,10 @@
   
   (define-structure (mplus lhs rhs))
   (define-structure (suspended goal state))
-  (define-structure (answers car cdr))
+  (define-structure (state+stream car cdr))
 
   (define (stream? s)
-    (or (failure? s) (mplus? s) (suspended? s) (state? s) (answers? s)))
+    (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s)))
   
   ;; === GOALS ===
   (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
