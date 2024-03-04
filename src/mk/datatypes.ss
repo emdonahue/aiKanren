@@ -3,19 +3,19 @@
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
-          var make-var var? var-id set-var-id!
+          var make-var var? var-id set-var-id! fresh-vars instantiate-vars vars->list
           stream?
           failure failure?
           make-suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           state-or-failure?
-          empty-state state? state-substitution state-constraints state-varid set-state-substitution set-state-constraints set-state-varid increment-varid instantiate-var state-extend-store
+          empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var
           empty-substitution
-          make-constraint-store constraint-store? constraint-store-constraints empty-constraint-store
-          make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var
+          make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var constraint
           goal? goal-memp
           succeed fail succeed? fail?
+          fresh exist conde
           make-== == ==? ==-lhs ==-rhs
           make-exist exist? exist-procedure suspend suspend? suspend-goal
           make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
@@ -77,15 +77,43 @@
     (cert (var? x) (var? y))
     (fx< (var-id x) (var-id y)))
 
-  ;; === CONSTRAINT STORE ===
-  (define-structure (constraint-store constraints)) ; Constraints are represented as a list of pairs in which car is the attributed variable and cdr is the goal representing the constraint
-  (define empty-constraint-store (make-constraint-store '()))
+  (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
+    (syntax-rules ()
+      [(_ [end-state (start-state '())] body ...)
+       (let ([end-state start-state]) body ...)]
+      [(_ [end-state (start-state (q ...))] body ...)
+       (let* ([vid (state-varid start-state)]
+              [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
+              [end-state (set-state-varid start-state vid)])
+         body ...)]
+      [(_ [end-state (start-state q)] body ...)
+       (fresh-vars [end-state (start-state (q))] body ...)]))
 
+  (define-syntax instantiate-vars ; Builds a new state and fresh variables, but throws them away if the body goals succeed trivially.
+    (syntax-rules () ;TODO merge with fresh vars
+      [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
+       (fresh-vars [intermediate-state (start-state q)]
+                   (let* ([end-goal start-goal]
+                          [end-state (if (succeed? end-goal) start-state intermediate-state)])
+                     body ...))]))
+
+  (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
+    (syntax-rules ()
+      [(_ ()) '()]
+      [(_ (q ...)) (list q ...)]
+      [(_ q) q]))
+
+  ;; === CONSTRAINT STORE ===
   (define-structure (constraint goal))
   (define (set-constraint-goal c g)
     (cert (constraint? c) (goal? g))
     (let ([c (vector-copy c)])
       (set-constraint-goal! c g) c))
+
+  (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
+    (syntax-rules ()
+                                        ;TODO try applying constraint immediately when applied
+      [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
   
   (define-structure (pconstraint vars procedure data))
   (define (pconstraint vars procedure data)
@@ -119,21 +147,13 @@
   (define empty-substitution sbral-empty)
   
   ;; === STATE ===
-  (define-structure (state substitution constraints pseudocounts varid))
-  (define empty-state (make-state empty-substitution empty-constraint-store #f 0))
+  (define-structure (state substitution pseudocounts varid))
+  (define empty-state (make-state empty-substitution #f 0))
 
   (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
     (if (not (failure? substitution))
         (let ([s (vector-copy s)])
           (set-state-substitution! s substitution) s) substitution))
-
-  (define (set-state-constraints s c)
-    (cert (state? s) (constraint-store? c))
-    (if (not (failure? c))
-        (let ([s (vector-copy s)])
-          (set-state-constraints! s c) s) c))
-  (define (state-extend-store s g)
-    (make-state (state-substitution s) (cons g (state-constraints s)) (state-pseudocounts s) (state-varid s)))
   
   (define (increment-varid s)
     (cert (state? s))
@@ -188,9 +208,28 @@
      [(var? y) (make-== y x)]
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
-  
-  
+    
+  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+    (syntax-rules ()
+      [(_ q g ...)
+       (lambda (start-state p)
+         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+                           (values end-goal end-state p)))]))
 
+  (define-syntax fresh ; Introduce fresh variables.
+    ;; (fresh (x y z) ...)
+    ;; Can be run with an empty variable list to simply suspend the search at that point.
+    (syntax-rules ()
+      [(_ q g ...)
+       (lambda (start-state p)
+         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+                           (values (suspend end-goal) end-state p)))]))
+
+  (define-syntax conde ; Nondeterministic branching.
+    (syntax-rules () 
+      [(_ (g ...)) (conj* g ...)] ;TODO make conde do fail checks syntactically
+      [(_ c0 c ...)
+       (conde-disj (conde c0) (conde c ...))]))
   
   (define-structure (matcho out-vars in-vars goal))
   

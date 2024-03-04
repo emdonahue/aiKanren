@@ -1,6 +1,6 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify reify-var instantiate-var walk state-add-constraint get-constraints remove-constraints unify disunify walk-var walk-var-val extend unbind-constraint simplify-unification) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (store) (sbral) (datatypes) (negation) (utils) (mini-substitution) (reducer))
+  (export reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend unbind-constraint simplify-unification) ;;TODO double check state exports. remove extend at least
+  (import (chezscheme) (sbral) (datatypes) (negation) (utils) (mini-substitution) (reducer))
 
   (define unbound succeed) ; Internal placeholder for unbound variables in the substitution.
   (define unbound? succeed?) ;TODO replace unbound with success as null element in state
@@ -256,12 +256,6 @@
                    (if (goal? val-or-goal) (extend s v (conj val-or-goal c)) s))
 #;;TODO clean up state add constraint. remove dead code
                  (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
-
-  (define (get-constraints s vs)
-    (fold-left make-conj succeed (map (lambda (v) (get-constraint (state-constraints s) v)) vs)))
-
-  (define (remove-constraints s vs)
-    (set-state-constraints s (fold-left (lambda (s v) (remove-constraint s v)) (state-constraints s) vs)))
 
   (define (unbind-constraint s v) ;TODO rename unbind-constraint -> remove-constraint
     (extend s v unbound)))

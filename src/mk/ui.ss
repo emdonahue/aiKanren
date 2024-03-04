@@ -3,31 +3,9 @@
           lazy-run
           fresh exist constraint conde
           trace-run)
-  (import (chezscheme) (running) (datatypes) (state) (utils) (tracing))
+  (import (chezscheme) (running) (datatypes) (state) (utils) (tracing) (datatypes))
 
-  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
-    (syntax-rules ()
-      [(_ q g ...)
-       (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values end-goal end-state p)))]))
-
-  (define-syntax fresh ; Introduce fresh variables.
-    ;; (fresh (x y z) ...)
-    ;; Can be run with an empty variable list to simply suspend the search at that point.
-    (syntax-rules ()
-      [(_ q g ...)
-       (lambda (start-state p)
-         (instantiate-vars [(end-state end-goal) (start-state (conj* g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values (suspend end-goal) end-state p)))]))
-
- (define-syntax conde ; Nondeterministic branching.
-   (syntax-rules () 
-     [(_ (g ...)) (conj* g ...)] ;TODO make conde do fail checks syntactically
-     [(_ c0 c ...)
-      (conde-disj (conde c0) (conde c ...))]))
-
- (define-syntax lazy-run ; Returns a lazy-run object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
+  (define-syntax lazy-run ; Returns a lazy-run stream object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
    ;; (lazy-run (q ...) g ...)
    (syntax-rules ()
       [(_ q g ...)
@@ -43,17 +21,16 @@
                        (lazy-run-dfs (vars->list q) (conj* g ...) start-state n (max-depth)))
            )]))
 
- (define-syntax run1 ; Returns the first answer instead of a list of answers.
+ (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
     (syntax-rules ()
       [(_ q g ...)
        (let ([ans (run 1 q g ...)])
          (if (null? ans) (void) (car ans)))]))
 
-    (define-syntax run* ; Returns all answers using a depth-first search.
+    (define-syntax run* ; Returns all answers using a depth-first search. Equivalent to (search-strategy 'dfs), number of answers = -1. Because all answers are returned, the search must be finite, so the more efficient dfs is used in place of interleaving.
       (syntax-rules ()
         [(_ q g ...)
-         (parameterize ([search-strategy search-strategy/dfs]
-                        [max-depth -1])
+         (parameterize ([search-strategy search-strategy/dfs])
           (run -1 q g ...))]))
 
    (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
@@ -77,34 +54,7 @@
          (parameterize ([trace-query (list q ...)])
              (trace-lazy-run (list q ...) (conj* g ...) start-state depth)))]))
 
-   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
-     (syntax-rules ()
-       [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))])) ;TODO try applying constraint immediately when applied
+    
 
   ;; === UTILITIES ===
-
-   (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
-     (syntax-rules ()
-       [(_ [end-state (start-state '())] body ...)
-        (let ([end-state start-state]) body ...)]
-       [(_ [end-state (start-state (q ...))] body ...)
-        (let* ([vid (state-varid start-state)]
-               [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
-               [end-state (set-state-varid start-state vid)])
-          body ...)]
-       [(_ [end-state (start-state q)] body ...)
-        (fresh-vars [end-state (start-state (q))] body ...)]))
-
-   (define-syntax instantiate-vars ; Builds a new state and fresh variables, but throws them away if the body goals succeed trivially.
-     (syntax-rules () ;TODO merge with fresh vars
-       [(_ [(end-state end-goal) (start-state start-goal q)] body ...)
-        (fresh-vars [intermediate-state (start-state q)]
-                    (let* ([end-goal start-goal]
-                           [end-state (if (succeed? end-goal) start-state intermediate-state)])
-                      body ...))]))
-
-   (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
-     (syntax-rules ()
-       [(_ ()) '()]
-       [(_ (q ...)) (list q ...)]
-       [(_ q) q])))
+)

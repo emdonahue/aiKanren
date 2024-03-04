@@ -1,6 +1,6 @@
 (library (goals) ; Deals with the pure search aspects without constraints.
   (export run-goal run-goal-dfs stream-step)
-  (import (chezscheme) (state) (failure) (package) (store) (negation) (datatypes) (solver) (utils) (debugging)) 
+  (import (chezscheme) (state) (failure) (package) (negation) (datatypes) (solver) (utils) (debugging)) 
 
   ;; === INTERLEAVING INTERPRETER ===
   
