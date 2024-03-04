@@ -64,7 +64,6 @@
       [(procedure? g) (let-values ([(g s p) (g s p)])
                         (run-goal-dfs g s p n (fx1- depth) answers ctn))]
       [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
-      [(trace-goal? g) (run-goal-dfs (trace-goal-goal g) s p n depth answers ctn)]
       [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))
   
   ;; === STREAMS ===

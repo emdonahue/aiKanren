@@ -12,7 +12,8 @@
    conj disj noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
    membero appendo assoco asspo for-eacho ; List
    __ ; Quantification
-   printfo displayo noopo trace-goal trace-run trace-conde prove trace-proof-goals trace-goals var ; Debugging
+   printfo displayo noopo var ; Debugging
+   trace-goal trace-run trace-conde prove trace-proof-goals trace-goals ; Tracing
    search-strategy max-depth answer-type ; Parameters
    )
   (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing) (running))

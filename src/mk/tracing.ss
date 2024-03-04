@@ -4,7 +4,7 @@
           trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
-  (define trace-query (make-parameter #f))
+  (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
   (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
   (define-structure (trace-answer theorem proof state))
