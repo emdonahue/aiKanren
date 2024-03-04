@@ -48,13 +48,14 @@
      [else 
       (let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
         (org-display c s^)
-        (when (not (or (reify-constraints) (not (conj-memp c matcho?))))
-          (printf "c ~s~%g ~s~%" c g))
-        (cert (or (reify-constraints) (not (conj-memp c matcho?))))
+        #;
+        (when (not (or (reify-constraints) (not (conj-memp c matcho?)))) ;
+        (printf "c ~s~%g ~s~%" c g))
+        ;(cert (or (reify-constraints) (not (conj-memp c matcho?))))
         (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)))
         #;
-        (if (succeed? p) ; If there are no pending constraints, all delta constraints must be fully normalized (non disj) so we can simply store them and continue. ;
-        (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)) pending) ;
+        (if (succeed? p) ; If there are no pending constraints, all delta constraints must be fully normalized (non disj) so we can simply store them and continue. ; ;
+        (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)) pending) ; ;
         (solve-constraint succeed s (conj (disj (noto c) (noto p)) ctn) resolve delta pending)))]))
 
 

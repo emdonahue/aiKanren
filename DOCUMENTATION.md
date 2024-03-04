@@ -3,8 +3,6 @@
 	- [run](#run)
 	- [run*](#run*)
 	- [run1](#run1)
-	- [runner](#runner)
-	- [runner-next](#runner-next)
 -  [Goals](#Goals)
 	- [constraint](#constraint)
 	- [succeed](#succeed)
@@ -49,7 +47,9 @@
 	- [trace-goals](#trace-goals)
 	- [var](#var)
 -  [Parameters](#Parameters)
-	- [reify-constraints](#reify-constraints)
+	- [search-strategy](#search-strategy)
+	- [max-depth](#max-depth)
+	- [answer-type](#answer-type)
 ## Run
 ### run
 ```scheme
@@ -63,19 +63,10 @@
 ```scheme
  (define-syntax run1 ; Returns the first answer instead of a list of answers.
 ```
-### runner
-```scheme
- (define-syntax runner ; Returns a runner object that represents a lazy search. The stream can be advanced using runner-next to receive three values: the next complete answer, the state representing that answer, and another runner waiting to seek the next answer.
-   ;; (runner (q ...) g ...)
-```
-### runner-next
-```scheme
-  (define (runner-next r)
-```
 ## Goals
 ### constraint
 ```scheme
-   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint. 
+   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
 ```
 ### succeed
 ```scheme
@@ -97,11 +88,11 @@
 ```scheme
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...)
-    ;; Can be run with an empty variable list to simply suspend the search at that point. 
+    ;; Can be run with an empty variable list to simply suspend the search at that point.
 ```
 ### exist
 ```scheme
- (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
 ```
 ### matcho
 ```scheme
@@ -255,8 +246,18 @@
       [(_ (var . idspec) body ...) (define var (org-lambda var idspec body ...))])))
 ```
 ## Parameters
-### reify-constraints
+### search-strategy
 ```scheme
-  (define reify-constraints ; If #f, constraints are not printed during reification. Situationally useful when dealing with very large constraints.
-    ; Default: #t
+  (define search-strategy ; Specifies the search strategy used by run. May be 'interleaving or 'dfs.
+    ; Default: 'interleaving.
+```
+### max-depth
+```scheme
+  (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
+    ; Default: -1 (infinite depth).
+```
+### answer-type
+```scheme
+  (define answer-type ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation.
+    ; Default: 'reified
 ```

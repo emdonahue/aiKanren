@@ -33,6 +33,7 @@
     (if (or (lazy-run-null? r) (lazy-run-car? r)) r (lazy-run-cdr* (lazy-run-cdr r))))
   
   (define (lazy-run-take n r)
+    ; Returns a list of n answers from the lazy-run r.
     (cert (lazy-run? r))
     (if (zero? n) '()
         (let ([r (lazy-run-cdr* r)])
@@ -43,7 +44,7 @@
                     (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
 
   (define (lazy-run-dfs q g s n depth)
-    (map (lambda (s) ((if (reify-constraints) reify reify-var) s q))
+    (map (lambda (s) (reify s q))
          (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
            (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
 
@@ -52,4 +53,4 @@
                   (parameterize ([org-tracing (trace-goals)])
                     (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])
       (cert (list? answers))
-      (map (lambda (ans) (list ((if (reify-constraints) reify reify-var) (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers)))))
+      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers)))))

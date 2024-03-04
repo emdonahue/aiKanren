@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss
 (library (datatypes)
-  (export lazy-solver reify-constraints expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
+  (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
           var make-var var? var-id set-var-id!
@@ -30,12 +30,6 @@
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
-  (define lazy-solver (make-parameter #f)) ;;TODO remove lazy solver
-  
-  (define reify-constraints ; If #f, constraints are not printed during reification. Situationally useful when dealing with very large constraints.
-    ; Default: #t
-    (make-parameter #t))
-  
   (define search-strategy/interleaving 'interleaving)
   (define search-strategy/dfs 'dfs)
   (define search-strategy ; Specifies the search strategy used by run. May be 'interleaving or 'dfs.
@@ -46,7 +40,7 @@
                         (assertion-violation 'answer-type "Unrecognized search-strategy" s))
                       s)))
   
-  (define expand-disjunctions (make-parameter #f))
+  (define expand-disjunctions (make-parameter #f)) ;TODO implement expand disjunction constraints in reifier. eg turn a bool constraint into a stream of t f.
   
   (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
     ; Default: -1 (infinite depth).
