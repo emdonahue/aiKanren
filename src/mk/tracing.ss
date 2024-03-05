@@ -10,7 +10,7 @@
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
   (define-structure (trace-answer theorem proof state))
 
-  (define-structure (trace-data proof theorem))
+  (define-structure (trace-data theorem proof))
   
   ;; === INTERFACE ===
   
@@ -63,6 +63,12 @@
   ;; === INTERPRETER ===
 
   (define (trace-run-goal g s p n depth answers proof theorem ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter
+                                        ;(display (state-datum s trace-data?))
+    #;
+    (when (not (failure? s))
+      (printf "aproof: ~s sproof: ~s~%" proof (trace-data-proof (state-datum s trace-data?))))
+    (cert (or (failure? s) (equal? proof (trace-data-proof (state-datum s trace-data?)))
+              (equal? theorem (trace-data-theorem (state-datum s trace-data?)))))
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
@@ -74,22 +80,20 @@
                    (if (zero? num-remaining) (values num-remaining answers p)
                        (trace-run-goal (conde-rhs g) s p num-remaining depth answers proof theorem ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                    (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
-     [(exist? g) (let-values ([(g s p) ((exist-procedure g) s p)])
-                   (trace-run-goal g s p n depth answers proof theorem ctn))]
+                    (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]     
      [(procedure? g) (let-values ([(g s p) (g s p)])
-                   (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
+                       (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
      [(untrace-goal? g)
       (if (theorem-contradiction theorem '())
           (trace-run-goal fail s p n depth answers proof theorem ctn)
-          (trace-run-goal (untrace-goal-goal g) s p n depth answers (close-subproof proof) (subtheorem theorem) ctn))]
-     [(proof-goal? g) (trace-run-goal (proof-goal-goal g) s p n depth answers proof (proof-goal-proof g) ctn)]
+          (trace-run-goal (untrace-goal-goal g) (set-state-datum s trace-data? (make-trace-data (subtheorem theorem) (close-subproof proof))) p n depth answers (close-subproof proof) (subtheorem theorem) ctn))]
+     [(proof-goal? g) (trace-run-goal (proof-goal-goal g) (set-state-datum s trace-data? (make-trace-data (proof-goal-proof g) proof)) p n depth answers proof (proof-goal-proof g) ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers proof theorem succeed)]))
 
   (define (cps-trace-goal g s p n depth answers proof theorem ctn)
-    (if (theorem-contradiction theorem (trace-goal-name g))
-        (trace-run-goal fail s p n depth answers proof theorem ctn)
+    (if (theorem-contradiction theorem (trace-goal-name g)) ; If the current theorem path diverges from the required proof,
+        (trace-run-goal fail s p n depth answers proof theorem ctn) ; fail immediately.
         (let ([subgoal (trace-goal-goal g)]
               [proof (open-subproof proof (trace-goal-name g))]
               [subtheorem (subtheorem theorem)]
@@ -99,7 +103,10 @@
                 (org-print-header (trace-goal-name g))           
                 (parameterize ([org-depth (fx1+ (org-depth))])
                   (when (tracing? theorem) (print-trace-args g s proof))
-                  (let*-values ([(ans-remaining answers p) (trace-run-goal subgoal s p n depth answers proof subtheorem ctn)])
+                  (let*-values ([(ans-remaining answers p)
+                                 (trace-run-goal subgoal
+                                                 (set-state-datum s trace-data? (make-trace-data theorem proof))
+                                                 p n depth answers proof subtheorem ctn)])
                     (when (theorem-trivial? theorem)
                       (if (null? answers) (org-print-header "<failure>")
                           (begin (org-print-header "<answers>")

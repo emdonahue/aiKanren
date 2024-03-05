@@ -165,7 +165,7 @@
     (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-data s)))))
 
   (define (state-datum s pred?)
-    (memp pred? (state-data s)))
+    (find pred? (state-data s)))
 
   (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
 
