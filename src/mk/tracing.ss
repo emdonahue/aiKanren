@@ -2,7 +2,8 @@
   (export trace-run 
           trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
-          trace-answer-proof trace-answer-state)
+          trace-answer-proof trace-answer-state
+          make-untrace-goal untrace-goal? untrace-goal-goal)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
