@@ -2,10 +2,8 @@
   (export run run* run1
           lazy-run
           fresh exist constraint conde
-          trace-run
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take
-          lazy-run-dfs
-          trace-lazy-run) ;TODO expose more of the lazy-run interface
+          lazy-run-dfs)
   (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (tracing))
 
   (define-syntax lazy-run ; Returns a lazy-run stream object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
@@ -21,8 +19,7 @@
        (if (eq? (search-strategy) search-strategy/interleaving)
            (lazy-run-take n (lazy-run q g ...))
            (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
-                       (lazy-run-dfs (vars->list q) start-goal start-state n (max-depth)))
-           )]))
+                       (lazy-run-dfs (vars->list q) start-goal start-state n (max-depth))))]))
 
   (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
     (syntax-rules ()
@@ -35,28 +32,6 @@
       [(_ q g ...)
        (parameterize ([search-strategy search-strategy/dfs])
          (run -1 q g ...))]))
-
-  (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
-    ;; (trace-run (q) g ...)
-    ;; (trace-run max-depth (q) g ...)
-    ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
-
-    (syntax-rules ()
-      [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
-      [(_ depth () g ...)
-       (parameterize ([trace-query '()])
-         (trace-lazy-run '() (conj* g ...) empty-state -1))]
-      [(_ depth (q) g ...)
-       (parameterize ([trace-query #t])
-        (fresh-vars [(start-state start-goal) (empty-state (g ...) (q))]
-                    (parameterize ([trace-query q])
-                      (trace-lazy-run q start-goal start-state depth))))]
-      [(_ depth (q ...) g ...)
-       (parameterize ([trace-query #t])
-         (fresh-vars
-          [(start-state start-goal) (empty-state (g ...) (q ...))]         
-          (parameterize ([trace-query (list q ...)])
-            (trace-lazy-run (list q ...) start-goal start-state depth))))]))
   
   (define (lazy-run-null? r)
                                         ; Tests whether the stream is completely exhausted of answers.
@@ -100,13 +75,6 @@
     (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
       (map (lambda (s) (reify-answer q s p))
            (reverse answers))))
-
-  (define (trace-lazy-run q g s depth)
-    (let-values ([(num-remaining answers p)
-                  (parameterize ([org-tracing (trace-goals)])
-                    (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])
-      (cert (list? answers))
-      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers))))
 
   (define (reify-answer q s p) ; Determine the return type based on parameters.
     (cert (state? s) (package? p))

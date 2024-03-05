@@ -10,7 +10,7 @@
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           state-or-failure?
-          empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var
+          empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var set-state-datum state-datum
           empty-substitution
           make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var constraint
           goal? goal-memp
@@ -160,6 +160,12 @@
     (if (fx= (state-varid s) v) s
         (let ([s (vector-copy s)])
           (set-state-varid! s v) s)))
+
+  (define (set-state-datum s pred? data)
+    (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-data s)))))
+
+  (define (state-datum s pred?)
+    (memp pred? (state-data s)))
 
   (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
 

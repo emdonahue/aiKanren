@@ -1,5 +1,6 @@
 (library (tracing)
-  (export trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
+  (export trace-run 
+          trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
           trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
@@ -9,6 +10,8 @@
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
   (define-structure (trace-answer theorem proof state))
 
+  (define-structure (trace-data proof theorem))
+  
   ;; === INTERFACE ===
   
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
@@ -28,6 +31,35 @@
        (trace-goal name g ...)]
       [(_ c0 c ...) (conde-disj (trace-conde c0) (trace-conde c ...))]))
 
+  (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
+    ;; (trace-run (q) g ...)
+    ;; (trace-run max-depth (q) g ...)
+    ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
+
+    (syntax-rules ()
+      [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
+      [(_ depth () g ...)
+       (parameterize ([trace-query '()])
+         (trace-lazy-run '() (conj* g ...) empty-state -1))]
+      [(_ depth (q) g ...)
+       (parameterize ([trace-query #t])
+         (fresh-vars [(start-state start-goal) (empty-state (g ...) (q))]
+                     (parameterize ([trace-query q])
+                       (trace-lazy-run q start-goal start-state depth))))]
+      [(_ depth (q ...) g ...)
+       (parameterize ([trace-query #t])
+         (fresh-vars
+          [(start-state start-goal) (empty-state (g ...) (q ...))]         
+          (parameterize ([trace-query (list q ...)])
+            (trace-lazy-run (list q ...) start-goal start-state depth))))]))
+  
+  (define (trace-lazy-run q g s depth)
+    (let-values ([(num-remaining answers p)
+                  (parameterize ([org-tracing (trace-goals)])
+                    (trace-run-goal g (set-state-datum s trace-data? (make-trace-data open-proof open-proof)) empty-package -1 depth '() open-proof open-proof succeed))])
+      (cert (list? answers))
+      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers))))
+  
   ;; === INTERPRETER ===
 
   (define (trace-run-goal g s p n depth answers proof theorem ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter
