@@ -2,8 +2,7 @@
   (export trace-run 
           trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
-          trace-answer-proof trace-answer-state
-          make-untrace-goal untrace-goal? untrace-goal-goal)
+          trace-answer-proof trace-answer-state)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
@@ -95,10 +94,6 @@
      [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                        (trace-run-goal g s p n (fx1- depth) answers ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) ctn)]
-     [(untrace-goal? g)
-      (if (theorem-contradiction (state-theorem s) '()) 
-          (trace-run-goal fail s p n depth answers ctn)
-          (trace-run-goal (untrace-goal-goal g) (set-state-datum s trace-data? (make-trace-data (subtheorem (state-theorem s)) (close-subproof (state-proof s)))) p n depth answers ctn))]
      [(proof-goal? g) (trace-run-goal (proof-goal-goal g) (set-state-datum s trace-data? (make-trace-data (proof-goal-proof g) (state-proof s))) p n depth answers ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers succeed)]))
 
@@ -108,16 +103,10 @@
         (let ([subgoal (trace-goal-goal g)]
               [proof (open-subproof proof (trace-goal-name g))]
               [subtheorem (subtheorem theorem)]
-              [ctn
-               #;
-               (lambda (s p c)
-                 (if (theorem-contradiction (state-theorem s) '()) 
-                     (values fail failure p fail)
-                     (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)
-                     ;(trace-run-goal (untrace-goal-goal g) (set-state-datum s trace-data? (make-trace-data (subtheorem theorem) (close-subproof proof))) p n depth answers (close-subproof proof) (subtheorem theorem) ctn)
-                     ))
-               (make-untrace-goal ctn)
-               ])
+              [ctn (lambda (s p c)
+                     (if (theorem-contradiction (state-theorem s) '()) 
+                         (values fail failure p fail)
+                         (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
           (if (tracing? theorem)
               (begin
                 (org-print-header (trace-goal-name g))           

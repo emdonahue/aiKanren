@@ -25,7 +25,7 @@
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
           make-noto noto? noto-goal
           __
-          make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal make-untrace-goal untrace-goal? untrace-goal-goal
+          make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal
           prove proof-goal? proof-goal-goal proof-goal-proof)
   (import (chezscheme) (sbral) (utils))
 
@@ -261,7 +261,7 @@
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (proof-goal? g) (untrace-goal? g)))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (proof-goal? g)))
 
   (define goal-memp
     (case-lambda
@@ -283,8 +283,6 @@
          clauses ...)]))
 
   (define-structure (conde lhs rhs))
-
-  (define-structure (untrace-goal goal)) ; Used internally in cps tracing interpreters to manipulate the nesting of the proofs.
 
   (define (conde-car g)
     (if (conde? g)
