@@ -1,4 +1,4 @@
-;TODO delete datatypes.ss
+;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
@@ -142,8 +142,8 @@
   (define empty-substitution sbral-empty)
   
   ;; === STATE ===
-  (define-structure (state substitution pseudocounts varid))
-  (define empty-state (make-state empty-substitution #f 0))
+  (define-structure (state substitution varid data))
+  (define empty-state (make-state empty-substitution 0 '()))
 
   (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
     (if (not (failure? substitution))
@@ -152,8 +152,7 @@
   
   (define (increment-varid s)
     (cert (state? s))
-    (let ([s (vector-copy s)])
-      (set-state-varid! s (fx1+ (state-varid s))) s))
+    (make-state (state-substitution s) #f (fx1+ (state-varid s))))
 
   (define (set-state-varid s v)
     ;;TODO remove set-state-varid
@@ -222,9 +221,7 @@
     ;; Can be run with an empty variable list to simply suspend the search at that point.
     (syntax-rules ()
       [(_ q g ...)
-       (lambda (start-state p)
-         (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values (suspend end-goal) end-state p)))]))
+       (exist q (suspend (conj* g ...)))]))
 
   (define-syntax conde ; Nondeterministic branching.
     (syntax-rules () 

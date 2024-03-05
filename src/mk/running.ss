@@ -83,29 +83,32 @@
      [else (void)]))
 
   (define (lazy-run-cdr* r)
-                                        ; Applies lazy-run-cdr as often as needed until either lazy-run-null? or lazy-run-car? are true. Does not advance a stream that has a waiting answer or is exhausted.
+    ;; Applies lazy-run-cdr as often as needed until either lazy-run-null? or lazy-run-car? are true. Does not advance a stream that has a waiting answer or is exhausted.
     (cert (lazy-run? r))
     (if (or (lazy-run-null? r) (lazy-run-car? r)) r (lazy-run-cdr* (lazy-run-cdr r))))
   
   (define (lazy-run-take n r)
-                                        ; Returns a list of n answers from the lazy-run r.
+    ;; Returns a list of n answers from the lazy-run r.
     (cert (lazy-run? r))
     (if (zero? n) '()
         (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
-              (cons (if (eq? (answer-type) answer-type/reified)
-                        (reify (lazy-run-car r) (lazy-run-query r))
-                        (lazy-run-car r))
+              (cons (reify-answer (lazy-run-query r) (lazy-run-car r) (lazy-run-package r))
                     (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
 
   (define (lazy-run-dfs q g s n depth)
-    (map (lambda (s) (reify s q))
-         (let-values ([(ans-remaining answers p) (run-goal-dfs g s empty-package n depth '() succeed)])
-           (reverse (if (fx< ans-remaining 0) answers (list-head answers (fx- n (max 0 ans-remaining))))))))
+    (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
+      (map (lambda (s) (reify-answer q s p))
+           (reverse answers))))
 
   (define (trace-lazy-run q g s depth)
     (let-values ([(num-remaining answers p)
                   (parameterize ([org-tracing (trace-goals)])
                     (trace-run-goal g s empty-package -1 depth '() open-proof open-proof succeed))])
       (cert (list? answers))
-      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers)))))
+      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers))))
+
+  (define (reify-answer q s p) ; Determine the return type based on parameters.
+    (cert (state? s) (package? p))
+    (if (eq? (answer-type) answer-type/reified)
+        (reify s q) s)))

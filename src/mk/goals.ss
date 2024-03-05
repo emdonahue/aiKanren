@@ -30,6 +30,17 @@
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.
                (if (failure? s) (values failure p) (run-goal ctn s p)))])]))
+
+  (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
+    (cert (stream? s) (package? p)) ; -> goal? stream? package?
+    (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
+     [(failure? s) (values s p)]
+     [(state? s) (values failure p)]
+     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] 
+     [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
+                   (values (mplus (mplus-rhs s) lhs) p))]
+     [(state+stream? s) (values (state+stream-stream s) p)]
+     [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
   
   (define (mplus lhs rhs)
     ;; Interleaves two branches of the search
@@ -46,33 +57,27 @@
 
   ;; === DEPTH FIRST INTERPRETER ===
 
-  (define (run-goal-dfs g s p n depth answers ctn) ;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
-    (if (zero? depth) (values n answers p)
-        (if (failure? s) (values n answers p)
-         (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
-          [(succeed? g) (if (succeed? ctn)
-                            (values (fx1- n) (cons s answers) p)
-                            (run-goal-dfs ctn s p n depth answers succeed))]
-          [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
-          [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
-                        (if (zero? num-remaining) (values num-remaining answers p)
-                            (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
-          [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                         (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-          [(procedure? g) (let-values ([(g s p) (g s p)])
-                            (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-          [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
-          [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)]))))
   
-  ;; === STREAMS ===
-  
-  (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
-    (cert (stream? s) (package? p)) ; -> goal? stream? package?
-    (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
-     [(failure? s) (values s p)]
-     [(state? s) (values failure p)]
-     [(suspended? s) (run-goal (suspended-goal s) (suspended-state s) p)] 
-     [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
-                   (values (mplus (mplus-rhs s) lhs) p))]
-     [(state+stream? s) (values (state+stream-stream s) p)]
-     [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))) 
+  (define run-goal-dfs
+    (case-lambda
+      [(g s p n depth)
+       (let-values ([(num-answers answers p) (run-goal-dfs g s p n depth '() succeed)])
+         (values answers p))]
+      [(g s p n depth answers ctn) ; -> #answers answers package?
+       ;;TODO consider analyzing goals in goal interpreter and running dfs if not recursive or only tail recursive. maybe use syntax analysis and a special conj type that marks its contents for dfs, where fresh bounces back to normal goal interpreter. it may not make a difference as outside of fresh a cps goal interpreter might be functionally depth first outside of trampolining
+        (if (zero? depth) (values n answers p)
+            (if (failure? s) (values n answers p)
+                (exclusive-cond ; TODO consider manipulating ctn order in dfs to get different searches, such as depth-ordered search using a functional queue to hold branching goals as the ctn
+                 [(succeed? g) (if (succeed? ctn)
+                                   (values (fx1- n) (cons s answers) p)
+                                   (run-goal-dfs ctn s p n depth answers succeed))]
+                 [(conj? g) (run-goal-dfs (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))] ; Conj rhs to continuation.
+                 [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n depth answers ctn)])
+                               (if (zero? num-remaining) (values num-remaining answers p)
+                                   (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
+                 [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
+                                (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+                 [(procedure? g) (let-values ([(g s p) (g s p)])
+                                   (run-goal-dfs g s p n (fx1- depth) answers ctn))]
+                 [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
+                 [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))]))) 
