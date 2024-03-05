@@ -12,12 +12,12 @@
   (define-syntax displayo ; A no-op goal that reifies and displays its arguments as part of the debug logging system.
     (syntax-rules ()
       [(_ expr ...)
-       (let ([displayo (lambda (s p) (org-display (reify s expr) ...) (values succeed s p))]) displayo)]))
+       (let ([displayo (lambda (s p c) (org-display (reify s expr) ...) (values succeed s p c))]) displayo)]))
 
   (define-syntax noopo ; A no-op goal that executes arbitrary code when called as part of the search.
     (syntax-rules ()
       [(_ body ...)
-       (let ([noopo (lambda (s p) body ... (values succeed s p))]) noopo)]))
+       (let ([noopo (lambda (s p c) body ... (values succeed s p c))]) noopo)]))
 
   ;; === PRETTY PRINTING ===
   

@@ -82,7 +82,7 @@
                        (trace-run-goal (conde-rhs g) s p num-remaining depth answers proof theorem ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
                     (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]     
-     [(procedure? g) (let-values ([(g s p) (g s p)])
+     [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                        (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
      [(untrace-goal? g)

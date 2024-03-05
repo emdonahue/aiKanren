@@ -17,7 +17,7 @@
       (exclusive-cond
        [(succeed? g) (if (succeed? ctn) (values s p) (run-goal ctn s p))] ; If the ctn is empty, we're done. Otherwise, now we run it.
        [(conj? g) (run-goal (conj-lhs g) s p (conj (conj-rhs g) ctn))] ; Run the lhs while pushing the rhs onto the continuation.
-       [(procedure? g) (let-values ([(g s p) (g s p)])
+       [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                      (run-goal g s p ctn))] ; Any procedure that accepts a state and package and returns a goal, state, and package can be considered a goal. Fresh and exist are implemented in terms of such procedures.
        [(conde? g) (let*-values ; Although states are per branch, package is global and must be threaded through lhs and rhs.
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
@@ -77,7 +77,7 @@
                                    (run-goal-dfs (conde-rhs g) s p num-remaining depth answers ctn)))]
                  [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
                                 (run-goal-dfs g s p n (fx1- depth) answers ctn))]
-                 [(procedure? g) (let-values ([(g s p) (g s p)])
+                 [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                                    (run-goal-dfs g s p n (fx1- depth) answers ctn))]
                  [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
                  [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))]))) 

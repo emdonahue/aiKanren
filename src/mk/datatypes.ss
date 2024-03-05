@@ -218,9 +218,9 @@
   (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
     (syntax-rules ()
       [(_ q g ...)
-       (lambda (start-state p)
+       (lambda (start-state p c)
          (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values end-goal end-state p)))]))
+                           (values end-goal end-state p c)))]))
 
   (define-syntax fresh ; Introduce fresh variables.
     ;; (fresh (x y z) ...)
