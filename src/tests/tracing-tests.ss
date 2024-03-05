@@ -6,7 +6,7 @@
   (define x2 (make-var 2))
   
   (define (run-tracing-tests)
-    
+
     (parameterize ([trace-goals #f])
       (tassert "trace ==" (map car (trace-run (x1) (org-untrace (== x1 1)))) '(1))
       (tassert "trace == & ==" (map car (trace-run (x1 x2) (org-untrace (conj* (== x1 1) (== x2 2))))) '((1 2)))
