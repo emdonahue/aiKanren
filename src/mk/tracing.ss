@@ -12,6 +12,15 @@
   (define-structure (trace-answer theorem proof state))
 
   (define-structure (trace-data theorem proof))
+  (define (state-theorem s)
+    (cert (state? s))
+    (trace-data-theorem (state-datum s trace-data?)))
+  (define (state-proof s)
+    (cert (state? s))
+    (trace-data-proof (state-datum s trace-data?)))
+  (define (set-state-trace s theorem proof)
+    (cert (state? s))
+    (set-state-datum s trace-data? (make-trace-data theorem proof)))
   
   ;; === INTERFACE ===
   
@@ -73,7 +82,7 @@
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
-                       (values (fx1- n) (cons (make-trace-answer theorem proof s) answers) p)
+                       (values (fx1- n) (cons (make-trace-answer (state-theorem s) (state-proof s) s) answers) p)
                        (trace-run-goal ctn s p n depth answers proof theorem succeed))]
      [(zero? depth) (print-depth-limit theorem) (values n answers p)]
      [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers proof theorem (conj (conj-rhs g) ctn))]
@@ -86,7 +95,7 @@
                        (trace-run-goal g s p n (fx1- depth) answers proof theorem ctn))]
      [(trace-goal? g) (cps-trace-goal g s p n depth answers proof theorem ctn)]
      [(untrace-goal? g)
-      (if (theorem-contradiction theorem '())
+      (if (theorem-contradiction theorem '()) 
           (trace-run-goal fail s p n depth answers proof theorem ctn)
           (trace-run-goal (untrace-goal-goal g) (set-state-datum s trace-data? (make-trace-data (subtheorem theorem) (close-subproof proof))) p n depth answers (close-subproof proof) (subtheorem theorem) ctn))]
      [(proof-goal? g) (trace-run-goal (proof-goal-goal g) (set-state-datum s trace-data? (make-trace-data (proof-goal-proof g) proof)) p n depth answers proof (proof-goal-proof g) ctn)]
@@ -98,7 +107,16 @@
         (let ([subgoal (trace-goal-goal g)]
               [proof (open-subproof proof (trace-goal-name g))]
               [subtheorem (subtheorem theorem)]
-              [ctn (make-untrace-goal ctn)])
+              [ctn
+               #;
+               (lambda (s p c)
+                 (if (theorem-contradiction (state-theorem s) '()) 
+                     (values fail failure p fail)
+                     (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)
+                     ;(trace-run-goal (untrace-goal-goal g) (set-state-datum s trace-data? (make-trace-data (subtheorem theorem) (close-subproof proof))) p n depth answers (close-subproof proof) (subtheorem theorem) ctn)
+                     ))
+                                        (make-untrace-goal ctn)
+               ])
           (if (tracing? theorem)
               (begin
                 (org-print-header (trace-goal-name g))           
