@@ -4,7 +4,7 @@
           open-proof close-proof
           state-proof
           prove)
-  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running))
+  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running) (state))
 
   (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
   (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
@@ -65,7 +65,7 @@
        (parameterize ([trace-query #t])
          (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
                      (parameterize ([trace-query (vars->list q)])
-                       (lazy-run-dfs (trace-query) start-goal (set-state-trace start-state open-proof open-proof) n (max-depth)))))]
+                       (trace-run-end (trace-query) start-goal (set-state-trace start-state open-proof open-proof) n (max-depth)))))]
       #;
       [(_ depth () g ...)
        (parameterize ([trace-query '()])
@@ -87,6 +87,11 @@
   (define-syntax trace-run*
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
+
+  (define (trace-run-end q g s n depth)
+    (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
+      (map (lambda (s) (reify-answer q (set-state-trace s (state-theorem s) (close-proof (state-proof s)))))
+           (reverse answers))))
   
   (define (trace-lazy-run q g s depth)
     (let-values ([(num-remaining answers p)

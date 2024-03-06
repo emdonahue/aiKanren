@@ -1,5 +1,5 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend unbind-constraint simplify-unification) ;;TODO double check state exports. remove extend at least
+  (export reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend unbind-constraint reify-answer simplify-unification) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (sbral) (datatypes) (negation) (utils) (mini-substitution) (reducer))
 
   (define unbound succeed) ; Internal placeholder for unbound variables in the substitution.
@@ -30,6 +30,11 @@
           (let ([w (walk-var s v)])
             (if (var? w) w (reify-var s w (cons v vs)))))]
         [else v])]))
+
+  (define (reify-answer q s) ; Determine the return type based on parameters.
+    (cert (state? s))
+    (if (eq? (answer-type) answer-type/reified)
+        (reify s q) s))
 
   (define (walk s v)
     (cert (state? s))

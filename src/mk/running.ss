@@ -68,15 +68,10 @@
     (if (zero? n) '()
         (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
-              (cons (reify-answer (lazy-run-query r) (lazy-run-car r) (lazy-run-package r))
+              (cons (reify-answer (lazy-run-query r) (lazy-run-car r))
                     (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
 
   (define (lazy-run-dfs q g s n depth)
     (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
-      (map (lambda (s) (reify-answer q s p))
-           (reverse answers))))
-
-  (define (reify-answer q s p) ; Determine the return type based on parameters.
-    (cert (state? s) (package? p))
-    (if (eq? (answer-type) answer-type/reified)
-        (reify s q) s)))
+      (map (lambda (s) (reify-answer q s))
+           (reverse answers)))))
