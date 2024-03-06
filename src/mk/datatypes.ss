@@ -18,6 +18,7 @@
           fresh exist conde
           make-== == ==? ==-lhs ==-rhs
           make-exist exist? exist-procedure suspend suspend? suspend-goal
+          dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
@@ -205,6 +206,11 @@
     (cert (goal? g))
     (if (or (succeed? g) (fail? g)) g (make-suspend g)))
 
+  (define-structure (dfs-goal procedure))
+  (define (dfs-goal p) ; Wraps a procedure that has the same signature as run-goal-dfs. Called internally by run-goal-dfs, which transparently passes its arguments to the procedure and returns the resulting values. Used to dynamically extend the behavior of the dfs interpreter.
+    (cert (procedure? p))
+    (make-dfs-goal p))
+  
   (define (== x y) ; Implements unification between terms.
     (cond
      [(or (eq? x __) (eq? y __)) succeed]
@@ -260,7 +266,7 @@
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g)))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (dfs-goal? g)))
 
   (define goal-memp
     (case-lambda

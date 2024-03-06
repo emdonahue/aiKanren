@@ -57,7 +57,6 @@
 
   ;; === DEPTH FIRST INTERPRETER ===
 
-  
   (define run-goal-dfs
     (case-lambda
       [(g s p n depth)
@@ -80,4 +79,5 @@
                  [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                                    (run-goal-dfs g s p n (fx1- depth) answers ctn))]
                  [(suspend? g) (run-goal-dfs (suspend-goal g) s p n depth answers ctn)]
+                 [(dfs-goal? g) ((dfs-goal-procedure g) s p n depth answers ctn)]
                  [else (run-goal-dfs ctn (run-constraint g s) p n depth answers succeed)])))]))) 
