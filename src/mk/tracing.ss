@@ -20,9 +20,9 @@
   (define (set-state-trace s theorem proof)
     (cert (state? s))
     (set-state-datum s trace-data? (make-trace-data theorem proof)))
-  
+
   ;; === INTERFACE ===
-  
+
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
     ;; (trace-goal name goals...)
     ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>.
@@ -34,10 +34,10 @@
 
            (dfs-goal (lambda (s p n depth answers c)
               (cps-trace-goal (conj* goals ...) s p n depth answers 'name '(goals ...) c)
-             
+
               ))
            (conj* goals ...))]))
-  
+
   (define-syntax trace-conde ; Equivalent to conde but each branch begins with a name and implicitly instantiates a trace-goal.
     ;; (trace-conde [name1 g1 ...] [name2 g2 ...] ...)
     (syntax-rules ()
@@ -54,7 +54,7 @@
          (values (conj* g ...) (set-state-trace s 'theorem (state-proof s)) p c))
        ;(make-proof-goal 'proof (conj* g ...))
        ]))
-  
+
   (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
     ;; (trace-run (q) g ...)
     ;; (trace-run max-depth (q) g ...)
@@ -80,7 +80,7 @@
       [(_ depth (q ...) g ...)
        (parameterize ([trace-query #t])
          (fresh-vars
-          [(start-state start-goal) (empty-state (g ...) (q ...))]         
+          [(start-state start-goal) (empty-state (g ...) (q ...))]
           (parameterize ([trace-query (list q ...)])
       (trace-lazy-run (list q ...) start-goal start-state depth))))]))
 
@@ -92,14 +92,14 @@
     (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
       (map (lambda (s) (reify-answer q (set-state-trace s (state-theorem s) (close-proof (state-proof s)))))
            (reverse answers))))
-  
+
   (define (trace-lazy-run q g s depth)
     (let-values ([(num-remaining answers p)
                   (parameterize ([org-tracing (trace-goals)])
                     (trace-run-goal g (set-state-datum s trace-data? (make-trace-data open-proof open-proof)) empty-package -1 depth '() succeed))])
       (cert (list? answers))
       (map (lambda (s) (list (reify s q) (close-proof (state-proof s)) (state-theorem s))) (reverse answers))))
-  
+
   ;; === INTERPRETER ===
 
   (define (trace-run-goal g s p n depth answers ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter
@@ -121,10 +121,10 @@
                    (if (zero? num-remaining) (values num-remaining answers p)
                        (trace-run-goal (conde-rhs g) s p num-remaining depth answers ctn)))]
      [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                    (trace-run-goal g s p n (fx1- depth) answers ctn))]     
+                    (trace-run-goal g s p n (fx1- depth) answers ctn))]
      [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                        (trace-run-goal g s p n (fx1- depth) answers ctn))]
-     [(trace-goal? g) (cps-trace-goal (trace-goal-goal g) s p n depth answers (trace-goal-name g) (trace-goal-source g) ctn)]     
+     [(trace-goal? g) (cps-trace-goal (trace-goal-goal g) s p n depth answers (trace-goal-name g) (trace-goal-source g) ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers succeed)]))
 
   (define (cps-trace-goal subgoal s p n depth answers name source ctn)
@@ -135,16 +135,13 @@
         (let (
               [proof (open-subproof (state-proof s) name)]
               [subtheorem (subtheorem (state-theorem s))]
-              [ctn (dfs-goal (lambda (s p n depth answers c)
-                      (if (theorem-contradiction (state-theorem s) '()) 
-                                        ;(values fail failure p fail)
-                          (run-goal-dfs fail s p n depth answers c)
-                          (run-goal-dfs ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p n depth answers c)
-                          ;(values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)
-                          )))])
+              [ctn (lambda (s p c)
+                     (if (theorem-contradiction (state-theorem s) '())
+                         (values fail failure p fail)
+                         (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
           (if (tracing? (state-theorem s))
               (begin
-                (org-print-header name)           
+                (org-print-header name)
                 (parameterize ([org-depth (fx1+ (org-depth))])
                   (when (tracing? (state-theorem s)) (print-trace-args s source))
                   (let*-values ([(ans-remaining answers p)
@@ -165,15 +162,15 @@
               ;(trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
               (run-goal-dfs subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
               ))))
-  
+
   ;; === PRINTING ===
-  
+
   (define (print-trace-args s source)
     (org-print-header "<arguments>")
     (parameterize ([org-depth (fx1+ (org-depth))])
       (print-trace-answer s)
       source))
-  
+
   (define (print-trace-answer s)
     (org-print-header "proof")
     (org-print-item (reverse-proof (state-proof s)))
@@ -192,15 +189,15 @@
     (when (tracing? theorem) (org-print-header " <depth limit reached>")))
 
   ;; === PROOFS ===
-  
+
   (define cursor '__)
   (define (cursor? c) (eq? c cursor))
 
   (define open-proof (list cursor))
-  
+
   (define (close-proof proof)
     (reverse-proof (cdr proof)))
-  
+
   (define (open-subproof proof name)
     (if (cursor? (car proof)) (cons (list cursor name) (cdr proof))
         (cons (open-subproof (car proof) name) (cdr proof))))
@@ -208,7 +205,7 @@
   (define (close-subproof proof)
     (if (cursor? (caar proof)) (cons* cursor (cdar proof) (cdr proof))
         (cons (close-subproof (car proof)) (cdr proof))))
-  
+
   (define (reverse-proof proof)
     (if (pair? proof) (reverse (map reverse-proof proof)) proof))
 

@@ -58,7 +58,7 @@
   ;; === DEPTH FIRST INTERPRETER ===
 
   (define run-goal-dfs
-    (case-lambda
+    (case-lambda ;TODO perhaps instead of counting freshes we could just limit the max var id to serve as a depth proxy
       [(g s p n depth)
        (let-values ([(num-answers answers p) (run-goal-dfs g s p n depth '() succeed)])
          (values answers p))]

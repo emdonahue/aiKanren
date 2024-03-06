@@ -30,35 +30,29 @@
         (tassert "proof conj rhs"
                  (state-proof (car (trace-run* (x1 x2) (== x1 1) (trace-goal x2=2 (== x2 2))))) '((x2=2)))
         (tassert "proof conde"
-                 (map state-proof (trace-run* x1 (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)]))) '(((x1=1)) ())))
-      
-      #;
-      (
-      
+                 (map state-proof (trace-run* x1 (conde [(trace-goal x1=1 (== x1 1))] [(== x1 2)]))) '(((x1=1)) ()))
 
-      
-      
-       
-       (tassert "theorem constraint head succeed"
-                (cadar (trace-run (x1) (prove ((x1=1)) (trace-goal x1=1 (== x1 1))))) '((x1=1)))
-       (tassert "theorem constraint head fail"
-                (trace-run (x1) (prove ((x1=2)) (trace-goal x1=1 (== x1 1)))) '())    
-       (tassert "theorem trace-conde select branch"
-                (map cadr (trace-run (x1) (prove ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])))) '(((x1=2))))
-       (tassert "theorem conj of trace-conde"
-                (cadar (trace-run (x1 x2) (prove ((x1=2) (x2=2))
-                                                 (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
-                                                 (trace-conde [x2=1 (== x2 1)] [x2=2 (== x2 2)])))) '((x1=2) (x2=2)))
-       (tassert "theorem trace-conde nested"
-                (map cadr (trace-run (x1 x2)
-                                     (prove ((x1=2 (x2=2)))
-                                            (trace-conde [x1=1 (== x1 1)]
-                                                         [x1=2 (== x1 2)
-                                                               (trace-conde
-                                                                [x2=1 (== x2 1)]
-                                                                [x2=2 (== x2 2)])])))) '(((x1=2 (x2=2)))))
+        (tassert "theorem constraint head succeed"
+                 (state-proof (car (trace-run* x1 (prove ((x1=1)) (trace-goal x1=1 (== x1 1)))))) '((x1=1)))
+        (tassert "theorem constraint head fail"
+                 (trace-run* x1 (prove ((x1=2)) (trace-goal x1=1 (== x1 1)))) '())    
+        (tassert "theorem trace-conde select branch"
+                 (state-proof (car (trace-run* x1 (prove ((x1=2)) (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)]))))) '((x1=2)))
+        (tassert "theorem conj of trace-conde"
+                 (map state-proof (trace-run* (x1 x2)
+                                              (prove ((x1=2) (x2=2))
+                                                     (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
+                                                     (trace-conde [x2=1 (== x2 1)] [x2=2 (== x2 2)])))) '(((x1=2) (x2=2))))
+        (tassert "theorem trace-conde nested"
+                 (state-proof (car (trace-run* (x1 x2)
+                                               (prove ((x1=2 (x2=2)))
+                                                      (trace-conde [x1=1 (== x1 1)]
+                                                                   [x1=2 (== x1 2)
+                                                                         (trace-conde
+                                                                          [x2=1 (== x2 1)]
+                                                                          [x2=2 (== x2 2)])]))))) '((x1=2 (x2=2))))
        (tassert "theorem trace-conde theorem too shallow fail"
-                (trace-run (x1 x2)
+                (trace-run* (x1 x2)
                            (prove ((x1=2))
                                   (trace-conde [x1=1 (== x1 1)]
                                                [x1=2 (== x1 2)
@@ -66,22 +60,22 @@
                                                       [x2=1 (== x2 1)]
                                                       [x2=2 (== x2 2)])]))) '())
        (tassert "theorem trace-conde theorem too deep fail"
-                (trace-run (x1 x2)
+                (trace-run* (x1 x2)
                            (prove ((x1=2 (x2=2)))
                                   (trace-conde [x1=1 (== x1 1)]
                                                [x1=2 (== x1 2)]))) '())
        (tassert "theorem trace-conde theorem prefix succeeds"
-                (map cadr (trace-run (x1 x2)
-                                     (prove ((x1=2 __))
-                                            (trace-conde [x1=1 (== x1 1)]
-                                                         [x1=2 (== x1 2)
-                                                               (trace-conde
-                                                                [x2=1 (== x2 1)]
-                                                                [x2=2 (== x2 2)])])))) '(((x1=2 (x2=1))) ((x1=2 (x2=2)))))
+                (map state-proof (trace-run* (x1 x2)
+                                             (prove ((x1=2 __))
+                                                    (trace-conde [x1=1 (== x1 1)]
+                                                                 [x1=2 (== x1 2)
+                                                                       (trace-conde
+                                                                        [x2=1 (== x2 1)]
+                                                                        [x2=2 (== x2 2)])])))) '(((x1=2 (x2=1))) ((x1=2 (x2=2)))))
        (tassert "theorem trace-conde theorem prefix leaves wildcard on deep recursion"
                 (map
-                 cadr
-                 (trace-run
+                 state-proof
+                 (trace-run*
                   (x1 x2 x3)
                   (prove ((x1=2 __))
                          (trace-conde
@@ -94,6 +88,20 @@
                                         [x3=1 (== x3 1)]
                                         [x3=2 (== x3 2)])])]))))
                 '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))
+        )
+
+
+      #;
+      (
+      
+
+      
+      
+       
+       
+      
+      
+
 
 
 #;    
