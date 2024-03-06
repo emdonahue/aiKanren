@@ -2,14 +2,12 @@
   (export trace-run 
           trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
-          trace-answer-proof trace-answer-state
           prove)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging))
 
   (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
   (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
-  (define-structure (trace-answer theorem proof state))
 
   (define-structure (trace-data theorem proof))
   (define (state-theorem s)
@@ -83,7 +81,7 @@
                   (parameterize ([org-tracing (trace-goals)])
                     (trace-run-goal g (set-state-datum s trace-data? (make-trace-data open-proof open-proof)) empty-package -1 depth '() succeed))])
       (cert (list? answers))
-      (map (lambda (ans) (list (reify (trace-answer-state ans) q) (close-proof (trace-answer-proof ans)) (trace-answer-state ans))) (reverse answers))))
+      (map (lambda (s) (list (reify s q) (close-proof (state-proof s)) (state-theorem s))) (reverse answers))))
   
   ;; === INTERPRETER ===
 
@@ -98,7 +96,7 @@
     (cond
      [(failure? s) (values n answers p)]
      [(succeed? g) (if (succeed? ctn)
-                       (values (fx1- n) (cons (make-trace-answer (state-theorem s) (state-proof s) s) answers) p)
+                       (values (fx1- n) (cons s answers) p)
                        (trace-run-goal ctn s p n depth answers succeed))]
      [(zero? depth) (print-depth-limit (state-theorem s)) (values n answers p)]
      [(conj? g) (trace-run-goal (conj-lhs g) s p n depth answers (conj (conj-rhs g) ctn))]
@@ -135,11 +133,11 @@
                     (when (theorem-trivial? (state-theorem s))
                       (if (null? answers) (org-print-header "<failure>")
                           (begin (org-print-header "<answers>")
-                                 (for-each (lambda (i a)
+                                 (for-each (lambda (i s)
                                              (parameterize ([org-depth (fx1+ (org-depth))])
                                                (org-print-header (number->string i))
                                                (parameterize ([org-depth (fx1+ (org-depth))])
-                                                 (print-trace-answer (trace-answer-state a))))) (enumerate answers) answers))))
+                                                 (print-trace-answer s)))) (enumerate answers) answers))))
                     (values ans-remaining answers p))))
               ;(values subgoal (set-state-trace s subtheorem proof) p ctn)
               (trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
