@@ -1,10 +1,10 @@
 (library (tracing)
-  (export trace-run 
+  (export trace-run trace-run*
           trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
           state-proof
           prove)
-  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals))
+  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running))
 
   (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
   (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
@@ -61,21 +61,32 @@
     ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
 
     (syntax-rules ()
-      [(_ (q ...) g ...) (trace-run -1 (q ...) g ...)]
+      [(_ n q g ...)
+       (parameterize ([trace-query #t])
+         (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
+                     (parameterize ([trace-query (vars->list q)])
+                       (lazy-run-dfs (trace-query) start-goal (set-state-trace start-state open-proof open-proof) n (max-depth)))))]
+      #;
       [(_ depth () g ...)
        (parameterize ([trace-query '()])
-         (trace-lazy-run '() (conj* g ...) empty-state -1))]
+      (trace-lazy-run '() (conj* g ...) empty-state -1))]
+      #;
       [(_ depth (q) g ...)
        (parameterize ([trace-query #t])
          (fresh-vars [(start-state start-goal) (empty-state (g ...) (q))]
                      (parameterize ([trace-query q])
-                       (trace-lazy-run q start-goal start-state depth))))]
+      (trace-lazy-run q start-goal start-state depth))))]
+      #;
       [(_ depth (q ...) g ...)
        (parameterize ([trace-query #t])
          (fresh-vars
           [(start-state start-goal) (empty-state (g ...) (q ...))]         
           (parameterize ([trace-query (list q ...)])
-            (trace-lazy-run (list q ...) start-goal start-state depth))))]))
+      (trace-lazy-run (list q ...) start-goal start-state depth))))]))
+
+  (define-syntax trace-run*
+    (syntax-rules ()
+      [(_ q g ...) (trace-run -1 q g ...)]))
   
   (define (trace-lazy-run q g s depth)
     (let-values ([(num-remaining answers p)
@@ -119,10 +130,13 @@
         (let (
               [proof (open-subproof (state-proof s) name)]
               [subtheorem (subtheorem (state-theorem s))]
-              [ctn (lambda (s p c)
-                     (if (theorem-contradiction (state-theorem s) '()) 
-                         (values fail failure p fail)
-                         (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
+              [ctn (dfs-goal (lambda (s p n depth answers c)
+                      (if (theorem-contradiction (state-theorem s) '()) 
+                                        ;(values fail failure p fail)
+                          (run-goal-dfs fail s p n depth answers c)
+                          (run-goal-dfs ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p n depth answers c)
+                          ;(values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)
+                          )))])
           (if (tracing? (state-theorem s))
               (begin
                 (org-print-header name)           

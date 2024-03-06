@@ -4,7 +4,7 @@
           fresh exist constraint conde
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take
           lazy-run-dfs)
-  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils) (tracing))
+  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils))
 
   (define-syntax lazy-run ; Returns a lazy-run stream object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
     ;; (lazy-run (q ...) g ...)
