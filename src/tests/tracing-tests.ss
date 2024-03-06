@@ -87,28 +87,4 @@
                                        (trace-conde
                                         [x3=1 (== x3 1)]
                                         [x3=2 (== x3 2)])])]))))
-                '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))
-        )
-
-
-      #;
-      (
-      
-
-      
-      
-       
-       
-      
-      
-
-
-
-#;    
-    (display (values->list (trace-dfs
-                            (conj (trace-conde [x1=1 (== x1 1)] [x1=2 (== x1 2)])
-                                  (trace-conde [x2=1 (== x2 1)] [x2=2 (== x2 2)]))
-                            empty-state empty-package -1 -1 '() '(__) '() succeed)))
-      
-       
-))))
+                '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))))))

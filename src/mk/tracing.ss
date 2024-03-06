@@ -1,6 +1,6 @@
 (library (tracing)
   (export trace-run trace-run*
-          trace-query trace-run-goal trace-goal trace-conde trace-proof-goals trace-goals
+          trace-query trace-goal trace-conde trace-proof-goals trace-goals
           open-proof close-proof
           state-proof
           prove)
@@ -32,8 +32,8 @@
        (if (trace-query) ; If we are not inside a trace call, don't even render the trace goal.
            ;(make-trace-goal 'name '(goals ...) (conj* goals ...))
 
-           (dfs-goal (lambda (s p n depth answers c)
-              (cps-trace-goal (conj* goals ...) s p n depth answers 'name '(goals ...) c)
+           (dfs-goal (lambda (s p n answers c)
+              (cps-trace-goal (conj* goals ...) s p n answers 'name '(goals ...) c)
 
               ))
            (conj* goals ...))]))
@@ -65,7 +65,7 @@
        (parameterize ([trace-query #t])
          (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
                      (parameterize ([trace-query (vars->list q)])
-                       (trace-run-end (trace-query) start-goal (set-state-trace start-state open-proof open-proof) n (max-depth)))))]
+                       (trace-run-end (trace-query) start-goal (set-state-trace start-state open-proof open-proof) n))))]
       #;
       [(_ depth () g ...)
        (parameterize ([trace-query '()])
@@ -88,20 +88,21 @@
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
 
-  (define (trace-run-end q g s n depth)
-    (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
+  (define (trace-run-end q g s n)
+    (let-values ([(answers p) (run-goal-dfs g s empty-package n)])
       (map (lambda (s) (reify-answer q (set-state-trace s (state-theorem s) (close-proof (state-proof s)))))
            (reverse answers))))
-
-  (define (trace-lazy-run q g s depth)
+#;
+  (define (trace-lazy-run q g s)
     (let-values ([(num-remaining answers p)
                   (parameterize ([org-tracing (trace-goals)])
-                    (trace-run-goal g (set-state-datum s trace-data? (make-trace-data open-proof open-proof)) empty-package -1 depth '() succeed))])
+                    (trace-run-goal g (set-state-datum s trace-data? (make-trace-data open-proof open-proof)) empty-package -1 '() succeed))])
       (cert (list? answers))
       (map (lambda (s) (list (reify s q) (close-proof (state-proof s)) (state-theorem s))) (reverse answers))))
 
   ;; === INTERPRETER ===
 
+  #;
   (define (trace-run-goal g s p n depth answers ctn) ;TODO might be able to fold proofs into standard dfs with parameters and get rid of special cps trace interpreter
                                         ;(display (state-datum s trace-data?))
     #;
@@ -127,9 +128,9 @@
      [(trace-goal? g) (cps-trace-goal (trace-goal-goal g) s p n depth answers (trace-goal-name g) (trace-goal-source g) ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers succeed)]))
 
-  (define (cps-trace-goal subgoal s p n depth answers name source ctn)
+  (define (cps-trace-goal subgoal s p n answers name source ctn)
     (if (theorem-contradiction (state-theorem s) name) ; If the current theorem path diverges from the required proof,
-        (run-goal-dfs fail s p n depth answers ctn) ; fail immediately.
+        (run-goal-dfs fail s p n answers ctn) ; fail immediately.
         ;(trace-run-goal fail s p n depth answers ctn) ; fail immediately.
         ;(values fail failure p fail)
         (let (
@@ -148,7 +149,7 @@
                                  ;trace-run-goal
                                  (run-goal-dfs subgoal
                                                  (set-state-trace s subtheorem proof)
-                                                 p n depth answers ctn)]) ;proof subtheorem
+                                                 p n answers ctn)]) ;proof subtheorem
                     (when (theorem-trivial? (state-theorem s))
                       (if (null? answers) (org-print-header "<failure>")
                           (begin (org-print-header "<answers>")
@@ -160,7 +161,7 @@
                     (values ans-remaining answers p))))
                                         ;(values subgoal (set-state-trace s subtheorem proof) p ctn)
               ;(trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
-              (run-goal-dfs subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
+              (run-goal-dfs subgoal (set-state-trace s subtheorem proof) p n answers ctn)
               ))))
 
   ;; === PRINTING ===

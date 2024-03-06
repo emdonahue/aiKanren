@@ -2,8 +2,7 @@
   (export run run* run1
           lazy-run
           fresh exist constraint conde
-          lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take
-          lazy-run-dfs)
+          lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
   (import (chezscheme) (goals) (failure) (state) (datatypes) (utils))
 
   (define-syntax lazy-run ; Returns a lazy-run stream object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
@@ -19,7 +18,10 @@
        (if (eq? (search-strategy) search-strategy/interleaving)
            (lazy-run-take n (lazy-run q g ...))
            (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
-                       (lazy-run-dfs (vars->list q) start-goal start-state n (max-depth))))]))
+                       (let-values ([(answers p) 
+                                     (run-goal-dfs start-goal start-state empty-package n)])
+                         (map (lambda (s) (reify-answer (vars->list q) s))
+                              (reverse answers)))))]))
 
   (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
     (syntax-rules ()
@@ -69,9 +71,4 @@
         (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
               (cons (reify-answer (lazy-run-query r) (lazy-run-car r))
-                    (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
-
-  (define (lazy-run-dfs q g s n depth)
-    (let-values ([(answers p) (run-goal-dfs g s empty-package n depth)])
-      (map (lambda (s) (reify-answer q s))
-           (reverse answers)))))
+                    (lazy-run-take (fx1- n) (lazy-run-cdr r))))))))

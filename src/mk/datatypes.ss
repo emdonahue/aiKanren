@@ -44,7 +44,7 @@
   
   (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
     ; Default: -1 (infinite depth).
-    (make-parameter -1
+    (make-parameter (most-positive-fixnum)
                     (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
 
   (define answer-type/reified 'reified)
