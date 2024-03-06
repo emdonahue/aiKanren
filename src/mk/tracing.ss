@@ -32,8 +32,9 @@
        (if (trace-query) ; If we are not inside a trace call, don't even render the trace goal.
            (make-trace-goal 'name '(goals ...) (conj* goals ...))
            #;
-           (lambda (g s p c)
-             (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) ctn)
+           (lambda (s p c)
+             (cps-trace-goal (conj* goals ...) s p n #f #f 'name '(goals ...) c)
+             
              )
            (conj* goals ...))]))
   
@@ -97,25 +98,26 @@
                     (trace-run-goal g s p n (fx1- depth) answers ctn))]     
      [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                        (trace-run-goal g s p n (fx1- depth) answers ctn))]
-     [(trace-goal? g) (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) (trace-goal-name g) (trace-goal-source g) ctn)]
+     [(trace-goal? g) (cps-trace-goal (trace-goal-goal g) s p n depth answers (trace-goal-name g) (trace-goal-source g) ctn)]
      [(proof-goal? g) (trace-run-goal (proof-goal-goal g) (set-state-datum s trace-data? (make-trace-data (proof-goal-proof g) (state-proof s))) p n depth answers ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers succeed)]))
 
-  (define (cps-trace-goal g s p n depth answers proof theorem name source ctn)
+  (define (cps-trace-goal subgoal s p n depth answers name source ctn)
     (if (theorem-contradiction (state-theorem s) name) ; If the current theorem path diverges from the required proof,
         (trace-run-goal fail s p n depth answers ctn) ; fail immediately.
-        (let ([subgoal (trace-goal-goal g)]
+        ;(values fail failure p fail)
+        (let (
               [proof (open-subproof (state-proof s) name)]
               [subtheorem (subtheorem (state-theorem s))]
               [ctn (lambda (s p c)
                      (if (theorem-contradiction (state-theorem s) '()) 
                          (values fail failure p fail)
                          (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
-          (if (tracing? theorem)
+          (if (tracing? (state-theorem s))
               (begin
                 (org-print-header name)           
                 (parameterize ([org-depth (fx1+ (org-depth))])
-                  (when (tracing? (state-theorem s)) (print-trace-args g s source))
+                  (when (tracing? (state-theorem s)) (print-trace-args s source))
                   (let*-values ([(ans-remaining answers p)
                                  (trace-run-goal subgoal
                                                  (set-state-trace s subtheorem proof)
@@ -129,21 +131,17 @@
                                                (parameterize ([org-depth (fx1+ (org-depth))])
                                                  (print-trace-answer (trace-answer-state a))))) (enumerate answers) answers))))
                     (values ans-remaining answers p))))
-              (trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)))))
+              ;(values subgoal (set-state-trace s subtheorem proof) p ctn)
+              (trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)
+              ))))
   
   ;; === PRINTING ===
   
-  (define (print-trace-args g s source)
+  (define (print-trace-args s source)
     (org-print-header "<arguments>")
     (parameterize ([org-depth (fx1+ (org-depth))])
       (print-trace-answer s)
-      (print-trace-goal g source)))
-
-  (define (print-trace-goal g source)
-    (org-print-header "source")
-    (for-each org-print-item (trace-goal-source g))
-    (org-print-header "simplified")
-    (org-print-item (trace-goal-goal g)))
+      source))
   
   (define (print-trace-answer s)
     (org-print-header "proof")
