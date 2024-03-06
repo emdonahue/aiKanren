@@ -39,13 +39,14 @@
 	- [printfo](#printfo)
 	- [displayo](#displayo)
 	- [noopo](#noopo)
+	- [var](#var)
+-  [Tracing](#Tracing)
 	- [trace-goal](#trace-goal)
 	- [trace-run](#trace-run)
 	- [trace-conde](#trace-conde)
 	- [prove](#prove)
 	- [trace-proof-goals](#trace-proof-goals)
 	- [trace-goals](#trace-goals)
-	- [var](#var)
 -  [Parameters](#Parameters)
 	- [search-strategy](#search-strategy)
 	- [max-depth](#max-depth)
@@ -53,20 +54,20 @@
 ## Run
 ### run
 ```scheme
- (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
 ```
 ### run*
 ```scheme
- (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
 ```
 ### run1
 ```scheme
- (define-syntax run1 ; Returns the first answer instead of a list of answers.
+  (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
 ```
 ## Goals
 ### constraint
 ```scheme
-   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
+  (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
 ```
 ### succeed
 ```scheme
@@ -82,7 +83,7 @@
 ```
 ### conde
 ```scheme
- (define-syntax conde ; Nondeterministic branching.
+  (define-syntax conde ; Nondeterministic branching.
 ```
 ### fresh
 ```scheme
@@ -205,6 +206,12 @@
 ```scheme
   (define-syntax noopo ; A no-op goal that executes arbitrary code when called as part of the search.
 ```
+### var
+```scheme
+  (define var ; Accepts an integer var-id and creates a var struct. Mostly for internal use, or for dynamically generating miniKanren programs.
+      [(_ (var . idspec) body ...) (define var (org-lambda var idspec body ...))])))
+```
+## Tracing
 ### trace-goal
 ```scheme
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
@@ -213,10 +220,10 @@
 ```
 ### trace-run
 ```scheme
-   (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
-     ;; (trace-run (q) g ...)
-     ;; (trace-run max-depth (q) g ...)
-     ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
+  (define-syntax trace-run ; Equivalent to run**-dfs or run*-dfs, but activates tracing system.
+    ;; (trace-run (q) g ...)
+    ;; (trace-run max-depth (q) g ...)
+    ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
 ```
 ### trace-conde
 ```scheme
@@ -233,17 +240,10 @@
 ```scheme
   (define trace-proof-goals (make-parameter #t)) ; A flag to enable or disable use of the proof subsystem during tracing.
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
-  (define-structure (trace-answer theorem proof state))
 ```
 ### trace-goals
 ```scheme
   (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
-  (define-structure (trace-answer theorem proof state))
-```
-### var
-```scheme
-  (define var ; Accepts an integer var-id and creates a var struct. Mostly for internal use, or for dynamically generating miniKanren programs.
-      [(_ (var . idspec) body ...) (define var (org-lambda var idspec body ...))])))
 ```
 ## Parameters
 ### search-strategy
@@ -253,8 +253,8 @@
 ```
 ### max-depth
 ```scheme
-  (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of suspended goals encountered on a given branch (such as those produced by fresh or matcho).
-    ; Default: -1 (infinite depth).
+  (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution.
+    ; Default: (most-positive-fixnum).
 ```
 ### answer-type
 ```scheme

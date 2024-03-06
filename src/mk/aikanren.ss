@@ -13,7 +13,7 @@
    membero appendo assoco asspo for-eacho ; List
    __ ; Quantification
    printfo displayo noopo var ; Debugging
-   trace-goal trace-run trace-conde prove trace-proof-goals trace-goals ; Tracing
+   trace-goal trace-run trace-conde prove trace-goals ; Tracing
    search-strategy max-depth answer-type ; Parameters
    )
   (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (goals) (tracing) (running))
