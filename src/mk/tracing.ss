@@ -29,8 +29,12 @@
     (syntax-rules ()
                                         ;TODO make goal-cond automatically add a condition for trace goals when not compiling and make trace goals vanish when compiling (test (optimize-level) param?
       [(_ name goals ...)
-       (if (trace-query)
+       (if (trace-query) ; If we are not inside a trace call, don't even render the trace goal.
            (make-trace-goal 'name '(goals ...) (conj* goals ...))
+           #;
+           (lambda (g s p c)
+             (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) ctn)
+             )
            (conj* goals ...))]))
   
   (define-syntax trace-conde ; Equivalent to conde but each branch begins with a name and implicitly instantiates a trace-goal.
@@ -93,57 +97,57 @@
                     (trace-run-goal g s p n (fx1- depth) answers ctn))]     
      [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                        (trace-run-goal g s p n (fx1- depth) answers ctn))]
-     [(trace-goal? g) (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) ctn)]
+     [(trace-goal? g) (cps-trace-goal g s p n depth answers (state-proof s) (state-theorem s) (trace-goal-name g) (trace-goal-source g) ctn)]
      [(proof-goal? g) (trace-run-goal (proof-goal-goal g) (set-state-datum s trace-data? (make-trace-data (proof-goal-proof g) (state-proof s))) p n depth answers ctn)]
      [else (trace-run-goal ctn (run-constraint g s) p n depth answers succeed)]))
 
-  (define (cps-trace-goal g s p n depth answers proof theorem ctn)
-    (if (theorem-contradiction theorem (trace-goal-name g)) ; If the current theorem path diverges from the required proof,
+  (define (cps-trace-goal g s p n depth answers proof theorem name source ctn)
+    (if (theorem-contradiction (state-theorem s) name) ; If the current theorem path diverges from the required proof,
         (trace-run-goal fail s p n depth answers ctn) ; fail immediately.
         (let ([subgoal (trace-goal-goal g)]
-              [proof (open-subproof proof (trace-goal-name g))]
-              [subtheorem (subtheorem theorem)]
+              [proof (open-subproof (state-proof s) name)]
+              [subtheorem (subtheorem (state-theorem s))]
               [ctn (lambda (s p c)
                      (if (theorem-contradiction (state-theorem s) '()) 
                          (values fail failure p fail)
                          (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
           (if (tracing? theorem)
               (begin
-                (org-print-header (trace-goal-name g))           
+                (org-print-header name)           
                 (parameterize ([org-depth (fx1+ (org-depth))])
-                  (when (tracing? theorem) (print-trace-args g s proof))
+                  (when (tracing? (state-theorem s)) (print-trace-args g s source))
                   (let*-values ([(ans-remaining answers p)
                                  (trace-run-goal subgoal
-                                                 (set-state-datum s trace-data? (make-trace-data subtheorem proof))
+                                                 (set-state-trace s subtheorem proof)
                                                  p n depth answers ctn)]) ;proof subtheorem
-                    (when (theorem-trivial? theorem)
+                    (when (theorem-trivial? (state-theorem s))
                       (if (null? answers) (org-print-header "<failure>")
                           (begin (org-print-header "<answers>")
                                  (for-each (lambda (i a)
                                              (parameterize ([org-depth (fx1+ (org-depth))])
                                                (org-print-header (number->string i))
                                                (parameterize ([org-depth (fx1+ (org-depth))])
-                                                 (print-trace-answer (trace-answer-proof a) (trace-answer-state a))))) (enumerate answers) answers))))
+                                                 (print-trace-answer (trace-answer-state a))))) (enumerate answers) answers))))
                     (values ans-remaining answers p))))
               (trace-run-goal subgoal (set-state-trace s subtheorem proof) p n depth answers ctn)))))
   
   ;; === PRINTING ===
   
-  (define (print-trace-args g s proof)
+  (define (print-trace-args g s source)
     (org-print-header "<arguments>")
     (parameterize ([org-depth (fx1+ (org-depth))])
-      (print-trace-answer proof s)
-      (print-trace-goal g)))
+      (print-trace-answer s)
+      (print-trace-goal g source)))
 
-  (define (print-trace-goal g)
+  (define (print-trace-goal g source)
     (org-print-header "source")
     (for-each org-print-item (trace-goal-source g))
     (org-print-header "simplified")
     (org-print-item (trace-goal-goal g)))
   
-  (define (print-trace-answer proof s)
+  (define (print-trace-answer s)
     (org-print-header "proof")
-    (org-print-item (reverse-proof proof))
+    (org-print-item (reverse-proof (state-proof s)))
     (org-print-header "query")
     (org-print-item (reify-var s (trace-query)))
     (let* ([substitution (walk-substitution s)] ;TODO print unbound variables in substitution debugging by checking var id in state
