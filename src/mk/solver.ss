@@ -2,39 +2,55 @@
   (export run-constraint simplify-=/= simplify-pconstraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer))
 
-  (define (run-constraint g s)
+  (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)]) s))
+    (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)])
+      ;(unless (or (succeed? resolved) (fail? resolved)) (printf "resorved ~s~%" resolved))
+      ;(cert (or (succeed? resolved) (fail? resolved)))
+      s))
 
-  (define (solve-constraint g s ctn resolve delta)
+  (org-define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
+    ;; resolve: constraints retrieved from the store that we need to recheck, but which should not be negated by noto on the return (so we cant just solve them immediately. we must delay rechecking until we are done with g).
+    ;; delta: conjunction of all the simplified goals we have added to the store. reflects the change (delta) of the returned state's constraint store.
     (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> delta pending state-or-failure?
     (if (failure? s) (values fail fail failure)
         (exclusive-cond
          [(fail? g) (values fail fail failure)]
-         [(succeed? g) (if (succeed? ctn)
-                           (if (succeed? resolve)
-                               (values delta succeed s)
-                               (let-values ([(resolved re-resolved s) (solve-constraint resolve s succeed succeed delta)])
-                                 (if (failure? s) (values fail fail failure)
-                                     (values delta (conj resolved re-resolved) s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
-                           (solve-constraint ctn s succeed resolve delta))]
+         [(succeed? g) (solve-succeed s ctn resolve delta)]
          [(==? g) (solve-== g s ctn resolve delta)]
          [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
          [(disj? g) (solve-disj g s ctn resolve delta)]
          [(conde? g) (solve-constraint (conde->disj g) s ctn resolve delta)]
          [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) resolve delta)]
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
-         [(procedure? g) (let-values ([(g s p) (g s empty-package)])
-                       (solve-constraint g s ctn resolve delta))]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
-         [(proxy? g) (let-values ([(v c) (walk-var-val s (proxy-var g))])
-                       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
-                           (solve-constraint succeed s ctn resolve delta)))]
+         [(proxy? g) (solve-proxy g s ctn resolve delta)]
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
+
+
+  (org-define (solve-succeed s ctn resolve delta)
+    (if (succeed? ctn) ; Solve until continuation is trivial.
+        (if (succeed? resolve) ; If we have no ctn and nothing left to recheck, we're done.
+            (values delta succeed s)
+            (let-values ([(resolved re-resolved s) (solve-constraint resolve s succeed succeed delta)])
+              (if (failure? s) (values fail fail failure)
+                  (values delta (conj resolved re-resolved) s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
+        (solve-constraint ctn s succeed resolve delta)))
+
+
+  (org-define (solve-== g s ctn resolve delta)
+    ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
+    ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
+    ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
+    ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
+    (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
+      (if (fail? bindings) (values fail fail failure)
+          (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
+                            delta))))
 
   
   (define (solve-noto g s ctn resolve delta)
@@ -48,17 +64,6 @@
      [else 
       (let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
         (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c))))]))
-
-  
-  (define (solve-== g s ctn resolve delta)
-    ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
-    ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
-    ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
-    ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
-    (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
-      (if (fail? bindings) (values fail fail failure)
-          (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
-                            delta))))
 
 
   (define (solve-=/= g s ctn resolve delta)
@@ -253,6 +258,11 @@
                           (values unified succeed disunified succeed)
                           (values unified disunified succeed succeed))))))))))
 
+  (define (solve-proxy g s ctn resolve delta)
+    (let-values ([(v c) (walk-var-val s (proxy-var g))])
+      (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
+          (solve-constraint succeed s ctn resolve delta))))
+  
   (define (store-constraint s g)
               ;; Store simplified constraints into the constraint store.
               (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?

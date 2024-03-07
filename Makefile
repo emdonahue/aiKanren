@@ -10,7 +10,7 @@ OBJSRC = $(OBJ:.so=.ss)
 default: lib/aikanren.wpo lib/aikanren.so
 
 clean:
-	rm -rf lib build profile benchmarks
+	rm -rf lib build profile
 
 lib/aikanren.wpo lib/aikanren.so &: $(SRC)
 # Source file directory must come before object directory, but need both for wpo.

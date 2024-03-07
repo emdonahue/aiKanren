@@ -64,17 +64,16 @@
     ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
     (syntax-rules ()
       [(_ n q g ...)
-       (org-trace
-        (parameterize ([tracing #t] ; Signal that trace-goals should not optimize themselves away.
-                       [search-strategy search-strategy/dfs])
-          (run n q
-            (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
-                   g ...
-                   ;; Last gaol closes the proof.
-                   (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed))))))]))
+       (parameterize ([tracing #t] ; Signal that trace-goals should not optimize themselves away.
+                      [search-strategy search-strategy/dfs]
+                      [org-tracing (trace-goals)])
+         (run n q
+           (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
+                  g ...
+                  ;; Last gaol closes the proof.
+                  (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed)))))]))
 
-  (define-syntax trace-run*
-                                        ; Equivalent to run*, but activates tracing.
+  (define-syntax trace-run* ; Equivalent to run*, but activates tracing.
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
 
