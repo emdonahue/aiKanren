@@ -25,8 +25,7 @@
           pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
           make-noto noto? noto-goal
-          __
-          make-trace-goal trace-goal? trace-goal-name trace-goal-source trace-goal-goal)
+          __)
   (import (chezscheme) (sbral) (utils))
 
   ;; === RUNTIME PARAMETERS ===
@@ -266,7 +265,7 @@
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
   (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (trace-goal? g) (dfs-goal? g)))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (dfs-goal? g)))
 
   (define goal-memp
     (case-lambda
@@ -306,8 +305,6 @@
      [(fail? x) y]
      [(fail? y) x]
      [else (make-conde x y)]))
-
-  (define-structure (trace-goal name source goal))
   
   ;; CONJ
   (define (conj lhs rhs) ; Logical conjunction between goals or constraints.

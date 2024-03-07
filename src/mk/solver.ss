@@ -34,9 +34,9 @@
          [(proxy? g) (let-values ([(v c) (walk-var-val s (proxy-var g))])
                        (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
                            (solve-constraint succeed s ctn resolve delta)))]
-         [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve delta)] ;TODO can we remove trace-goal from general solver 
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
+  
   (define (solve-noto g s ctn resolve delta)
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
@@ -47,39 +47,18 @@
             (solve-constraint succeed (store-constraint s (noto g)) ctn resolve (conj delta (noto g)))))]
      [else 
       (let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
-        ;(org-display c s^)
-        #;
-        (when (not (or (reify-constraints) (not (conj-memp c matcho?)))) ;
-        (printf "c ~s~%g ~s~%" c g))
-        ;(cert (or (reify-constraints) (not (conj-memp c matcho?))))
-        (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)))
-        #;
-        (if (succeed? p) ; If there are no pending constraints, all delta constraints must be fully normalized (non disj) so we can simply store them and continue. ; ;
-        (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c)) pending) ; ;
-        (solve-constraint succeed s (conj (disj (noto c) (noto p)) ctn) resolve delta pending)))]))
+        (solve-constraint succeed (store-constraint s (noto c)) ctn resolve (conj delta (noto c))))]))
 
-
-
+  
   (define (solve-== g s ctn resolve delta)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
-              ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
-              ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
+    ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
+    ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
     (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
       (if (fail? bindings) (values fail fail failure)
           (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
-                            delta)
-          ;;(conj delta (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))
-          #;;;TODO revisit simplifying == once all unifications have been made
-          (let-values ([(recheck/simplified recheck/recheck) (simplify-unification recheck bindings)])
-            (if (or (fail? recheck/simplified) (fail? recheck/recheck)) (values fail failure)
-                (let-values ([(ctn/simplified ctn/recheck) (simplify-unification ctn bindings)])
-                  ;;(org-display simplified recheck recheck/simplified recheck/recheck ctn ctn/simplified ctn/recheck)
-                  (if (or (fail? ctn/simplified) (fail? ctn/recheck)) (values fail failure)                                            
-                      (solve-constraint succeed (store-constraint s (conj simplified (conj recheck/simplified ctn/simplified)))
-                                        ctn/recheck (conj recheck/recheck resolve)
-                                        (conj delta
-                                              (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))))))))))
+                            delta))))
 
 
   (define (solve-=/= g s ctn resolve delta)
@@ -177,17 +156,15 @@
               (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
               (presolve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
-  (define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
-              (let-values ([(d-lhs r-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
-                (exclusive-cond
-                 [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
-                 [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)]
-                 [else (solve-constraint succeed (store-constraint s (disj d-lhs (disj-rhs g))) ctn resolve (conj delta (disj d-lhs (disj-rhs g))))]
-                 #;
-                 [else (let-values ([(d-rhs r-rhs s-rhs) (solve-constraint (disj-rhs g) s succeed succeed succeed)])
-                         (if (fail? d-rhs) (solve-constraint succeed s-lhs ctn resolve (conj delta d-lhs))
-                          (let ([d (disj-factorized d-lhs d-rhs)])
-                            (solve-constraint succeed (store-constraint s d) ctn resolve (conj delta d)))))])))
+  (define (solve-disj g s ctn resolve delta)
+    (let-values ([(d-lhs r-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
+      (exclusive-cond ; Solve the lhs disjunct.
+       [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)] ; If it fails, continue solving disjuncts.
+       [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)] ; If it succeeds, discard the entire disj constraint.
+       [else ; If it only simplifies, store the simplified disj with a new lhs.
+        (let ([simplified-lhs (disj d-lhs (disj-rhs g))])
+          (solve-constraint succeed (store-constraint s simplified-lhs)
+                            ctn resolve (conj delta simplified-lhs)))])))
 
   (define solve-pconstraint
     (case-lambda
@@ -276,7 +253,7 @@
                           (values unified succeed disunified succeed)
                           (values unified disunified succeed succeed))))))))))
 
-  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
+  (define (store-constraint s g)
               ;; Store simplified constraints into the constraint store.
               (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
               (exclusive-cond
@@ -287,39 +264,31 @@
                [else ; All other constraints get assigned to their attributed variables.
                 (state-add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
 
-  (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
+  (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
-                     [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
-                     [(g vs unifies)
-                      (cert (goal? g))
-                      (exclusive-cond
-                       [(succeed? g) (values vs unifies)]
-                       [(disj? g) (attributed-vars (disj-car g) vs unifies)]
-                       #;
-                       [(disj? g) (let-values ([(lhs lhs-unifies) (attributed-vars (disj-car g) vs unifies)]) ;TODO do we need to check for recheckable matchos when attributing disj?
-                                    (if (conj-memp (disj-car g) ==?) ; Disjunct 2 normalized iff 1 contains no ==
-                                        (attributed-vars (disj-car (disj-cdr g)) lhs #t)
-                                        (values lhs unifies)))]
-                       [(conj? g) (call-with-values
-                                      (lambda () (attributed-vars (conj-cdr g) vs unifies))
-                                    (lambda (vs unifies) (attributed-vars (conj-car g) vs unifies)))]
-                       [(noto? g)
-                        (if (==? (noto-goal g))
-                            (let ([vs (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs))) (cons (==-rhs (noto-goal g)) vs) vs)])
-                             (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
-                               (values vars unifies)))
-                            (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
-                              (values vars unifies)))]
-                       [(==? g) ;TODO test whether == must attribute to both vars like =/=
-                        (cert (var? (==-lhs g)))
-                        (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)
-                        #;
-                        (let ([vs (if (and (var? (==-rhs g)) (not (memq (==-rhs g) vs))) (cons (==-rhs g) vs) vs)])
-                          (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t))]
-                       [(matcho? g)
-                        (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
-                       [(pconstraint? g)
-                        (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
-                       [(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]
-                       [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
+      [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
+      [(g vs unifies)
+       (cert (goal? g))
+       (exclusive-cond
+        [(succeed? g) (values vs unifies)]
+        [(disj? g) (attributed-vars (disj-car g) vs unifies)]
+        [(conj? g) (call-with-values
+                       (lambda () (attributed-vars (conj-cdr g) vs unifies))
+                     (lambda (vs unifies) (attributed-vars (conj-car g) vs unifies)))]
+        [(noto? g)
+         (if (==? (noto-goal g))
+             (let ([vs (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs))) (cons (==-rhs (noto-goal g)) vs) vs)])
+               (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
+                 (values vars unifies)))
+             (let-values ([(vars _) (attributed-vars (noto-goal g) vs #f)])
+               (values vars unifies)))]
+        [(==? g) ;TODO test whether == must attribute to both vars like =/=
+         (cert (var? (==-lhs g)))
+         (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
+        [(matcho? g)
+         (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
+        [(pconstraint? g)
+         (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
+        [(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]
+        [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
