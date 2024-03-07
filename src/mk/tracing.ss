@@ -6,17 +6,17 @@
           prove)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running) (state))
 
-  
+
   ;; === PARAMETERS ===
 
-  
+
   (define trace-goals (make-parameter #t)) ; External flag to enable or disable trace printing.
   (define tracing (make-parameter #f)) ; Internal flag that signals the trace system is running.
 
-  
+
   ;; === DATA STRUCTURES ===
 
-  
+
   (define-structure (trace-data theorem proof)) ; Tracing data records the path of trace-goal names taken by a specific state and is stored in the state in a trace-data structure.
 
   (define (state-theorem s) ; The theorem is the (potentially partial) path of trace-goal names the search is constrained to follow. Once this path has been satisfied (assuming it ends with the wildcard __ path), the search can continue as normal. Useful for constraining the search to explore a particular part of the space without changing the search itself.
@@ -31,10 +31,10 @@
     (cert (state? s))
     (set-state-datum s trace-data? (make-trace-data theorem proof)))
 
-  
+
   ;; === INTERFACE ===
 
-  
+
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
     ;; (trace-goal name goals...)
     ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>. States also carry "proofs," corresponding to the tree of names of trace goals they have encountered.
@@ -78,37 +78,43 @@
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
 
-  
+
   ;; === STREAMS ===
 
-  
+
   (define (run-trace-goal g s p n answers name source ctn)
     (if (theorem-contradiction? (state-theorem s) name) ; If this trace-goal name diverges from the required proof,
         (run-goal-dfs fail s p n answers ctn) ; fail immediately.
         (let ([s (set-state-trace
                   s (subtheorem (state-theorem s))
                   (open-subproof (state-proof s) name))])
-          (print-trace-header s name)
+          (print-trace-header s name source)
           (parameterize ([org-depth (fx1+ (org-depth))])
-            (print-trace-arguments s)
             (let-values ([(ans-remaining child-answers p)
                           (run-goal-dfs
                            g s p n '()
                               (lambda (s p c) ; Encountering the ctn => we have finished with this trace-goal's children, and must clean up the proof before proceeding to the next ctn conjuncts.
-                                (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal. 
+                                (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal.
                                     (values fail failure p fail) ; If there are unproven terms in our theorem, we fail.
                                     ;; Otherwise, trim the theorem and close the proof before moving on.
                                     (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c))))])
               (print-trace-answers s child-answers)
               (values ans-remaining (append child-answers answers) p))))))
-  
-  
+
+
   ;; === PRINTING ===
 
 
-  (define (print-trace-header s name)
-    (when (trace-goals) (org-print-header name)))
-  
+  (define (print-trace-header s name source)
+    (when (trace-goals)
+      (org-print-header name)
+      (parameterize ([org-depth (fx1+ (org-depth))])
+        (org-print-header "<state>")
+        (org-print-header "<goal>")
+        (org-print-item source)
+        (parameterize ([org-depth (fx1+ (org-depth))])
+          (print-trace-answer s)))))
+
   (define (print-trace-answers s answers) ; Prints one nested tree in the org outline corresponding to the current trace-goal.
     (when (trace-goals)
       (if (null? answers) (org-print-header "<failure>")
@@ -119,14 +125,8 @@
                                (parameterize ([org-depth (fx1+ (org-depth))])
                                  (print-trace-answer s)))) (enumerate answers) answers)))))
 
-  (define (print-trace-arguments s)
-    (when (trace-goals)
-      (org-print-header "<arguments>")
-      (parameterize ([org-depth (fx1+ (org-depth))])
-        (print-trace-answer s))))
-
   (define (print-trace-answer s) ; Prints all the relevant details of a state
-    (when (trace-goals) 
+    (when (trace-goals)
       (org-print-header "proof")
       (org-print-item (reverse-proof (state-proof s)))
       (org-print-header "query")
@@ -139,12 +139,12 @@
         (unless (null? substitution)
           (org-print-header "substitution")
           (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution)))))
-  
+
   ;; === PROOFS ===
 
-  
+
   (define cursor '__) ; The cursor represents the 'current' location in the proof tree. It will be replaced by the next trace-goal name encountered and a new cursor will be inserted.
-  
+
   (define (cursor? c) (eq? c cursor))
 
   (define open-proof (list cursor)) ; Creates a new, empty proof.
