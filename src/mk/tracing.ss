@@ -6,22 +6,36 @@
           prove)
   (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running) (state))
 
-  (define trace-query (make-parameter #f)) ; Query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
-  (define trace-goals (make-parameter #t)) ; A flag to enable or disable trace printing.
+  
+  ;; === PARAMETERS ===
 
+  
+  (define trace-goals (make-parameter #t)) ; External flag to enable or disable trace printing.
+
+  (define trace-query (make-parameter #f)) ; Internal query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
+
+  
+  ;; === DATA STRUCTURES ===
+
+  
   (define-structure (trace-data theorem proof)) ; Tracing data records the path of trace-goal names taken by a specific state and is stored in the state in a trace-data structure.
+
   (define (state-theorem s) ; The theorem is the (potentially partial) path of trace-goal names the search is constrained to follow. Once this path has been satisfied (assuming it ends with the wildcard __ path), the search can continue as normal. Useful for constraining the search to explore a particular part of the space without changing the search itself.
     (cert (state? s))
     (trace-data-theorem (state-datum s trace-data?)))
+
   (define (state-proof s) ; The proof is the current path through trace-goal names a given state has followed to this point in the search. Used in debug printing understand what path this state has taken, as well as to compare with the current theorem to determine if the state should be discarded.
     (cert (state? s))
     (trace-data-proof (state-datum s trace-data?)))
+
   (define (set-state-trace s theorem proof)
     (cert (state? s))
     (set-state-datum s trace-data? (make-trace-data theorem proof)))
 
+  
   ;; === INTERFACE ===
 
+  
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
     ;; (trace-goal name goals...)
     ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>. States also carry "proofs," corresponding to the tree of names of trace goals they have encountered.
@@ -65,40 +79,43 @@
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
 
-  ;; === INTERPRETER ===
+  
+  ;; === STREAMS ===
 
+  
   (define (run-trace-goal g s p n answers name source ctn)
     (if (theorem-contradiction? (state-theorem s) name) ; If this trace-goal name diverges from the required proof,
         (run-goal-dfs fail s p n answers ctn) ; fail immediately.
-        (let ([proof (open-subproof (state-proof s) name)] ; Open a proof for the children of this trace-goal.
-              [subtheorem (subtheorem (state-theorem s))] ; Trim this trace-goal name off the states' theorem-to-prove.
-              [ctn (lambda (s p c) ; Encountering the ctn => we have finished with this trace-goal's children, and must clean up before proceeding to the next ctn conjuncts.
-                     (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal. 
-                         (values fail failure p fail) ; If there are unproven terms in our theorem, we fail.
-                         ;; Otherwise, trim the theorem and close the proof before moving on.
-                         (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c)))])
+        (let-values ([(ans-remaining answers p)
+                      (run-goal-dfs
+                       g (set-state-trace
+                          s (subtheorem (state-theorem s))
+                          (open-subproof (state-proof s) name)) p n answers
+                          (lambda (s p c) ; Encountering the ctn => we have finished with this trace-goal's children, and must clean up the proof before proceeding to the next ctn conjuncts.
+                            (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal. 
+                                (values fail failure p fail) ; If there are unproven terms in our theorem, we fail.
+                                ;; Otherwise, trim the theorem and close the proof before moving on.
+                                (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c))))])
           (if (trace-goals)
-              (begin
-                (org-print-header name)
-                (parameterize ([org-depth (fx1+ (org-depth))])
-                  (when (tracing? (state-theorem s)) (print-trace-args s source))
-                  (let*-values ([(ans-remaining answers p)
-                                 (run-goal-dfs g
-                                                 (set-state-trace s subtheorem proof)
-                                                 p n answers ctn)])
-                    (when (theorem-trivial? (state-theorem s))
-                      (if (null? answers) (org-print-header "<failure>")
-                          (begin (org-print-header "<answers>")
-                                 (for-each (lambda (i s)
-                                             (parameterize ([org-depth (fx1+ (org-depth))])
-                                               (org-print-header (number->string i))
-                                               (parameterize ([org-depth (fx1+ (org-depth))])
-                                                 (print-trace-answer s)))) (enumerate answers) answers))))
-                    (values ans-remaining answers p))))
-              (run-goal-dfs g (set-state-trace s subtheorem proof) p n answers ctn)))))
-
+              (print-trace-subtree s answers name source)
+              (values ans-remaining answers p)))))
+  
+  
   ;; === PRINTING ===
 
+  (define (print-trace-subtree s answers name source)
+    (org-print-header name)
+    (parameterize ([org-depth (fx1+ (org-depth))])
+      (when (theorem-trivial? (state-theorem s)) (print-trace-args s source))
+      (when (theorem-trivial? (state-theorem s))
+        (if (null? answers) (org-print-header "<failure>")
+            (begin (org-print-header "<answers>")
+                   (for-each (lambda (i s)
+                               (parameterize ([org-depth (fx1+ (org-depth))])
+                                 (org-print-header (number->string i))
+                                 (parameterize ([org-depth (fx1+ (org-depth))])
+                                   (print-trace-answer s)))) (enumerate answers) answers))))))
+  
   (define (print-trace-args s source)
     (org-print-header "<arguments>")
     (parameterize ([org-depth (fx1+ (org-depth))])
@@ -119,11 +136,10 @@
         (org-print-header "substitution")
         (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution))))
 
-  (define (print-depth-limit theorem)
-    (when (tracing? theorem) (org-print-header " <depth limit reached>")))
-
+  
   ;; === PROOFS ===
 
+  
   (define cursor '__) ; The cursor represents the 'current' location in the proof tree. It will be replaced by the next trace-goal name encountered and a new cursor will be inserted.
   (define (cursor? c) (eq? c cursor))
 
@@ -151,8 +167,5 @@
         (if (pair? (car theorem)) (cons (subtheorem (car theorem)) (cdr theorem))
             (if (cursor? (car theorem)) cursor (cdr theorem))) theorem))
 
-  (define (tracing? theorem)
-    (theorem-trivial? theorem))
-
-  (define (theorem-trivial? theorem)
+  (define (theorem-trivial? theorem) ; A theorem is trivial when its head is the cursor, meaning that the proof is entirely unconstrained.
     (if (pair? theorem) (theorem-trivial? (car theorem)) (cursor? theorem))))
