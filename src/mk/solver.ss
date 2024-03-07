@@ -33,21 +33,34 @@
     (if (succeed? ctn) ; Solve until continuation is trivial.
         (if (succeed? resolve) ; If we have no ctn and nothing left to recheck, we're done.
             (values delta s)
-            (let-values ([(_ s) (solve-constraint resolve s succeed succeed delta)])
-              (if (failure? s) (values fail failure) ;(conj resolved re-resolved)
-                  (values delta s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
+            (let-values ([(resolved s) (solve-constraint resolve s succeed succeed delta)])
+              (values (if (fail? resolved) fail delta) s))) ; If our recheck constraints fail, fail. Otherwise return the delta of the original simplified constraint (not the rechecks, since we don't want noto to negate the rechecked values that were removed from the constraint store but that were not children of noto). We want to make sure all constraints succeed, but we only want to save the simplified form of our original constraint. Not others that must be rechecked as a result of checking it (eg because it is a unification that fires subsequent constraints). 
         (solve-constraint ctn s succeed resolve delta)))
 
+  (define (solve-disj g s ctn resolve delta)
+    (let-values ([(d-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)]) ; Solve the lhs in a new hypothetical environment with no continuation. Just simplify the current disj goals in the context of the current state. Passing the continuation through creates many copies of the same constraints, which destroys performance.
+      (exclusive-cond ; Solve the lhs disjunct.
+       [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)] ; If it fails, continue solving disjuncts.
+       [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)] ; If it succeeds, discard the entire disj constraint.
+       [else ; If it only simplifies, store the simplified disj with a new lhs.
+        (let ([simplified-lhs (disj d-lhs (disj-rhs g))])
+          (solve-constraint succeed (store-constraint s simplified-lhs)
+                            ctn resolve (conj delta simplified-lhs)))])))
+
+
+
+  
+  
 
   (org-define (solve-== g s ctn resolve delta)
-    ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
-    ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
-    ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
-    ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
-    (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
-      (if (fail? bindings) (values fail failure)
-          (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
-                            delta))))
+              ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
+              ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
+              ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
+              ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
+              (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
+                (if (fail? bindings) (values fail failure)
+                    (solve-constraint succeed (store-constraint s simplified) (conj ctn pending) (conj resolve committed)
+                                      delta))))
 
   
   (define (solve-noto g s ctn resolve delta)
@@ -64,53 +77,53 @@
 
 
   (define (solve-=/= g s ctn resolve delta)
-              ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
-              (cert (==? g)) ; -> delta pending state
-              (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y
-                (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
-                    (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
-                        (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-                          ;(org-display unified disunified recheck diseq)
-                          (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
-                              (solve-constraint succeed (store-constraint (extend s (=/=-lhs g) disunified) diseq) ctn (conj recheck resolve) (conj delta g))))))))
+    ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
+    (cert (==? g)) ; -> delta pending state
+    (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y
+      (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
+          (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
+              (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
+                                        ;(org-display unified disunified recheck diseq)
+                (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
+                    (solve-constraint succeed (store-constraint (extend s (=/=-lhs g) disunified) diseq) ctn (conj recheck resolve) (conj delta g))))))))
 
   (define (simplify-=/= g x y d)
-              ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
-              ;; 1) g simplified under the assumption x==y. If fail?, g => x=/=y, so we can simply throw away the new constraint. Since we only need to check for failure, we can cut corners and not compute the true simplification of g, g', so long as ~g <=> ~g'.
-              ;; 2) g simplified under x=/=y but only conjuncts that are completely normalized. Since they are guaranteed to be already normalized, we can simply add them directly to the store.
-              ;; 3) g simplified under x=/=y, but only conjuncts that might be unnormalized. We must re-check these with the full solver.
-              ;; 4) The final disequality constraint x=/=y. If it is already entailed by our simplifications of g, just return succeed. This will be conjoined to the constraint from #2 when adding to the store.
-              (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
-              (exclusive-cond
-               [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
-                    [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
-                                    [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
-                               (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
-                                (exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
-                                 [(failure? s^) (values succeed g succeed d)] ; == different from =/= => =/= satisfied
-                                 [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
-                                 [else (values g g succeed d)])))] ; free vars => =/= undecidable
-                    [(pconstraint? g) (if (pconstraint-attributed? g x) (values (noto (pconstraint-check g x y)) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
-                    [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
-                                     (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
-                    [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
-                                 (cert (succeed? recheck)) ; noto only wraps primitive goals since its a =/=, which should never need rechecking on their own
-                                 (values (noto unified) (noto disunified) recheck d))]
+    ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
+    ;; 1) g simplified under the assumption x==y. If fail?, g => x=/=y, so we can simply throw away the new constraint. Since we only need to check for failure, we can cut corners and not compute the true simplification of g, g', so long as ~g <=> ~g'.
+    ;; 2) g simplified under x=/=y but only conjuncts that are completely normalized. Since they are guaranteed to be already normalized, we can simply add them directly to the store.
+    ;; 3) g simplified under x=/=y, but only conjuncts that might be unnormalized. We must re-check these with the full solver.
+    ;; 4) The final disequality constraint x=/=y. If it is already entailed by our simplifications of g, just return succeed. This will be conjoined to the constraint from #2 when adding to the store.
+    (cert (goal? g)) ; -> goal?(unified) goal?(disunified) goal?(recheck) goal?(disequality)
+    (exclusive-cond
+     [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
+     [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
+                     [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
+                (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
+                  (exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
+                   [(failure? s^) (values succeed g succeed d)] ; == different from =/= => =/= satisfied
+                   [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
+                   [else (values g g succeed d)])))] ; free vars => =/= undecidable
+     [(pconstraint? g) (if (pconstraint-attributed? g x) (values (noto (pconstraint-check g x y)) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
+     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
+                      (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
+     [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
+                  (cert (succeed? recheck)) ; noto only wraps primitive goals since its a =/=, which should never need rechecking on their own
+                  (values (noto unified) (noto disunified) recheck d))]
 
-                    ;; if =/= in a conj => skip
-                    ;; if =/= in a disj => dont skip
-                    ;; if =/= not in a disj, ski ok
-                    ;; cant be in both conj and disj??
-                    [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/= (conj-lhs g) x y d)])
-                                 (if (succeed? unified) (values succeed disunified-lhs recheck-lhs d) ; If unified fails, we can throw the =/= away, so abort early.
-                                     (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/= (conj-rhs g) x y d)])
-                                       (values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
-                    [(disj? g) (simplify-=/=-disj g x y d)]
-                    [(fail? g) (values succeed fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
-                    [(constraint? g) (simplify-=/= (constraint-goal g) x y d)]
-                    [(procedure? g) (nyi simplify-=/= proceedure)]
-                    [(proxy? g) (values g succeed g d)] ;TODO can we discard proxies in some cases while reducing =/=?
-                    [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
+     ;; if =/= in a conj => skip
+     ;; if =/= in a disj => dont skip
+     ;; if =/= not in a disj, ski ok
+     ;; cant be in both conj and disj??
+     [(conj? g) (let-values ([(unified disunified-lhs recheck-lhs d) (simplify-=/= (conj-lhs g) x y d)])
+                  (if (succeed? unified) (values succeed disunified-lhs recheck-lhs d) ; If unified fails, we can throw the =/= away, so abort early.
+                      (let-values ([(unified disunified-rhs recheck-rhs d) (simplify-=/= (conj-rhs g) x y d)])
+                        (values unified (conj disunified-lhs disunified-rhs) (conj recheck-lhs recheck-rhs) d))))]
+     [(disj? g) (simplify-=/=-disj g x y d)]
+     [(fail? g) (values succeed fail fail fail)] ; Empty disjunction tail. Fail is thrown away by disj.
+     [(constraint? g) (simplify-=/= (constraint-goal g) x y d)]
+     [(procedure? g) (nyi simplify-=/= proceedure)]
+     [(proxy? g) (values g succeed g d)] ;TODO can we discard proxies in some cases while reducing =/=?
+     [else (assertion-violation 'simplify-=/= "Unrecognized constraint type" g)]))
 
   (define (simplify-=/=-disj g x y d)
     (let*-values ([(unified-lhs simplified-lhs recheck-lhs d)
@@ -136,37 +149,27 @@
                           (values unified disunified succeed succeed))))))))))
 
   (define (solve-matcho g s ctn resolve delta) ;TODO rebase solve-matcho on presolve-matcho
-              (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
-                  (let-values ([(_ g s p) (expand-matcho g s empty-package)])
-                    (solve-constraint g s ctn resolve delta)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
-                  (let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
-                    ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
-                    (if (var? v)        ; If first out-var is free,
-                        (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho.
-                          (solve-constraint ctn (store-constraint s m) succeed resolve (conj delta m))) ; Otherwise, keep looking for a free var.
-                        ;;TODO just operate on the list for matcho solving
-                        (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve delta)))))
+    (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
+        (let-values ([(_ g s p) (expand-matcho g s empty-package)])
+          (solve-constraint g s ctn resolve delta)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
+        (let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO this walk should be handled by == when it replaces var with new binding
+          ;;TODO if we get a non pair, we can fail matcho right away without expanding lambda
+          (if (var? v)        ; If first out-var is free,
+              (let ([m (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g))]) ; store the matcho.
+                (solve-constraint ctn (store-constraint s m) succeed resolve (conj delta m))) ; Otherwise, keep looking for a free var.
+              ;;TODO just operate on the list for matcho solving
+              (solve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s ctn resolve delta)))))
 
   (define (presolve-matcho g s)
     ;; Simplify matcho using s, but do not solve the contained constraint if matcho simplifies completely.
     (cert (goal? g) (state? s)) ; -> constraint? simplified-completely?
-    (if (null? (matcho-out-vars g))
-        (let-values ([(_ g s p) (expand-matcho g s empty-package)])
-         (values g s #t))
-        (let ([v (walk-var s (car (matcho-out-vars g)))])
-          (if (var? v)
+    (if (null? (matcho-out-vars g)) ; If all external variables have been assigned ground values,
+        (let-values ([(_ g s p) (expand-matcho g s empty-package)]) ; expand the inner goal procedure.
+          (values g s #t)) ; Otherwise walk the first external var in the current state.
+        (let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
+          (if (var? v) ; If it is free, continue to suspend matcho. Otherwise, continue walking variables.
               (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
               (presolve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
-
-  (define (solve-disj g s ctn resolve delta)
-    (let-values ([(d-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
-      (exclusive-cond ; Solve the lhs disjunct.
-       [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)] ; If it fails, continue solving disjuncts.
-       [(succeed? d-lhs) (solve-constraint succeed s ctn resolve delta)] ; If it succeeds, discard the entire disj constraint.
-       [else ; If it only simplifies, store the simplified disj with a new lhs.
-        (let ([simplified-lhs (disj d-lhs (disj-rhs g))])
-          (solve-constraint succeed (store-constraint s simplified-lhs)
-                            ctn resolve (conj delta simplified-lhs)))])))
 
   (define solve-pconstraint
     (case-lambda
@@ -241,14 +244,14 @@
             (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
                 (let ([unified (if (and (succeed? unified-lhs) (succeed? unified-rhs)) succeed p)])
                   (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
-                    ;(org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
+                                        ;(org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
                     (let ([disunified
                            (conj conjs (conj
                                         (if (not (or (succeed? unified-lhs) (succeed? unified-rhs)))
                                             (conj d (disj lhs rhs))
                                             (disj (if (succeed? unified-lhs) lhs (conj d lhs))
                                                   (if (succeed? unified-rhs) rhs (conj d rhs)))) disjs))])
-                      ;(org-display unified unified-lhs unified-rhs)
+                                        ;(org-display unified unified-lhs unified-rhs)
                       (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
                               (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
                                    (conj-memp simplified-lhs ==?))) ; Only need to check simplified since any non succeed recheck will force a recheck
@@ -261,15 +264,15 @@
           (solve-constraint succeed s ctn resolve delta))))
   
   (define (store-constraint s g)
-              ;; Store simplified constraints into the constraint store.
-              (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
-              (exclusive-cond
-               [(fail? g) failure]
-               [(succeed? g) s]
-               [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
-               [(==? g) (extend s (==-lhs g) (==-rhs g))]
-               [else ; All other constraints get assigned to their attributed variables.
-                (state-add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
+    ;; Store simplified constraints into the constraint store.
+    (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
+    (exclusive-cond
+     [(fail? g) failure]
+     [(succeed? g) s]
+     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
+     [(==? g) (extend s (==-lhs g) (==-rhs g))]
+     [else ; All other constraints get assigned to their attributed variables.
+      (state-add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
 
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
