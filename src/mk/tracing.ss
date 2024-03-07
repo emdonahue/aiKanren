@@ -1,6 +1,6 @@
 (library (tracing)
   (export trace-run trace-run*
-          trace-query trace-goal trace-conde trace-goals
+          trace-goal trace-conde trace-goals
           open-proof close-proof
           state-proof
           prove)
@@ -11,8 +11,7 @@
 
   
   (define trace-goals (make-parameter #t)) ; External flag to enable or disable trace printing.
-
-  (define trace-query (make-parameter #f)) ; Internal query variables used to generate trace debug information. Set internally by trace-run. #f is used to signify that the tracing subsystem is not running.
+  (define tracing (make-parameter #f)) ; Internal flag that signals the trace system is running.
 
   
   ;; === DATA STRUCTURES ===
@@ -41,7 +40,7 @@
     ;; When the trace is printing, goals wrapped in trace-goal will print within a nested hierarchy under a new heading titled <name>. States also carry "proofs," corresponding to the tree of names of trace goals they have encountered.
     (syntax-rules ()
       [(_ name goals ...)
-       (if (trace-query) ; If we are not inside a trace call, don't even render the trace goal.
+       (if (tracing) ; If we are not inside a trace call, don't even render the trace goal.
            (dfs-goal (lambda (s p n answers c)
                        (run-trace-goal (conj* goals ...) s p n answers 'name '(goals ...) c)))
            (conj* goals ...))]))
@@ -66,14 +65,13 @@
     (syntax-rules ()
       [(_ n q g ...)
        (org-trace
-        (parameterize ([trace-query #t] ; Dummy trace-query prevents trace goals from optimizing themselves out.
+        (parameterize ([tracing #t] ; Signal that trace-goals should not optimize themselves away.
                        [search-strategy search-strategy/dfs])
           (run n q
-            (parameterize ([trace-query (vars->list q)])
-              (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
-                     g ...
-                     ;; Last gaol closes the proof.
-                     (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed)))))))]))
+            (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
+                   g ...
+                   ;; Last gaol closes the proof.
+                   (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed))))))]))
 
   (define-syntax trace-run*
                                         ; Equivalent to run*, but activates tracing.
@@ -109,10 +107,10 @@
 
 
   (define (print-trace-header s name)
-    (when (print-trace? s) (org-print-header name)))
+    (when (trace-goals) (org-print-header name)))
   
   (define (print-trace-answers s answers) ; Prints one nested tree in the org outline corresponding to the current trace-goal.
-    (when (print-trace? s)
+    (when (trace-goals)
       (if (null? answers) (org-print-header "<failure>")
           (begin (org-print-header "<answers>")
                  (for-each (lambda (i s)
@@ -122,17 +120,17 @@
                                  (print-trace-answer s)))) (enumerate answers) answers)))))
 
   (define (print-trace-arguments s)
-    (when (print-trace? s)
+    (when (trace-goals)
       (org-print-header "<arguments>")
       (parameterize ([org-depth (fx1+ (org-depth))])
         (print-trace-answer s))))
 
   (define (print-trace-answer s) ; Prints all the relevant details of a state
-    (when (print-trace? s)
+    (when (trace-goals) 
       (org-print-header "proof")
       (org-print-item (reverse-proof (state-proof s)))
       (org-print-header "query")
-      (org-print-item (reify-var s (trace-query)))
+      (org-print-item (reify-var s (query)))
       (let* ([substitution (walk-substitution s)] ;TODO print unbound variables in substitution debugging by checking var id in state
              [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
         (unless (null? constraints)
@@ -141,9 +139,6 @@
         (unless (null? substitution)
           (org-print-header "substitution")
           (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution)))))
-
-  (define (print-trace? s) ; No point in printing all the failures of the theorem constraint since it's not the path we're interested in. A non-trivial theorem means we're still finding the unconstrained part of the space.
-    (and (trace-goals) (theorem-trivial? (state-theorem s))))
   
   ;; === PROOFS ===
 
