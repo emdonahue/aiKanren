@@ -5,10 +5,7 @@
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
-    (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)])
-      ;(unless (or (succeed? resolved) (fail? resolved)) (printf "resorved ~s~%" resolved))
-      ;(cert (or (succeed? resolved) (fail? resolved)))
-      s))
+    (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)]) s))
 
   (org-define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
@@ -37,8 +34,8 @@
         (if (succeed? resolve) ; If we have no ctn and nothing left to recheck, we're done.
             (values delta succeed s)
             (let-values ([(resolved re-resolved s) (solve-constraint resolve s succeed succeed delta)])
-              (if (failure? s) (values fail fail failure)
-                  (values delta (conj resolved re-resolved) s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
+              (if (failure? s) (values fail fail failure) ;(conj resolved re-resolved)
+                  (values delta succeed s)))) ; resolve returns delta, not d, because noto must negate the returned constraint, which must not include constraints from elsewhere in the store
         (solve-constraint ctn s succeed resolve delta)))
 
 
