@@ -43,7 +43,7 @@
       [(_ name goals ...)
        (if (trace-query) ; If we are not inside a trace call, don't even render the trace goal.
            (dfs-goal (lambda (s p n answers c)
-              (run-trace-goal (conj* goals ...) s p n answers 'name '(goals ...) c)))
+                       (run-trace-goal (conj* goals ...) s p n answers 'name '(goals ...) c)))
            (conj* goals ...))]))
 
   (define-syntax trace-conde ; Equivalent to conde but each branch begins with a name and implicitly instantiates a trace-goal.
@@ -65,17 +65,18 @@
     ;; The tracing system prints nested debugging information including which trace-goals have been encountered, and various views of the substitution and constraints at each trace-goal. Output is formatted with line-initial asterisks, and is intended to be viewed in a collapsible outline viewer such as Emacs org mode.
     (syntax-rules ()
       [(_ n q g ...)
-       (parameterize ([trace-query #t] ; Dummy trace-query prevents trace goals from optimizing themselves out.
-                      [search-strategy search-strategy/dfs])
-         (run n q
-           (parameterize ([trace-query (vars->list q)])
-            (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
-                   g ...
-                   ;; Last gaol closes the proof.
-                   (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed))))))]))
+       (org-trace
+        (parameterize ([trace-query #t] ; Dummy trace-query prevents trace goals from optimizing themselves out.
+                       [search-strategy search-strategy/dfs])
+          (run n q
+            (parameterize ([trace-query (vars->list q)])
+              (conj* (lambda (s p c) (values c (set-state-trace s open-proof open-proof) p succeed)) ; First goal opens a new proof and theorem
+                     g ...
+                     ;; Last gaol closes the proof.
+                     (lambda (s p c) (values c (set-state-trace s (state-theorem s) (close-proof (state-proof s))) p succeed)))))))]))
 
   (define-syntax trace-run*
-    ; Equivalent to run*, but activates tracing.
+                                        ; Equivalent to run*, but activates tracing.
     (syntax-rules ()
       [(_ q g ...) (trace-run -1 q g ...)]))
 
@@ -86,61 +87,69 @@
   (define (run-trace-goal g s p n answers name source ctn)
     (if (theorem-contradiction? (state-theorem s) name) ; If this trace-goal name diverges from the required proof,
         (run-goal-dfs fail s p n answers ctn) ; fail immediately.
-        (let-values ([(ans-remaining answers p)
-                      (run-goal-dfs
-                       g (set-state-trace
-                          s (subtheorem (state-theorem s))
-                          (open-subproof (state-proof s) name)) p n answers
-                          (lambda (s p c) ; Encountering the ctn => we have finished with this trace-goal's children, and must clean up the proof before proceeding to the next ctn conjuncts.
-                            (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal. 
-                                (values fail failure p fail) ; If there are unproven terms in our theorem, we fail.
-                                ;; Otherwise, trim the theorem and close the proof before moving on.
-                                (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c))))])
-          (if (trace-goals)
-              (print-trace-subtree s answers name source)
-              (values ans-remaining answers p)))))
+        (let ([s (set-state-trace
+                  s (subtheorem (state-theorem s))
+                  (open-subproof (state-proof s) name))])
+          (print-trace-header s name)
+          (parameterize ([org-depth (fx1+ (org-depth))])
+            (print-trace-arguments s)
+            (let-values ([(ans-remaining child-answers p)
+                          (run-goal-dfs
+                           g s p n '()
+                              (lambda (s p c) ; Encountering the ctn => we have finished with this trace-goal's children, and must clean up the proof before proceeding to the next ctn conjuncts.
+                                (if (theorem-contradiction? (state-theorem s) '()) ; When returning from a trace-goal's children, we should have exactly matched the proof of that trace-goal. 
+                                    (values fail failure p fail) ; If there are unproven terms in our theorem, we fail.
+                                    ;; Otherwise, trim the theorem and close the proof before moving on.
+                                    (values ctn (set-state-trace s (subtheorem (state-theorem s)) (close-subproof (state-proof s))) p c))))])
+              (print-trace-answers s child-answers)
+              (values ans-remaining (append child-answers answers) p))))))
   
   
   ;; === PRINTING ===
 
-  (define (print-trace-subtree s answers name source)
-    (org-print-header name)
-    (parameterize ([org-depth (fx1+ (org-depth))])
-      (when (theorem-trivial? (state-theorem s)) (print-trace-args s source))
-      (when (theorem-trivial? (state-theorem s))
-        (if (null? answers) (org-print-header "<failure>")
-            (begin (org-print-header "<answers>")
-                   (for-each (lambda (i s)
-                               (parameterize ([org-depth (fx1+ (org-depth))])
-                                 (org-print-header (number->string i))
-                                 (parameterize ([org-depth (fx1+ (org-depth))])
-                                   (print-trace-answer s)))) (enumerate answers) answers))))))
+
+  (define (print-trace-header s name)
+    (when (print-trace? s) (org-print-header name)))
   
-  (define (print-trace-args s source)
-    (org-print-header "<arguments>")
-    (parameterize ([org-depth (fx1+ (org-depth))])
-      (print-trace-answer s)
-      source))
+  (define (print-trace-answers s answers) ; Prints one nested tree in the org outline corresponding to the current trace-goal.
+    (when (print-trace? s)
+      (if (null? answers) (org-print-header "<failure>")
+          (begin (org-print-header "<answers>")
+                 (for-each (lambda (i s)
+                             (parameterize ([org-depth (fx1+ (org-depth))])
+                               (org-print-header (number->string i))
+                               (parameterize ([org-depth (fx1+ (org-depth))])
+                                 (print-trace-answer s)))) (enumerate answers) answers)))))
 
-  (define (print-trace-answer s)
-    (org-print-header "proof")
-    (org-print-item (reverse-proof (state-proof s)))
-    (org-print-header "query")
-    (org-print-item (reify-var s (trace-query)))
-    (let* ([substitution (walk-substitution s)] ;TODO print unbound variables in substitution debugging by checking var id in state
-           [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
-      (unless (null? constraints)
-        (org-print-header "constraints")
-        (for-each (lambda (b) (org-print-item (car b) (cdr b))) constraints))
-      (unless (null? substitution)
-        (org-print-header "substitution")
-        (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution))))
+  (define (print-trace-arguments s)
+    (when (print-trace? s)
+      (org-print-header "<arguments>")
+      (parameterize ([org-depth (fx1+ (org-depth))])
+        (print-trace-answer s))))
 
+  (define (print-trace-answer s) ; Prints all the relevant details of a state
+    (when (print-trace? s)
+      (org-print-header "proof")
+      (org-print-item (reverse-proof (state-proof s)))
+      (org-print-header "query")
+      (org-print-item (reify-var s (trace-query)))
+      (let* ([substitution (walk-substitution s)] ;TODO print unbound variables in substitution debugging by checking var id in state
+             [constraints (filter (lambda (b) (and (goal? (cdr b)) (not (succeed? (cdr b))))) substitution)])
+        (unless (null? constraints)
+          (org-print-header "constraints")
+          (for-each (lambda (b) (org-print-item (car b) (cdr b))) constraints))
+        (unless (null? substitution)
+          (org-print-header "substitution")
+          (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution)))))
+
+  (define (print-trace? s) ; No point in printing all the failures of the theorem constraint since it's not the path we're interested in. A non-trivial theorem means we're still finding the unconstrained part of the space.
+    (and (trace-goals) (theorem-trivial? (state-theorem s))))
   
   ;; === PROOFS ===
 
   
   (define cursor '__) ; The cursor represents the 'current' location in the proof tree. It will be replaced by the next trace-goal name encountered and a new cursor will be inserted.
+  
   (define (cursor? c) (eq? c cursor))
 
   (define open-proof (list cursor)) ; Creates a new, empty proof.

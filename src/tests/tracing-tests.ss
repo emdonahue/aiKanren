@@ -6,7 +6,17 @@
   (define x2 (make-var 2))
   
   (define (run-tracing-tests)
+    #;
+    (trace-run* (x1 x2)
+                (trace-conde
+                 [x1=1 (== x1 1)]
+                 [x1=2 (== x1 2)])
+                (trace-conde
+                 [x2=1 (== x2 1)]
+                 [x2=2 (== x2 2)]))
 
+
+    
     (parameterize ([trace-goals #f])
       (tassert "trace ==" (trace-run* x1 (org-untrace (== x1 1))) '(1))
       (tassert "trace ==" (trace-run* x1 (org-untrace (== x1 1))) '(1))
@@ -73,6 +83,23 @@
                                                                         [x2=1 (== x2 1)]
                                                                         [x2=2 (== x2 2)])])))) '(((x1=2 (x2=1))) ((x1=2 (x2=2)))))
        (tassert "theorem trace-conde theorem prefix leaves wildcard on deep recursion"
+                (map
+                 state-proof
+                 (trace-run*
+                  (x1 x2 x3)
+                  (prove ((x1=2 __))
+                         (trace-conde
+                          [x1=1 (== x1 1)]
+                          [x1=2 (== x1 2)
+                                (trace-conde
+                                 [x2=1 (== x2 1)]
+                                 [x2=2 (== x2 2)
+                                       (trace-conde
+                                        [x3=1 (== x3 1)]
+                                        [x3=2 (== x3 2)])])]))))
+                '(((x1=2 (x2=1))) ((x1=2 (x2=2 (x3=1)))) ((x1=2 (x2=2 (x3=2))))))
+       #;
+       (tassert "proofs in lower branches of tree"
                 (map
                  state-proof
                  (trace-run*

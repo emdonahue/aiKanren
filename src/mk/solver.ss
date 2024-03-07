@@ -2,12 +2,12 @@
   (export run-constraint simplify-=/= simplify-pconstraint)
   (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer))
 
-  (org-define (run-constraint g s)
+  (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
     (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
     (let-values ([(delta resolved s) (solve-constraint g s succeed succeed succeed)]) s))
 
-  (org-define (solve-constraint g s ctn resolve delta)
+  (define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> delta pending state-or-failure?
     (if (failure? s) (values fail fail failure)
@@ -37,7 +37,7 @@
          [(trace-goal? g) (solve-constraint (trace-goal-goal g) s ctn resolve delta)] ;TODO can we remove trace-goal from general solver 
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
-  (org-define (solve-noto g s ctn resolve delta)
+  (define (solve-noto g s ctn resolve delta)
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
      [(matcho? g)
@@ -47,7 +47,7 @@
             (solve-constraint succeed (store-constraint s (noto g)) ctn resolve (conj delta (noto g)))))]
      [else 
       (let-values ([(c _ s^) (solve-constraint g s succeed succeed succeed)])
-        (org-display c s^)
+        ;(org-display c s^)
         #;
         (when (not (or (reify-constraints) (not (conj-memp c matcho?)))) ;
         (printf "c ~s~%g ~s~%" c g))
@@ -60,7 +60,7 @@
 
 
 
-  (org-define (solve-== g s ctn resolve delta)
+  (define (solve-== g s ctn resolve delta)
     ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
     ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
               ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
@@ -82,18 +82,18 @@
                                               (fold-left (lambda (c e) (conj c (make-== (car e) (cdr e)))) succeed bindings))))))))))
 
 
-  (org-define (solve-=/= g s ctn resolve delta)
+  (define (solve-=/= g s ctn resolve delta)
               ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
               (cert (==? g)) ; -> delta pending state
               (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y
                 (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
                     (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
                         (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs (disj-car g)) (=/=-rhs (disj-car g)) (disj-car g))]) ; Simplify the constraints with the first disjoined =/=.
-                          (org-display unified disunified recheck diseq)
+                          ;(org-display unified disunified recheck diseq)
                           (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
                               (solve-constraint succeed (store-constraint (extend s (=/=-lhs g) disunified) diseq) ctn (conj recheck resolve) (conj delta g))))))))
 
-  (org-define (simplify-=/= g x y d)
+  (define (simplify-=/= g x y d)
               ;; Simplifies the constraint g given the new constraint x=/=y. Simultaneously constructs 4 goals:
               ;; 1) g simplified under the assumption x==y. If fail?, g => x=/=y, so we can simply throw away the new constraint. Since we only need to check for failure, we can cut corners and not compute the true simplification of g, g', so long as ~g <=> ~g'.
               ;; 2) g simplified under x=/=y but only conjuncts that are completely normalized. Since they are guaranteed to be already normalized, we can simply add them directly to the store.
@@ -154,7 +154,7 @@
                           (values unified succeed disunified succeed)
                           (values unified disunified succeed succeed))))))))))
 
-  (org-define (solve-matcho g s ctn resolve delta) ;TODO rebase solve-matcho on presolve-matcho
+  (define (solve-matcho g s ctn resolve delta) ;TODO rebase solve-matcho on presolve-matcho
               (if (null? (matcho-out-vars g)) ; Expand matcho immediately if all vars are ground
                   (let-values ([(_ g s p) (expand-matcho g s empty-package)])
                     (solve-constraint g s ctn resolve delta)) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
@@ -177,7 +177,7 @@
               (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
               (presolve-matcho (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
-  (org-define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
+  (define (solve-disj g s ctn resolve delta) ;TODO split g in solve-disj into normalized and unnormalized args to let other fns flexibly avoid double solving already normalized constraints
               (let-values ([(d-lhs r-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)])
                 (exclusive-cond
                  [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)]
@@ -190,65 +190,65 @@
                             (solve-constraint succeed (store-constraint s d) ctn resolve (conj delta d)))))])))
 
   (define solve-pconstraint
-    (org-case-lambda solve-pconstraint
-                     [(g s ctn resolve delta) (solve-pconstraint g s ctn resolve delta '())]
-                     [(g s ctn resolve delta vs) ; -> delta pending state?
-                      (cert (goal? g) (state? s) (goal? ctn) (goal? resolve) (goal? delta) (list? vs))
-                      (if (not (pconstraint? g)) (solve-constraint g s ctn resolve delta)
-                          (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
-                            (if (not var) (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)) ; All vars walked. Store constraint.
-                                (let-values ([(var^ val) (walk-var-val s var)])
-                                  (let ([vs (cons var^ vs)])
-                                    (cond 
-                                     [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn resolve delta vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
-                                     [(goal? val) (let-values ([(g simplified recheck p)
-                                                                (simplify-pconstraint val (pconstraint-rebind-var g var var^))])
-                                                    (if (succeed? g) (solve-constraint ctn s succeed resolve delta)
-                                                        (if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
-                                                            (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
-                                                                               ctn (conj recheck resolve) delta vs))))]
-                                     [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve delta vs)]))))))]))
+    (case-lambda
+      [(g s ctn resolve delta) (solve-pconstraint g s ctn resolve delta '())]
+      [(g s ctn resolve delta vs) ; -> delta pending state?
+       (cert (goal? g) (state? s) (goal? ctn) (goal? resolve) (goal? delta) (list? vs))
+       (if (not (pconstraint? g)) (solve-constraint g s ctn resolve delta)
+           (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
+             (if (not var) (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)) ; All vars walked. Store constraint.
+                 (let-values ([(var^ val) (walk-var-val s var)])
+                   (let ([vs (cons var^ vs)])
+                     (cond 
+                      [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn resolve delta vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
+                      [(goal? val) (let-values ([(g simplified recheck p)
+                                                 (simplify-pconstraint val (pconstraint-rebind-var g var var^))])
+                                     (if (succeed? g) (solve-constraint ctn s succeed resolve delta)
+                                         (if (or (fail? simplified) (fail? recheck)) (values fail fail failure)
+                                             (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
+                                                                ctn (conj recheck resolve) delta vs))))]
+                      [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve delta vs)]))))))]))
 
   (define simplify-pconstraint
-    (org-case-lambda simplify-pconstraint
-                     [(g p) (simplify-pconstraint g p p)]
-                     [(g p c)
-                      (cert (or (pconstraint? p) (succeed? p)) (goal? g) (or (succeed? c) (pconstraint? c)))
-                      (cond
-                       [(succeed? p) (values succeed succeed succeed c)]
-                       [(conj? g) (let-values ([(p-lhs simplified-lhs recheck-lhs c) (simplify-pconstraint (conj-lhs g) p c)])
-                                    (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail succeed c)
-                                        (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
-                                          (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
-                       [(disj? g) (simplify-pconstraint-disj g p c)]
-                       [(pconstraint? g) (if (equal? p g) (values succeed succeed succeed c)
-                                             (let ([v (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))])
-                                               (if (not v) (values p g succeed c)
-                                                   (let-values ([(g simplified recheck) ((pconstraint-procedure g) v v p g (pconstraint-data p))])
-                                                     (values g simplified recheck c)))))]
-                       [(==? g) (if (memq (==-lhs g) (pconstraint-vars p))
-                                    (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) p succeed (pconstraint-data p))])
-                                      (values entailed (if (fail? entailed) fail g) succeed c))
-                                    (values p g succeed c))
-                        #;
-                        (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))]) ;
-                        (values simplified g recheck c))]
-                       ;; numbero & not numbero -> succeed succeed -> fail fail
-                       ;; numbero & not symbolo  -> fail fail -> numbero succeed
-                       ;; numbero & =/=1 -> succeed ==1 -> numbero =/=1
-                       ;; numbero & =/='symbol -> fail fail -> numbero succeed
-                       ;; numbero & not symbolo x2 -> numbero symbolo x2 -> numbero not symbolo x2
-                       [(noto? g) (let-values ([(entailed simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
-                                    (org-display entailed simplified recheck)
-                                    (when (not (succeed? recheck)) (display p))
-                                    (cert (succeed? recheck))
-                                    (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
-                                      (values p (noto simplified) succeed c)))]
-                       [(matcho? g) (let ([v (memp (lambda (v) (memq v (matcho-out-vars g))) (pconstraint-vars p))])
-                                      (if (not v) (values p g succeed c)
-                                          (let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g (pconstraint-data p))])
-                                            (values entailed simplified recheck c))))]
-                       [else (values p g succeed c)])]))
+    (case-lambda
+      [(g p) (simplify-pconstraint g p p)]
+      [(g p c)
+       (cert (or (pconstraint? p) (succeed? p)) (goal? g) (or (succeed? c) (pconstraint? c)))
+       (cond
+        [(succeed? p) (values succeed succeed succeed c)]
+        [(conj? g) (let-values ([(p-lhs simplified-lhs recheck-lhs c) (simplify-pconstraint (conj-lhs g) p c)])
+                     (if (or (fail? p-lhs) (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail succeed c)
+                         (let-values ([(p-rhs simplified-rhs recheck-rhs c) (simplify-pconstraint (conj-rhs g) p c)])
+                           (values (if (or (succeed? p-lhs) (succeed? p-rhs)) succeed p) (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs) c))))]
+        [(disj? g) (simplify-pconstraint-disj g p c)]
+        [(pconstraint? g) (if (equal? p g) (values succeed succeed succeed c)
+                              (let ([v (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))])
+                                (if (not v) (values p g succeed c)
+                                    (let-values ([(g simplified recheck) ((pconstraint-procedure g) v v p g (pconstraint-data p))])
+                                      (values g simplified recheck c)))))]
+        [(==? g) (if (memq (==-lhs g) (pconstraint-vars p))
+                     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) p succeed (pconstraint-data p))])
+                       (values entailed (if (fail? entailed) fail g) succeed c))
+                     (values p g succeed c))
+         #;
+         (let-values ([(simplified recheck) (simplify-unification p (->mini-substitution g))]) ;
+         (values simplified g recheck c))]
+        ;; numbero & not numbero -> succeed succeed -> fail fail
+        ;; numbero & not symbolo  -> fail fail -> numbero succeed
+        ;; numbero & =/=1 -> succeed ==1 -> numbero =/=1
+        ;; numbero & =/='symbol -> fail fail -> numbero succeed
+        ;; numbero & not symbolo x2 -> numbero symbolo x2 -> numbero not symbolo x2
+        [(noto? g) (let-values ([(entailed simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
+                     (org-display entailed simplified recheck)
+                     (when (not (succeed? recheck)) (display p))
+                     (cert (succeed? recheck))
+                     (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
+                       (values p (noto simplified) succeed c)))]
+        [(matcho? g) (let ([v (memp (lambda (v) (memq v (matcho-out-vars g))) (pconstraint-vars p))])
+                       (if (not v) (values p g succeed c)
+                           (let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g (pconstraint-data p))])
+                             (values entailed simplified recheck c))))]
+        [else (values p g succeed c)])]))
 
   (define (simplify-pconstraint-disj g p d)
     (cert (or (succeed? d) (pconstraint? d)))
@@ -262,21 +262,21 @@
             (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
                 (let ([unified (if (and (succeed? unified-lhs) (succeed? unified-rhs)) succeed p)])
                   (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
-                    (org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
+                    ;(org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
                     (let ([disunified
                            (conj conjs (conj
                                         (if (not (or (succeed? unified-lhs) (succeed? unified-rhs)))
                                             (conj d (disj lhs rhs))
                                             (disj (if (succeed? unified-lhs) lhs (conj d lhs))
                                                   (if (succeed? unified-rhs) rhs (conj d rhs)))) disjs))])
-                      (org-display unified unified-lhs unified-rhs)
+                      ;(org-display unified unified-lhs unified-rhs)
                       (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
                               (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
                                    (conj-memp simplified-lhs ==?))) ; Only need to check simplified since any non succeed recheck will force a recheck
                           (values unified succeed disunified succeed)
                           (values unified disunified succeed succeed))))))))))
 
-  (org-define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
+  (define (store-constraint s g) ;TODO make store constraint put disj right and everything else left
               ;; Store simplified constraints into the constraint store.
               (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
               (exclusive-cond
@@ -289,7 +289,7 @@
 
   (define attributed-vars ;TODO thread trace-goal through other critical infrastructure so its semantically transparent
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (org-case-lambda attr-vars ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
+    (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
                      [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
                      [(g vs unifies)
                       (cert (goal? g))

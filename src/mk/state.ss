@@ -65,7 +65,7 @@
   
   (define unify ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
-    (org-case-lambda unify
+    (case-lambda
       [(s d x y) (unify s d x y '())]
       [(s d x y bindings)
        (cert (state? s)) ; -> bindings simplified recheck state
@@ -75,7 +75,7 @@
              (unify-binding s d y-var y x-var x bindings)
              (unify-binding s d x-var x y-var y bindings)))]))
 
-  (org-define (unify-binding s d x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
+  (define (unify-binding s d x-var x y-var y bindings) ; If both vars, x-var guaranteed to have lower id
     (cert (not (or (goal? x-var) (goal? y-var))))
     (cond
        [(goal? x) ; TODO When should simplifying a constraint commit more ==?
@@ -101,7 +101,7 @@
     (if (occurs-check/binding s x y) (values fail fail fail fail fail failure)
      (values (cons (cons x y) bindings) succeed succeed succeed (conj d (== x y)) (extend s x y))))
 
-  (org-define (extend-constraint s d var val var-c val-c bindings)
+  (define (extend-constraint s d var val var-c val-c bindings)
     ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on val (and it is a var), we must explicitly remove it.
     (cert (var? var)) 
     (let-values ([(pending committed) (conj-partition (lambda (g) (conj-member g d)) var-c)])
@@ -138,7 +138,7 @@
           (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
      [else #f]))
 
-  (org-define (simplify-unification g s)
+  (define (simplify-unification g s)
     (cert (goal? g))
     (exclusive-cond
      #;
@@ -229,7 +229,7 @@
   
   ;; === CONSTRAINTS ===
   
-  (org-define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
+  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
                                         ;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
     (let ([g (substitution-ref (state-substitution s) (car vs))])
