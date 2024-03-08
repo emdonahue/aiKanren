@@ -75,16 +75,19 @@
              (unify-binding s d y-var y x-var x bindings)
              (unify-binding s d x-var x y-var y bindings)))]))
 
-  (define (unify-binding s d x-var x y-var y bindings) 
+  (org-define (unify-binding s d x-var x y-var y bindings) 
     (cert (not (or (goal? x-var) (goal? y-var)))
           (or (not (var? x-var)) (not (var? y-var)) (fx<= (var-id x-var) (var-id y-var)))) ; If both vars, x-var guaranteed to have lower id
     (cond
-     [(eq? x y) (values bindings succeed succeed succeed d s)]
+     
      [(goal? x) 
       (if (goal? y)
-          (extend-constraint s d x-var y-var x y bindings) ; x->y, y->y, ^cx(y)&cy
+          (if (eq? x-var y-var)
+              (values bindings succeed succeed succeed d s)
+              (extend-constraint s d x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
           (extend-constraint s d x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
       
+     [(eq? x y) (values bindings succeed succeed succeed d s)]
      [(goal? y) (if (var? x)
                     (extend-constraint s d x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
                     (extend-constraint s d y-var x y succeed bindings))] ; y->x, ^cy(x). unless x is a constant.
