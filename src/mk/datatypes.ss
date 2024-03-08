@@ -132,7 +132,7 @@
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
 
-  (define-structure (proxy var))
+  (define-structure (proxy var)) ;TODO make proxies remove only their specific constraint, not rerun the whole thing.
   (define (proxy v)
     (cert (var? v))
     (make-proxy v))
