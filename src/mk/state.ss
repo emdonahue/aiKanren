@@ -71,7 +71,7 @@
        (cert (state? s)) ; -> bindings simplified recheck state
        (let-values ([(x-var x) (walk-var-val s x)]
                     [(y-var y) (walk-var-val s y)])
-         (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index. Some constraints are keyed to the low index variable.
+         (if (and (var? y-var) (var? x-var) (fx< (var-id y-var) (var-id x-var))) ; Swap x and y if both are vars and y has a lower index. We will be storing y in the x location and the x constraints in the y location, so swapping lets us disambiguate which is which.
              (unify-binding s d y-var y x-var x bindings)
              (unify-binding s d x-var x y-var y bindings)))]))
 
@@ -108,20 +108,27 @@
      (values (cons (cons x y) bindings) succeed succeed succeed (conj d (== x y)) (extend s x y))))
 
   (define (extend-constraint s d x y x-c y-c bindings)
-    ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. If there is a constraint on y (and it is a var), we must explicitly remove it.
-    (cert (var? x) (or (not (var? y)) (fx< (var-id x) (var-id y)))) 
-    (let-values ([(pending committed) (conj-partition (lambda (g) (conj-member g d)) x-c)])
-      (let-values ([(committed/simplified committed/recheck) (simplify-unification committed (list (cons x y)))]) ;TODO return y constraint to simplify it with potentially other bindings and also unbind its var?
-        (if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
-         (let-values ([(pending/simplified pending/recheck) (simplify-unification pending (list (cons x y)))])
-           (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+    ;; Opportunistically simplifies the retrieved constraints using the available vars and vals and then extends the substitution. Since x->y now, we can replace x with y everywhere it appears, and y with y's new value. If there was a constraint on y (and y was a var), we must explicitly remove it since it won't have been overwritten.
+    (cert (var? x) (or (not (var? y)) (fx< (var-id x) (var-id y))))
+    (if (occurs-check/binding s x y)
+        (values fail fail fail fail fail failure)
+        
+        (values (cons (cons x y) bindings) succeed x-c y-c (conj d (== x y)) (extend s x y))
+        #;
+     (let-values ([(pending committed)
+                  
+                   (conj-partition (lambda (g) (conj-member g d)) x-c)])
+       (let-values ([(committed/simplified committed/recheck) (simplify-unification committed (list (cons x y)))]) ;TODO return y constraint to simplify it with potentially other bindings and also unbind its var?
+         (if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+             (let-values ([(pending/simplified pending/recheck) (simplify-unification pending (list (cons x y)))])
+               (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
 
-               ;; remove var-c constraints from delta
-               ;; add simplified constraints back to delta
-               ;; return separate 
-               (if (occurs-check/binding s x y)
-                   (values fail fail fail fail fail failure)
-                   (values (cons (cons x y) bindings) (conj committed/simplified pending/simplified) committed/recheck pending/recheck (conj (conj (conj-diff d pending) pending/simplified) (== x y)) (extend s x y)))))))))
+                   ;; remove var-c constraints from delta
+                   ;; add simplified constraints back to delta
+                   ;; return separate 
+                   (if (occurs-check/binding s x y)
+                       (values fail fail fail fail fail failure)
+                       (values (cons (cons x y) bindings) (conj committed/simplified pending/simplified) committed/recheck pending/recheck (conj (conj (conj-diff d pending) pending/simplified) (== x y)) (extend s x y))))))))))
 
   (define (extend s x y)
     ;; Insert a new binding between x and y into the substitution.
