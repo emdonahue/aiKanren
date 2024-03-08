@@ -68,6 +68,6 @@
         (let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
           (if (eq? (car vars) walked)
               (reduce-==/pconstraint g c s (cdr vars) (and normalized normalized-var))
-              (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed (pconstraint-data g)) c s)))))
+              (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) c s)))))
 
   )

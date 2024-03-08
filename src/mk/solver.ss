@@ -212,10 +212,10 @@
         [(pconstraint? g) (if (equal? p g) (values succeed succeed succeed c)
                               (let ([v (memp (lambda (v) (memq v (pconstraint-vars g))) (pconstraint-vars p))])
                                 (if (not v) (values p g succeed c)
-                                    (let-values ([(g simplified recheck) ((pconstraint-procedure g) v v p g (pconstraint-data p))])
+                                    (let-values ([(g simplified recheck) ((pconstraint-procedure g) v v p g p)])
                                       (values g simplified recheck c)))))]
         [(==? g) (if (memq (==-lhs g) (pconstraint-vars p))
-                     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) p succeed (pconstraint-data p))])
+                     (let ([entailed ((pconstraint-procedure p) (==-lhs g) (==-rhs g) p succeed p)])
                        (values entailed (if (fail? entailed) fail g) succeed c))
                      (values p g succeed c))
          #;
@@ -234,7 +234,7 @@
                        (values p (noto simplified) succeed c)))]
         [(matcho? g) (let ([v (memp (lambda (v) (memq v (matcho-out-vars g))) (pconstraint-vars p))])
                        (if (not v) (values p g succeed c)
-                           (let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g (pconstraint-data p))])
+                           (let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g p)])
                              (values entailed simplified recheck c))))]
         [else (values p g succeed c)])]))
 
