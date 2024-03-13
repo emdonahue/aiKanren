@@ -13,6 +13,7 @@
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure
           make-constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
+          make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           __)
   (import (chezscheme) (variables) (utils))
 
@@ -49,15 +50,18 @@
 
   ;; === CONDE ===
   (define-structure (conde lhs rhs))
+  
   (define (conde-car g)
     (if (conde? g)
         (conde-car (conde-lhs g))
         g))
+  
   (define (conde-cdr g)
     (if (conde? g)
         (let ([lhs (conde-cdr (conde-lhs g))])
           (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
-        fail))  
+        fail))
+  
   (define (conde-disj x y)
     ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
     (cond
@@ -67,6 +71,7 @@
 
   ;; === PCONSTRAINT ===
   (define-structure (pconstraint vars procedure data))
+  
   (define (pconstraint vars procedure data)
     (cert (list? vars) (procedure? procedure))
     (make-pconstraint vars procedure data))
@@ -78,8 +83,91 @@
   (define __ ; Wildcard logic variable that unifies with everything without changing substitution.
     (vector '__))
 
-  ;; === OTHER GOALS ===
+  ;; === CONJ ===
+
   (define-structure (conj lhs rhs))
+  
+  (define (conj lhs rhs) ; Logical conjunction between goals or constraints.
+    ;; Can be used between any goals or constraints. Unlike disj, conj is not specific to constraint goals.
+    
+    (when (not (goal? lhs)) (display lhs))
+    (cert (goal? lhs) (goal? rhs))
+    ;TODO replace conj with make-conj or short circuiting conj* where possible
+    (cond
+     [(or (fail? lhs) (fail? rhs)) fail]
+     [(succeed? rhs) lhs]
+     [(succeed? lhs) rhs]
+     [else (make-conj lhs rhs)]))
+
+  (define-syntax conj* ;TODO experiment with short circuiting conj and disj macros
+    (syntax-rules () ;TODO make conj a macro but when it is just an identifier macro make it return a function of itself for use with higher order fns
+      [(_) succeed]
+      [(_ g) g]
+      [(_ lhs rhs ...) (conj lhs (conj* rhs ...))
+       #;
+       (let ([l lhs])
+         (if (fail? l) fail
+             (let ([r (conj* rhs ...)])
+               (cond
+                [(fail? r) r]
+                [else (make-conj l r)]))))]))
+
+  #;
+  (define (conj* . conjs)
+    (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
+  
+  (define (conj-car c) ;TODO remove conj-car
+    (cert (conj? c))
+    (conj-lhs c))
+  
+  (define (conj-cdr c)
+    (cert (conj? c))
+    (conj-rhs c))
+
+  (define (conj-filter c p)
+    (if (conj? c)
+        (conj
+         (conj-filter (conj-lhs c) p)
+         (conj-filter (conj-rhs c) p))
+        (if (p c) c succeed)))
+
+  (define (conj-diff c d)
+    (if (conj? c) (conj (conj-diff (conj-lhs c) d) (conj-diff (conj-rhs c) d))
+        (if (conj-member c d) succeed c)))
+
+  (define (conj-intersect c d)
+    (if (conj? c) (conj (conj-intersect (conj-lhs c) d) (conj-intersect (conj-rhs c) d))
+        (if (conj-member c d) c succeed)))
+
+  (define (conj-member e c)
+    (if (conj? c) (or (conj-member e (conj-lhs c)) (conj-member e (conj-rhs c)))
+        (equal? c e)))
+
+  (define (conj-memq e c)
+    (if (conj? c) (or (conj-memq e (conj-lhs c)) (conj-memq e (conj-rhs c)))
+        (eq? c e)))
+
+  (define (conj-memp c p)
+    (if (conj? c)
+        (or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
+        (if (p c) c #f)))
+  
+  (define (conj-fold p s cs) ;TODO is conj-fold ever used?
+    (cert (procedure? p) (conj? cs))
+    (let ([lhs (if (conj? (conj-lhs cs))
+                   (conj-fold p s (conj-lhs cs))
+                   (p s (conj-lhs cs)))])
+      (if (conj? (conj-rhs cs))
+          (conj-fold p lhs (conj-rhs cs))
+          (p lhs (conj-rhs cs)))))
+
+  (define (conj-partition p cs)
+    (if (conj? cs) (let-values ([(lhs-t lhs-f) (conj-partition p (conj-lhs cs))]
+                                [(rhs-t rhs-f) (conj-partition p (conj-rhs cs))])
+                     (values (conj lhs-t rhs-t) (conj lhs-f rhs-f)))
+        (if (p cs) (values cs succeed) (values succeed cs))))
+
+  ;; === OTHER GOALS ===  
   (define-structure (disj lhs rhs))
   (define-structure (noto goal)) ; Negated goal
   (define-structure (exist procedure))
