@@ -3,7 +3,7 @@
           lazy-run
           query
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
-  (import (chezscheme) (goals) (failure) (state) (datatypes) (utils))
+  (import (chezscheme) (streams) (failure) (state) (datatypes) (utils))
 
   (define query (make-parameter #f)) ; Holds the query variables for inspection by internal elements of the dfs search. Used for debugging.
   

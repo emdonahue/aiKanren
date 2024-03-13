@@ -4,7 +4,7 @@
           open-proof close-proof
           state-proof
           prove)
-  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (goals) (running) (state))
+  (import (chezscheme) (datatypes) (solver) (utils) (state) (debugging) (streams) (running) (state))
 
 
   ;; === PARAMETERS ===

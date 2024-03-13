@@ -27,7 +27,7 @@
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
           make-noto noto? noto-goal
           __)
-  (import (chezscheme) (sbral) (variables) (utils))
+  (import (chezscheme) (sbral) (variables) (goals) (utils))
 
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
@@ -196,18 +196,7 @@
     (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s)))
   
   ;; === GOALS ===
-  (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
-    (vector 'succeed))
-  (define fail ; A goal that trivially fails. Used as a constant rather than a function call.
-    (vector 'fail))
-  (define (succeed? g) (eq? g succeed))
-  (define (fail? g) (eq? g fail))
-  (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==. then we can simplify the order checking inside the unifier
-  (define-structure (conj lhs rhs))
-  (define-structure (disj lhs rhs))
-  (define-structure (noto goal)) ; Negated goal
-  (define-structure (exist procedure))
-  (define-structure (suspend goal))
+  
   (define (suspend g)
     (cert (goal? g))
     (if (or (succeed? g) (fail? g)) g (make-suspend g)))
