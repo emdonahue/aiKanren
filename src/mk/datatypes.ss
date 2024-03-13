@@ -143,8 +143,7 @@
 
   
 
-  (define (instantiate-var s)
-    (values (make-var (state-varid s)) (increment-varid s)))
+  
 
   ;; === STREAMS ===
   
@@ -241,52 +240,7 @@
   
 
   ;; DISJ
-  (define (disj lhs rhs) ; Logical disjunction between constraints.
-    ; Unlike conj, disj is specific to constraints and any goals joined with disj will be interpreted as constraints rather than as nondeterministic goals.
-    (cert (goal? lhs) (goal? rhs))
-    ;TODO convert constructor fns to constructed params of structure  
-    (cond
-     [(or (succeed? lhs) (succeed? rhs)) succeed]
-     [(fail? rhs) lhs]
-     [(fail? lhs) rhs]
-     [else (make-disj lhs rhs)]))
-
-  (define (disj* . disjs)
-    (fold-right (lambda (lhs rhs) (disj lhs rhs)) fail disjs))
-
-  (define (disj-car g)
-    (if (disj? g)
-        (disj-car (disj-lhs g))
-        g))
-
-  (define (disj-cdr g) ;TODO microbenchmark disj cdr that looks ahead instead of using base case to check for non disj
-    (if (disj? g)
-        (disj (disj-cdr (disj-lhs g)) (disj-rhs g))
-        fail))
-
-  (define conde->disj
-    ;; Inverts conde from right-branching to left-branching to allow for optimizations in solve-disj
-    (case-lambda
-      [(c) (conde->disj c fail)]
-      [(c d) (if (conde? c) (conde->disj (conde-rhs c) (conde->disj (conde-lhs c) d)) (disj d c))]))
   
-  (define (disj-succeeds? d)
-    ;; True if d contains a literal succeed goal.
-    (cond
-     [(succeed? d) #t]
-     [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
-     [else #f]))
-
-  (define (disj-factorize lhs rhs)
-    (let ([intersection (conj-intersect lhs rhs)])
-      (values (conj-filter intersection (lambda (c) (not (disj? c))))
-              (conj-filter intersection disj?)
-              (conj-diff lhs intersection)
-              (conj-diff rhs intersection))))
-
-  (define (disj-factorized lhs rhs)
-    (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
-      (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))))
 
   ;; === QUANTIFICATION ===
 

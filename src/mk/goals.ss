@@ -9,21 +9,24 @@
           make-suspend suspend? suspend-goal
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           proxy proxy? proxy-var proxy
-          conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj
+          conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure
           make-constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
-          make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
+          make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition 
+          make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           __)
   (import (chezscheme) (variables) (utils))
 
-  ;; === TRIVIAL ===
+  
+  ;; === SUCCEED & FAIL ===
   (define succeed ; A goal that trivially succeeds. Used as a constant rather than a function call.
     (vector 'succeed))
   (define fail ; A goal that trivially fails. Used as a constant rather than a function call.
     (vector 'fail))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
+
 
   ;; === == ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==. then we can simplify the order checking inside the unifier
@@ -36,17 +39,20 @@
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
 
+  
   ;; === DFS ===
   (define-structure (dfs-goal procedure))
   (define (dfs-goal p) ; Wraps a procedure that has the same signature as run-goal-dfs. Called internally by run-goal-dfs, which transparently passes its arguments to the procedure and returns the resulting values. Used to dynamically extend the behavior of the dfs interpreter.
     (cert (procedure? p))
     (make-dfs-goal p))
 
+  
   ;; === PROXY ===
   (define-structure (proxy var)) ;TODO make proxies remove only their specific constraint and return other conjoined constraints to the store, not rerun all conjuncts.
   (define (proxy v) ; If a constraint is bound to multiple variables, we only keep one true copy of the constraint. The other variables receive proxy constraints that remember the one variable with the true constraint. When solving, proxy constraints fetch the true constraint and run that to avoid running multiple copies of the same constraint. In addition to being generally inefficient, multiple copies can lead to various kinds of blow up conditions depending on how solving is implemented (eg multiple copies of a fresh will yield constraints with different object identities, which may make it hard to do any simplification, especially if we simplify them locally first).
     (cert (var? v))
     (make-proxy v))
+
 
   ;; === CONDE ===
   (define-structure (conde lhs rhs))
@@ -69,6 +75,7 @@
      [(fail? y) x]
      [else (make-conde x y)]))
 
+
   ;; === PCONSTRAINT ===
   (define-structure (pconstraint vars procedure data))
   
@@ -76,13 +83,16 @@
     (cert (list? vars) (procedure? procedure))
     (make-pconstraint vars procedure data))
 
+
   ;; === CONSTRAINT ===
   (define-structure (constraint goal))
+
 
   ;; === QUANTIFICATION ===
   (define __ ; Wildcard logic variable that unifies with everything without changing substitution.
     (vector '__))
 
+  
   ;; === CONJ ===
 
   (define-structure (conj lhs rhs))
@@ -103,13 +113,16 @@
     (syntax-rules () ;TODO make conj a macro but when it is just an identifier macro make it return a function of itself for use with higher order fns
       [(_) succeed]
       [(_ g) g]
-      [(_ lhs rhs ...) (conj lhs (conj* rhs ...))
+      [(_ lhs rhs ...)
+       (conj lhs (conj* rhs ...))
        #;
        (let ([l lhs])
          (if (fail? l) fail
              (let ([r (conj* rhs ...)])
                (cond
                 [(fail? r) r]
+                [(succeed? l) r]
+                [(succeed? r) l]
                 [else (make-conj l r)]))))]))
 
   (define (conj-filter c p)
@@ -155,8 +168,59 @@
                      (values (conj lhs-t rhs-t) (conj lhs-f rhs-f)))
         (if (p cs) (values cs succeed) (values succeed cs))))
 
-  ;; === OTHER GOALS ===  
+  
+  ;; === DISJ ===
+
   (define-structure (disj lhs rhs))
+  
+  (define (disj lhs rhs) ; Logical disjunction between constraints.
+    ; Unlike conj, disj is specific to constraints and any goals joined with disj will be interpreted as constraints rather than as nondeterministic goals.
+    (cert (goal? lhs) (goal? rhs))
+    ;TODO convert constructor fns to constructed params of structure  
+    (cond
+     [(or (succeed? lhs) (succeed? rhs)) succeed]
+     [(fail? rhs) lhs]
+     [(fail? lhs) rhs]
+     [else (make-disj lhs rhs)]))
+
+  (define (disj* . disjs)
+    (fold-right (lambda (lhs rhs) (disj lhs rhs)) fail disjs))
+
+  (define (disj-car g)
+    (if (disj? g)
+        (disj-car (disj-lhs g))
+        g))
+
+  (define (disj-cdr g) ;TODO microbenchmark disj cdr that looks ahead instead of using base case to check for non disj
+    (if (disj? g)
+        (disj (disj-cdr (disj-lhs g)) (disj-rhs g))
+        fail))
+
+  (define conde->disj
+    ;; Inverts conde from right-branching to left-branching to allow for optimizations in solve-disj
+    (case-lambda
+      [(c) (conde->disj c fail)]
+      [(c d) (if (conde? c) (conde->disj (conde-rhs c) (conde->disj (conde-lhs c) d)) (disj d c))]))
+  
+  (define (disj-succeeds? d)
+    ;; True if d contains a literal succeed goal.
+    (cond
+     [(succeed? d) #t]
+     [(disj? d) (or (disj-succeeds? (disj-lhs d)) (disj-succeeds? (disj-rhs d)))]
+     [else #f]))
+
+  (define (disj-factorize lhs rhs)
+    (let ([intersection (conj-intersect lhs rhs)])
+      (values (conj-filter intersection (lambda (c) (not (disj? c))))
+              (conj-filter intersection disj?)
+              (conj-diff lhs intersection)
+              (conj-diff rhs intersection))))
+
+  (define (disj-factorized lhs rhs)
+    (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
+      (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))))
+  
+  ;; === OTHER GOALS ===    
   (define-structure (noto goal)) ; Negated goal
   (define-structure (exist procedure))
   (define-structure (suspend goal))

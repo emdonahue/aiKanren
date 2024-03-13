@@ -1,9 +1,9 @@
 (library (streams) ; Definitions for core mk goals
-  (export empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid set-state-datum state-datum
+  (export empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid set-state-datum state-datum instantiate-var
           empty-substitution
           failure failure?
           state-or-failure?)
-  (import (chezscheme) (sbral) (utils))
+  (import (chezscheme) (sbral) (variables) (utils))
 
   ;; === FALIURE ===
   (define failure (vector 'failure))
@@ -39,6 +39,10 @@
 
   (define (state-datum s pred?)
     (find pred? (state-data s)))
+
+  (define (instantiate-var s)
+    ;; Return a new var and the state with an incremented varid
+    (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === CONTRACTS ===
   (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
