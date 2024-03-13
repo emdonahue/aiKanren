@@ -13,7 +13,7 @@
           state-or-failure?
           empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var set-state-datum state-datum
           empty-substitution
-          make-constraint constraint? constraint-goal set-constraint-goal proxy proxy? proxy-var constraint
+          make-constraint constraint? constraint-goal  proxy proxy? proxy-var constraint
           goal? goal-memp
           succeed fail succeed? fail?
           fresh exist conde
@@ -128,22 +128,15 @@
       [(_ (q ...)) (list q ...)]
       [(_ q) q]))
 
-  ;; === CONSTRAINT STORE ===
-  (define-structure (constraint goal))
-  (define (set-constraint-goal c g)
-    (cert (constraint? c) (goal? g))
-    (let ([c (vector-copy c)])
-      (set-constraint-goal! c g) c))
+  ;; === CONSTRAINT STORE ===  
+
 
   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
     (syntax-rules ()
                                         ;TODO try applying constraint immediately when applied
       [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
   
-  (define-structure (pconstraint vars procedure data))
-  (define (pconstraint vars procedure data)
-    (cert (list? vars) (procedure? procedure))
-    (make-pconstraint vars procedure data))
+
 
   (define pconstraint-rebind-var
     ;; Moves a pconstraint from one var to another
@@ -163,10 +156,7 @@
   (define (pconstraint-attributed? p var)
     (memq var (pconstraint-vars p)))
 
-  (define-structure (proxy var)) ;TODO make proxies remove only their specific constraint, not rerun the whole thing.
-  (define (proxy v)
-    (cert (var? v))
-    (make-proxy v))
+  
 
   
   
@@ -201,19 +191,7 @@
     (cert (goal? g))
     (if (or (succeed? g) (fail? g)) g (make-suspend g)))
 
-  (define-structure (dfs-goal procedure))
-  (define (dfs-goal p) ; Wraps a procedure that has the same signature as run-goal-dfs. Called internally by run-goal-dfs, which transparently passes its arguments to the procedure and returns the resulting values. Used to dynamically extend the behavior of the dfs interpreter.
-    (cert (procedure? p))
-    (make-dfs-goal p))
   
-  (define (== x y) ; Implements unification between terms.
-    (cond
-     [(or (eq? x __) (eq? y __)) succeed]
-     [(equal? x y) succeed]
-     [(var? x) (if (var? y) (if (var< x y) (make-== x y) (make-== y x)) (make-== x y))]
-     [(var? y) (make-== y x)]
-     [(and (pair? x) (pair? y)) (make-== x y)]
-     [else fail]))
     
   (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
     (syntax-rules ()
@@ -235,7 +213,7 @@
       [(_ c0 c ...)
        (conde-disj (conde c0) (conde c ...))]))
   
-  (define-structure (matcho out-vars in-vars goal))
+  
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (cert (not (and (null? out) (null? in))))
@@ -260,8 +238,6 @@
   (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
   
-  (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (dfs-goal? g)))
 
   (define goal-memp
     (case-lambda
@@ -282,25 +258,7 @@
        (case (if (procedure? goal) 'fresh (vector-ref goal 0))
          clauses ...)]))
 
-  (define-structure (conde lhs rhs))
-
-  (define (conde-car g)
-    (if (conde? g)
-        (conde-car (conde-lhs g))
-        g))
-
-  (define (conde-cdr g)
-    (if (conde? g)
-        (let ([lhs (conde-cdr (conde-lhs g))])
-          (if (fail? lhs) (conde-rhs g) (make-conde lhs (conde-rhs g))))
-        fail))
   
-  (define (conde-disj x y)
-    ;; Conde can simplify on failure, but unlike disj constraints, cannot simply remove itself on success.
-    (cond
-     [(fail? x) y]
-     [(fail? y) x]
-     [else (make-conde x y)]))
   
   ;; CONJ
   (define (conj lhs rhs) ; Logical conjunction between goals or constraints.
@@ -433,5 +391,4 @@
 
   ;; === QUANTIFICATION ===
 
-  (define __ ; Wildcard logic variable that unifies with everything without changing substitution.
-    (vector '__)))
+  )
