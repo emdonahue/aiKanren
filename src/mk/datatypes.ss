@@ -27,35 +27,13 @@
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
           make-noto noto? noto-goal
           __)
-  (import (chezscheme) (sbral) (variables) (goals) (utils))
+  (import (chezscheme) (sbral) (variables) (goals) (streams) (utils))
 
   ;; === SUBSTITUTION ===
-  (define empty-substitution sbral-empty)
 
-  (define-structure (state substitution varid data))
-  (define empty-state (make-state empty-substitution 0 '()))
-
-  (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
-    (if (not (failure? substitution))
-        (let ([s (vector-copy s)])
-          (set-state-substitution! s substitution) s) substitution))
   
-  (define (increment-varid s)
-    (cert (state? s))
-    (make-state (state-substitution s) #f (fx1+ (state-varid s))))
 
-  (define (set-state-varid s v)
-    ;;TODO remove set-state-varid
-    (cert (state? s) (number? v) (fx<= (state-varid s) v))
-    (if (fx= (state-varid s) v) s
-        (let ([s (vector-copy s)])
-          (set-state-varid! s v) s)))
-
-  (define (set-state-datum s pred? data)
-    (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-data s)))))
-
-  (define (state-datum s pred?)
-    (find pred? (state-data s)))
+  
 
 
 
@@ -163,14 +141,13 @@
   ;; === STATE ===
   
 
-  (define (state-or-failure? s) (or (state? s) (failure? s))) ;TODO rename state-or-failure? to maybe-state?
+  
 
   (define (instantiate-var s)
     (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === STREAMS ===
-  (define failure (vector 'failure))
-  (define (failure? s) (eq? s failure))
+  
   
   (define-structure (mplus lhs rhs))
   (define-structure (suspended goal state))

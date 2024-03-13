@@ -16,7 +16,7 @@
    trace-goal trace-run trace-conde prove trace-goals ; Tracing
    search-strategy max-depth answer-type ; Parameters
    )
-  (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (streams) (tracing) (running))
+  (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (search) (tracing) (running))
 
 
   )
