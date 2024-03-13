@@ -20,7 +20,7 @@
           make-== == ==? ==-lhs ==-rhs
           make-exist exist? exist-procedure suspend suspend? suspend-goal
           dfs-goal dfs-goal? dfs-goal-procedure
-          make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
+          make-conj conj conj?  conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
           pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?

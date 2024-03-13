@@ -13,7 +13,7 @@
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure
           make-constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
-          make-conj conj conj? conj-car conj-cdr conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
+          make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           __)
   (import (chezscheme) (variables) (utils))
 
@@ -111,18 +111,6 @@
                (cond
                 [(fail? r) r]
                 [else (make-conj l r)]))))]))
-
-  #;
-  (define (conj* . conjs)
-    (fold-right (lambda (lhs rhs) (conj lhs rhs)) succeed conjs))
-  
-  (define (conj-car c) ;TODO remove conj-car
-    (cert (conj? c))
-    (conj-lhs c))
-  
-  (define (conj-cdr c)
-    (cert (conj? c))
-    (conj-rhs c))
 
   (define (conj-filter c p)
     (if (conj? c)

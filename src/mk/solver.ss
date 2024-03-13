@@ -20,7 +20,7 @@
          [(noto? g) (solve-noto (noto-goal g) s ctn resolve delta)]
          [(disj? g) (solve-disj g s ctn resolve delta)]
          [(conde? g) (solve-constraint (conde->disj g) s ctn resolve delta)]
-         [(conj? g) (solve-constraint (conj-car g) s (conj (conj-cdr g) ctn) resolve delta)]
+         [(conj? g) (solve-constraint (conj-lhs g) s (conj (conj-rhs g) ctn) resolve delta)]
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
@@ -272,7 +272,7 @@
     (exclusive-cond
      [(fail? g) failure]
      [(succeed? g) s]
-     [(conj? g) (store-constraint (store-constraint s (conj-car g)) (conj-cdr g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
+     [(conj? g) (store-constraint (store-constraint s (conj-lhs g)) (conj-rhs g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
      [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
       (state-add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
@@ -287,8 +287,8 @@
         [(succeed? g) (values vs unifies)]
         [(disj? g) (attributed-vars (disj-car g) vs unifies)]
         [(conj? g) (call-with-values
-                       (lambda () (attributed-vars (conj-cdr g) vs unifies))
-                     (lambda (vs unifies) (attributed-vars (conj-car g) vs unifies)))]
+                       (lambda () (attributed-vars (conj-rhs g) vs unifies))
+                     (lambda (vs unifies) (attributed-vars (conj-lhs g) vs unifies)))]
         [(noto? g)
          (if (==? (noto-goal g))
              (let ([vs (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs))) (cons (==-rhs (noto-goal g)) vs) vs)])
