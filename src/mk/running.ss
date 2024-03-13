@@ -74,4 +74,9 @@
         (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
               (cons (reify-answer (lazy-run-query r) (lazy-run-car r))
-                    (lazy-run-take (fx1- n) (lazy-run-cdr r))))))))
+                    (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
+
+  (define (reify-answer q s) ; Determine the return type based on parameters.
+    (cert (state? s))
+    (if (eq? (answer-type) answer-type/reified)
+        (reify s q) s)))

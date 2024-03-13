@@ -1,11 +1,8 @@
 (library (state) ; Main state object that holds substitution & constraints
-  (export reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend unbind-constraint reify-answer simplify-unification) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (sbral) (datatypes) (negation) (utils) (mini-substitution) (reducer))
+  (export reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend simplify-unification) ;;TODO double check state exports. remove extend at least
+  (import (chezscheme) (sbral) (variables) (negation) (utils) (mini-substitution) (reducer))
 
-  (define unbound succeed) ; Internal placeholder for unbound variables in the substitution.
-  (define unbound? succeed?) ;TODO replace unbound with success as null element in state
-
-  ;; === VARIABLES ===
+  ;; === WALK & REIFY ===
   
   (define reify ;TODO reify vars inside constraints
     (case-lambda
@@ -20,48 +17,51 @@
         [else v])]))
 
   (define reify-var
-    (case-lambda
+    (case-lambda ;TODO parameterize this into reify
       [(s v) (reify-var s v '())]
       [(s v vs) 
        (cond
         [(pair? v) (cons (reify-var s (car v) vs) (reify-var s (cdr v) vs))]
         [(var? v)
          (if (memq v vs) v
-          (let ([w (walk-var s v)])
-            (if (var? w) w (reify-var s w (cons v vs)))))]
+             (let ([w (walk-var s v)])
+               (if (var? w) w (reify-var s w (cons v vs)))))]
         [else v])]))
 
-  (define (reify-answer q s) ; Determine the return type based on parameters.
-    (cert (state? s))
-    (if (eq? (answer-type) answer-type/reified)
-        (reify s q) s))
-
   (define (walk s v)
-    (cert (state? s))
+    (cert (state? s)) ; -> (or ground? var? constraint?)
     (let-values ([(binding v) (walk-var-val s v)]) v))
 
   (define (walk-var s v)
-    (let-values ([(binding v) (walk-var-val s v)]) (if (goal? v) binding v)))
+    (cert (state? s)) ; (or ground? var?)
+    (let-values ([(lvar val) (walk-var-val s v)])
+      (if (goal? val) ; If val is a constraint, the var is still free, so return it.
+          lvar val)))
 
   (define (walk-var-val s v)
+    ;; Returns the value or constraints on v, and whatever is the last logic variable in the chain.
+    (cert (state? s)) ; -> (or var? ground?) (or (ground? var? constraint?)
     (walk-binding (state-substitution s) v))
 
   (define (substitution-ref s v)
     ;; var-id starts at 1, so for the first var bound, substitution length=1 - varid=1 ==> index=0, which is where it looks up its value. Vars are not stored in the substitution. Instead, their id is used as an index at which to store their value.
     (cert (sbral? s) (var? v))
-    (sbral-ref s (fx- (sbral-length s) (var-id v)) unbound))
+    (sbral-ref s (fx- (sbral-length s) (var-id v)) succeed))
   
   (define (walk-binding s v)
-    (cert (sbral? s) (not (and (var? v) (zero? (var-id v)))))
+    ;; Returns the walked value or constraint of v and whatever is the last logic variable in the chain (possibly equal to the value if the var is completely free). If v is ground, it will return two grounds.
+    (cert (sbral? s) (not (and (var? v) (zero? (var-id v))))) ; -> (or var? ground?) (or ground? var? constraint?)
     (if (var? v)
         (let ([walked (substitution-ref s v)])
           (exclusive-cond
-           [(unbound? walked) (values v v)]
+           [(succeed? walked) (values v v)]
            [(var? walked) (walk-binding s walked)]
            [else (values v walked)]))
         (values v v)))
 
+  
   ;; === UNIFICATION ===
+
   
   (define unify ;TODO is there a good opportunity to further simplify constraints rechecked by unify using the other unifications we are performing during a complex unification? currently we only simplify constraints with the unification on the variable to which they are bound, but they might contain other variables that we could simplify now and then not have to walk to look up later. maybe we combine the list of unifications and the list of constraints after return from unify
     ;;Unlike traditional unification, unify builds the new substitution in parallel with a goal representing the normalized extensions made to the unification that can be used by the constraint system. The substitution also contains constraints on the variable, which must be dealt with by the unifier.
@@ -85,8 +85,7 @@
           (if (eq? x-var y-var)
               (values bindings succeed succeed succeed d s)
               (extend-constraint s d x-var y-var x y bindings)) ; x->y, y->y, ^cx(y)&cy
-          (extend-constraint s d x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const
-     
+          (extend-constraint s d x-var y x succeed bindings))] ; x->y, ^cx(y). y always replaces x if x var, no matter whether y var or const     
      [(eq? x y) (values bindings succeed succeed succeed d s)]
      [(goal? y) (if (var? x)
                     (extend-constraint s d x y-var succeed y bindings) ; x->y, y->y, ^cy. y always replaces x due to id, 
@@ -112,16 +111,16 @@
     (cert (var? x) (or (not (var? y)) (fx< (var-id x) (var-id y))))
     (if (occurs-check/binding s x y)
         (values fail fail fail fail fail failure)
-        
-        (values (cons (cons x y) bindings) succeed x-c y-c (conj d (== x y)) (extend s x y))
+        (let-values ([(x-c/simplified x-c/recheck) (reduce-const2 x-c bindings)])
+         (values (cons (cons x y) bindings) succeed x-c y-c (conj d (== x y)) (extend s x y)))
         #;
      (let-values ([(pending committed)
                   
                    (conj-partition (lambda (g) (conj-member g d)) x-c)])
        (let-values ([(committed/simplified committed/recheck) (simplify-unification committed (list (cons x y)))]) ;TODO return y constraint to simplify it with potentially other bindings and also unbind its var?
-         (if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+         (if (or (fail? committed/simplified) (fail? committed/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (remove-constraint s val))
              (let-values ([(pending/simplified pending/recheck) (simplify-unification pending (list (cons x y)))])
-               (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (unbind-constraint s val))
+               (if (or (fail? pending/simplified) (fail? pending/recheck)) (values fail fail fail fail fail failure) ; (if (succeed? val-c) s (remove-constraint s val))
 
                    ;; remove var-c constraints from delta
                    ;; add simplified constraints back to delta
@@ -136,7 +135,7 @@
     (set-state-substitution
      s (sbral-set-ref
         (state-substitution s)
-        (fx- (sbral-length (state-substitution s)) (var-id x)) y unbound)))
+        (fx- (sbral-length (state-substitution s)) (var-id x)) y succeed)))
 
   (define (occurs-check/binding s v term) ;TODO see if the normalized ==s can help speed up occurs-check/binding, eg by only checking rhs terms in case of a trail of unified terms. maybe use the fact that normalized vars have directional unification?
     ;; TODO try implementing occurs check in the constraint system and eliminating checks in the wrong id direction (eg only check lower->higher)
@@ -240,40 +239,18 @@
     (if (occurs-check/binding s x y) (values succeed succeed)
      (values (disj (=/= x y) d) c)))
   
+
   ;; === CONSTRAINTS ===
+
   
   (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
                                         ;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
     (let ([g (substitution-ref (state-substitution s) (car vs))])
-      (when (not (goal? g)) ;TODO remove extra non-goal print checks in add constraint
-        (pretty-print g)
-        (pretty-print (car vs))
-        (pretty-print c)
-        (pretty-print s))
       (cert (goal? g))
       (fold-left (lambda (s v)
                    (let ([g (substitution-ref (state-substitution s) v)])
-                     (extend s v (conj g (proxy (car vs)))))) (extend s (car vs) (conj g c)) (cdr vs)))
-#;    
-    (fold-left (lambda (s v)
-                 #;
-                 (when (not (goal? (substitution-ref (state-substitution s) v))) (printf "instore: ~a~%var: ~a~%new con: ~a~%" (substitution-ref (state-substitution s) v) v c)
-                       (pretty-print c))
-                 (let ([val-or-goal (substitution-ref (state-substitution s) v)]) ; Since all attributed vars should be normalized, we don't need walk - we can look them up directly in the substitution.
+                     (extend s v (conj g (proxy (car vs)))))) (extend s (car vs) (conj g c)) (cdr vs))))
 
-                   (when (not (goal? val-or-goal))
-                     (pretty-print v)
-                     (pretty-print val-or-goal)
-                     (pretty-print (walk s v))
-                     (pretty-print c)
-                     (pretty-print s)
-                     
-                                     )
-                   (cert (goal? val-or-goal)) ;TODO can we store stale constraints?
-                   (if (goal? val-or-goal) (extend s v (conj val-or-goal c)) s))
-#;;TODO clean up state add constraint. remove dead code
-                 (set-state-constraints s (add-constraint (state-constraints s) v c))) s vs))
-
-  (define (unbind-constraint s v) ;TODO rename unbind-constraint -> remove-constraint
-    (extend s v unbound)))
+  (define (remove-constraint s v) ;TODO rename remove-constraint -> remove-constraint
+    (extend s v succeed)))

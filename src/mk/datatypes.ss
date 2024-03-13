@@ -3,9 +3,10 @@
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
           make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
-          var make-var var? var-id set-var-id! fresh-vars vars->list
+          fresh-vars vars->list
           stream?
           failure failure?
+          var make-var var? var-id set-var-id!
           make-suspended suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
@@ -26,7 +27,7 @@
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
           make-noto noto? noto-goal
           __)
-  (import (chezscheme) (sbral) (utils))
+  (import (chezscheme) (sbral) (variables) (utils))
 
   ;; === RUNTIME PARAMETERS ===
   (define search-strategy/interleaving 'interleaving)
@@ -69,12 +70,7 @@
   (define empty-package (make-package '()))
   
   ;; === VAR ===
-  (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
-  (define var ; Accepts an integer var-id and creates a var struct. Mostly for internal use, or for dynamically generating miniKanren programs.
-    make-var)
-  (define (var< x y)
-    (cert (var? x) (var? y))
-    (fx< (var-id x) (var-id y)))
+  
 
   (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
     (syntax-rules ()
