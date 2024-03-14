@@ -1,6 +1,6 @@
 (library (constraints)
   (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo filtero)
-  (import (chezscheme) (datatypes) (negation) (state) (matcho) (utils))
+  (import (chezscheme) (goals) (variables) (negation) (state) (matcho) (utils))
   
   (define (booleano v) ; Constrains a term to be either #t or #f.
     (disj (== v #t) (== v #f)))
