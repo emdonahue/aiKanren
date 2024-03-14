@@ -10,7 +10,7 @@
           make-suspended suspended suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
-          state-or-failure?
+          maybe-state?
           empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var set-state-datum state-datum
           empty-substitution
           make-constraint constraint? constraint-goal  proxy proxy? proxy-var constraint

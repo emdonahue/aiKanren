@@ -4,14 +4,14 @@
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
-    (cert (goal? g) (state-or-failure? s)) ; -> state-or-failure?
+    (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
     (let-values ([(delta s) (solve-constraint g s succeed succeed succeed)]) s))
 
   (org-define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     ;; resolve: constraints retrieved from the store that we need to recheck, but which should not be negated by noto on the return (so we cant just solve them immediately. we must delay rechecking until we are done with g).
     ;; delta: conjunction of all the simplified goals we have added to the store. reflects the change (delta) of the returned state's constraint store.
-    (cert (goal? g) (state-or-failure? s) (goal? ctn)) ; -> delta pending state-or-failure?
+    (cert (goal? g) (maybe-state? s) (goal? ctn)) ; -> delta pending maybe-state?
     (if (failure? s) (values fail failure)
         (exclusive-cond
          [(fail? g) (values fail failure)]
@@ -268,7 +268,7 @@
 
   (define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
-    (cert (state-or-failure? s) (goal? g) (not (conde? g))) ; -> state?
+    (cert (maybe-state? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
      [(fail? g) failure]
      [(succeed? g) s]
