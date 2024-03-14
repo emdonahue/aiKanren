@@ -18,21 +18,19 @@
   
   (define empty-state (make-state empty-substitution 0 '()))
 
-  (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
+  (define (set-state-substitution s substitution)
     (if (not (failure? substitution))
-        (let ([s (vector-copy s)])
-          (set-state-substitution! s substitution) s) substitution))
+        (make-state substitution (state-varid s) (state-data s))
+        failure))
   
   (define (increment-varid s)
     (cert (state? s))
     (make-state (state-substitution s) #f (fx1+ (state-varid s))))
 
   (define (set-state-varid s v)
-    ;;TODO remove set-state-varid
     (cert (state? s) (number? v) (fx<= (state-varid s) v))
     (if (fx= (state-varid s) v) s
-        (let ([s (vector-copy s)])
-          (set-state-varid! s v) s)))
+        (make-state (state-substitution s) v (state-data s))))
 
   (define (set-state-datum s pred? data)
     (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-data s)))))
