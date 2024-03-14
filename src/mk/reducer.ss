@@ -1,9 +1,21 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (reducer)
   (export reduce-constraint reduce-const2)
-  (import (chezscheme) (goals) (mini-substitution) (utils) (negation) (datatypes))
+  (import (chezscheme) (goals) (mini-substitution) (utils) (negation) (variables) (streams)) ;TODO remove streams dependency by not expanding matcho without state
   ;;TODO simplify with negated pconstraints as well
 
+  (define (expand-matcho g s p)
+    ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
+    ((matcho-goal g) s p (matcho-in-vars g)))
+
+  (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
+    (cert (not (and (null? out) (null? in))))
+    (exclusive-cond
+     [(null? out)
+      (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
+     [(var? (car out)) (make-matcho out in proc)]
+     [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
+  
   (define (reduce-const2 g s)
 
     (values succeed g))
@@ -60,7 +72,9 @@
         (cond
          [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
          [(not (matcho? g)) (reduce-constraint g c s)]
-         [(null? (matcho-out-vars g)) (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
+         [(null? (matcho-out-vars g))
+          (nyi reduce-matcho)
+          (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
                                         (reduce-constraint g c s))] ; TODO should we thread the real state when expanding matcho while reducing ==?
          [normalized (values g succeed)]
          [else (values succeed g)]))))
