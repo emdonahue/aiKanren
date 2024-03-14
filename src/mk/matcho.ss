@@ -3,9 +3,9 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair
-          expand-matcho matcho-attributed?; normalize-matcho matcho-attributed? matcho-test-eq?
+          expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?
           )
-  (import (chezscheme) (datatypes) (mini-substitution) (state) (utils)) ;(streams) (variables) (goals)
+  (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
 
   (define (expand-matcho g s p)
@@ -14,10 +14,10 @@
 
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))
-#;
+
   (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
-  #;
+
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
     (cert (not (and (null? out) (null? in))))
     (exclusive-cond

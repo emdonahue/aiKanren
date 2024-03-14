@@ -1,6 +1,6 @@
 (library (solver-tests) ; Tests the core mechanisms of the constraint solver
   (export run-solver-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state) (solver) (tracing))
+  (import (chezscheme) (test-runner) (aikanren) (goals) (variables) (utils) (state) (solver) (tracing))
   
   (define (run-solver-tests)
     (define x1 (make-var 1))

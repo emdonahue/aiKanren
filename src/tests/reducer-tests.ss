@@ -1,6 +1,6 @@
 (library (reducer-tests) ; Tests the core mechanisms of the constraint solver
   (export run-reducer-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils) (state) (solver))
+  (import (chezscheme) (test-runner) (aikanren) (goals) (variables) (matcho) (utils) (state) (solver))
   
   (define (run-reducer-tests)
     (define x1 (make-var 1))

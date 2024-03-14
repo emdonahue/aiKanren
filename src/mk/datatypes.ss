@@ -24,7 +24,7 @@
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
           pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal  normalize-matcho  matcho-test-eq?
+          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal;  normalize-matcho  matcho-test-eq?
 ;          matcho-attributed?
           make-noto noto? noto-goal
           __)
