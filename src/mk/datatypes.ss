@@ -1,12 +1,13 @@
 ;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
+
           package? empty-package
           fresh-vars vars->list
           stream?
           failure failure?
           var make-var var? var-id set-var-id!
-          make-suspended suspended suspended? suspended-goal suspended-state
+          make-suspended  suspended? suspended-goal suspended-state
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           maybe-state?
@@ -61,18 +62,7 @@
   ;; === STREAMS ===
   
   
-  (define-structure (mplus lhs rhs))
-  (define-structure (suspended goal state))
-  (define (suspended g s s^)
-    (cert (goal? g) (state? s))
-    (exclusive-cond
-     [(fail? g) failure]
-     [(succeed? g) s]     
-     [else (make-suspended g s^)]))
-  (define-structure (state+stream state stream))
 
-  (define (stream? s)
-    (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s)))
   
   ;; === GOALS ===
   
@@ -96,5 +86,7 @@
   (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
 
+
+  
 
   )

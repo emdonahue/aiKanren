@@ -1,6 +1,6 @@
 (library (listo) ; Relational list library
   (export appendo assoco containso asspo listo for-eacho membero)
-  (import (chezscheme) (datatypes) (matcho) (negation) (debugging) (utils))
+  (import (chezscheme) (goals) (matcho) (negation) (debugging) (utils))
 
   (define (listo l) ; Constrains l to be a proper list.
     (disj

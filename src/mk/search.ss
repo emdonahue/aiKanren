@@ -26,7 +26,11 @@
        [(matcho? g) (let-values ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
                         ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ; TODO If any vars are non-free, there is structurally recursive information to exploit, so continue running aggressively on this branch. Otherwise suspend like a normal fresh.
                       (if (exceeds-max-depth? s) (values failure p)
-                          (values (suspended (conj g ctn) s s^) p)))]
+                          (values
+                           (exclusive-cond
+                            [(fail? g) failure]
+                            [(succeed? g) s]     
+                            [else (make-suspended (conj g ctn) s^)]) p)))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.

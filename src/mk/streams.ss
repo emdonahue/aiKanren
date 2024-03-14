@@ -3,15 +3,35 @@
           empty-substitution
           failure failure?
           package? empty-package
-          maybe-state?)
+          make-mplus mplus? mplus-lhs mplus-rhs
+          make-state+stream state+stream? state+stream-state state+stream-stream
+          make-suspended suspended? suspended-goal suspended-state
+          maybe-state? stream?)
   (import (chezscheme) (sbral) (variables) (utils))
 
+  
   ;; === FALIURE ===
   (define failure (vector 'failure))
   (define (failure? s) (eq? s failure))
 
+  
   ;; === SUBSTITUTION ===
   (define empty-substitution sbral-empty)
+
+
+  (define-structure (mplus lhs rhs))
+
+  ;; === SUSPENDED ===
+  (define-structure (suspended goal state))
+  #;
+  (define (suspended g s s^) ; Suspended streams hold states and continuation goals until the search re-activates their branch.
+    (cert (state? s))
+    (exclusive-cond
+     [(fail? g) failure]
+     [(succeed? g) s]     
+     [else (make-suspended g s^)]))
+
+  (define-structure (state+stream state stream)) ; Streams with at least 1 answer state that has completed all current continuation conjuncts.
   
 
   ;; === STATE ===
@@ -43,9 +63,14 @@
     ;; Return a new var and the state with an incremented varid
     (values (make-var (state-varid s)) (increment-varid s)))
 
+  
   ;; === PACKAGE ===
   (define-structure (package data))
   (define empty-package (make-package '()))
+
   
   ;; === CONTRACTS ===
-  (define (maybe-state? s) (or (state? s) (failure? s))))
+  (define (maybe-state? s) (or (state? s) (failure? s)))
+  
+  (define (stream? s)
+    (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s))))
