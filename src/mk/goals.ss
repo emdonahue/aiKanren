@@ -6,17 +6,18 @@
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
           make-exist exist? exist-procedure
-          make-suspend suspend? suspend-goal
+          suspend suspend? suspend-goal
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           proxy proxy? proxy-var proxy
           conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
-          pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure
-          make-constraint constraint? constraint-goal
+          pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
+          constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition 
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
+          fresh-vars fresh exist
           __)
-  (import (chezscheme) (variables) (utils))
+  (import (chezscheme) (variables) (streams) (utils))
 
   
   ;; === SUCCEED & FAIL ===
@@ -83,9 +84,32 @@
     (cert (list? vars) (procedure? procedure))
     (make-pconstraint vars procedure data))
 
+  (define pconstraint-rebind-var
+    ;; Moves a pconstraint from one var to another
+    (case-lambda
+      [(g v) (pconstraint (cons v (cdr (pconstraint-vars g)))
+                          (pconstraint-procedure g)
+                          (pconstraint-data g))]
+      [(g v v^) (if (eq? v v^) g
+                    (pconstraint (cons v^ (remq v (pconstraint-vars g)))
+                                 (pconstraint-procedure g)
+                                 (pconstraint-data g)))]))
+
+  (define (pconstraint-check p var val)
+    (cert (memq var (pconstraint-vars p)))
+    ((pconstraint-procedure p) var val succeed succeed p))
+
+  (define (pconstraint-attributed? p var)
+    (memq var (pconstraint-vars p)))
+  
 
   ;; === CONSTRAINT ===
   (define-structure (constraint goal))
+
+  (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
+    (syntax-rules ()
+      [(_ g ...) (let ([c (conj* g ...)])
+                   (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
 
 
   ;; === QUANTIFICATION ===
@@ -217,15 +241,59 @@
               (conj-diff rhs intersection))))
 
   (define (disj-factorized lhs rhs)
+    ;; Factorizes out goals common to all branches of a disj so they can be applied once. 
     (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
       (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))))
+
+  
+  ;; === SUSPEND ===
+
+  (define-structure (suspend goal))
+
+  (define (suspend g) ; A suspend goal tells the interleaving interpreter to suspend this branch and continue with the search later. This is the fundamental primitive on which fresh is built, but it can be used directly by end-users.
+    (cert (goal? g))
+    (if (or (succeed? g) (fail? g)) g (make-suspend g)))
   
   ;; === OTHER GOALS ===    
   (define-structure (noto goal)) ; Negated goal
-  (define-structure (exist procedure))
-  (define-structure (suspend goal))
+  (define-structure (exist procedure))  
   (define-structure (matcho out-vars in-vars goal))
+
+  
+  ;; === FRESH/EXIST ===
+
+  (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately incremented variable id counter and runs the body forms in the scope of variables bound to the new logic variables. This is the basic primitive for all logic variable instantiation.
+    (syntax-rules ()
+      [(_ [(end-state end-goal) (start-state (start-goal ...) ())] body ...) ; Empty variable lists => just run the goals without incrementing the state.
+       (let ([end-state start-state]
+             [end-goal (conj* start-goal ...)])
+         body ...)]
+      [(_ [(end-state end-goal) (start-state (start-goal ...) (q ...))] body ...)
+       (let* ([vid (state-varid start-state)] ; Get the current state var id.
+              [q (begin (set! vid (fx1+ vid)) (make-var vid))] ... ; For each fresh variable, set its var id and increment the var id.
+              [end-goal (conj* start-goal ...)] ; Conjoin the goals into a single goal.
+              [end-state (if (succeed? end-goal) start-state (set-state-varid start-state vid))]) ; If the state is a trivial success, we won't need those variables, so throw out the state and the new fresh variables to conserve var id index.
+         body ...)]
+      [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...) ; Single variables are treated as 1-length lists.
+       (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
+
+  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+    ;; (exist (x y z) ...)
+    (syntax-rules ()
+      [(_ q g ...)
+       (lambda (start-state p c)
+         (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
+                     (values end-goal end-state p c)))]))
+
+  (define-syntax fresh ; Introduce fresh variables.
+    ;; (fresh (x y z) ...)
+    ;; Can be run with an empty variable list to simply suspend the search at that point.
+    (syntax-rules ()
+      [(_ q g ...)
+       (exist q (suspend (conj* g ...)))]))
+  
   
   ;; === CONTRACTS ===
+  
   (define (goal? g)
     (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (dfs-goal? g))))

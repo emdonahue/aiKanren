@@ -2,6 +2,7 @@
   (export empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid set-state-datum state-datum instantiate-var
           empty-substitution
           failure failure?
+          package? empty-package
           maybe-state?)
   (import (chezscheme) (sbral) (variables) (utils))
 
@@ -42,6 +43,9 @@
     ;; Return a new var and the state with an incremented varid
     (values (make-var (state-varid s)) (increment-varid s)))
 
+  ;; === PACKAGE ===
+  (define-structure (package data))
+  (define empty-package (make-package '()))
+  
   ;; === CONTRACTS ===
-  (define (maybe-state? s) (or (state? s) (failure? s))) ;TODO rename maybe-state? to maybe-state?
-  )
+  (define (maybe-state? s) (or (state? s) (failure? s))))

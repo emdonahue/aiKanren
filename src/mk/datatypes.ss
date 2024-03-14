@@ -1,7 +1,6 @@
 ;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
   (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
-          make-lazy-run lazy-run? lazy-run-stream lazy-run-query lazy-run-package set-lazy-run-stream
           package? empty-package
           fresh-vars vars->list
           stream?
@@ -13,7 +12,7 @@
           maybe-state?
           empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var set-state-datum state-datum
           empty-substitution
-          make-constraint constraint? constraint-goal  proxy proxy? proxy-var constraint
+          constraint? constraint-goal  proxy proxy? proxy-var constraint
           goal? goal-memp
           succeed fail succeed? fail?
           fresh exist conde
@@ -28,18 +27,6 @@
           make-noto noto? noto-goal
           __)
   (import (chezscheme) (sbral) (variables) (goals) (streams) (utils))
-
-  ;; === SUBSTITUTION ===
-
-  
-
-  
-
-
-
-  
-
-
 
   
   ;; === RUNTIME PARAMETERS ===
@@ -70,75 +57,9 @@
                         (assertion-violation 'answer-type "Unrecognized answer-type" t))
                       t)))
   
-  ;; === RUNNER ===
-  (define-structure (lazy-run stream query package))
-  
-  (define (set-lazy-run-stream r s)
-    (cert (lazy-run? r) (not (lazy-run? s)))
-    (let ([r (vector-copy r)])
-      (set-lazy-run-stream! r s) r))
-
-  ;; === PACKAGE ===  
-  (define-structure (package tables))
-  (define empty-package (make-package '()))
-  
   ;; === VAR ===
   
 
-  (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately advanced variable id counter and runs the body forms in the scope of variables bound to the new logic variables.
-    (syntax-rules ()
-      [(_ [(end-state end-goal) (start-state (start-goal ...) ())] body ...)
-       (let ([end-state start-state]
-             [end-goal (conj* start-goal ...)])
-         body ...)]
-      [(_ [(end-state end-goal) (start-state (start-goal ...) (q ...))] body ...)
-       (let* ([vid (state-varid start-state)]
-              [q (begin (set! vid (fx1+ vid)) (make-var vid))] ...
-              [end-goal (conj* start-goal ...)]
-              [end-state (if (succeed? end-goal) start-state (set-state-varid start-state vid))])
-         body ...)]
-      [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...)
-       (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
-
-  (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
-    (syntax-rules ()
-      [(_ ()) '()]
-      [(_ (q ...)) (list q ...)]
-      [(_ q) q]))
-
-  ;; === CONSTRAINT STORE ===  
-
-
-  (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
-    (syntax-rules ()
-                                        ;TODO try applying constraint immediately when applied
-      [(_ g ...) (let ([c (conj* g ...)]) (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
-  
-
-
-  (define pconstraint-rebind-var
-    ;; Moves a pconstraint from one var to another
-    (case-lambda
-      [(g v) (pconstraint (cons v (cdr (pconstraint-vars g)))
-                          (pconstraint-procedure g)
-                          (pconstraint-data g))]
-      [(g v v^) (if (eq? v v^) g
-                    (pconstraint (cons v^ (remq v (pconstraint-vars g)))
-                                 (pconstraint-procedure g)
-                                 (pconstraint-data g)))]))
-
-  (define (pconstraint-check p var val)
-    (cert (memq var (pconstraint-vars p)))
-    ((pconstraint-procedure p) var val succeed succeed p))
-
-  (define (pconstraint-attributed? p var)
-    (memq var (pconstraint-vars p)))
-
-  
-
-  
-  
-  ;; === STATE ===
   
 
   
@@ -163,25 +84,11 @@
   
   ;; === GOALS ===
   
-  (define (suspend g)
-    (cert (goal? g))
-    (if (or (succeed? g) (fail? g)) g (make-suspend g)))
+
 
   
     
-  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
-    (syntax-rules ()
-      [(_ q g ...)
-       (lambda (start-state p c)
-         (fresh-vars [(end-state end-goal) (start-state (g ...) q)] ;TODO make fresh insert fail checks between conjuncts to short circuit even building subsequent goals
-                           (values end-goal end-state p c)))]))
-
-  (define-syntax fresh ; Introduce fresh variables.
-    ;; (fresh (x y z) ...)
-    ;; Can be run with an empty variable list to simply suspend the search at that point.
-    (syntax-rules ()
-      [(_ q g ...)
-       (exist q (suspend (conj* g ...)))]))
+  
 
   (define-syntax conde ; Nondeterministic branching.
     (syntax-rules () 
