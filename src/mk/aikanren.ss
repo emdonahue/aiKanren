@@ -15,6 +15,7 @@
    printfo displayo noopo var ; Debugging
    trace-goal trace-run trace-conde prove trace-goals ; Tracing
    search-strategy max-depth answer-type ; Parameters
+   search-strategy/interleaving search-strategy/dfs answer-type answer-type/reified answer-type/state ; Parameter-Values
    )
   (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (search) (tracing) (running))
 

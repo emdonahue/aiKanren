@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
-  (export expand-disjunctions  max-depth answer-type answer-type/reified answer-type/state
+  (export expand-disjunctions  max-depth 
 
           package? empty-package
           fresh-vars vars->list
@@ -40,15 +40,7 @@
     (make-parameter (most-positive-fixnum)
                     (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
 
-  (define answer-type/reified 'reified)
-  (define answer-type/state 'state)
-  (define answer-type ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation.
-    ; Default: 'reified
-    (make-parameter answer-type/reified
-                    (lambda (t)
-                      (unless (or (eq? t answer-type/reified) (eq? t answer-type/state))
-                        (assertion-violation 'answer-type "Unrecognized answer-type" t))
-                      t)))
+  
   
 
   

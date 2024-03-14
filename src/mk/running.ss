@@ -3,8 +3,9 @@
           lazy-run
           query
           search-strategy search-strategy/interleaving search-strategy/dfs
+          answer-type answer-type/reified answer-type/state
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
-  (import (chezscheme) (search) (failure) (state) (streams) (utils) (datatypes))
+  (import (chezscheme) (search) (failure) (state) (streams) (utils) (goals) (variables))
 
   ;; === RUNTIME PARAMETERS ===
   
@@ -17,6 +18,18 @@
                       (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs))
                         (assertion-violation 'answer-type "Unrecognized search-strategy" s))
                       s)))
+
+  (define answer-type/reified 'reified)
+  (define answer-type/state 'state)
+  (define answer-type ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation.
+    ; Default: 'reified
+    (make-parameter answer-type/reified
+                    (lambda (t)
+                      (unless (or (eq? t answer-type/reified) (eq? t answer-type/state))
+                        (assertion-violation 'answer-type "Unrecognized answer-type" t))
+                      t)))
+  
+  ;; === INTERNAL PARAMETERS
   
   (define query (make-parameter #f)) ; Holds the query variables for inspection by internal elements of the dfs search. Used for debugging.
   
