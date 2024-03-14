@@ -1,6 +1,6 @@
 (library (solver) ; Central logic of the constraint solver
   (export run-constraint simplify-=/= simplify-pconstraint)
-  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer))
+  (import (chezscheme) (state) (negation) (datatypes) (utils) (debugging) (mini-substitution) (reducer) (matcho))
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
