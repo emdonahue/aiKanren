@@ -1,7 +1,7 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (reducer)
   (export reduce-constraint reduce-const2)
-  (import (chezscheme) (datatypes) (mini-substitution) (utils) (negation))
+  (import (chezscheme) (goals) (mini-substitution) (utils) (negation) (datatypes))
   ;;TODO simplify with negated pconstraints as well
 
   (define (reduce-const2 g s)
@@ -37,7 +37,6 @@
                   (if (succeed? recheck) (values (noto simplified) succeed)
                       (values succeed (noto (conj simplified recheck)))))]
      [(constraint? g) (reduce-constraint (constraint-goal g) c s)]
-     [(procedure? g) (reduce-constraint (g empty-state empty-package) c s)]
      [(conde? g) (reduce-constraint (conde->disj g) c s)]
      [else (exclusive-cond
             [(==? c) (reduce-== g c s)])])
