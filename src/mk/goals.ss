@@ -5,7 +5,6 @@
           make-noto noto? noto-goal
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
-          make-exist exist? exist-procedure
           suspend suspend? suspend-goal
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           proxy proxy? proxy-var proxy
@@ -253,11 +252,6 @@
   (define (suspend g) ; A suspend goal tells the interleaving interpreter to suspend this branch and continue with the search later. This is the fundamental primitive on which fresh is built, but it can be used directly by end-users.
     (cert (goal? g))
     (if (or (succeed? g) (fail? g)) g (make-suspend g)))
-  
-  ;; === OTHER GOALS ===    
-  (define-structure (noto goal)) ; Negated goal
-  (define-structure (exist procedure))  
-  (define-structure (matcho out-vars in-vars goal))
 
   
   ;; === FRESH/EXIST ===
@@ -292,8 +286,13 @@
       [(_ q g ...)
        (exist q (suspend (conj* g ...)))]))
   
+
+  ;; === OTHER GOALS ===    
+  (define-structure (noto goal)) ; Negated goal
+  (define-structure (matcho out-vars in-vars goal))
+  
   
   ;; === CONTRACTS ===
   
   (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (exist? g) (suspend? g) (proxy? g) (dfs-goal? g))))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g))))

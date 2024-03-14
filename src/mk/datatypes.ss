@@ -17,7 +17,7 @@
           succeed fail succeed? fail?
           fresh exist conde
           make-== == ==? ==-lhs ==-rhs
-          make-exist exist? exist-procedure suspend suspend? suspend-goal
+          suspend suspend? suspend-goal
           dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj?  conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition ;TODO replace conj-car/cdr with lhs/rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
