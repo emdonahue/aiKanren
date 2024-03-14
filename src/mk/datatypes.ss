@@ -55,7 +55,7 @@
   
   (define expand-disjunctions (make-parameter #f)) ;TODO implement expand disjunction constraints in reifier. eg turn a bool constraint into a stream of t f.
   
-  (define max-depth ; Specifies the maximum depth of the dfs search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution.
+  (define max-depth ; Specifies the maximum search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution. This parameter applies to all search types, including interleaving.
     ; Default: (most-positive-fixnum).
     (make-parameter (most-positive-fixnum)
                     (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
