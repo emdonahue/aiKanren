@@ -8,7 +8,7 @@
           suspend suspend? suspend-goal
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           proxy proxy? proxy-var proxy
-          conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
+          conde conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
           constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
@@ -56,6 +56,12 @@
 
   ;; === CONDE ===
   (define-structure (conde lhs rhs))
+
+  (define-syntax conde ; Nondeterministic branching.
+    (syntax-rules () 
+      [(_ (g ...)) (conj* g ...)]
+      [(_ c0 c ...)
+       (conde-disj (conde c0) (conde c ...))]))
   
   (define (conde-car g)
     (if (conde? g)

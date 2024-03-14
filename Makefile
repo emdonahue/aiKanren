@@ -85,5 +85,5 @@ debug:
 	@TESTSUITE=$$(mktemp); \
 	trap "rm -f $$TESTSUITE" EXIT; \
 	echo '(import (chezscheme) (test-runner) (all-tests)) (run-all-tests) (tmessage)' > "$$TESTSUITE"; \
-	scheme --libdirs src/mk:src/tests:src/benchmarks:src/examples --debug-on-exception --script "$$TESTSUITE" || true
+	scheme --libdirs src/mk:src/tests:src/benchmarks:src/examples --debug-on-exception --import-notify --script "$$TESTSUITE" || true
 

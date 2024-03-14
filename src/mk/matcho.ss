@@ -2,8 +2,29 @@
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
-  (export matcho matcho-pair)
-  (import (chezscheme) (datatypes) (mini-substitution) (state) (utils))
+  (export matcho matcho-pair
+          ;expand-matcho normalize-matcho matcho-attributed? matcho-test-eq?
+          )
+  (import (chezscheme) (datatypes) (mini-substitution) (state) (utils)) ;(streams) (variables) (goals)
+
+  #;
+  (define (expand-matcho g s p)
+    ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
+    ((matcho-goal g) s p (matcho-in-vars g)))
+#;
+  (define (matcho-attributed? g var)
+    (memq var (matcho-out-vars g)))
+#;
+  (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
+    (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
+  #;
+  (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
+    (cert (not (and (null? out) (null? in))))
+    (exclusive-cond
+     [(null? out)
+      (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
+     [(var? (car out)) (make-matcho out in proc)]
+     [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
   
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.

@@ -13,7 +13,7 @@
           empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid instantiate-var set-state-datum state-datum
           empty-substitution
           constraint? constraint-goal  proxy proxy? proxy-var constraint
-          goal? goal-memp
+          goal?
           succeed fail succeed? fail?
           fresh exist conde
           make-== == ==? ==-lhs ==-rhs
@@ -23,7 +23,7 @@
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
           pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? simplify-matcho
+          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal expand-matcho normalize-matcho matcho-attributed? matcho-test-eq? 
           make-noto noto? noto-goal
           __)
   (import (chezscheme) (sbral) (variables) (goals) (streams) (utils))
@@ -57,14 +57,6 @@
                         (assertion-violation 'answer-type "Unrecognized answer-type" t))
                       t)))
   
-  ;; === VAR ===
-  
-
-  
-
-  
-
-  
 
   ;; === STREAMS ===
   
@@ -84,18 +76,6 @@
   
   ;; === GOALS ===
   
-
-
-  
-    
-  
-
-  (define-syntax conde ; Nondeterministic branching.
-    (syntax-rules () 
-      [(_ (g ...)) (conj* g ...)] ;TODO make conde do fail checks syntactically
-      [(_ c0 c ...)
-       (conde-disj (conde c0) (conde c ...))]))
-  
   
   
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
@@ -110,45 +90,11 @@
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
     ((matcho-goal g) s p (matcho-in-vars g)))
 
-  (define (simplify-matcho g)
-    (if (and (matcho? g) (null? (matcho-out-vars g)))
-        (let-values ([(_ g s p) (expand-matcho g empty-state empty-package)]) g)
-        g))
-
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))
 
   (define (matcho-test-eq? g out in) ; Shorthand for checking the comparable properties of matcho during unit testing.
     (and (matcho? g) (equal? (matcho-out-vars g) out) (equal? (matcho-in-vars g) in)))
-  
 
-  (define goal-memp
-    (case-lambda
-      [(g p) (goal-memp g  p '())]
-      [(g p gs)
-       (cond
-        [(p g) (cons g gs)]
-        [(conj? g) (let ([gs (goal-memp (conj-rhs g) p gs)])
-                     (goal-memp (conj-lhs g) p gs))]
-        [(disj? g) (let ([gs (goal-memp (disj-rhs g) p gs)])
-                     (goal-memp (disj-lhs g) p gs))]
-        [else gs])]))
-
-  #;
-  (define-syntax goal-cond ;TODO revisit goal-cond once fresh is either explicit or removed
-    (syntax-rules ()
-      [(_ goal (predicate body ...) ...)
-       (case (if (procedure? goal) 'fresh (vector-ref goal 0))
-         clauses ...)]))
-
-  
-  
-  ;; CONJ
-  
-
-  ;; DISJ
-  
-
-  ;; === QUANTIFICATION ===
 
   )
