@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
-  (export expand-disjunctions  max-depth 
+  (export expand-disjunctions  
 
           package? empty-package
           fresh-vars vars->list
@@ -35,10 +35,7 @@
   
   (define expand-disjunctions (make-parameter #f)) ;TODO implement expand disjunction constraints in reifier. eg turn a bool constraint into a stream of t f.
   
-  (define max-depth ; Specifies the maximum search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution. This parameter applies to all search types, including interleaving.
-    ; Default: (most-positive-fixnum).
-    (make-parameter (most-positive-fixnum)
-                    (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
+  
 
   
   

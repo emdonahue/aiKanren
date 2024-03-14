@@ -1,7 +1,12 @@
 (library (search) ; Deals with the pure search aspects without constraints.
-  (export run-goal run-goal-dfs stream-step)
-  (import (chezscheme) (state) (failure) (package) (negation) (goals) (streams) (matcho) (solver) (utils) (debugging) (datatypes)) 
+  (export run-goal run-goal-dfs stream-step max-depth)
+  (import (chezscheme) (state) (failure) (package) (negation) (goals) (streams) (matcho) (solver) (utils) (debugging)) 
 
+  (define max-depth ; Specifies the maximum search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution. This parameter applies to all search types, including interleaving.
+    ; Default: (most-positive-fixnum).
+    (make-parameter (most-positive-fixnum)
+                    (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
+  
   ;; === INTERLEAVING INTERPRETER ===
   
   (define run-goal
