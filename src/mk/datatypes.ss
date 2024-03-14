@@ -24,8 +24,8 @@
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           conde-disj conde? conde-lhs conde-rhs conde-car conde-cdr conde->disj
           pconstraint? pconstraint pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
-          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal  normalize-matcho matcho-attributed? matcho-test-eq?
-          ;expand-matcho
+          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal  normalize-matcho  matcho-test-eq?
+;          matcho-attributed?
           make-noto noto? noto-goal
           __)
   (import (chezscheme) (sbral) (variables) (goals) (streams) (utils))
@@ -59,6 +59,7 @@
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
     ((matcho-goal g) s p (matcho-in-vars g)))
 
+  #;
   (define (matcho-attributed? g var)
     (memq var (matcho-out-vars g)))
 
