@@ -2,7 +2,7 @@
   (export printfo displayo noopo
           print-substitution
           walk-substitution)
-  (import (chezscheme) (datatypes) (sbral) (state) (utils))
+  (import (chezscheme) (goals) (streams) (sbral) (state) (utils))
 
   ;; === DEBUG PRINTING ===
   

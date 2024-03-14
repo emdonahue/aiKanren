@@ -3,7 +3,7 @@
   (import (chezscheme) (test-runner) (aikanren) (utils) (datatypes))
 
   (define (run-dfs-tests) ; TODO consider making max depth a parameter and then just passing it in in the macros so we dont have to keep accessing a parameter, though we can try accessing the param directly and see if that affects performance
-    (parameterize ([search-strategy search-strategy/dfs])
+    (parameterize ([search-strategy 'dfs])
       (tassert "dfs ==" (run1 x1 (== x1 1)) 1)
       (tassert "dfs == & ==" (run1 (x1 x2) (== x1 1) (== x2 2)) '(1 2))
       (tassert "dfs == | ==" (run* x1 (conde [(== x1 1)] [(== x1 2)])) '(1 2))

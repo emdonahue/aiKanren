@@ -1,6 +1,6 @@
 ;TODO delete datatypes.ss and break it into smaller libs
 (library (datatypes)
-  (export expand-disjunctions search-strategy search-strategy/interleaving search-strategy/dfs max-depth answer-type answer-type/reified answer-type/state
+  (export expand-disjunctions  max-depth answer-type answer-type/reified answer-type/state
 
           package? empty-package
           fresh-vars vars->list
@@ -31,16 +31,7 @@
   (import (chezscheme) (sbral) (variables) (goals) (streams) (utils))
 
   
-  ;; === RUNTIME PARAMETERS ===
-  (define search-strategy/interleaving 'interleaving)
-  (define search-strategy/dfs 'dfs)
-  (define search-strategy ; Specifies the search strategy used by run. May be 'interleaving or 'dfs.
-    ; Default: 'interleaving.
-    (make-parameter search-strategy/interleaving
-                    (lambda (s)
-                      (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs))
-                        (assertion-violation 'answer-type "Unrecognized search-strategy" s))
-                      s)))
+  
   
   (define expand-disjunctions (make-parameter #f)) ;TODO implement expand disjunction constraints in reifier. eg turn a bool constraint into a stream of t f.
   
