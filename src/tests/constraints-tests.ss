@@ -1,4 +1,4 @@
-(import (test-runner) (mk) (goals) (variables) (utils) (state) (constraints))
+(import (test-runner) (mk) (goals) (variables) (utils) (state) (mk constraints) (mk listo))
 
 (define (forever x)
   (fresh (y) (forever x)))

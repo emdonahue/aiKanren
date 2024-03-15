@@ -1,6 +1,6 @@
 (library (quine)
   (export evalo evalo-env)
-  (import (chezscheme) (mk) (utils) (mk tracing))
+  (import (chezscheme) (mk) (utils) (mk tracing) (mk constraints) (mk listo))
   
   (define evalo
     (case-lambda

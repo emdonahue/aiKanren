@@ -1,4 +1,4 @@
-(import (test-runner) (mk) (goals) (variables) (matcho) (utils) (state) (solver))
+(import (test-runner) (mk) (goals) (variables) (matcho) (utils) (state) (solver) (mk constraints))
 
 (define x1 (make-var 1))
 (define x2 (make-var 2))

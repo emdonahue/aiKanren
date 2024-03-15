@@ -1,6 +1,6 @@
 (library (interpreter) ; Ported from https://github.com/michaelballantyne/faster-minikanren/blob/master/full-interp.scm
   (export evalo initial-env evalo-env synthesizeo)
-  (import (chezscheme) (mk) (mk tracing))
+  (import (chezscheme) (mk) (mk tracing) (mk constraints) (mk listo))
 
   (define empty-env '())
   (define initial-env `((list . (val . (closure (lambda x x) ,empty-env)))

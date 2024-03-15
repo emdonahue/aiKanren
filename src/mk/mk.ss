@@ -9,12 +9,13 @@
    run run* run1 ; Run
    lazy-run lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-cdr* ; Lazy-Run
    constraint succeed fail == conde fresh exist matcho ; Goals
-   conj disj noto =/= booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
-   membero appendo assoco asspo for-eacho ; List
+   conj disj noto =/=
+   booleano presento absento listo finite-domain ==> typeo symbolo numbero pairo ; Constraints
+   membero appendo assoco asspo for-eacho filtero ; List
    __ ; Quantification
    printfo displayo noopo var ; Debugging
-   ;trace-goal trace-run trace-conde prove trace-goals ; Tracing
+   trace-goal trace-run trace-run* trace-conde prove trace-goals ; Tracing
    search-strategy max-depth answer-type ; Parameters
    search-strategy/interleaving search-strategy/dfs answer-type answer-type/reified answer-type/state ; Parameter-Values
    )
-  (import (chezscheme) (negation) (constraints) (matcho) (listo) (debugging) (search) (running) (variables) (goals)))
+  (import (chezscheme) (negation) (matcho) (debugging) (search) (running) (variables) (goals) (mk tracing) (mk listo) (mk constraints)))
