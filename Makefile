@@ -10,7 +10,7 @@ OBJSRC = $(OBJ:.so=.ss)
 default: lib/aikanren.wpo lib/aikanren.so
 
 clean:
-	rm -rf lib build profile src/*/*.so
+	rm -rf lib build profile src/*/*.so src/*/*.wpo
 
 lib/aikanren.wpo lib/aikanren.so &: $(SRC)
 # Source file directory must come before object directory, but need both for wpo.
@@ -81,3 +81,5 @@ test:
 debug:
 	@scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
+src/benchmarks/benchmarks.wpo:
+	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
