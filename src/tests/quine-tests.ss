@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (quine) (utils) (debugging))
+(import (test-runner) (mk) (quine) (utils) (debugging))
 
 (test-suite
  quine
@@ -37,7 +37,7 @@
   #;
   (trace-run (q) (prove ((evalo (eval-apply (eval-rator (evalo (eval-lambda (not-in-envo)))) (evalo-rand (evalo (eval-quote (not-in-envo)))) (evalo-body (evalo (eval-list (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list (evalo (eval-list (eval-proper-list (evalo (eval-quote (not-in-envo))) (eval-proper-list (evalo (lookupo (lookupo-r))) (eval-proper-list)))(library (interpreter-tests)
   (export run-interpreter-tests)
-  (import (chezscheme) (test-runner) (aikanren) (interpreter) (utils))
+  (import (chezscheme) (test-runner) (mk) (interpreter) (utils))
   
   (define (run-interpreter-tests)
   

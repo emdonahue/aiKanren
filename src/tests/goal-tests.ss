@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (utils) (goals) (streams) (variables))
+(import (test-runner) (mk) (utils) (goals) (streams) (variables))
 
 (define x1 (make-var 1))
 (define x2 (make-var 2))

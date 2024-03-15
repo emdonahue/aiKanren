@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (utils) (variables))
+(import (test-runner) (mk) (utils) (variables))
 
 (define x1 (make-var 1))
 

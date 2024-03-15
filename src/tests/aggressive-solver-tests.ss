@@ -1,6 +1,6 @@
 (library (aggressive-solver-tests) ; Tests the higher level constraint solving beyond detecting failure (eg resolving inevitable unifications to single ground terms)
   (export run-aggressive-solver-tests)
-  (import (chezscheme) (test-runner) (aikanren) (utils) (state) (solver))
+  (import (chezscheme) (test-runner) (mk) (utils) (state) (solver))
   
   (define (run-aggressive-solver-tests)
     (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list 1 (proxy x1)))

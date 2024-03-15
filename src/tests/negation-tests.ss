@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (variables) (goals))
+(import (test-runner) (mk) (variables) (goals))
 
 (define x1 (make-var 1))
 

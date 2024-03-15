@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (interpreter) (utils))
+(import (test-runner) (mk) (interpreter) (utils))
 
 (test-suite
  interpreter

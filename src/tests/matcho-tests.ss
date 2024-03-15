@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (goals) (variables) (matcho) (utils))
+(import (test-runner) (mk) (goals) (variables) (matcho) (utils))
 
 (define x1 (make-var 1))
 (define x2 (make-var 2))

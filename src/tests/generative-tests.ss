@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (variables) (goals))
+(import (test-runner) (mk) (variables) (goals))
 
 (define-structure (mk-var id))
 (define vars (map make-var '(1 2 3)))

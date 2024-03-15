@@ -1,30 +1,24 @@
 SHELL := /bin/bash
 .PHONY: default clean profile bench repl rebench doc test debug
 
-SRC = $(wildcard src/mk/*.ss)
-PRE = $(SRC:src/mk/%=build/preprocessed/%)
-PRO = $(SRC:src/mk/%=build/profiled/%)
-OBJ = $(SRC:src/mk/%.ss=build/%.so)
-OBJSRC = $(OBJ:.so=.ss)
-
 default: 
 	make doc
 
 clean:
-	rm -rf profile src/*/*.so src/*/*.wpo
+	rm -rf profile src/*/*.so src/*/*.wpo src/*/*/*.so src/*/*/*.wpo
 
 profile:
 # Builds an html heatmap of function calls for optimization purposes.
 	make clean
 	mkdir -p profile
-	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/profile/profile.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'src/mk:src/tests:src/benchmarks:src/examples' --optimize-level 1
+	echo "(compile-profile 'source) "'(import (chezscheme) (mk)) (load "src/profile/profile.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'src/mk:src/tests:src/benchmarks:src/examples' --optimize-level 1 # The non-zero optimize level turns off debug code like (cert)
 
 bench:
 # Builds a set of benchmarks to test performance improvements.
 	@mkdir -p benchmarks
 	@if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
 	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
-	@scheme --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
+	scheme --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 	@if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); LC_COLLATE=C join -e0 -oauto -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement","% > prev","slower?"} {if ($$2==0||$$3==0) {$$4="-"; $$5="-"} else {$$4=-100*($$3-$$2)/$$2" %"; $$5=$$2/$$3; $$5=($$2/$$3-1)*100; if($$5<0) $$6="x"} print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
 
 rebench:
@@ -33,22 +27,22 @@ rebench:
 	make bench
 
 repl:
-# Boot up a REPL preloaded with aiKanren
+# Boot up a REPL preloaded with miniKanren
 	REPLBOOT=$$(mktemp); \
 	trap "rm -f $$REPLBOOT" EXIT; \
-	echo '(import (aikanren))' > "$$REPLBOOT"; \
+	echo '(import (mk))' > "$$REPLBOOT"; \
 	scheme --libdirs src/mk "$$REPLBOOT"
 
 doc:
 # Extract documentation from source and build doc file
 	echo '# Documentation' > DOCUMENTATION.md
-	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
+	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
 		echo '-  ['$${fns[-1]}'](#'$${fns[-1]}')' >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
 			echo -e '\t- ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
 		done \
 	done
-	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
+	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
 		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
 			echo -e '### '$$f'\n```scheme' >> DOCUMENTATION.md; \

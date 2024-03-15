@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (goals) (variables) (utils) (state) (constraints))
+(import (test-runner) (mk) (goals) (variables) (utils) (state) (constraints))
 
 (define (forever x)
   (fresh (y) (forever x)))

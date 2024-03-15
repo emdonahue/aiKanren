@@ -1,4 +1,4 @@
-(import (test-runner) (aikanren) (utils))
+(import (test-runner) (mk) (utils))
 
 (test-suite
  dfs
