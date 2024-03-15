@@ -10,7 +10,7 @@ OBJSRC = $(OBJ:.so=.ss)
 default: lib/aikanren.wpo lib/aikanren.so
 
 clean:
-	rm -rf lib build profile
+	rm -rf lib build profile src/*/*.so
 
 lib/aikanren.wpo lib/aikanren.so &: $(SRC)
 # Source file directory must come before object directory, but need both for wpo.
@@ -79,8 +79,5 @@ test:
 	@scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
 debug:
-	@TESTSUITE=$$(mktemp); \
-	trap "rm -f $$TESTSUITE" EXIT; \
-	echo '(import (chezscheme) (test-runner) (all-tests)) (run-all-tests) (tmessage)' > "$$TESTSUITE"; \
-	scheme --libdirs src/mk:src/tests:src/benchmarks:src/examples --debug-on-exception --import-notify --script "$$TESTSUITE" || true
+	@scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
