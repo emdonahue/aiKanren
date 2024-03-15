@@ -76,10 +76,7 @@ doc:
 	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
-	@TESTSUITE=$$(mktemp); \
-	trap "rm -f $$TESTSUITE" EXIT; \
-	echo '(import (chezscheme) (test-runner) (all-tests)) (run-all-tests) (tmessage)' > "$$TESTSUITE"; \
-	scheme --libdirs src/mk:src/tests:src/benchmarks:src/examples --script "$$TESTSUITE" || true
+	@scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
 debug:
 	@TESTSUITE=$$(mktemp); \
