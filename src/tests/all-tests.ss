@@ -1,9 +1,8 @@
-
-#;(import (chezscheme) (aikanren) (test-runner) (benchmark-runner) (sbral-tests) (mini-substitution-tests) (state-tests) (solver-tests) (constraints-tests) (negation-tests) (listo-tests) (matcho-tests) (goal-tests) (quine-tests) (interpreter-tests) (dfs-tests) (tracing-tests) (reducer-tests) (generative-tests))
-
 (import (test-runner))
 
 (load "goal-tests.ss")
+(load "constraints-tests.ss")
+
 (printf "~%Testing Complete: ")
 (tmessage)
 
