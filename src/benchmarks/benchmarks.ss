@@ -1,4 +1,4 @@
-(import (chezscheme) (mk) (benchmark-runner) (utils) (prefix (quine) quine-))
+(import (chezscheme) (mk) (benchmark-runner) (prefix (quine) quine-))
 
 (include "src/benchmarks/core-benchmarks.ss")
 (include "src/benchmarks/disequality-benchmarks.ss")

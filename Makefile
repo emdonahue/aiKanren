@@ -28,10 +28,7 @@ rebench:
 
 repl:
 # Boot up a REPL preloaded with miniKanren
-	REPLBOOT=$$(mktemp); \
-	trap "rm -f $$REPLBOOT" EXIT; \
-	echo '(import (mk))' > "$$REPLBOOT"; \
-	scheme --libdirs src/mk "$$REPLBOOT"
+	scheme --libdirs src/mk src/repl/repl.ss
 
 doc:
 # Extract documentation from source and build doc file
