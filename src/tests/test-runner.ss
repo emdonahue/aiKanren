@@ -1,6 +1,6 @@
 ;;TODO make tassert capture file and line number
 (library (test-runner)
-  (export tassert tmessage test-case)
+  (export tassert tmessage test-suite)
   (import (chezscheme))
 
   (define failed (make-parameter 0))
@@ -11,7 +11,7 @@
     (if (= 0 (failed)) (printf "Pass (~s)~%" (total))
         (printf "Failed: ~s/~s~%" (failed) (total))))
 
-  (define-syntax test-case
+  (define-syntax test-suite
     (syntax-rules ()
       [(_ name body ...)
        (let ([fail-count (failed)]

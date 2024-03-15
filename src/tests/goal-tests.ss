@@ -1,9 +1,9 @@
-(import (chezscheme) (test-runner) (aikanren) (utils) (goals) (streams) (variables))
+(import (test-runner) (aikanren) (utils) (goals) (streams) (variables))
 
 (define x1 (make-var 1))
 (define x2 (make-var 2))
 
-(test-case
+(test-suite
  goals
  (tassert "goal == simplifies atoms fail" (== 1 2) fail)
  (tassert "goal == simplifies atoms succeed" (== 1 1) succeed)

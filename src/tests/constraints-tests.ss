@@ -10,7 +10,7 @@
 (define x4 (make-var 4))
 (define stale (lambda (s p) (cert #f))) ; Fresh that should never be expanded
 
-(test-case
+(test-suite
  constraints
  ;; === VARID ===
  (parameterize ([answer-type answer-type/state])
