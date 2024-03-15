@@ -7,28 +7,19 @@ PRO = $(SRC:src/mk/%=build/profiled/%)
 OBJ = $(SRC:src/mk/%.ss=build/%.so)
 OBJSRC = $(OBJ:.so=.ss)
 
-default: lib/aikanren.wpo lib/aikanren.so
+default: 
+	make doc
 
 clean:
-	rm -rf lib build profile src/*/*.so src/*/*.wpo
+	rm -rf profile src/*/*.so src/*/*.wpo
 
-lib/aikanren.wpo lib/aikanren.so &: $(SRC)
-# Source file directory must come before object directory, but need both for wpo.
-	mkdir -p lib build/optimized
-	cp -f src/mk/* build/optimized
-	echo '(generate-wpo-files #t) (compile-library "build/optimized/aikanren.ss")' | scheme -q --libdirs build/optimized --compile-imported-libraries --optimize-level 3
-	echo '(generate-wpo-files #t) (compile-whole-library "build/optimized/aikanren.wpo" "lib/aikanren.so")' | scheme -q --libdirs build/optimized --compile-imported-libraries --optimize-level 3
-
-profile: profile/profile.html
+profile:
 # Builds an html heatmap of function calls for optimization purposes.
-build/profiled/%.ss: build/preprocessed/%.ss
-	mkdir -p build/profiled
-	cp $< $@
-profile/profile.html: $(PRE)
+	make clean
 	mkdir -p profile
-	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/benchmarks/benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:src/benchmarks' --optimize-level 3
+	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/profile/profile.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'src/mk:src/tests:src/benchmarks:src/examples' --optimize-level 1
 
-bench: #benchmarks/bench
+bench:
 # Builds a set of benchmarks to test performance improvements.
 	@mkdir -p benchmarks
 	@if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
@@ -41,13 +32,15 @@ rebench:
 	rm -f benchmarks/bench
 	make bench
 
-repl: # Boot up a REPL preloaded with aiKanren
+repl:
+# Boot up a REPL preloaded with aiKanren
 	REPLBOOT=$$(mktemp); \
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
 	scheme --libdirs src/mk "$$REPLBOOT"
 
 doc:
+# Extract documentation from source and build doc file
 	echo '# Documentation' > DOCUMENTATION.md
 	grep -E '; \w+$$' src/mk/aikanren.ss | while read -a fns; do \
 		echo '-  ['$${fns[-1]}'](#'$${fns[-1]}')' >> DOCUMENTATION.md; \
@@ -69,7 +62,9 @@ doc:
 	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
+# Run unit tests
 	@scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
 debug:
+# Run unit tests with debugging enabled
 	@scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
