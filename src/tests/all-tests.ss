@@ -1,4 +1,4 @@
-(import (test-runner))
+(import (test-runner) (benchmark-runner))
 
 #;
 (define (run-suite filename)
@@ -20,25 +20,13 @@
 (load "src/tests/quine-tests.ss")
 (load "src/tests/interpreter-tests.ss")
 
+(parameterize ([benchmark-testing #t])
+  (load "src/benchmarks/benchmarks.ss"))
+
 (printf "~%Testing Complete: ")
 (tmessage)
 
 
-#;
-((run-sbral-tests)
-(run-mini-substitution-tests)
-(run-state-tests)
-(run-goal-tests)
-(run-reducer-tests)
-(run-solver-tests)
-(run-matcho-tests)
-(run-negation-tests)
-(run-dfs-tests)
-(run-constraints-tests)
-(run-listo-tests)
-(run-tracing-tests)
-(run-generative-tests)
-(run-quine-tests)
-(run-interpreter-tests)
-(parameterize ([benchmark-testing #t])
-(include "src/benchmarks/benchmarks.ss")))
+
+
+

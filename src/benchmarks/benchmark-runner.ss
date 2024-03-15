@@ -1,7 +1,9 @@
 (library (benchmark-runner)
   (export bench benchmark-testing)
   (import (chezscheme))
+  
   (define benchmark-testing (make-parameter #f))
+  
   (define-syntax bench
     (syntax-rules ()
       [(_ name iterations benchmark)
