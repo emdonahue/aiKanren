@@ -28,31 +28,24 @@ profile/profile.html: $(PRE)
 	mkdir -p profile
 	echo "(compile-profile 'source) "'(import (chezscheme) (aikanren)) (load "src/benchmarks/benchmarks.ss") (profile-dump-html "profile/")' | scheme -q --libdirs 'build/preprocessed:src/benchmarks' --optimize-level 3
 
-bench: benchmarks/bench
+bench: #benchmarks/bench
 # Builds a set of benchmarks to test performance improvements.
+	@mkdir -p benchmarks
+	@if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
+	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
+	@scheme --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 	@if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); LC_COLLATE=C join -e0 -oauto -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement","% > prev","slower?"} {if ($$2==0||$$3==0) {$$4="-"; $$5="-"} else {$$4=-100*($$3-$$2)/$$2" %"; $$5=$$2/$$3; $$5=($$2/$$3-1)*100; if($$5<0) $$6="x"} print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
+
 rebench:
 # If you don't believe the numbers bench gave you, re-roll until your optimization wins!
 	rm -f benchmarks/bench
 	make bench
-benchtest: build/benchmarks.so
-	scheme --program build/benchmarks.so
-benchmarks/bench: build/benchmarks.so
-	mkdir -p benchmarks
-	if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
-	scheme --program build/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
-build/benchmarks.so: lib/aikanren.wpo $(wildcard src/benchmarks/*) $(wildcard src/mk/*)
-	mkdir -p build/benchmarks
-	cp -f src/benchmarks/* src/examples/* build/benchmarks
-	echo '(generate-wpo-files #t) (compile-program "build/benchmarks/benchmarks.ss")' | scheme -q --libdirs 'build/optimized:build/benchmarks' --compile-imported-libraries --optimize-level 3
-	echo '(compile-whole-program "build/benchmarks/benchmarks.wpo" "build/benchmarks.so")' | scheme -q --libdirs 'build/optimized:build/benchmarks' --compile-imported-libraries --optimize-level 3
 
 repl: # Boot up a REPL preloaded with aiKanren
 	REPLBOOT=$$(mktemp); \
 	trap "rm -f $$REPLBOOT" EXIT; \
 	echo '(import (aikanren))' > "$$REPLBOOT"; \
 	scheme --libdirs src/mk "$$REPLBOOT"
-
 
 doc:
 	echo '# Documentation' > DOCUMENTATION.md
@@ -80,6 +73,3 @@ test:
 
 debug:
 	@scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
-
-src/benchmarks/benchmarks.wpo:
-	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
