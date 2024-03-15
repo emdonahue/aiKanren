@@ -1,5 +1,5 @@
 (library (variables)
-  (export var make-var var? var-id set-var-id! var< vars->list)
+  (export var make-var var? var-id set-var-id! var< vars->list __)
   (import (chezscheme) (utils))
 
   (define-structure (var id)) ;TODO make the var tag a unique object to avoid unifying with a (var _) vector and confusing it for a real var
@@ -10,6 +10,10 @@
     (cert (var? x) (var? y))
     (fx< (var-id x) (var-id y)))
 
+  ;; === QUANTIFICATION ===
+  (define __ ; Wildcard logic variable that unifies with everything without changing substitution.
+    (vector '__))
+  
   (define-syntax vars->list ; Turns a syntactic list of variables into a reified Scheme list.
     (syntax-rules ()
       [(_ ()) '()]

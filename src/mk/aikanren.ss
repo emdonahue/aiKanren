@@ -17,7 +17,7 @@
    search-strategy max-depth answer-type ; Parameters
    search-strategy/interleaving search-strategy/dfs answer-type answer-type/reified answer-type/state ; Parameter-Values
    )
-  (import (chezscheme) (datatypes) (negation) (constraints) (matcho) (listo) (debugging) (search) (tracing) (running))
+  (import (chezscheme) (negation) (constraints) (matcho) (listo) (debugging) (search) (tracing) (running) (variables) (goals))
 
 
   )

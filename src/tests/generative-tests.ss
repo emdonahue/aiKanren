@@ -1,6 +1,6 @@
 (library (generative-tests)
   (export run-generative-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes))
+  (import (chezscheme) (test-runner) (aikanren) (variables) (goals))
 
   (define-structure (mk-var id))
   (define vars (map make-var '(1 2 3)))

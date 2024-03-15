@@ -1,6 +1,6 @@
 (library (mini-substitution-tests)
   (export run-mini-substitution-tests)
-  (import (chezscheme) (test-runner) (mini-substitution) (datatypes))
+  (import (chezscheme) (test-runner) (mini-substitution) (variables) (streams))
 
   (define (run-mini-substitution-tests)
     (define x1 (make-var 1))

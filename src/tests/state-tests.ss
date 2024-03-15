@@ -1,6 +1,6 @@
 (library (state-tests)
   (export run-state-tests)
-  (import (chezscheme) (test-runner) (state) (datatypes) (utils) (aikanren))
+  (import (chezscheme) (test-runner) (state) (streams) (variables) (utils) (aikanren))
   
   (define (run-state-tests)
     (define x1 (make-var 1))

@@ -1,6 +1,6 @@
 (library (goal-tests)
   (export run-goal-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils))
+  (import (chezscheme) (test-runner) (aikanren) (utils) (goals) (streams) (variables))
   
   (define (run-goal-tests)
     (define x1 (make-var 1))

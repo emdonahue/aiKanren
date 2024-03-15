@@ -1,6 +1,6 @@
 (library (negation-tests)
   (export run-negation-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes))
+  (import (chezscheme) (test-runner) (aikanren) (variables) (goals))
 
   (define (run-negation-tests)
     (define x1 (make-var 1))

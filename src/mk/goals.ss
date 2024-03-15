@@ -14,8 +14,7 @@
           dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition 
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
-          fresh-vars fresh exist
-          __)
+          fresh-vars fresh exist)
   (import (chezscheme) (variables) (streams) (utils))
 
   
@@ -116,14 +115,8 @@
       [(_ g ...) (let ([c (conj* g ...)])
                    (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
 
-
-  ;; === QUANTIFICATION ===
-  (define __ ; Wildcard logic variable that unifies with everything without changing substitution.
-    (vector '__))
-
   
   ;; === CONJ ===
-
   (define-structure (conj lhs rhs))
   
   (define (conj lhs rhs) ; Logical conjunction between goals or constraints.
@@ -199,7 +192,6 @@
 
   
   ;; === DISJ ===
-
   (define-structure (disj lhs rhs))
   
   (define (disj lhs rhs) ; Logical disjunction between constraints.
@@ -252,7 +244,6 @@
 
   
   ;; === SUSPEND ===
-
   (define-structure (suspend goal))
 
   (define (suspend g) ; A suspend goal tells the interleaving interpreter to suspend this branch and continue with the search later. This is the fundamental primitive on which fresh is built, but it can be used directly by end-users.
@@ -261,7 +252,6 @@
 
   
   ;; === FRESH/EXIST ===
-
   (define-syntax fresh-vars ; Accepts a state and syntactic list of variables. Binds a new state with appropriately incremented variable id counter and runs the body forms in the scope of variables bound to the new logic variables. This is the basic primitive for all logic variable instantiation.
     (syntax-rules ()
       [(_ [(end-state end-goal) (start-state (start-goal ...) ())] body ...) ; Empty variable lists => just run the goals without incrementing the state.
@@ -298,7 +288,6 @@
   (define-structure (matcho out-vars in-vars goal))
   
   
-  ;; === CONTRACTS ===
-  
+  ;; === CONTRACTS ===  
   (define (goal? g)
     (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g))))

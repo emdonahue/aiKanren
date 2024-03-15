@@ -1,6 +1,6 @@
 (library (dfs-tests)
   (export run-dfs-tests)
-  (import (chezscheme) (test-runner) (aikanren) (utils) (datatypes))
+  (import (chezscheme) (test-runner) (aikanren) (utils))
 
   (define (run-dfs-tests) ; TODO consider making max depth a parameter and then just passing it in in the macros so we dont have to keep accessing a parameter, though we can try accessing the param directly and see if that affects performance
     (parameterize ([search-strategy search-strategy/dfs])

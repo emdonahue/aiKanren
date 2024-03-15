@@ -1,6 +1,6 @@
 (library (listo-tests)
   (export run-listo-tests)
-  (import (chezscheme) (test-runner) (aikanren) (datatypes) (utils))
+  (import (chezscheme) (test-runner) (aikanren) (utils) (variables))
   
   (define (run-listo-tests)
     (define x1 (make-var 1))

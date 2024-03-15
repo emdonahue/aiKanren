@@ -1,6 +1,6 @@
 (library (tracing-tests)
   (export run-tracing-tests)
-  (import (chezscheme) (test-runner) (aikanren) (utils) (debugging) (datatypes) (tracing))
+  (import (chezscheme) (test-runner) (aikanren) (utils) (debugging) (tracing) (variables) (goals))
 
   (define x1 (make-var 1))
   (define x2 (make-var 2))
