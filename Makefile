@@ -32,14 +32,20 @@ repl:
 
 doc:
 # Extract documentation from source and build doc file
-	echo '# Documentation' > DOCUMENTATION.md
-	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
+#	echo '# Documentation' > DOCUMENTATION.md
+	for lib in core; do \
+		echo "## $$lib"; \
+		echo -e '```scheme\n(import (mk '$$lib'))\n```'; \
+		sed -n '/(library/,/(export/p' src/mk/mk/"$$lib.ss" | sed -nE 's/.*; *(.*)/\1/p'; \
+	done
+
+#	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
 		echo '-  ['$${fns[-1]}'](#'$${fns[-1]}')' >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
 			echo -e '\t- ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
 		done \
 	done
-	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
+#	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
 		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
 			echo -e '### '$$f'\n```scheme' >> DOCUMENTATION.md; \
@@ -47,10 +53,10 @@ doc:
 			echo '```' >> DOCUMENTATION.md; \
 		done \
 	done
-	echo '# Not Yet Implemented' > TODO.md
-	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
-	echo '# TODO' >> TODO.md
-	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
+#	echo '# Not Yet Implemented' > TODO.md
+#	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
+#	echo '# TODO' >> TODO.md
+#	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
 # Run unit tests
