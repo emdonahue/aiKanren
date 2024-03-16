@@ -16,29 +16,39 @@
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...)
-       (matcho2 (bindings ...) body ...)]))
+       (matcho2 () (bindings ...) body ...)]))
   
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ () body ...) (begin body ...)]
+      [(_ ids () body ...) (begin body ...)]
 
-      [(_ ([out! ()] p ...) body ...)
-       (conj* (== out! '()) (matcho2 (p ...) body ...))]
+      [(_ ids ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho2 ids (p ...) body ...))]
 
-      [(_ ([out! name] p ...) body ...)
+      [(_ (id ...) ([out! name] p ...) body ...)
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
+       (let ([name out!]) (matcho2 (name id ...) (p ...) body ...))]
+
+      [(_ (id ...) ([out! name] p ...) body ...)
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
+       (let ([out out!])
+         (conj* (== name out)
+          (let ([name out]) (matcho2 (name id ...) (p ...) body ...))))]
+#;
+      [(_ (id ...) ([out! name] p ...) body ...)
        (identifier? #'name)
-       (let ([name out!]) (matcho2 (p ...) body ...))]
+       (let ([name out!]) (matcho2 (name id ...) (p ...) body ...))]
 
-      [(_ ([out! (p-car . p-cdr)] p ...) body ...)
+      [(_ ids ([out! (p-car . p-cdr)] p ...) body ...)
        (let ([out out!])
          (if (pair? out)
-             (matcho2 ([(car out) p-car]
+             (matcho2 ids ([(car out) p-car]
                        [(cdr out) p-cdr]
                        p ...) body ...)
              failure))]
 
-      [(_ ([out! ground] p ...) body ...)
-       (conj* (== out! ground) (matcho2 (p ...) body ...))]
+      [(_ ids ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho2 ids (p ...) body ...))]
       #;
       (let ([p-car (car out)])
       (matcho2 ([(cdr out) p-cdr]) body ...))

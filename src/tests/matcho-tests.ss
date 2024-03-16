@@ -67,6 +67,6 @@
 ;(display (expand '(matcho3 (['() ()]) succeed)))
  (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
  (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (list a d b)) '(1 2 3))
-; (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
+ (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
 
  )
