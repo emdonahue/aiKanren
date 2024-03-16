@@ -3,17 +3,26 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair
-          matcho2
+          matcho2 matcho-tst
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
 
+  (define-syntax matcho-tst
+   (syntax-rules ()
+     [(_ a b) (bound-identifier=? #'a #'b) 1]
+     [(_ a b) 2]))
+
   (define-syntax matcho2
     (syntax-rules ()
       [(_ () body ...) (begin body ...)]
-      
+
       [(_ ([out! ()] p ...) body ...)
        (conj* (== out! '()) (matcho2 (p ...) body ...))]
+
+      [(_ ([out! name] p ...) body ...)
+       (identifier? #'name)
+       (let ([name out!]) (matcho2 (p ...) body ...))]
 
       [(_ ([out! (p-car . p-cdr)] p ...) body ...)
        (let ([out out!])
@@ -22,12 +31,14 @@
                        [(cdr out) p-cdr]
                        p ...) body ...)
              failure))]
+
+      [(_ ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho2 (p ...) body ...))]
       #;
       (let ([p-car (car out)])
       (matcho2 ([(cdr out) p-cdr]) body ...))
 
-      [(_ ([out! name] p ...) body ...)
-       (let ([name out!]) (matcho2 (p ...) body ...))]))
+      ))
   
   (define (expand-matcho g s p)
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
