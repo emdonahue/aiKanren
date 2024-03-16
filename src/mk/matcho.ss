@@ -10,14 +10,19 @@
 
   (define-syntax matcho2
     (syntax-rules ()
+      [(_ () body ...) (begin body ...)]
+      
       [(_ ([out! ()]) body ...)
        (conj* (== out! '()) body ...)]
+
       [(_ ([out! (p-car . p-cdr)]) body ...)
        (let ([out out!])
          (if (pair? out)
+             
              (let ([p-car (car out)])
                (matcho2 ([(cdr out) p-cdr]) body ...))
              failure))]
+
       [(_ ([out! name]) body ...)
        (let ([name out!]) body ...)]))
   
