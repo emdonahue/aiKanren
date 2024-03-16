@@ -58,7 +58,8 @@
 
   (define-syntax conde ; Nondeterministic branching.
     (syntax-rules () 
-      [(_ (g ...)) (conj* g ...)]
+      [(_ (g ...))
+       (conj* g ...)]
       [(_ c0 c ...)
        (conde-disj (conde c0) (conde c ...))]))
   
@@ -112,8 +113,9 @@
 
   (define-syntax constraint ; Wrapped goals are conjoined and interpreted as a constraint.
     (syntax-rules ()
-      [(_ g ...) (let ([c (conj* g ...)])
-                   (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
+      [(_ g ...)
+       (let ([c (conj* g ...)])
+         (if (or (fail? c) (succeed? c)) c (make-constraint c)))]))
 
   
   ;; === CONJ ===

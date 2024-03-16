@@ -71,8 +71,7 @@
        (parameterize ([search-strategy search-strategy/dfs])
          (run -1 q g ...))]))
   
-  (define (lazy-run-null? r)
-                                        ; Tests whether the stream is completely exhausted of answers.
+  (define (lazy-run-null? r) ; Tests whether the stream is completely exhausted of answers.
     (cert (lazy-run? r))
     (failure? (lazy-run-stream r)))
   
