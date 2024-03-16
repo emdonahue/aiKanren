@@ -12,19 +12,22 @@
     (syntax-rules ()
       [(_ () body ...) (begin body ...)]
       
-      [(_ ([out! ()]) body ...)
-       (conj* (== out! '()) body ...)]
+      [(_ ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho2 (p ...) body ...))]
 
-      [(_ ([out! (p-car . p-cdr)] p-tail ...) body ...)
+      [(_ ([out! (p-car . p-cdr)] p ...) body ...)
        (let ([out out!])
          (if (pair? out)
-             
-             (let ([p-car (car out)])
-               (matcho2 ([(cdr out) p-cdr]) body ...))
+             (matcho2 ([(car out) p-car]
+                       [(cdr out) p-cdr]
+                       p ...) body ...)
              failure))]
+      #;
+      (let ([p-car (car out)])
+      (matcho2 ([(cdr out) p-cdr]) body ...))
 
-      [(_ ([out! name]) body ...)
-       (let ([name out!]) body ...)]))
+      [(_ ([out! name] p ...) body ...)
+       (let ([name out!]) (matcho2 (p ...) body ...))]))
   
   (define (expand-matcho g s p)
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
