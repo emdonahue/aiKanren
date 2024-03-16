@@ -17,44 +17,46 @@
     (syntax-rules ()
       [(_ (bindings ...) body ...)
        (matcho2 () () (bindings ...) body ...)]))
+
+  ;; constraint situation:
+  ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to 
   
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ ids free () body ...) (begin body ...)]
+      [(_ ids () () body ...) (begin body ...)]
+      
+      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
+       (make-matcho (list out ...) '() (lambda () (begin body ...)))]
 
-      [(_ ids free ([out! ()] p ...) body ...)
-       (conj* (== out! '()) (matcho2 ids free (p ...) body ...))]
+      [(_ ids frees ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
 
-      [(_ (id ...) free ([out! name] p ...) body ...)
+      [(_ (id ...) frees ([out! name] p ...) body ...)
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho2 (name id ...) free (p ...) body ...))]
+       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
 
-      [(_ (id ...) free ([out! name] p ...) body ...)
+      [(_ (id ...) frees ([out! name] p ...) body ...)
        (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
        (let ([out out!])
          (conj* (== name out)
-          (let ([name out]) (matcho2 (name id ...) free (p ...) body ...))))]
-#;
-      [(_ (id ...) ([out! name] p ...) body ...)
-       (identifier? #'name)
-       (let ([name out!]) (matcho2 (name id ...) free (p ...) body ...))]
+          (let ([name out]) (matcho2 (name id ...) frees (p ...) body ...))))]
 
-      [(_ ids free ([out! (p-car . p-cdr)] p ...) body ...)
+      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
        (let ([out out!])
          (exclusive-cond
           [(pair? out)
-           (matcho2 ids free ([(car out) p-car]
-                         [(cdr out) p-cdr]
-                         p ...) body ...)]
-          [(var? out) (nyi)
+           (matcho2 ids (free ...)
+                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
+                    body ...)]
+          [(var? out)
+           (matcho2 ids (free ... [out (p-car . p-cdr)])
+                    (p ...)
+                    body ...)
            ]
           [else fail]))]
 
-      [(_ ids free ([out! ground] p ...) body ...)
-       (conj* (== out! ground) (matcho2 ids free (p ...) body ...))]
-      #;
-      (let ([p-car (car out)])
-      (matcho2 ([(cdr out) p-cdr]) free body ...))
+      [(_ ids frees ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
 
       ))
   
