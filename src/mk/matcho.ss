@@ -15,7 +15,7 @@
       [(_ ([out! ()]) body ...)
        (conj* (== out! '()) body ...)]
 
-      [(_ ([out! (p-car . p-cdr)]) body ...)
+      [(_ ([out! (p-car . p-cdr)] p-tail ...) body ...)
        (let ([out out!])
          (if (pair? out)
              
