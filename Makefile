@@ -33,41 +33,26 @@ repl:
 
 doc:
 # Extract documentation from source and build doc file
-#	echo '# Documentation' > DOCUMENTATION.md
+	echo '# Documentation' > DOCUMENTATION.md
 	for lib in core; do \
-		echo "## $$lib"; \
-		echo -e '```scheme\n(import (mk '$$lib'))\n```'; \
-		sed -En '/\(library/,/\(export/ s/.*; *(.*)/\1/p' src/mk/mk/"$$lib.ss"; \
+		echo "## $$lib" >> DOCUMENTATION.md; \
+		echo -e '```scheme\n(import (mk '$$lib'))\n```' >> DOCUMENTATION.md; \
+		sed -En '/\(library/,/\(export/ s/.*; *(.*)/\1/p' src/mk/mk/"$$lib.ss" >> DOCUMENTATION.md; \
 		sed -En '/\(export/,/\(import/ {/;/ p}' src/mk/mk/"$$lib.ss" | while read -a fns; do \
-			echo '### '$${fns[-1]}; \
+			echo '### '$${fns[-1]} >> DOCUMENTATION.md; \
 			for f in $${fns[@]::$${#fns[@]}-2}; do \
-				echo -e '#### '$$f; \
+				echo -e '#### '$$f >> DOCUMENTATION.md; \
 				sed -En -e 's|.*define \('"$${f/\?/[?]}"' (.*)\).*|```scheme\n('"$$f"' _\1_)\n```|p' \
-					-e '\%define-syntax '"$$f"' %,\%^ *$$% s|.*\(_ (.*)\).*|```scheme\n('"$$f"' \1)\n```|p' src/mk/*.ss; \
-				sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% s/.*; (.*)/\1/p" src/mk/*.ss; \
+					-e '\%define-syntax '"$$f"' %,\%^ *$$% s|.*\(_ (.*)\).*|```scheme\n('"$$f"' \1)\n```|p' src/mk/*.ss >> DOCUMENTATION.md; \
+				sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% s/.*; (.*)/\1/p" src/mk/*.ss >> DOCUMENTATION.md; \
 			done \
 		done \
 	done
 
-#	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
-		echo '-  ['$${fns[-1]}'](#'$${fns[-1]}')' >> DOCUMENTATION.md; \
-		for f in $${fns[@]::$${#fns[@]}-2}; do \
-			echo -e '\t- ['$$f'](#'$$f')' >> DOCUMENTATION.md; \
-		done \
-	done
-#	grep -E '; \w+$$' src/mk/mk.ss | while read -a fns; do \
-		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
-		for f in $${fns[@]::$${#fns[@]}-2}; do \
-			echo -e '### '$$f'\n```scheme' >> DOCUMENTATION.md; \
-#	echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
-#	scheme --compile-imported-libraries --optimize-level 3 --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench			sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/* | grep -e 'define' -e ';' >> DOCUMENTATION.md; \
-			echo '```' >> DOCUMENTATION.md; \
-		done \
-	done
-#	echo '# Not Yet Implemented' > TODO.md
-#	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
-#	echo '# TODO' >> TODO.md
-#	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
+	echo '# Not Yet Implemented' > TODO.md
+	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
+	echo '# TODO' >> TODO.md
+	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
 # Run unit tests
