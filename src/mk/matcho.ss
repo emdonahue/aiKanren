@@ -41,11 +41,12 @@
 
       [(_ ids ([out! (p-car . p-cdr)] p ...) body ...)
        (let ([out out!])
-         (if (pair? out)
-             (matcho2 ids ([(car out) p-car]
-                       [(cdr out) p-cdr]
-                       p ...) body ...)
-             failure))]
+         (exclusive-cond
+          [(pair? out)
+           (matcho2 ids ([(car out) p-car]
+                         [(cdr out) p-cdr]
+                         p ...) body ...)]
+          [else fail]))]
 
       [(_ ids ([out! ground] p ...) body ...)
        (conj* (== out! ground) (matcho2 ids (p ...) body ...))]
