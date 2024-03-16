@@ -47,4 +47,13 @@
  (tassert "match noto pattern succeed" (run1 x1 (== x1 `(1 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) (void))
  (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
  (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho ([x1 (y . 2)]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
- (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho ([x1 (y . z)]) (conde [(== y 1)] [(== z 2)])))) (list (cons (=/= x2 1) (=/= x3 2)) (=/= x2 1) (=/= x3 2))))
+ (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho ([x1 (y . z)]) (conde [(== y 1)] [(== z 2)])))) (list (cons (=/= x2 1) (=/= x3 2)) (=/= x2 1) (=/= x3 2)))
+
+
+
+ ;; New-style matcho
+ (tassert "match empty list" (matcho2 (['() ()]) succeed) succeed)
+ (tassert "match simple variable rename" (matcho2 ([1 a]) a) 1)
+ (tassert "match ground pair" (matcho2 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
+
+ )

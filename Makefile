@@ -1,11 +1,20 @@
 SHELL := /bin/bash
 .PHONY: default clean profile bench repl rebench doc test debug
 
-default: 
-	make doc
+#TODO figure out how to compile a whole program that may have its own libraries that have name conflicts with internal libraries
+#https://www.reddit.com/r/scheme/comments/lw8e4t/looking_for_a_chez_scheme_example_using_a/
+#echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss") (compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
+#scheme --libdirs .:../lib --script main.ss
+#echo '(generate-wpo-files #t) (compile-program "main.ss") (compile-whole-program "main.wpo" "main.so")' | scheme -q --libdirs ../lib:. --import-notify --optimize-level 3
+
+default: lib/mk.so lib/mk.wpo
+
+lib/mk.so lib/mk.wpo:
+	mkdir -p lib
+	echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss") (compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
 
 clean:
-	rm -rf profile src/*/*.so src/*/*.wpo src/*/*/*.so src/*/*/*.wpo
+	rm -rf profile src/*/*.so src/*/*.wpo src/*/*/*.so src/*/*/*.wpo lib
 
 profile:
 # Builds an html heatmap of function calls for optimization purposes.
@@ -15,7 +24,6 @@ profile:
 
 bench:
 # Builds a set of benchmarks to test performance improvements.
-#https://www.reddit.com/r/scheme/comments/lw8e4t/looking_for_a_chez_scheme_example_using_a/
 	@mkdir -p benchmarks
 	@if [[ -f benchmarks/bench ]]; then mv benchmarks/bench benchmarks/bench-$$(ls -1 benchmarks | wc -l); fi
 	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
@@ -56,8 +64,8 @@ doc:
 
 test:
 # Run unit tests
-	@scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
+	scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
 debug:
 # Run unit tests with debugging enabled
-	@scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
+	scheme --debug-on-exception --import-notify --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
