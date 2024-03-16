@@ -52,21 +52,21 @@
 
 
  ;; New-style matcho
- ;(display (expand '(matcho2 (['() ()]) succeed)))
-; (display (expand '(matcho2 (['() ()] ['() ()]) succeed)))
+ ;(display (expand '(matcho3 (['() ()]) succeed)))
+; (display (expand '(matcho3 (['() ()] ['() ()]) succeed)))
 
  
 
  ;(display (matcho-tst c c))
  
- (tassert "match no patterns" (matcho2 () succeed) succeed)
- (tassert "match empty list" (matcho2 (['() ()]) succeed) succeed)
- (tassert "match number" (matcho2 ([1 1]) succeed) succeed)
- (tassert "match simple variable rename" (matcho2 ([1 a]) a) 1)
- (tassert "match multiple empty list" (matcho2 (['() ()] ['() ()]) succeed) succeed)
-;(display (expand '(matcho2 (['() ()]) succeed)))
- (tassert "match ground pair" (matcho2 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
- (tassert "match nested car" (matcho2 (['((1 . 3) . 2) ((a . b) . d)]) (list a d b)) '(1 2 3))
-; (tassert "match shared varname" (matcho2 ([1 a] [2 a]) succeed) fail)
+ (tassert "match no patterns" (matcho3 () succeed) succeed)
+ (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
+ (tassert "match number" (matcho3 ([1 1]) succeed) succeed)
+ (tassert "match simple variable rename" (matcho3 ([1 a]) a) 1)
+ (tassert "match multiple empty list" (matcho3 (['() ()] ['() ()]) succeed) succeed)
+;(display (expand '(matcho3 (['() ()]) succeed)))
+ (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
+ (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (list a d b)) '(1 2 3))
+; (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
 
  )

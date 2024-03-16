@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair
-          matcho2 matcho-tst
+          matcho3 matcho-tst
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -13,6 +13,11 @@
      [(_ a b) (bound-identifier=? #'a #'b) 1]
      [(_ a b) 2]))
 
+  (define-syntax matcho3
+    (syntax-rules ()
+      [(_ (bindings ...) body ...)
+       (matcho2 (bindings ...) body ...)]))
+  
   (define-syntax matcho2
     (syntax-rules ()
       [(_ () body ...) (begin body ...)]
