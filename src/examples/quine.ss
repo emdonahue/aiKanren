@@ -1,6 +1,6 @@
 (library (quine)
   (export evalo evalo-env)
-  (import (chezscheme) (mk) (utils) (mk tracing) (mk constraints) (mk listo))
+  (import (chezscheme) (mk))
   
   (define evalo
     (case-lambda
@@ -69,7 +69,6 @@
                              (trace-goal evalo-body (evalo body `((,param . ,arg) . ,env^) val)))))))))
 
   (define (not-in-envo sym env)
-    (cert (symbol? sym))    
     (trace-goal not-in-envo (noto (asspo sym env (lambda (v) succeed)))))
   
   (define (eval-listo expr env val)
