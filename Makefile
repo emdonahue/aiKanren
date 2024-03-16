@@ -41,9 +41,8 @@ doc:
 		sed -En '/\(export/,/\(import/ {/;/p}' src/mk/mk/"$$lib.ss" | while read -a fns; do \
 			echo '### '$${fns[-1]}; \
 			for f in $${fns[@]::$${#fns[@]}-2}; do \
-				echo -e '#### '$$f'\n```scheme'; \
-				sed -En "s/.*define \($$f (.*)\).*/($$f _\1_)/p" src/mk/*.ss; \
-				echo '```'; \
+				echo -e '#### '$$f; \
+				sed -En 's|.*define \('"$$f"' (.*)\).*|```scheme\n('"$$f"' _\1_)\n```|p' src/mk/*.ss; \
 			done \
 		done \
 	done
