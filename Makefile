@@ -44,6 +44,7 @@ doc:
 				echo -e '#### '$$f; \
 				sed -En -e 's|.*define \('"$${f/\?/[?]}"' (.*)\).*|```scheme\n('"$$f"' _\1_)\n```|p' \
 					-e '\%define-syntax '"$$f"' %,\%^ *$$% s|.*\(_ (.*)\).*|```scheme\n('"$$f"' \1)\n```|p' src/mk/*.ss; \
+				sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% s/.*; (.*)/\1/p" src/mk/*.ss; \
 			done \
 		done \
 	done
