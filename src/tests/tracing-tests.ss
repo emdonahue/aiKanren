@@ -17,7 +17,7 @@
    (tassert "trace matcho" (trace-run* x1 (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '((1 . 2)))
    (tassert "trace fail if constraint fails" (trace-run* x1 (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])) '(2))
 
-   (parameterize ([answer-type answer-type/state])
+   (parameterize ([answer-type 'state])
      (tassert "proof constraint"
               (state-proof (car (trace-run* x1 (trace-goal x1=1 (== x1 1))))) '((x1=1)))
      (tassert "proof trace-conde"

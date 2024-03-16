@@ -42,7 +42,7 @@ doc:
 			echo '### '$${fns[-1]}; \
 			for f in $${fns[@]::$${#fns[@]}-2}; do \
 				echo -e '#### '$$f'\n```scheme'; \
-				sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/*.ss | grep -e 'define' -e ';'; \
+				sed -En "s/.*define \($$f (.*)\).*/($$f _\1_)/p" src/mk/*.ss; \
 				echo '```'; \
 			done \
 		done \
@@ -58,7 +58,8 @@ doc:
 		echo '## '$${fns[-1]} >> DOCUMENTATION.md; \
 		for f in $${fns[@]::$${#fns[@]}-2}; do \
 			echo -e '### '$$f'\n```scheme' >> DOCUMENTATION.md; \
-			sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/* | grep -e 'define' -e ';' >> DOCUMENTATION.md; \
+#	echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
+#	scheme --compile-imported-libraries --optimize-level 3 --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench			sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% p" src/mk/* | grep -e 'define' -e ';' >> DOCUMENTATION.md; \
 			echo '```' >> DOCUMENTATION.md; \
 		done \
 	done
