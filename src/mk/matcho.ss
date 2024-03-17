@@ -36,11 +36,16 @@
       
       [(_ ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
-                    (lambda (grounds)
-                      (display "HERE")
-                      (pretty-print grounds)
+                    (lambda (var ground)
+                      (printf "HERE~%")
+                      (pretty-print var)
+                      (pretty-print ground)
                       (pretty-print '((p-car . p-cdr) ...))
                       (flush-output-port)
+
+                      (exclusive-cond
+                       [(eq? out var) ground] ...)
+                      
                       ;(matcho3 ([grounds ((a . d))]) (cons d a))
                       #;
                       (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
@@ -60,8 +65,8 @@
                       #;
                       (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
                       succeed))
-                      (printf "recursion: ")
-                      (matcho8 () () ([grounds [(p-car . p-cdr) ...]]) body ...)
+                      ;(printf "recursion: ")
+                      ;(matcho8 () () ([grounds [(p-car . p-cdr) ...]]) body ...)
                       ;(pretty-print (matcho2 () () (['(3 . 4) a]) (== (var 3) 3)))
 ;                      (pretty-print (expand '(matcho2 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
 
