@@ -29,6 +29,20 @@
   ;; constraint situation:
   ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to 
 
+  #;
+  (or (not (identifier? #'out))
+           (not (memp (lambda (v)
+                        (display v)
+                        (display #'out)
+                        (and (identifier? v) (bound-identifier=? #'out! v))) (filter identifier? #'(suspended-var ...))))
+           (assertion-violation 'matcho "Dup binding" 'test))
+
+  (define-syntax matcho-c
+    (syntax-rules ()
+      [(_ shared-ids ([out (p-car . p-cdr)] p ...) (no-match ...) var ground body ...)
+       (if (eq? out var)
+           (matcho8 shared-ids (no-match ... p ...) ([ground (p-car . p-cdr)]) body ...)
+           fail)]))
   
   (define-syntax matcho2
     (syntax-rules ()
@@ -37,11 +51,16 @@
       [(_ shared-ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
                     (lambda (var ground)
-                      (exclusive-cond
-                       [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)))]
+                      (if (pair? ground)
+                          (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
+                          #;
+                          (exclusive-cond
+                           ;([out (p-car . p-cdr)] ...)
+                        [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)
+                       fail)))]
 
-      [(_ shared-ids suspended-vars ([out! ()] p ...) body ...) ; Empty list
-       (conj* (== out! '()) (matcho2 shared-ids suspended-vars (p ...) body ...))]
+      [(_ shared-ids ([suspended-var suspended-pattern] ...) ([out! ()] p ...) body ...) ; Empty list       
+       (conj* (== out! '()) (matcho2 shared-ids ([suspended-var suspended-pattern] ...) (p ...) body ...))]
       
       [(_ (shared-id ...) suspended-vars ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
@@ -53,6 +72,14 @@
          (conj* (== name out)
           (let ([name out]) (matcho2 (name shared-id ...) suspended-vars (p ...) body ...))))]
 
+      #;
+      [(_ shared-ids ([suspended-var suspended-pattern] ...) ([out! (p-car . p-cdr)]) body ...) ; Constraint ground pair
+       (and (identifier? #'out!) (memp (lambda (v) (bound-identifier=? #'out! v)) #'(suspended-var ...)))
+       (let ([out out!])
+         (matcho2 shared-ids ([suspended-var suspended-pattern] ...)
+                  ([(car out) p-car] [(cdr out) p-cdr])
+                  body ...))]
+      
       [(_ shared-ids (suspended-var ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond

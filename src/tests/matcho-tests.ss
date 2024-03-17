@@ -58,7 +58,6 @@
  
 
  ;(display (matcho-tst c c))
- 
  (tassert "match no patterns" (matcho3 () succeed) succeed)
  (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
  (tassert "match number" (matcho3 ([1 1]) succeed) succeed)
