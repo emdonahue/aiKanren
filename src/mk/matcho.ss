@@ -32,21 +32,16 @@
   
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ ids () () body ...) (begin body ...)] ; No-op
+      [(_ shared-ids () () body ...) (begin body ...)] ; No-op
       
-      [(_ ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
                     (lambda (var ground)
                       (exclusive-cond
-                       [(eq? out var) (matcho8 ids () [(ground (p-car . p-cdr))] body ...)] ...)))]
+                       [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)))]
 
-      [(_ ids frees ([out! ()] p ...) body ...) ; Empty list
-       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
-
-      #;
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
-       (identifier? #'name)
-       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
+      [(_ shared-ids frees ([out! ()] p ...) body ...) ; Empty list
+       (conj* (== out! '()) (matcho2 shared-ids frees (p ...) body ...))]
       
       [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
@@ -58,22 +53,22 @@
          (conj* (== name out)
           (let ([name out]) (matcho2 (name id ...) frees (p ...) body ...))))]
 
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
+      [(_ shared-ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
           [(pair? out)
-           (matcho2 ids (free ...)
+           (matcho2 shared-ids (free ...)
                     ([(car out) p-car] [(cdr out) p-cdr] p ...)
                     body ...)]
           [(var? out)
-           (matcho2 ids (free ... [out (p-car . p-cdr)])
+           (matcho2 shared-ids (free ... [out (p-car . p-cdr)])
                     (p ...)
                     body ...)
            ]
           [else fail]))]
 
-      [(_ ids frees ([out! ground] p ...) body ...) ; Ground
-       (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
+      [(_ shared-ids frees ([out! ground] p ...) body ...) ; Ground
+       (conj* (== out! ground) (matcho2 shared-ids frees (p ...) body ...))]
 
       ))
 
@@ -90,11 +85,6 @@
 
       [(_ ids frees ([out! ()] p ...) body ...) ; Empty list
        (conj* (== out! '()) (matcho8 ids frees (p ...) body ...))]
-
-      #;
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
-       (identifier? #'name)
-       (let ([name out!]) (matcho8 (name id ...) frees (p ...) body ...))]
       
       [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
