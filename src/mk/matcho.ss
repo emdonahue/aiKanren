@@ -61,7 +61,7 @@
                       (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
                       succeed))
                       (printf "recursion: ")
-                      (matcho8 () () ([1 1]) succeed)
+                      (matcho8 () () ([grounds [(p-car . p-cdr) ...]]) succeed)
                       ;(pretty-print (matcho2 () () (['(3 . 4) a]) (== (var 3) 3)))
 ;                      (pretty-print (expand '(matcho2 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
 
