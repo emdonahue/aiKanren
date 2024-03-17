@@ -38,47 +38,7 @@
        (make-matcho (list out ...) '()
                     (lambda (var ground)
                       (exclusive-cond
-                       [(eq? out var) (matcho8 ids () [(ground (p-car . p-cdr))] body ...)] ...)
-                      
-                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
-                      #;
-                      (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
-                               body ...)))
-                                        ;1
-
-                      ;1                      
-                                        ;(break 'lam)
-
-                      #;
-                      (matcho2 () () ([grounds (x . y)])
-                               succeed)
-                      #;
-                      (pretty-print (expand '(matcho2 () () ([grounds (x . y)])
-                      succeed)))
-
-                      #;
-                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
-                      succeed))
-                      ;(printf "recursion: ")
-                      ;(matcho8 () () ([grounds [(p-car . p-cdr) ...]]) body ...)
-                      ;(pretty-print (matcho2 () () (['(3 . 4) a]) (== (var 3) 3)))
-;                      (pretty-print (expand '(matcho2 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
-
-                      
-                      #;
-                      (pretty-print (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                                        succeed)))
-                      #;
-                      (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                              succeed)))
-
-                      ;1
-                      )
-                    #;
-                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
-                    (list out ...)
-                    #;
-                    (begin body ...)))]
+                       [(eq? out var) (matcho8 ids () [(ground (p-car . p-cdr))] body ...)] ...)))]
 
       [(_ ids frees ([out! ()] p ...) body ...) ; Empty list
        (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]

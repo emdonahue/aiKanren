@@ -73,9 +73,6 @@
  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
  (tassert "match free" (matcho3 ([x1 (a . d)]) (cons d a))
           (lambda (m) (matcho-test-eq? m (list x1) '())))
-
- ;(tassert "match nested list" (matcho4 () () (['((1 . 2)) ((1 . 2))]) succeed) succeed)
-; (tassert "match nested list" (matcho4 () () (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
  (tassert "match free expand" ((matcho-goal (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
  
  )
