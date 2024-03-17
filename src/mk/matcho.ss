@@ -197,9 +197,9 @@
 
                       ;1                      
                                         ;(break 'lam)
-                      (exit)
-                      #;
-                      (matcho4 () () (['(1 . 2) '(1 . 2)])
+
+
+                      (matcho4 () () (['(1 . 2) (1 . 2)])
                                succeed)
                       #;
                       (pretty-print (expand '(matcho4 () () ([grounds (x . y)])
