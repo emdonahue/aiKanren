@@ -40,35 +40,35 @@
                       (exclusive-cond
                        [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)))]
 
-      [(_ shared-ids frees ([out! ()] p ...) body ...) ; Empty list
-       (conj* (== out! '()) (matcho2 shared-ids frees (p ...) body ...))]
+      [(_ shared-ids suspended-vars ([out! ()] p ...) body ...) ; Empty list
+       (conj* (== out! '()) (matcho2 shared-ids suspended-vars (p ...) body ...))]
       
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
+      [(_ (shared-id ...) suspended-vars ([out! name] p ...) body ...) ; New identifier
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
+       (let ([name out!]) (matcho2 (name shared-id ...) suspended-vars (p ...) body ...))]
 
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; Shared identifier
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
+      [(_ (shared-id ...) suspended-vars ([out! name] p ...) body ...) ; Shared identifier
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
        (let ([out out!])
          (conj* (== name out)
-          (let ([name out]) (matcho2 (name id ...) frees (p ...) body ...))))]
+          (let ([name out]) (matcho2 (name shared-id ...) suspended-vars (p ...) body ...))))]
 
-      [(_ shared-ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
+      [(_ shared-ids (suspended-var ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
           [(pair? out)
-           (matcho2 shared-ids (free ...)
+           (matcho2 shared-ids (suspended-var ...)
                     ([(car out) p-car] [(cdr out) p-cdr] p ...)
                     body ...)]
           [(var? out)
-           (matcho2 shared-ids (free ... [out (p-car . p-cdr)])
+           (matcho2 shared-ids (suspended-var ... [out (p-car . p-cdr)])
                     (p ...)
                     body ...)
            ]
           [else fail]))]
 
-      [(_ shared-ids frees ([out! ground] p ...) body ...) ; Ground
-       (conj* (== out! ground) (matcho2 shared-ids frees (p ...) body ...))]
+      [(_ shared-ids suspended-vars ([out! ground] p ...) body ...) ; Ground
+       (conj* (== out! ground) (matcho2 shared-ids suspended-vars (p ...) body ...))]
 
       ))
 
