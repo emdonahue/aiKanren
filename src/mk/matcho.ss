@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair
-          matcho3 matcho-tst matcho5 matcho4
+          matcho3 matcho-tst ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -17,7 +17,9 @@
      [(_ a) (matcho-tst (unroll-lst a))]
      [(_ a b) 2]))
 
-  
+  (define-syntax matcho-ctn
+    (syntax-rules ()
+      [(_ body ...) (matcho7 body ...)]))
 
   (define-syntax matcho3
     (syntax-rules ()
@@ -26,6 +28,7 @@
 
   ;; constraint situation:
   ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to 
+
   
   (define-syntax matcho2
     (syntax-rules ()
@@ -57,10 +60,15 @@
                       #;
                       (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
                       succeed))
+                      (printf "recursion: ")
+                      ;(pretty-print (matcho2 () () (['(3 . 4) a]) (== (var 3) 3)))
+;                      (pretty-print (expand '(matcho2 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
 
+                      
+                      #;
                       (pretty-print (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
                                                         succeed)))
-
+                      #;
                       (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
                                               succeed)))
 
@@ -75,6 +83,11 @@
       [(_ ids frees ([out! ()] p ...) body ...) ; Empty list
        (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
 
+      #;
+      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
+       (identifier? #'name)
+       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
+      
       [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
        (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
@@ -104,6 +117,7 @@
 
       ))
 
+#;
   (define matcho5
     (syntax-rules ()
       [(_ ids () () body ...) (begin body ...)]
@@ -117,6 +131,10 @@
                       (display "HERE")
                       (pretty-print grounds)
                       (pretty-print '((p-car . p-cdr) ...))
+
+                      (flush-output)
+
+                      
                       ;(matcho3 ([grounds ((a . d))]) (cons d a))
                       #;
                       (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
@@ -176,7 +194,8 @@
        (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
 
       ))
-  
+
+  #;
   (define-syntax matcho4
     (syntax-rules ()
       
@@ -199,8 +218,10 @@
                                         ;(break 'lam)
 
 
-                      (matcho4 () () (['(1 . 2) (1 . 2)])
-                               succeed)
+                      (pretty-print (matcho4 () () () 'success))
+                      #;
+                      (pretty-print (matcho4 () () (['(1 . 2) (1 . 2)])
+                                succeed))
                       #;
                       (pretty-print (expand '(matcho4 () () ([grounds (x . y)])
                       succeed)))
@@ -284,6 +305,7 @@
 
 ))
 
+  #;
     (define-syntax matcho6
     (syntax-rules ()
       [(_ ids () () body ...) (begin body ...)]
@@ -347,6 +369,94 @@
 
       [(_ ids frees ([out! ground] p ...) body ...)
        (conj* (== out! ground) (matcho6 ids frees (p ...) body ...))]
+
+      ))
+
+#;
+    (define-syntax matcho7
+    (syntax-rules ()
+      [(_ ids () () ctn body ...) (begin body ...)] ; No-op
+      
+      [(_ ids ([out (p-car . p-cdr)] ...) () ctn body ...) ; Suspend free vars
+       (make-matcho (list out ...) '()
+                    (lambda (grounds)
+                      (display "HERE")
+                      (pretty-print grounds)
+                      (pretty-print '((p-car . p-cdr) ...))
+                      (flush-output-port)
+                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
+                      #;
+                      (pretty-print (expand '(matcho7 ids () ([grounds ((p-car . p-cdr) ...)])
+                               body ...)))
+                                        ;1
+
+                      ;1                      
+                                        ;(break 'lam)
+
+                      #;
+                      (matcho7 () () ([grounds (x . y)])
+                               succeed)
+                      #;
+                      (pretty-print (expand '(matcho7 () () ([grounds (x . y)])
+                      succeed)))
+
+                      #;
+                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
+                      succeed))
+                      (printf "recursion: ")
+                      ;(pretty-print (matcho7 () () (['(3 . 4) a]) (== (var 3) 3)))
+;                      (pretty-print (expand '(matcho7 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
+
+                      
+                      #;
+                      (pretty-print (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
+                                                        succeed)))
+                      #;
+                      (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
+                                              succeed)))
+
+                      1
+                      )
+                    #;
+                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
+                    (list out ...)
+                    #;
+                    (begin body ...)))]
+
+      [(_ ids frees ([out! ()] p ...) ctn body ...) ; Empty list
+       (conj* (== out! '()) (matcho7 ids frees (p ...) ctn body ...))]
+
+      #;
+      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
+       (identifier? #'name)
+       (let ([name out!]) (matcho7 (name id ...) frees (p ...) body ...))]
+      
+      [(_ (id ...) frees ([out! name] p ...) ctn body ...) ; New identifier
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
+       (let ([name out!]) (matcho7 (name id ...) frees (p ...) body ...))]
+
+      [(_ (id ...) frees ([out! name] p ...) ctn body ...) ; Shared identifier
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
+       (let ([out out!])
+         (conj* (== name out)
+          (let ([name out]) (matcho7 (name id ...) frees (p ...) ctn body ...))))]
+
+      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) ctn body ...) ; Pair
+       (let ([out out!])
+         (exclusive-cond
+          [(pair? out)
+           (matcho7 ids (free ...)
+                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
+                    ctn body ...)]
+          [(var? out)
+           (matcho7 ids (free ... [out (p-car . p-cdr)])
+                    (p ...)
+                    ctn body ...)
+           ]
+          [else fail]))]
+
+      [(_ ids frees ([out! ground] p ...) ctn body ...) ; Ground
+       (conj* (== out! ground) (matcho7 ids frees (p ...) ctn body ...))]
 
       ))
   
