@@ -61,6 +61,7 @@
                       (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
                       succeed))
                       (printf "recursion: ")
+                      (matcho8 () () ([1 1]) succeed)
                       ;(pretty-print (matcho2 () () (['(3 . 4) a]) (== (var 3) 3)))
 ;                      (pretty-print (expand '(matcho2 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
 
@@ -72,7 +73,7 @@
                       (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
                                               succeed)))
 
-                      1
+                      ;1
                       )
                     #;
                     (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
@@ -120,7 +121,7 @@
   (define-syntax matcho8
     (syntax-rules ()
       [(_ ids () () body ...) (begin body ...)] ; No-op
-      
+#;      
       [(_ ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
                     (lambda (grounds)
@@ -192,6 +193,7 @@
            (matcho8 ids (free ...)
                     ([(car out) p-car] [(cdr out) p-cdr] p ...)
                     body ...)]
+          #;
           [(var? out)
            (matcho8 ids (free ... [out (p-car . p-cdr)])
                     (p ...)
