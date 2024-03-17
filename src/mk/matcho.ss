@@ -3,15 +3,21 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
                                         
   (export matcho matcho-pair
-          matcho3 matcho-tst
+          matcho3 matcho-tst ;matcho5
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
+  #;
+  (define-syntax unroll-lst
+    (syntax-rules ()
+      [(_ a)]))
 
   (define-syntax matcho-tst
    (syntax-rules ()
-     [(_ a b) (bound-identifier=? #'a #'b) 1]
+     [(_ a) (matcho-tst (unroll-lst a))]
      [(_ a b) 2]))
+
+  
 
   (define-syntax matcho3
     (syntax-rules ()
@@ -26,7 +32,39 @@
       [(_ ids () () body ...) (begin body ...)]
       
       [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
-       (make-matcho (list out ...) '() (lambda () (begin body ...)))]
+       (make-matcho (list out ...) '()
+                    (lambda (grounds)
+                      (display "HERE")
+                      (pretty-print grounds)
+                      (pretty-print '((p-car . p-cdr) ...))
+                      (flush-output-port)
+                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
+                      #;
+                      (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
+                               body ...)))
+                                        ;1
+
+                      ;1                      
+                                        ;(break 'lam)
+
+                      #;
+                      (matcho2 () () ([grounds (x . y)])
+                               succeed)
+                      #;
+                      (pretty-print (expand '(matcho2 () () ([grounds (x . y)])
+                      succeed)))
+
+                      #;
+                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
+                      succeed))
+
+                      1
+                      )
+                    #;
+                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
+                    (list out ...)
+                    #;
+                    (begin body ...)))]
 
       [(_ ids frees ([out! ()] p ...) body ...)
        (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
@@ -57,6 +95,171 @@
 
       [(_ ids frees ([out! ground] p ...) body ...)
        (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
+
+      ))
+
+  (define matcho5
+    (syntax-rules ()
+      [(_ ids () () body ...) (begin body ...)]
+
+      [(_ ids frees ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
+      
+      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
+       (make-matcho (list out ...) '()
+                    (lambda (grounds)
+                      (display "HERE")
+                      (pretty-print grounds)
+                      (pretty-print '((p-car . p-cdr) ...))
+                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
+                      #;
+                      (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
+                               body ...)))
+                                        ;1
+
+                      ;1                      
+                                        ;(break 'lam)
+                      #;
+                      (pretty-print (expand '(matcho4 ids () ([grounds ((x . y))])
+                      succeed)))
+
+                      #;
+                      (pretty-print (matcho5 ids () ([grounds ((x . y))])
+                                             succeed))
+
+                      #;
+                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
+                      succeed))
+
+                      1
+                      )
+                    #;
+                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
+                    (list out ...)
+                    #;
+                    (begin body ...)))]
+
+      [(_ ids frees ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
+
+      [(_ (id ...) frees ([out! name] p ...) body ...)
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
+       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
+
+      [(_ (id ...) frees ([out! name] p ...) body ...)
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
+       (let ([out out!])
+         (conj* (== name out)
+          (let ([name out]) (matcho2 (name id ...) frees (p ...) body ...))))]
+
+      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
+       (let ([out out!])
+         (exclusive-cond
+          [(pair? out)
+           (matcho2 ids (free ...)
+                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
+                    body ...)]
+          [(var? out)
+           (matcho2 ids (free ... [out (p-car . p-cdr)])
+                    (p ...)
+                    body ...)
+           ]
+          [else fail]))]
+
+      [(_ ids frees ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
+
+      ))
+  
+  (define-syntax matcho4
+    (syntax-rules ()
+      [(_ ids () () body ...) (begin body ...)]
+      
+      [(_ (id ...) frees ([out! name] p ...) body ...)
+       (identifier? #'name)
+       (let ([name out!]) (matcho4 (name id ...) frees (p ...) body ...))]
+      
+      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
+       (let ([out out!])
+         (exclusive-cond
+          [(pair? out)
+           (matcho4 ids (free ...)
+                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
+                    body ...)]
+          #;
+          [(var? out)
+          (matcho2 ids (free ... [out (p-car . p-cdr)])
+          (p ...)
+          body ...)
+          ]
+          [else fail]))]
+
+      [(_ ids frees ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho4 ids frees (p ...) body ...))]))
+
+    (define-syntax matcho6
+    (syntax-rules ()
+      [(_ ids () () body ...) (begin body ...)]
+      
+      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
+       (make-matcho (list out ...) '()
+                    (lambda (grounds)
+                      (display "HERE")
+                      (pretty-print grounds)
+                      (pretty-print '((p-car . p-cdr) ...))
+                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
+                      #;
+                      (pretty-print (expand '(matcho6 ids () ([grounds ((p-car . p-cdr) ...)])
+                               body ...)))
+                                        ;1
+
+                      ;1                      
+                                        ;(break 'lam)
+                      
+                      (pretty-print (expand '(matcho4 ids () ([grounds ((p-car . p-cdr) ...)])
+                                                      succeed)))
+
+                      #;
+                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
+                      succeed))
+
+                      1
+                      )
+                    #;
+                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
+                    (list out ...)
+                    #;
+                    (begin body ...)))]
+
+      [(_ ids frees ([out! ()] p ...) body ...)
+       (conj* (== out! '()) (matcho6 ids frees (p ...) body ...))]
+
+      [(_ (id ...) frees ([out! name] p ...) body ...)
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
+       (let ([name out!]) (matcho6 (name id ...) frees (p ...) body ...))]
+
+      [(_ (id ...) frees ([out! name] p ...) body ...)
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
+       (let ([out out!])
+         (conj* (== name out)
+          (let ([name out]) (matcho6 (name id ...) frees (p ...) body ...))))]
+
+      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
+       (let ([out out!])
+         (exclusive-cond
+          [(pair? out)
+           (matcho6 ids (free ...)
+                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
+                    body ...)]
+          [(var? out)
+           (matcho6 ids (free ... [out (p-car . p-cdr)])
+                    (p ...)
+                    body ...)
+           ]
+          [else fail]))]
+
+      [(_ ids frees ([out! ground] p ...) body ...)
+       (conj* (== out! ground) (matcho6 ids frees (p ...) body ...))]
 
       ))
   

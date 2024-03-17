@@ -123,8 +123,6 @@
   
   (define (conj lhs rhs) ; Logical conjunction between goals or constraints.
     ;; Can be used between any goals or constraints. Unlike disj, conj is not specific to constraint goals.
-    
-    (when (not (goal? lhs)) (display lhs))
     (cert (goal? lhs) (goal? rhs))
     ;TODO replace conj with make-conj or short circuiting conj* where possible
     (cond
@@ -287,7 +285,8 @@
 
   ;; === OTHER GOALS ===    
   (define-structure (noto goal)) ; Negated goal
-  (define-structure (matcho out-vars in-vars goal))
+  (define-structure (matcho out-vars in-vars goal)) ; TODO rename matcho-goal to procedure
+  
   
   
   ;; === CONTRACTS ===  

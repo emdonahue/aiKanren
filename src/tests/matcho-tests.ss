@@ -1,4 +1,4 @@
-(import (test-runner) (mk) (goals) (variables) (matcho) (utils))
+(import (chezscheme) (test-runner) (mk) (goals) (variables) (matcho) (utils))
 
 (define x1 (make-var 1))
 (define x2 (make-var 2))
@@ -68,6 +68,13 @@
  (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
  (tassert "match ground fail" (matcho3 ([1 (a . d)]) succeed) fail)
  (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (list a d b)) '(1 2 3))
+ (tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
+ (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1)))
  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
- (tassert "match free" (matcho3 ([x1 (a . d)]) succeed) (lambda (m) (matcho? m)))
+ (tassert "match free" (matcho3 ([x1 (a . d)]) (cons d a))
+          (lambda (m) (matcho-test-eq? m (list x1) '())))
+
+; (pretty-print (matcho5 #'(matcho5 (['() ()]) succeed)))
+ ;(tassert "match free expand" ((matcho-goal (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '((1 . 2))) '(2 . 1))
+ 
  )
