@@ -41,12 +41,12 @@
     (syntax-rules ()
       [(_ shared-ids ([out (p-car . p-cdr)] p ...) (no-match ...) var ground body ...)
        (if (eq? out var) ; thread a bool flag to make matcho2 into matcho8
-           (matcho8 shared-ids (no-match ... p ...) ([ground (p-car . p-cdr)]) body ...)
+           (matcho2 shared-ids (no-match ... p ...) #t ([ground (p-car . p-cdr)]) body ...)
            (nyi))]))
   
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ shared-ids () is-constraint? () body ...) (begin body ...)] ; No-op
+      [(_ shared-ids () is-constraint? () body ...) (begin body ...)] ; No-op. Once all bindings have been processed, run the body.
       
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
@@ -78,6 +78,12 @@
        (let ([out out!])
          (matcho2 shared-ids ([suspended-var suspended-pattern] ...)
                   ([(car out) p-car] [(cdr out) p-cdr])
+                  body ...))]
+
+      [(_ shared-ids (suspended-var ...) #t ([out! (p-car . p-cdr)] p ...) body ...) ; Ground constraint pairs
+       (let ([out out!])
+         (matcho2 shared-ids (suspended-var ...) #f
+                  ([(car out) p-car] [(cdr out) p-cdr] p ...)
                   body ...))]
       
       [(_ shared-ids (suspended-var ...) is-constraint? ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
