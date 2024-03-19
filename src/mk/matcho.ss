@@ -24,7 +24,7 @@
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...)
-       (matcho2 () () (bindings ...) body ...)]))
+       (matcho2 () () #f (bindings ...) body ...)]))
 
   ;; constraint situation:
   ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to 
@@ -40,15 +40,15 @@
   (define-syntax matcho-c
     (syntax-rules ()
       [(_ shared-ids ([out (p-car . p-cdr)] p ...) (no-match ...) var ground body ...)
-       (if (eq? out var)
+       (if (eq? out var) ; thread a bool flag to make matcho2 into matcho8
            (matcho8 shared-ids (no-match ... p ...) ([ground (p-car . p-cdr)]) body ...)
-           fail)]))
+           (nyi))]))
   
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ shared-ids () () body ...) (begin body ...)] ; No-op
+      [(_ shared-ids () is-constraint? () body ...) (begin body ...)] ; No-op
       
-      [(_ shared-ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars
        (make-matcho (list out ...) '()
                     (lambda (var ground)
                       (if (pair? ground)
@@ -59,18 +59,18 @@
                         [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)
                        fail)))]
 
-      [(_ shared-ids ([suspended-var suspended-pattern] ...) ([out! ()] p ...) body ...) ; Empty list       
-       (conj* (== out! '()) (matcho2 shared-ids ([suspended-var suspended-pattern] ...) (p ...) body ...))]
+      [(_ shared-ids ([suspended-var suspended-pattern] ...) is-constraint? ([out! ()] p ...) body ...) ; Empty list       
+       (conj* (== out! '()) (matcho2 shared-ids ([suspended-var suspended-pattern] ...) is-constraint? (p ...) body ...))]
       
-      [(_ (shared-id ...) suspended-vars ([out! name] p ...) body ...) ; New identifier
+      [(_ (shared-id ...) suspended-vars is-constraint? ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
-       (let ([name out!]) (matcho2 (name shared-id ...) suspended-vars (p ...) body ...))]
+       (let ([name out!]) (matcho2 (name shared-id ...) suspended-vars is-constraint? (p ...) body ...))]
 
-      [(_ (shared-id ...) suspended-vars ([out! name] p ...) body ...) ; Shared identifier
+      [(_ (shared-id ...) suspended-vars is-constraint? ([out! name] p ...) body ...) ; Shared identifier
        (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
        (let ([out out!])
          (conj* (== name out)
-          (let ([name out]) (matcho2 (name shared-id ...) suspended-vars (p ...) body ...))))]
+          (let ([name out]) (matcho2 (name shared-id ...) suspended-vars is-constraint? (p ...) body ...))))]
 
       #;
       [(_ shared-ids ([suspended-var suspended-pattern] ...) ([out! (p-car . p-cdr)]) body ...) ; Constraint ground pair
@@ -80,22 +80,22 @@
                   ([(car out) p-car] [(cdr out) p-cdr])
                   body ...))]
       
-      [(_ shared-ids (suspended-var ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
+      [(_ shared-ids (suspended-var ...) is-constraint? ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
           [(pair? out)
-           (matcho2 shared-ids (suspended-var ...)
+           (matcho2 shared-ids (suspended-var ...) is-constraint?
                     ([(car out) p-car] [(cdr out) p-cdr] p ...)
                     body ...)]
           [(var? out)
-           (matcho2 shared-ids (suspended-var ... [out (p-car . p-cdr)])
+           (matcho2 shared-ids (suspended-var ... [out (p-car . p-cdr)]) is-constraint?
                     (p ...)
                     body ...)
            ]
           [else fail]))]
 
-      [(_ shared-ids suspended-vars ([out! ground] p ...) body ...) ; Ground
-       (conj* (== out! ground) (matcho2 shared-ids suspended-vars (p ...) body ...))]
+      [(_ shared-ids suspended-vars is-constraint? ([out! ground] p ...) body ...) ; Ground
+       (conj* (== out! ground) (matcho2 shared-ids suspended-vars is-constraint? (p ...) body ...))]
 
       ))
 
