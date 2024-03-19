@@ -1,7 +1,7 @@
 ;;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
-                                        
+
   (export matcho matcho-pair
           matcho3 matcho-tst ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
@@ -27,7 +27,7 @@
        (matcho2 () () #f (bindings ...) body ...)]))
 
   ;; constraint situation:
-  ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to 
+  ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to
 
   #;
   (or (not (identifier? #'out))
@@ -43,455 +43,62 @@
        (if (eq? out var) ; thread a bool flag to make matcho2 into matcho8
            (matcho2 shared-ids (no-match ... p ...) #t ([ground (p-car . p-cdr)]) body ...)
            (nyi))]))
-  
+
   (define-syntax matcho2
     (syntax-rules ()
       [(_ shared-ids () is-constraint? () body ...) (begin body ...)] ; No-op. Once all bindings have been processed, run the body.
-      
-      [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars
+
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
        (make-matcho (list out ...) '()
                     (lambda (var ground)
                       (if (pair? ground)
                           (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
-                          #;
-                          (exclusive-cond
-                           ;([out (p-car . p-cdr)] ...)
-                        [(eq? out var) (matcho8 shared-ids () [(ground (p-car . p-cdr))] body ...)] ...)
                        fail)))]
 
-      [(_ shared-ids ([suspended-var suspended-pattern] ...) is-constraint? ([out! ()] p ...) body ...) ; Empty list       
-       (conj* (== out! '()) (matcho2 shared-ids ([suspended-var suspended-pattern] ...) is-constraint? (p ...) body ...))]
-      
+      [(_ shared-ids ([suspended-var suspended-pattern] ...) is-constraint? ([out! ()] p ...) body ...) ; Empty list
+       (conj* (== out! '()) ; Unify with the empty list to handle the tails of list patterns.
+              (matcho2 shared-ids ([suspended-var suspended-pattern] ...) is-constraint? (p ...) body ...))]
+
       [(_ (shared-id ...) suspended-vars is-constraint? ([out! name] p ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
-       (let ([name out!]) (matcho2 (name shared-id ...) suspended-vars is-constraint? (p ...) body ...))]
+       (let ([name out!]) ; Create a let binding and add the name to our shared-id list to check for future re-uses of the same name in the match pattern.
+         (matcho2 (name shared-id ...) suspended-vars is-constraint? (p ...) body ...))]
 
       [(_ (shared-id ...) suspended-vars is-constraint? ([out! name] p ...) body ...) ; Shared identifier
        (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
        (let ([out out!])
-         (conj* (== name out)
+         (conj* (== name out) ; If we have used this identifier before, unify the two values with the same name.
           (let ([name out]) (matcho2 (name shared-id ...) suspended-vars is-constraint? (p ...) body ...))))]
 
-      #;
-      [(_ shared-ids ([suspended-var suspended-pattern] ...) ([out! (p-car . p-cdr)]) body ...) ; Constraint ground pair
-       (and (identifier? #'out!) (memp (lambda (v) (bound-identifier=? #'out! v)) #'(suspended-var ...)))
-       (let ([out out!])
-         (matcho2 shared-ids ([suspended-var suspended-pattern] ...)
-                  ([(car out) p-car] [(cdr out) p-cdr])
-                  body ...))]
-
       [(_ shared-ids (suspended-var ...) #t ([out! (p-car . p-cdr)] p ...) body ...) ; Ground constraint pairs
-       (let ([out out!])
+       (let ([out out!]) ; Constraints will only match ground pairs, so we only need to check for them. If we check for vars we create infinite loops.
          (matcho2 shared-ids (suspended-var ...) #f
                   ([(car out) p-car] [(cdr out) p-cdr] p ...)
                   body ...))]
-      
+
       [(_ shared-ids (suspended-var ...) is-constraint? ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
-          [(pair? out)
+          [(pair? out) ; Destructure ground pairs and pass their sub-parts to the matcher.
            (matcho2 shared-ids (suspended-var ...) is-constraint?
                     ([(car out) p-car] [(cdr out) p-cdr] p ...)
                     body ...)]
-          [(var? out)
+          [(var? out) ; Set aside variable matchers to wrap in the suspended goal at the end.
            (matcho2 shared-ids (suspended-var ... [out (p-car . p-cdr)]) is-constraint?
                     (p ...)
                     body ...)
            ]
           [else fail]))]
 
-      [(_ shared-ids suspended-vars is-constraint? ([out! ground] p ...) body ...) ; Ground
+      [(_ shared-ids suspended-vars is-constraint? ([out! ground] p ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
        (conj* (== out! ground) (matcho2 shared-ids suspended-vars is-constraint? (p ...) body ...))]
 
       ))
 
-  (define-syntax matcho8
-    (syntax-rules ()
-      [(_ ids () () body ...) (begin body ...)] ; No-op
-      
-      [(_ ids ([out (p-car . p-cdr)] ...) () body ...) ; Suspend free vars
-       (make-matcho (list out ...) '()
-                    (lambda (var ground)
-                      (exclusive-cond
-                       [(eq? out var) (matcho8 ids () [(ground (p-car . p-cdr))] body ...)] ...)
-                      ))]
-
-      [(_ ids frees ([out! ()] p ...) body ...) ; Empty list
-       (conj* (== out! '()) (matcho8 ids frees (p ...) body ...))]
-      
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho8 (name id ...) frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; Shared identifier
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
-       (let ([out out!])
-         (conj* (== name out)
-          (let ([name out]) (matcho8 (name id ...) frees (p ...) body ...))))]
-
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; Pair
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho8 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    body ...)]
-          #;
-          [(var? out)
-           (matcho8 ids (free ... [out (p-car . p-cdr)])
-                    (p ...)
-                    body ...)
-           ]
-          [else fail]))]
-
-      [(_ ids frees ([out! ground] p ...) body ...) ; Ground
-       (conj* (== out! ground) (matcho8 ids frees (p ...) body ...))]
-
-      ))
-
-#;
-  (define matcho5
-    (syntax-rules ()
-      [(_ ids () () body ...) (begin body ...)]
-
-      [(_ ids frees ([out! ()] p ...) body ...)
-       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
-      
-      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
-       (make-matcho (list out ...) '()
-                    (lambda (grounds)
-                      (display "HERE")
-                      (pretty-print grounds)
-                      (pretty-print '((p-car . p-cdr) ...))
-
-                      (flush-output)
-
-                      
-                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
-                      #;
-                      (pretty-print (expand '(matcho2 ids () ([grounds ((p-car . p-cdr) ...)])
-                               body ...)))
-                                        ;1
-
-                      ;1                      
-                                        ;(break 'lam)
-                      #;
-                      (pretty-print (expand '(matcho4 ids () ([grounds ((x . y))])
-                      succeed)))
-
-                      #;
-                      (pretty-print (matcho5 ids () ([grounds ((x . y))])
-                                             succeed))
-
-                      #;
-                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
-                      succeed))
-
-                      1
-                      )
-                    #;
-                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
-                    (list out ...)
-                    #;
-                    (begin body ...)))]
-
-      [(_ ids frees ([out! ()] p ...) body ...)
-       (conj* (== out! '()) (matcho2 ids frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...)
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho2 (name id ...) frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...)
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
-       (let ([out out!])
-         (conj* (== name out)
-          (let ([name out]) (matcho2 (name id ...) frees (p ...) body ...))))]
-
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho2 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    body ...)]
-          [(var? out)
-           (matcho2 ids (free ... [out (p-car . p-cdr)])
-                    (p ...)
-                    body ...)
-           ]
-          [else fail]))]
-
-      [(_ ids frees ([out! ground] p ...) body ...)
-       (conj* (== out! ground) (matcho2 ids frees (p ...) body ...))]
-
-      ))
-
-  #;
-  (define-syntax matcho4
-    (syntax-rules ()
-      
-      [(_ ids () () body ...) (begin body ...)]
-      
-      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
-       (make-matcho (list out ...) '()
-                    (lambda (grounds)
-                      (display "HERE")
-                      (pretty-print grounds)
-                      (pretty-print '((p-car . p-cdr) ...))
-                      (flush-output-port)
-                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
-                      #;
-                      (pretty-print (expand '(matcho4 ids () ([grounds ((p-car . p-cdr) ...)])
-                               body ...)))
-                                        ;1
-
-                      ;1                      
-                                        ;(break 'lam)
 
 
-                      (pretty-print (matcho4 () () () 'success))
-                      #;
-                      (pretty-print (matcho4 () () (['(1 . 2) (1 . 2)])
-                                succeed))
-                      #;
-                      (pretty-print (expand '(matcho4 () () ([grounds (x . y)])
-                      succeed)))
-
-                      #;
-                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
-                      succeed))
-                      #;
-                      (pretty-print (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                                        succeed)))
-                      #;
-                      (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                              succeed)))
-
-                      1
-                      )
-                    #;
-                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
-                    (list out ...)
-                    #;
-                    (begin body ...)))]
 
 
-      [(_ ids frees ([out! ()] p ...) body ...) ; empty
-       (conj* (== out! '()) (matcho4 ids frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...)
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho4 (name id ...) frees (p ...) body ...))]
-
-      #;
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; shared id
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
-       (let ([out out!])
-         (conj* (== name out)
-          (let ([name out]) (matcho4 (name id ...) frees (p ...) body ...))))]
-
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; pair
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho4 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    body ...)]
-          [(var? out)
-           (matcho4 ids (free ... [out (p-car . p-cdr)])
-                    (p ...)
-                    body ...)
-           ]
-          [else fail]))]
-
-      [(_ ids frees ([out! ground] p ...) body ...) ; ground
-       (conj* (== out! ground) (matcho4 ids frees (p ...) body ...))]
-
-      )
-    #;
-    (syntax-rules ()
-      [(_ ids () () body ...) (begin body ...)]
-
-      [(_ ids frees ([out! ()] p ...) body ...) ; empty list
-       (conj* (== out! '()) (matcho4 ids frees (p ...) body ...))]
-      
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; var bind
-       (identifier? #'name)
-       (let ([name out!]) (matcho4 (name id ...) frees (p ...) body ...))]
-      
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...) ; pair
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho4 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    body ...)]
-          #;
-          [(var? out)
-          (matcho4 ids (free ... [out (p-car . p-cdr)])
-          (p ...)
-          body ...)
-          ]
-          [else fail]))]
-
-))
-
-  #;
-    (define-syntax matcho6
-    (syntax-rules ()
-      [(_ ids () () body ...) (begin body ...)]
-      
-      [(_ ids ([out (p-car . p-cdr)] ...) () body ...)
-       (make-matcho (list out ...) '()
-                    (lambda (grounds)
-                      (display "HERE")
-                      (pretty-print grounds)
-                      (pretty-print '((p-car . p-cdr) ...))
-                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
-                      #;
-                      (pretty-print (expand '(matcho6 ids () ([grounds ((p-car . p-cdr) ...)])
-                               body ...)))
-                                        ;1
-
-                      ;1                      
-                                        ;(break 'lam)
-                      
-                      (pretty-print (expand '(matcho4 ids () ([grounds ((p-car . p-cdr) ...)])
-                                                      succeed)))
-
-                      #;
-                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
-                      succeed))
-
-                      1
-                      )
-                    #;
-                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
-                    (list out ...)
-                    #;
-                    (begin body ...)))]
-
-      [(_ ids frees ([out! ()] p ...) body ...)
-       (conj* (== out! '()) (matcho6 ids frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...)
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho6 (name id ...) frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) body ...)
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
-       (let ([out out!])
-         (conj* (== name out)
-          (let ([name out]) (matcho6 (name id ...) frees (p ...) body ...))))]
-
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) body ...)
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho6 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    body ...)]
-          [(var? out)
-           (matcho6 ids (free ... [out (p-car . p-cdr)])
-                    (p ...)
-                    body ...)
-           ]
-          [else fail]))]
-
-      [(_ ids frees ([out! ground] p ...) body ...)
-       (conj* (== out! ground) (matcho6 ids frees (p ...) body ...))]
-
-      ))
-
-#;
-    (define-syntax matcho7
-    (syntax-rules ()
-      [(_ ids () () ctn body ...) (begin body ...)] ; No-op
-      
-      [(_ ids ([out (p-car . p-cdr)] ...) () ctn body ...) ; Suspend free vars
-       (make-matcho (list out ...) '()
-                    (lambda (grounds)
-                      (display "HERE")
-                      (pretty-print grounds)
-                      (pretty-print '((p-car . p-cdr) ...))
-                      (flush-output-port)
-                      ;(matcho3 ([grounds ((a . d))]) (cons d a))
-                      #;
-                      (pretty-print (expand '(matcho7 ids () ([grounds ((p-car . p-cdr) ...)])
-                               body ...)))
-                                        ;1
-
-                      ;1                      
-                                        ;(break 'lam)
-
-                      #;
-                      (matcho7 () () ([grounds (x . y)])
-                               succeed)
-                      #;
-                      (pretty-print (expand '(matcho7 () () ([grounds (x . y)])
-                      succeed)))
-
-                      #;
-                      (pretty-print (matcho3 ([grounds ((p-car . p-cdr) ...)]) ;
-                      succeed))
-                      (printf "recursion: ")
-                      ;(pretty-print (matcho7 () () (['(3 . 4) a]) (== (var 3) 3)))
-;                      (pretty-print (expand '(matcho7 () () (['(3 . 4) (a . d)]) (== (var 3) a))))
-
-                      
-                      #;
-                      (pretty-print (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                                        succeed)))
-                      #;
-                      (eval (matcho5 #'(matcho5 () () ([grounds ((p-car . p-cdr) ...)])
-                                              succeed)))
-
-                      1
-                      )
-                    #;
-                    (lambda (out ...) ; wrap all patterns into a single giant list pattern and do a 1 param match with the input list
-                    (list out ...)
-                    #;
-                    (begin body ...)))]
-
-      [(_ ids frees ([out! ()] p ...) ctn body ...) ; Empty list
-       (conj* (== out! '()) (matcho7 ids frees (p ...) ctn body ...))]
-
-      #;
-      [(_ (id ...) frees ([out! name] p ...) body ...) ; New identifier
-       (identifier? #'name)
-       (let ([name out!]) (matcho7 (name id ...) frees (p ...) body ...))]
-      
-      [(_ (id ...) frees ([out! name] p ...) ctn body ...) ; New identifier
-       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...))))
-       (let ([name out!]) (matcho7 (name id ...) frees (p ...) body ...))]
-
-      [(_ (id ...) frees ([out! name] p ...) ctn body ...) ; Shared identifier
-       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(id ...)))
-       (let ([out out!])
-         (conj* (== name out)
-          (let ([name out]) (matcho7 (name id ...) frees (p ...) ctn body ...))))]
-
-      [(_ ids (free ...) ([out! (p-car . p-cdr)] p ...) ctn body ...) ; Pair
-       (let ([out out!])
-         (exclusive-cond
-          [(pair? out)
-           (matcho7 ids (free ...)
-                    ([(car out) p-car] [(cdr out) p-cdr] p ...)
-                    ctn body ...)]
-          [(var? out)
-           (matcho7 ids (free ... [out (p-car . p-cdr)])
-                    (p ...)
-                    ctn body ...)
-           ]
-          [else fail]))]
-
-      [(_ ids frees ([out! ground] p ...) ctn body ...) ; Ground
-       (conj* (== out! ground) (matcho7 ids frees (p ...) ctn body ...))]
-
-      ))
-  
   (define (expand-matcho g s p)
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
     ((matcho-goal g) s p (matcho-in-vars g)))
@@ -509,7 +116,7 @@
       (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
      [(var? (car out)) (make-matcho out in proc)]
      [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
-  
+
   (define-syntax build-substitution
     ;; Walks each out-variable in turn and unifies it with its pattern, failing the entire computation if any pattern unification fails before walking subsequent variables.
     (syntax-rules ()
@@ -523,7 +130,7 @@
       [(_ state package substitution grounding (binding bindings ...) body ...)
        (build-substitution state package substitution grounding (binding)
                            (build-substitution state package substitution grounding (bindings ...) body ...))]))
-  
+
   (define-syntax build-pattern
     ;; Turn a pattern match schema into a full scheme object for unification.
     (syntax-rules (quote)
@@ -564,7 +171,7 @@
                [p-cdr (cdr out-var)])
            (conj* body ...))]
         [else fail])]))
-  
+
   (define-syntax (matcho bindings) ; A pattern-matching equivalent for fresh.
     ;; (matcho ([x (a . 1)] [y ('b . c)] ...) ...)
     ;; The above form destructures the input variables x and y, ensuring that (== (cdr x) 1) and (== (car y) 'b) and then binding a and c to the car and cdr of x and y respectively. a and b may then be accessed like normal let bindings within the scope of the wrapped goals.
@@ -585,7 +192,7 @@
                   (if (memp (lambda (e) (bound-identifier=? e #'v)) vs) vs (cons #'v vs))]
                [(h . t) (extract-vars #'h (extract-vars #'t vs))]
                [a vs]))]))
-    
+
     (syntax-case bindings ()
       #;
       [(_ label ([out-var (p-car . p-cdr)]) body ...)
@@ -600,7 +207,7 @@
       [(_ label ([out-var (p-car . p-cdr)] ...) body ...) ;TODO add fender to matcho to prevent duplicate lhs vars and cyclic pattern vars (since out-vars are bound beneath in-vars, so the shadowing will go the wrong way)
        (with-syntax ([(in-var ...) (extract-vars #'(p-car ... p-cdr ...))]) ; Get new identifiers from pattern bindings that may require fresh logic variables.
          #`(normalize-matcho
-            (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal. 
+            (list out-var ...) ;TODO equip matcho with the patterns externally to fail constraints without invoking goal.
             '()
             (let ([label (lambda (state package grounding)
                            (let ([substitution '()]
@@ -618,9 +225,7 @@
                                  (set-state-varid ; Set as many variable ids as needed for fresh variables that remain fresh and so must enter the larger search as unbound variables.
                                   state (fold-left
                                          (lambda (id v)
-                                           (if (and (var? v) (zero? (var-id v))) 
+                                           (if (and (var? v) (zero? (var-id v)))
                                                (begin (set-var-id! v (fx1+ id)) (fx1+ id)) id))
                                          (state-varid state) (list in-var ...)))
                                  package)))))]) label)))])))
-
-
