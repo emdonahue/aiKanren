@@ -33,12 +33,7 @@
   
   (define query (make-parameter #f)) ; Holds the query variables for inspection by internal elements of the dfs search. Used for debugging.
   
-  (define-structure (lazy-run stream query package))
-  
-  (define (set-lazy-run-stream r s)
-    (cert (lazy-run? r) (not (lazy-run? s)))
-    (let ([r (vector-copy r)])
-      (set-lazy-run-stream! r s) r)) 
+  (define-structure (lazy-run stream query package)) 
   
   (define-syntax lazy-run ; Returns a lazy-run stream object that represents a lazy search stream. The stream can be advanced using the lazy-run-* functions.
     ;; (lazy-run (q ...) g ...)

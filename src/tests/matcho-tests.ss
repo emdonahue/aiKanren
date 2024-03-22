@@ -70,8 +70,8 @@
  (tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
  (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1)))
  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
- (tassert "match free" (matcho3 ([x1 (a . d)]) (cons d a))
-          (lambda (m) (matcho-test-eq? m (list x1) '())))
- (tassert "match free expand" ((matcho-goal (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
+ (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a)))
+          (list x1))
+ (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
  
  )
