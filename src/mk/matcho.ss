@@ -49,7 +49,7 @@
 
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ shared-ids () is-constraint? () body ...) (begin body ...)] ; No-op. Once all bindings have been processed, run the body.
+      [(_ shared-ids () is-constraint? () body ...) (begin succeed body ...)] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
        (make-matcho4 (list out ...)

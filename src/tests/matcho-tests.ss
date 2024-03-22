@@ -8,7 +8,7 @@
  matcho
 
  ;; Basic pattern matching
- (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho ([m (a 1)])))) (void))
+ (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
  (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho ([m (a 1)])))) '())
  (tassert "match list extract" (run1 (x1 x2) (let ([m '(1 2)]) (matcho ([m (a b)]) (== x1 a) (== x2 b)))) '(1 2))
  (tassert "match list extend" (run1 x1 (let ([m (list 1 x1)]) (matcho ([m (a 2)])))) 2)
