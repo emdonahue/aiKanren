@@ -53,8 +53,11 @@
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
        (make-matcho4 (list out ...)
-                    (lambda (var ground)
-                      (cert (not (var? ground)))
+                     (lambda (out ...)
+                       #;
+                      (cert (not (var? ground)) #f)
+                      (list out ...)
+                      #;
                       (if (pair? ground)
                           (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
                        fail)))]
