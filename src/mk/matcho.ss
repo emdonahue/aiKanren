@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho matcho-pair
-          matcho3 matcho-tst ;matcho5 matcho4
+          matcho3 matcho-tst matcho5 matcho6 ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -12,10 +12,10 @@
     (syntax-rules ()
       [(_ a)]))
 
-  (define-syntax matcho-tst
+  (define matcho-tst
    (syntax-rules ()
-     [(_ a) (matcho-tst (unroll-lst a))]
-     [(_ a b) 2]))
+     [(_ a) (list a)]
+))
 
   (define-syntax matcho-ctn
     (syntax-rules ()
@@ -49,6 +49,10 @@
 
   (define-syntax matcho2
     (syntax-rules ()
+
+      [(_ shared-ids ([out p] ...) #t () body ...) ; Ground constraint pairs
+       (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
+      
       [(_ shared-ids () is-constraint? () body ...) (conj* body ...)] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
@@ -56,7 +60,8 @@
                      (lambda (out ...)
                        #;
                       (cert (not (var? ground)) #f)
-                      (list out ...)
+                                        ;(list out ...)
+                       (matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
                       #;
                       (if (pair? ground)
                           (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
@@ -77,11 +82,18 @@
          (conj* (== name out) ; If we have used this identifier before, unify the two values with the same name.
           (let ([name out]) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))))]
 
-      [(_ shared-ids (suspended-binding ...) #t ([out! (p-car . p-cdr)] binding ...) body ...) ; Ground constraint pairs
-       (let ([out out!]) ; Constraints will only match ground pairs, so we only need to check for them. If we check for vars we create infinite loops.
-         (matcho2 shared-ids (suspended-binding ...) #f
-                  ([(car out) p-car] [(cdr out) p-cdr] binding ...) body ...))]
 
+
+
+      
+      [(_ shared-ids (suspended-binding ...) #t ([out (p-car . p-cdr)] binding ...) body ...) ; Ground constraint pairs
+       (if (pair? out)
+           (matcho2 shared-ids () #f
+                    ([(car out) p-car] [(cdr out) p-cdr] suspended-binding ... binding ...) body ...)
+           (matcho2 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) #t (binding ...) body ...))]
+
+
+      
       [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
@@ -94,6 +106,72 @@
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
        (conj* (== out! ground) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
+
+      ))
+
+  (define matcho6
+    (syntax-rules ()
+      [(_ (bindings ...) body ...)
+       (matcho5 () () #f (bindings ...) body ...)]))
+  
+  (define matcho5
+    (syntax-rules ()
+      [(_ shared-ids ([out p] ...) #t () body ...) ; Ground constraint pairs
+       (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
+      
+      [(_ shared-ids () is-constraint? () body ...) (conj* body ...)] ; No-op. Once all bindings have been processed, run the body.
+
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
+       (make-matcho4 (list out ...)
+                     (lambda (out ...)
+                       #;
+                      (cert (not (var? ground)) #f)
+                                        ;(list out ...)
+                       (matcho5 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
+                      #;
+                      (if (pair? ground)
+                          (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
+                       fail)))]
+
+      [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty list
+       (conj* (== out! '()) ; Unify with the empty list to handle the tails of list patterns.
+              (matcho5 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
+
+      [(_ (shared-id ...) suspended-bindings is-constraint? ([out! name] binding ...) body ...) ; New identifier
+       (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
+       (let ([name out!]) ; Create a let binding and add the name to our shared-id list to check for future re-uses of the same name in the match pattern.
+         (matcho5 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))]
+
+      [(_ (shared-id ...) suspended-bindings is-constraint? ([out! name] binding ...) body ...) ; Shared identifier
+       (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
+       (let ([out out!])
+         (conj* (== name out) ; If we have used this identifier before, unify the two values with the same name.
+          (let ([name out]) (matcho5 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))))]
+
+
+
+      
+      
+      [(_ shared-ids (suspended-binding ...) #t ([out (p-car . p-cdr)] binding ...) body ...) ; Ground constraint pairs
+       (if (pair? out)
+           (matcho5 shared-ids () #f
+                    ([(car out) p-car] [(cdr out) p-cdr] suspended-binding ... binding ...) body ...)
+           (matcho5 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) #t (binding ...) body ...))]
+
+
+      
+      [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
+       (let ([out out!])
+         (exclusive-cond
+          [(pair? out) ; Destructure ground pairs and pass their sub-parts to the matcher.
+           (matcho5 shared-ids (suspended-binding ...) is-constraint?
+                    ([(car out) p-car] [(cdr out) p-cdr] binding ...) body ...)]
+          [(var? out) ; Set aside variable matchers to wrap in the suspended goal at the end.
+           (matcho5 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) is-constraint? (binding ...) body ...)]
+          [else fail]))]
+
+      [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
+       (conj* (== out! ground) (matcho5 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
 
       ))
 
