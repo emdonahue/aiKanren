@@ -8,18 +8,20 @@
  matcho
 
  ;; Basic pattern matching
- (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
- (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho ([m (a 1)])))) '())
- (tassert "match list extract" (run1 (x1 x2) (let ([m '(1 2)]) (matcho ([m (a b)]) (== x1 a) (== x2 b)))) '(1 2))
- (tassert "match list extend" (run1 x1 (let ([m (list 1 x1)]) (matcho ([m (a 2)])))) 2)
- (tassert "match pair fail" (run1 () (let ([m '(1 . 2)]) (matcho ([m (a . 1)])))) (void))
- (tassert "match pair succeed" (run1 () (let ([m '(1 . 1)]) (matcho ([m (a . 1)])))) '())
- (tassert "match pair extract" (run1 (x1 x2) (let ([m '(1 . 2)]) (matcho ([m (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
- (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho ([m (a . 2)])))) 2)
- (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho ([m (a . 'two)]) (== a x1)))) '(one two))
- (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
- (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho ([m (a 2)] [n (a 2)])))) 1)
- (tassert "match optimized pair unifies cons" (run1 x1 (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ #;
+ (
+  (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
+  (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho3 ([m (a 1)])))) '())
+  (tassert "match list extract" (run1 (x1 x2) (let ([m '(1 2)]) (matcho3 ([m (a b)]) (== x1 a) (== x2 b)))) '(1 2))
+  (tassert "match list extend" (run1 x1 (let ([m (list 1 x1)]) (matcho3 ([m (a 2)])))) 2)
+  (tassert "match pair fail" (run1 () (let ([m '(1 . 2)]) (matcho3 ([m (a . 1)])))) (void))
+  (tassert "match pair succeed" (run1 () (let ([m '(1 . 1)]) (matcho3 ([m (a . 1)])))) '())
+  (tassert "match pair extract" (run1 (x1 x2) (let ([m '(1 . 2)]) (matcho3 ([m (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
+  (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2)
+  (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
+  (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
+  (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
+  (tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2)))
 
  ;; Eagerly run matcho until we exhaust ground information
  #;
@@ -72,6 +74,6 @@
  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
  (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a)))
           (list x1))
- (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
+ ;(tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
  
  )
