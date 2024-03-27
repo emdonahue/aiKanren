@@ -11,7 +11,7 @@
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     ;; resolve: constraints retrieved from the store that we need to recheck, but which should not be negated by noto on the return (so we cant just solve them immediately. we must delay rechecking until we are done with g).
     ;; delta: conjunction of all the simplified goals we have added to the store. reflects the change (delta) of the returned state's constraint store.
-    (cert (goal? g) (maybe-state? s) (goal? ctn)) ; -> delta pending maybe-state?
+    (cert (goal? g) (maybe-state? s) (goal? ctn)) ; -> delta maybe-state?
     (if (failure? s) (values fail failure)
         (exclusive-cond
          [(fail? g) (values fail failure)]
@@ -24,6 +24,7 @@
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
+         [(matcho4? g) (solve-matcho2 g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
          [(proxy? g) (solve-proxy g s ctn resolve delta)]
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
@@ -47,7 +48,7 @@
           (solve-constraint ctn (store-constraint s simplified-lhs)
                             succeed resolve (conj delta simplified-lhs)))])))
 
-  (define (solve-matcho g s ctn resolve delta) ;TODO rebase solve-matcho on solve-matcho/expand
+  (define (solve-matcho g s ctn resolve delta) 
     (let-values ([(g s expanded?) (solve-matcho/expand g s)])
       (if expanded?
           (solve-constraint g s ctn resolve delta)
@@ -64,6 +65,28 @@
               (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
               (solve-matcho/expand (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
+  (define solve-matcho2
+    (case-lambda
+      [(g s ctn resolve delta) (solve-matcho2 g s ctn resolve delta '())]
+      [(g s ctn resolve delta walked)
+       (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
+         (if w (let ([v (walk-var s w)]) ; If there is an unwalked variable, walk it.
+                 (if (var? v)
+                     (solve-matcho2 (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
+                                                  (matcho4-procedure g))
+                                    s ctn resolve delta (cons w walked)) ; If it is a var, swap it out and continue solving.
+                     (let-values ([(shared match) ; Otherwise run the matcher.
+                                   (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
+                                          (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
+                       (exclusive-cond
+                        [(fail? match) (values fail failure)]
+                        [(matcho4? match) ; If not yet solved, keep solving.
+                         (solve-matcho2 match s (conj shared ctn) resolve delta (cons w walked))]
+                        [else ; If fully solved, solve inner goal.
+                         (solve-constraint match s (conj shared ctn) resolve delta)]))))
+             ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
+             (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g))))]))
+  
   (define (solve-proxy g s ctn resolve delta) ; Solves the constraint on the proxied varid.
     (let-values ([(v c) (walk-var-val s (proxy-var g))])
       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)

@@ -51,14 +51,16 @@
            (matcho-c shared-ids (binding ...) ([out (p-car . p-cdr)] no-match ...) var ground body ...))]))
 
   (define-syntax matcho/match-one
+    ;; Called when constraints are fired from the store. Guarantees that at least one variable is now ground (and is a pair, since non-pair ground terms fail early in the solver). Without this, we would need to generate an infinite tree of cases for each possible variable-variable substitution. By handling that part at runtime, we can just generate the tree of ever smaller lists of variables that bottom out and terminate.
     (syntax-rules ()
       [(_ shared-ids ([out p] ...) () body ...)
        (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
 
       [(_ shared-ids (suspended-binding ...) ([out (p-car . p-cdr)] binding ...) body ...)
-       (if (pair? out)
+       (if (pair? out) ; When we find the pair, destructure it and set the usual match procedure running.
            (matcho2 shared-ids () #f
                     ([(car out) p-car] [(cdr out) p-cdr] suspended-binding ... binding ...) body ...)
+           ;; For variables, set them aside until we find the pair then dump them all back in and let the usual matcho handle it.
            (matcho/match-one shared-ids (suspended-binding ... [out (p-car . p-cdr)]) (binding ...) body ...))]))
 
   (define-syntax matcho2
@@ -69,25 +71,13 @@
        (values succeed
                (make-matcho4 (list out ...)
                              (lambda (out ...)
-                               #;
-                               (cert (not (var? ground)) #f)
-                                        ;(list out ...)
-                               (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)
-                                        ;(matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
-                               #;
-                               (if (pair? ground) ;
-                               (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...) ;
-                               fail))))]
+                               (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...))))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty list
        (let ([u (== out! '())]) ; Unify with the empty list to handle the tails of list patterns.
          (if (fail? u) (values fail fail)
              (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
-               (values (conj u c) m))))
-
-       #;
-       (conj* (== out! '()) ; Unify with the empty list to handle the tails of list patterns.
-              (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
+               (values (conj u c) m))))]
 
       [(_ (shared-id ...) suspended-bindings is-constraint? ([out! name] binding ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
@@ -101,13 +91,7 @@
            (if (fail? u) (values fail fail)
                (let ([name out])
                  (let-values ([(c m) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
-                   (values (conj u c) m)))
-             ))
-         #;
-         (conj* (== name out) ; If we have used this identifier before, unify the two values with the same name.
-          (let ([name out]) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))))]
-
-
+                   (values (conj u c) m))))))]
 
       [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (let ([out out!])
@@ -123,11 +107,7 @@
        (let ([u (== out! ground)]) 
          (if (fail? u) (values fail fail)
              (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
-               (values (conj u c) m))))
-       #;
-       (conj* (== out! ground) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
-
-      ))
+               (values (conj u c) m))))]))
 
   (define matcho6
     (syntax-rules ()
