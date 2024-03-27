@@ -24,7 +24,10 @@
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...)
-       (matcho2 () () #f (bindings ...) body ...)]))
+       (let-values ([(c m) (matcho2 () () #f (bindings ...) body ...)])
+         (conj c m))]
+       #;
+       (matcho2 () () #f (bindings ...) body ...)))
 
   ;; constraint situation:
   ;; the ground list will be full, but it may contain free vars that match sub patterns, so we should expect to destructure all the input terms (possibly failing) and then be left with a sub problem of more bindings that may require that we return a new suspended matcho. this is fundamentally a similar problem to
@@ -60,7 +63,7 @@
 
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ shared-ids () is-constraint? () body ...) (conj* body ...)] ; No-op. Once all bindings have been processed, run the body.
+      [(_ shared-ids () is-constraint? () body ...) (values succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
        (make-matcho4 (list out ...)
@@ -76,6 +79,12 @@
                        fail)))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty list
+       (let ([u (== out! '())]) ; Unify with the empty list to handle the tails of list patterns.
+         (if (fail? u) (values fail fail)
+             (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
+               (values (conj u c) m))))
+
+       #;
        (conj* (== out! '()) ; Unify with the empty list to handle the tails of list patterns.
               (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
 
@@ -87,6 +96,13 @@
       [(_ (shared-id ...) suspended-bindings is-constraint? ([out! name] binding ...) body ...) ; Shared identifier
        (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
        (let ([out out!])
+         (let ([u (== name out)]) ; Unify with the empty list to handle the tails of list patterns.
+           (if (fail? u) (values fail fail)
+               (let ([name out])
+                 (let-values ([(c m) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
+                   (values (conj u c) m)))
+             ))
+         #;
          (conj* (== name out) ; If we have used this identifier before, unify the two values with the same name.
           (let ([name out]) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))))]
 
@@ -103,6 +119,11 @@
           [else fail]))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
+       (let ([u (== out! ground)]) ; Unify with the empty list to handle the tails of list patterns.
+         (if (fail? u) (values fail fail)
+             (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
+               (values (conj u c) m))))
+       #;
        (conj* (== out! ground) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...))]
 
       ))

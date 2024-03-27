@@ -63,12 +63,12 @@
  (tassert "match no patterns" (matcho3 () succeed) succeed)
  (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
  (tassert "match number" (matcho3 ([1 1]) succeed) succeed)
- (tassert "match simple variable rename" (matcho3 ([1 a]) a) 1)
+ (tassert "match simple variable rename" (matcho3 ([1 a]) (== x1 a)) (== x1 1))
  (tassert "match multiple empty list" (matcho3 (['() ()] ['() ()]) succeed) succeed)
 
- (trace sc-expand)
+ ;(trace sc-expand)
  ;(display (matcho-tst #'(matcho-tst 4)))
-
+#;
  (parameterize ([expand-output (current-output-port)]
                 [current-expand (trace-lambda expander (x) (sc-expand x))]
                 )
@@ -79,7 +79,7 @@
    (expand `(matcho3 (['(1 . 2) (a . d)]) (cons d a))))
  
  
- (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
+ (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
  
  #;
  (
