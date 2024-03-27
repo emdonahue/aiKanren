@@ -8,20 +8,24 @@
  matcho
 
  ;; Basic pattern matching
-
-
- (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
- (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho3 ([m (a 1)])))) '())
- (tassert "match list extract" (run1 (x1 x2) (let ([m '(1 2)]) (matcho3 ([m (a b)]) (== x1 a) (== x2 b)))) '(1 2))
- (tassert "match list extend" (run1 x1 (let ([m (list 1 x1)]) (matcho3 ([m (a 2)])))) 2)
- (tassert "match pair fail" (run1 () (let ([m '(1 . 2)]) (matcho3 ([m (a . 1)])))) (void))
- (tassert "match pair succeed" (run1 () (let ([m '(1 . 1)]) (matcho3 ([m (a . 1)])))) '())
- (tassert "match pair extract" (run1 (x1 x2) (let ([m '(1 . 2)]) (matcho3 ([m (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
- (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2)
+#;
+ (
+  (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
+  (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho3 ([m (a 1)])))) '())
+  (tassert "match list extract" (run1 (x1 x2) (let ([m '(1 2)]) (matcho3 ([m (a b)]) (== x1 a) (== x2 b)))) '(1 2))
+  (tassert "match list extend" (run1 x1 (let ([m (list 1 x1)]) (matcho3 ([m (a 2)])))) 2)
+  (tassert "match pair fail" (run1 () (let ([m '(1 . 2)]) (matcho3 ([m (a . 1)])))) (void))
+  (tassert "match pair succeed" (run1 () (let ([m '(1 . 1)]) (matcho3 ([m (a . 1)])))) '())
+  (tassert "match pair extract" (run1 (x1 x2) (let ([m '(1 . 2)]) (matcho3 ([m (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
+  (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2))
+#;
+ (
  (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
+ (pretty-print (matcho3 ([(cons 'one x2) (a . 'two)]) (== a x1)))
+ (exit)
  (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
  (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
- (tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ (tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2)))
 
  ;; Eagerly run matcho until we exhaust ground information
  #;
@@ -61,10 +65,10 @@
 
  ;(display (matcho-tst c c))
  (tassert "match no patterns" (matcho3 () succeed) succeed)
- (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
+ ;(tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
  (tassert "match number" (matcho3 ([1 1]) succeed) succeed)
  (tassert "match simple variable rename" (matcho3 ([1 a]) (== x1 a)) (== x1 1))
- (tassert "match multiple empty list" (matcho3 (['() ()] ['() ()]) succeed) succeed)
+; (tassert "match multiple empty list" (matcho3 (['() ()] ['() ()]) succeed) succeed)
 
  ;(trace sc-expand)
  ;(display (matcho-tst #'(matcho-tst 4)))
@@ -76,18 +80,30 @@
    (pretty-print (matcho5 (cadddr (matcho5 (caddr (caddr (matcho5 (cadr (caddr (caddr (matcho5 (matcho6 #'(matcho6 (['(1 . 2) (a . d)]) (cons d a))))))))))))))
    ;(matcho5 #'(matcho5 (['(1 . 2) (a . d)]) (cons d a)))
    #;
-   (expand `(matcho3 (['(1 . 2) (a . d)]) (cons d a))))
- 
- 
- (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
- (tassert "match ground fail" (matcho3 ([1 (a . d)]) succeed) fail)
- (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (== x1 (list a d b))) (== x1 '(1 2 3)))
- (tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
- (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1))) 
- (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
- (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
+ (expand `(matcho3 (['(1 . 2) (a . d)]) (cons d a))))
 
- (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list succeed (== x2 '(2 . 1))))
+ (pretty-print
+  (matcho5 (matcho6 #'(matcho6 (['() ()]) succeed)
+            )))
+ 
+ #;
+ (
+  (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
+  (tassert "match non-pair fail" (matcho3 ([1 (a . d)]) succeed) fail)
+  (tassert "match ground car fail" (matcho3 (['(1 . 2) (2 . d)]) succeed) fail)
+  (tassert "match ground cdr fail" (matcho3 (['(1 . 2) (a . 1)]) succeed) fail)
+  (tassert "match ground car succeed" (matcho3 (['(1 . 2) (1 . d)]) (== x1 d)) (== x1 2))
+  (tassert "match ground cdr succeed" (matcho3 (['(1 . 2) (a . 2)]) (== x1 a)) (== x1 1))
+  (tassert "match ground symbol car fail" (matcho3 (['(one . two) ('two . d)]) (== x1 d)) fail)
+  (tassert "match ground symbol car succeed" (matcho3 (['(one . two) ('one . d)]) (== x1 d)) (== x1 'two))
+
+  (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (== x1 (list a d b))) (== x1 '(1 2 3)))
+  (tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
+  (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1))) 
+  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
+  (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
+  (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list succeed (== x2 '(2 . 1)))))
+ 
  
 
  

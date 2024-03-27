@@ -324,6 +324,8 @@
          (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
         [(matcho? g)
          (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
+        [(matcho4? g)
+         (values (matcho4-vars g) unifies)]
         [(pconstraint? g)
          (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
         [(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]
