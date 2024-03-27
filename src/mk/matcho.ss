@@ -41,18 +41,25 @@
     (syntax-rules ()
       [(_ shared-ids ([out (p-car . p-cdr)]) (no-match ...) var ground body ...)
        (matcho2 shared-ids (no-match ...) #t ([ground (p-car . p-cdr)]) body ...)]
-      
+
       [(_ shared-ids ([out (p-car . p-cdr)] binding ...) (no-match ...) var ground body ...)
        (if (eq? out var)
            (matcho2 shared-ids (no-match ... binding ...) #t ([ground (p-car . p-cdr)]) body ...)
            (matcho-c shared-ids (binding ...) ([out (p-car . p-cdr)] no-match ...) var ground body ...))]))
 
+  (define-syntax matcho/match-one
+    (syntax-rules ()
+      [(_ shared-ids ([out p] ...) () body ...)
+       (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
+
+      [(_ shared-ids (suspended-binding ...) ([out (p-car . p-cdr)] binding ...) body ...)
+       (if (pair? out)
+           (matcho2 shared-ids () #f
+                    ([(car out) p-car] [(cdr out) p-cdr] suspended-binding ... binding ...) body ...)
+           (matcho/match-one shared-ids (suspended-binding ... [out (p-car . p-cdr)]) (binding ...) body ...))]))
+
   (define-syntax matcho2
     (syntax-rules ()
-
-      [(_ shared-ids ([out p] ...) #t () body ...) ; Ground constraint pairs
-       (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
-      
       [(_ shared-ids () is-constraint? () body ...) (conj* body ...)] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
@@ -61,7 +68,8 @@
                        #;
                       (cert (not (var? ground)) #f)
                                         ;(list out ...)
-                       (matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
+                       (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)
+                       ;(matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
                       #;
                       (if (pair? ground)
                           (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
@@ -84,16 +92,6 @@
 
 
 
-
-      
-      [(_ shared-ids (suspended-binding ...) #t ([out (p-car . p-cdr)] binding ...) body ...) ; Ground constraint pairs
-       (if (pair? out)
-           (matcho2 shared-ids () #f
-                    ([(car out) p-car] [(cdr out) p-cdr] suspended-binding ... binding ...) body ...)
-           (matcho2 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) #t (binding ...) body ...))]
-
-
-      
       [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
@@ -113,12 +111,12 @@
     (syntax-rules ()
       [(_ (bindings ...) body ...)
        (matcho5 () () #f (bindings ...) body ...)]))
-  
+
   (define matcho5
     (syntax-rules ()
       [(_ shared-ids ([out p] ...) #t () body ...) ; Ground constraint pairs
        (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
-      
+
       [(_ shared-ids () is-constraint? () body ...) (conj* body ...)] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
@@ -150,8 +148,8 @@
 
 
 
-      
-      
+
+
       [(_ shared-ids (suspended-binding ...) #t ([out (p-car . p-cdr)] binding ...) body ...) ; Ground constraint pairs
        (if (pair? out)
            (matcho5 shared-ids () #f
@@ -159,7 +157,7 @@
            (matcho5 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) #t (binding ...) body ...))]
 
 
-      
+
       [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (let ([out out!])
          (exclusive-cond
