@@ -80,20 +80,15 @@
  
  
  (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
- 
- #;
- (
-(tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (cons d a)) '(2 . 1))
-(tassert "match ground fail" (matcho3 ([1 (a . d)]) succeed) fail)
-(tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (list a d b)) '(1 2 3))
+ (tassert "match ground fail" (matcho3 ([1 (a . d)]) succeed) fail)
+ (tassert "match nested car" (matcho3 (['((1 . 3) . 2) ((a . b) . d)]) (== x1 (list a d b))) (== x1 '(1 2 3)))
  (tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
  (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1))) 
+ (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
+  (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
 
- 
-  (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
-  (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a)))
-           (list x1))
-                                        ;(tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
-  (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (== x2 '(2 . 1))))
+  ;(tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) x1 '(1 . 2)) (== x2 '(2 . 1)))
+  ;(tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (== x2 '(2 . 1)))
+
  
  )

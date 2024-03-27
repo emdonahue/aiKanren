@@ -66,17 +66,18 @@
       [(_ shared-ids () is-constraint? () body ...) (values succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
-       (make-matcho4 (list out ...)
-                     (lambda (out ...)
-                       #;
-                      (cert (not (var? ground)) #f)
+       (values succeed
+               (make-matcho4 (list out ...)
+                             (lambda (out ...)
+                               #;
+                               (cert (not (var? ground)) #f)
                                         ;(list out ...)
-                       (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)
-                       ;(matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
-                      #;
-                      (if (pair? ground)
-                          (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...)
-                       fail)))]
+                               (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)
+                                        ;(matcho2 shared-ids () #t ([out (p-car . p-cdr)] ...) body ...)
+                               #;
+                               (if (pair? ground) ;
+                               (matcho-c shared-ids ([out (p-car . p-cdr)] ...) () var ground body ...) ;
+                               fail))))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty list
        (let ([u (== out! '())]) ; Unify with the empty list to handle the tails of list patterns.
@@ -116,10 +117,10 @@
                     ([(car out) p-car] [(cdr out) p-cdr] binding ...) body ...)]
           [(var? out) ; Set aside variable matchers to wrap in the suspended goal at the end.
            (matcho2 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) is-constraint? (binding ...) body ...)]
-          [else fail]))]
+          [else (values fail fail)]))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
-       (let ([u (== out! ground)]) ; Unify with the empty list to handle the tails of list patterns.
+       (let ([u (== out! ground)]) 
          (if (fail? u) (values fail fail)
              (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
                (values (conj u c) m))))
