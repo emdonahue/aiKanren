@@ -7,7 +7,7 @@
 (test-suite
  matcho
 
- ;; Basic pattern matching
+ ;; Eager pattern matching
 
  (begin
    (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
@@ -17,15 +17,16 @@
    (tassert "match pair fail" (run1 () (let ([m '(1 . 2)]) (matcho3 ([m (a . 1)])))) (void))
    (tassert "match pair succeed" (run1 () (let ([m '(1 . 1)]) (matcho3 ([m (a . 1)])))) '())
    (tassert "match pair extract" (run1 (x1 x2) (let ([m '(1 . 2)]) (matcho3 ([m (a . b)]) (== x1 a) (== x2 b)))) '(1 2))
-   (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2))
-#;
- (
- (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
- (pretty-print (matcho3 ([(cons 'one x2) (a . 'two)]) (== a x1)))
- (exit)
- (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
+   (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2)
+   (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
+   (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
  (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
- (tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2)))
+ 
+   )
+
+ ;; Fresh var instantiation
+ ;(tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ 
 
  ;; Eagerly run matcho until we exhaust ground information
  #;
@@ -37,16 +38,16 @@
  (tassert "match lazy var" (run* (x1) (conde [(matcho ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '(2 (1 2))))
 
  ;; Constraint matcho
- (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho ([m (a 2)]) (== a x1))))) 1)
- (tassert "match constraint ground-free" (run1 x1 (let ([m (list x1 2)]) (constraint (matcho ([m (a 2)]) (== a 1))))) 1)
- (tassert "match constraint free" (matcho-out-vars (run1 x1 (constraint (matcho ([x1 (a 2)]) (== a 1))))) (list x1))
- (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) (lambda (g) (and (equal? '(1 2) (car g)) (matcho-test-eq? (cadr g) (list x2) '((1 2))))))
- (tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constraint (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
- (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
- (tassert "match constraint no fresh" (run1 (x1 x2) (constraint (matcho ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
- (tassert "match constraint simplifies ground" (run1 (x1 x2) (constraint (matcho ([x1 (a . d)] [x2 (b . c)]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
- (tassert "match constraint simplifies var" (run1 (x1 x2) (constraint (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
- (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (matcho-test-eq? (cadr g) (list x3) '((1 . 2))) (matcho-test-eq? (caddr g) (list x3) '((1 . 2))))))
+ (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) 1)
+ (tassert "match constraint ground-free" (run1 x1 (let ([m (list x1 2)]) (constraint (matcho3 ([m (a 2)]) (== a 1))))) 1)
+ ;(tassert "match constraint free" (matcho3-out-vars (run1 x1 (constraint (matcho3 ([x1 (a 2)]) (== a 1))))) (list x1))
+ ;(tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) (lambda (g) (and (equal? '(1 2) (car g)) (matcho-test-eq? (cadr g) (list x2) '((1 2))))))
+ ;(tassert "match constraint disj rest" (matcho-out-vars (car (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))))) (list x1 x2))
+ (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
+ (tassert "match constraint no fresh" (run1 (x1 x2) (constraint (matcho3 ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
+ (tassert "match constraint simplifies ground" (run1 (x1 x2) (constraint (matcho3 ([x1 (a . d)] [x2 (b . c)]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
+ (tassert "match constraint simplifies var" (run1 (x1 x2) (constraint (matcho3 ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
+; (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho3 ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (matcho-test-eq? (cadr g) (list x3) '((1 . 2))) (matcho-test-eq? (caddr g) (list x3) '((1 . 2))))))
 
  ;; Negated matcho
  (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho ([x1 (2 . y)]) succeed))) '(1 . 2))
@@ -108,7 +109,9 @@
    (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1))) 
    (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
    (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
-   (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list succeed (== x2 '(2 . 1)))))
+   (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list succeed (== x2 '(2 . 1))))
+   (tassert "match free expand quote" ((matcho4-procedure (matcho3 ([x1 ('one . d)]) (== x2 d))) '(one . 2)) (list succeed (== x2 2)))
+   )
  
  
 

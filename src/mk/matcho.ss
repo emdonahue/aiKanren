@@ -75,11 +75,8 @@
                                (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...))))]
 
       
-      [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty list
-       (let ([u (== out! '())]) ; Unify with the empty list to handle the tails of list patterns.
-         (if (fail? u) (values fail fail)
-             (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
-               (values (conj u c) m))))]
+      [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
+       (matcho2 shared-ids suspended-bindings is-constraint? ([out! '()] binding ...) body ...)]
 
       [(_ (shared-id ...) suspended-bindings is-constraint? ([out! name] binding ...) body ...) ; New identifier
        (and (identifier? #'name) (not (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...))))
