@@ -8,7 +8,7 @@
  matcho
 
  ;; Basic pattern tests
-#; 
+
  (begin
    (tassert "match no patterns" (matcho3 () succeed) succeed)
    (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
