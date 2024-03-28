@@ -24,7 +24,7 @@
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...)
-       (let-values ([(c m) (matcho2 () () #f (bindings ...) body ...)])
+       (let-values ([(expanded? c m) (matcho2 () () #f (bindings ...) body ...)])
          (conj c m))]
        #;
        (matcho2 () () #f (bindings ...) body ...)))
@@ -66,10 +66,10 @@
 
   (define-syntax matcho2
     (syntax-rules ()
-      [(_ shared-ids () is-constraint? () body ...) (values succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
+      [(_ shared-ids () is-constraint? () body ...) (values #t succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
-       (values succeed
+       (values #f succeed
                (make-matcho4 (list out ...)
                              (lambda (out ...)
                                (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...))))]
@@ -87,10 +87,10 @@
        (and (identifier? #'name) (memp (lambda (i) (bound-identifier=? i #'name)) #'(shared-id ...)))
        (let ([out out!])
          (let ([u (== name out)]) ; Unify with the empty list to handle the tails of list patterns.
-           (if (fail? u) (values fail fail)
+           (if (fail? u) (values #t fail fail)
                (let ([name out])
-                 (let-values ([(c m) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
-                   (values (conj u c) m))))))]
+                 (let-values ([(expanded? c m) (matcho2 (name shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
+                   (values expanded? (conj u c) m))))))]
 
       [(_ shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (not (eq? (syntax->datum #'p-car) 'quote))
@@ -101,13 +101,13 @@
                     ([(car out) p-car] [(cdr out) p-cdr] binding ...) body ...)]
           [(var? out) ; Set aside variable matchers to wrap in the suspended goal at the end.
            (matcho2 shared-ids (suspended-binding ... [out (p-car . p-cdr)]) is-constraint? (binding ...) body ...)]
-          [else (values fail fail)]))]
+          [else (values #t fail fail)]))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
        (let ([g (== out! ground)]) 
-         (if (fail? g) (values fail fail)
-             (let-values ([(c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
-               (values (conj g c) m))))]))
+         (if (fail? g) (values #t fail fail)
+             (let-values ([(expanded? c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
+               (values expanded? (conj g c) m))))]))
 
 
   (define matcho6

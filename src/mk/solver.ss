@@ -66,10 +66,10 @@
               (solve-matcho/expand (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
   (define (solve-matcho2 g s ctn resolve delta)
-    (let-values ([(g ==s) (solve-matcho2/expand g s succeed '())])
-      (if (matcho4? g)
-          (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve delta)
-          (solve-constraint g s (conj ==s ctn) resolve delta))))
+    (let-values ([(expanded? g ==s) (solve-matcho2/expand g s succeed '())])
+      (if expanded?
+          (solve-constraint g s (conj ==s ctn) resolve delta)
+          (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve delta))))
   
   (define (solve-matcho2/expand g s ==s walked)
     (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
@@ -79,19 +79,22 @@
                    (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
                                  (matcho4-procedure g))
                                  s ==s (cons w walked)) 
-                  (let-values ([(shared match) ; Otherwise run the matcher.
+                  (let-values ([(expanded? shared match) ; Otherwise run the matcher.
                                 (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
                                        (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
-                    (exclusive-cond
-                     [(fail? match) (values fail fail)]
+                    (if expanded?
+                        (values #t match (conj ==s shared))
+                        (solve-matcho2/expand match s (conj ==s shared) (cons w walked))
+                        #;
                      [(matcho4? match) ; If not yet solved, keep solving.
-                      (solve-matcho2/expand match s (conj ==s shared) (cons w walked))]
+                        (solve-matcho2/expand match s (conj ==s shared) (cons w walked))]
+                        #;
                      [else ; If fully solved, solve inner goal.
                       (values match (conj ==s shared))
                       #;
                       (solve-constraint match s (conj shared ctn) resolve delta)]))))
           ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
-          (values g ==s)
+          (values #f g ==s)
           #;
           (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))
   

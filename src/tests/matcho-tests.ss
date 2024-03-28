@@ -48,7 +48,7 @@
  (tassert "match constraint simplifies var" (run1 (x1 x2) (constraint (matcho3 ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
  (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho3 ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho4? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho4-vars (conj-rhs (cadr g))) (list x3)))))
  (tassert "matcho expander differentiates between parent and child matcho"
-          (run1 (x1) (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
+          (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
 
  ;; Negated matcho
  (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho3 ([x1 (2 . y)]) succeed))) '(1 . 2))
@@ -112,8 +112,8 @@
    (tassert "match nested list var" (let ([xs '((1 . 2))]) (matcho3 ([xs ((a . b))]) (== x1 (cons b a)))) (== x1 '(2 . 1))) 
    (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
    (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
-   (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list succeed (== x2 '(2 . 1))))
-   (tassert "match free expand quote" ((matcho4-procedure (matcho3 ([x1 ('one . d)]) (== x2 d))) '(one . 2)) (list succeed (== x2 2)))
+   (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list #t succeed (== x2 '(2 . 1))))
+   (tassert "match free expand quote" ((matcho4-procedure (matcho3 ([x1 ('one . d)]) (== x2 d))) '(one . 2)) (list #t succeed (== x2 2)))
    )
  
  
