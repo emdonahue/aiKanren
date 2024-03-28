@@ -68,11 +68,20 @@
     (syntax-rules ()
       [(_ shared-ids () is-constraint? () body ...) (values #t succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) #t () body ...) ; Create fresh vars.
+       (nyi create-fresh)]
+      
       [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
        (values #f succeed
                (make-matcho4 (list out ...)
-                             (lambda (out ...)
-                               (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...))))]
+                             (case-lambda
+                               [(s out ...)
+                                (let-values ([(expanded? ==s g)
+                                              (matcho2 shared-ids () #t ([(walk-var s out) (p-car . p-cdr)] ...) body ...)])
+                                  (if (state? g) (nyi state-return)
+                                      (values (conj ==s g) s)))]
+                               [(out ...)
+                                (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)])))]
 
       
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.

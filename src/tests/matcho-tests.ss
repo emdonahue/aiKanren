@@ -51,7 +51,9 @@
    )
 
  ;; Fresh var instantiation
- (tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ (tassert "match goal walk var" (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ (tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ ;(tassert "match optimized pair unifies cons" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
  
 
  ;; Eagerly run matcho until we exhaust ground information
