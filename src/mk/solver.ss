@@ -66,37 +66,30 @@
               (solve-matcho/expand (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
   (define (solve-matcho2 g s ctn resolve delta)
-    (let-values ([(expanded? g ==s) (solve-matcho2/expand g s succeed '())])
+    (let-values ([(expanded? g ==s) (solve-matcho2/expand g s)])
       (if expanded?
           (solve-constraint g s (conj ==s ctn) resolve delta)
           (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve delta))))
   
-  (define (solve-matcho2/expand g s ==s walked)
-    (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
-      (if w (let ([v (walk-var s w)]) ; If there is an unwalked variable, walk it.
-              (if (var? v) ; If it is a var, swap it out and continue expanding.
-                  (solve-matcho2/expand
-                   (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
-                                 (matcho4-procedure g))
-                                 s ==s (cons w walked)) 
-                  (let-values ([(expanded? shared match) ; Otherwise run the matcher.
-                                (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
-                                       (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
-                    (if expanded?
-                        (values #t match (conj ==s shared))
-                        (solve-matcho2/expand match s (conj ==s shared) (cons w walked))
-                        #;
-                     [(matcho4? match) ; If not yet solved, keep solving.
-                        (solve-matcho2/expand match s (conj ==s shared) (cons w walked))]
-                        #;
-                     [else ; If fully solved, solve inner goal.
-                      (values match (conj ==s shared))
-                      #;
-                      (solve-constraint match s (conj shared ctn) resolve delta)]))))
-          ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
-          (values #f g ==s)
-          #;
-          (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))
+  (define solve-matcho2/expand
+    (case-lambda
+      [(g s) (solve-matcho2/expand g s succeed '())]
+      [(g s ==s walked)
+       (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
+         (if w (let ([v (walk-var s w)]) ; If there is an unwalked variable, walk it.
+                 (if (var? v) ; If it is a var, swap it out and continue expanding.
+                     (solve-matcho2/expand
+                      (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
+                                    (matcho4-procedure g))
+                      s ==s (cons w walked)) 
+                     (let-values ([(expanded? shared match) ; Otherwise run the matcher.
+                                   (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
+                                          (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
+                       (if expanded? ; If the constraint is fully expanded, return. Else continue expanding.
+                           (values #t match (conj ==s shared))
+                           (solve-matcho2/expand match s (conj ==s shared) (cons w walked))))))
+             ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
+             (values #f g ==s)))]))
   
   (define (solve-proxy g s ctn resolve delta) ; Solves the constraint on the proxied varid.
     (let-values ([(v c) (walk-var-val s (proxy-var g))])
@@ -113,6 +106,12 @@
           (if expanded?
               (solve-constraint (noto g) s ctn resolve delta)
               (solve-constraint ctn (store-constraint s (noto g)) succeed resolve (conj delta (noto g))))))]
+     [(matcho4? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of a conj into the state, though some branches may contain stale variables.
+      (let-values ([(expanded? g ==s) (solve-matcho2/expand g s)])
+        (let ([g (disj (noto ==s) (noto g))])
+         (if expanded?
+             (solve-constraint g s ctn resolve delta)
+             (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))]
      [else
       (let-values ([(g s^) ; Evaluate the positive constraint hypothetically and invert the result (success <=> failure). Discard the state, which may have changed under the hypothetical positive constraint, and keep only the simplified constraint g, which we negate and return to the store. This is the same logic as for classical implementations of disequality (inverting the substitution of unification), but generalized to arbitrary constraints.
                     (solve-constraint g s succeed succeed succeed)])
