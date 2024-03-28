@@ -20,7 +20,7 @@
   (define-syntax matcho-ctn
     (syntax-rules ()
       [(_ body ...) (matcho7 body ...)]))
-  
+
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...)
@@ -53,7 +53,7 @@
   (define-syntax matcho/match-one
     ;; Called when constraints are fired from the store. Guarantees that at least one variable is now ground (and is a pair, since non-pair ground terms fail early in the solver). Without this, we would need to generate an infinite tree of cases for each possible variable-variable substitution. By handling that part at runtime, we can just generate the tree of ever smaller lists of variables that bottom out and terminate.
     (syntax-rules ()
-      
+
       [(_ shared-ids ([out p] ...) () body ...)
        (assertion-violation 'matcho "Matcho constraint must contain at least one ground pair" (list out ...))]
 
@@ -64,26 +64,40 @@
            ;; For variables, set them aside until we find the pair then dump them all back in and let the usual matcho handle it.
            (matcho/match-one shared-ids (suspended-binding ... [out (p-car . p-cdr)]) (binding ...) body ...))]))
 
+  (define-syntax matcho/fresh
+    (syntax-rules ()
+      [(_ vid shared-ids ([var (p-car . p-cdr)] binding ...) body ...)
+
+
+       (let* ([p-car (make-var (fx1+ vid))]
+              [p-cdr (make-var (fx+ 2 vid))])
+         (values (fx+ 3 vid) (conj* (== var (cons p-car p-cdr)) body ...)))
+       ]))
+  
   (define-syntax matcho2
     (syntax-rules ()
       [(_ shared-ids () is-constraint? () body ...) (values #t succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
-      [(_ shared-ids ([out (p-car . p-cdr)] ...) #t () body ...) ; Create fresh vars.
-       (nyi create-fresh)]
-      
-      [(_ shared-ids ([out (p-car . p-cdr)] ...) is-constraint? () body ...) ; Suspend free vars as a goal.
+      [(_ shared-ids ([out (p-car . p-cdr)] ...) #f () body ...) ; Suspend free vars as a goal.
        (values #f succeed
                (make-matcho4 (list out ...)
                              (case-lambda
                                [(s out ...)
-                                (let-values ([(expanded? ==s g)
-                                              (matcho2 shared-ids () #t ([(walk-var s out) (p-car . p-cdr)] ...) body ...)])
-                                  (if (state? g) (nyi state-return)
+                                (let-values ([(maybe-s ==s g)
+                                              (matcho2 shared-ids () s ([(walk-var s out) (p-car . p-cdr)] ...) body ...)])
+                                  (if (state? maybe-s) ; If the state has been modified, it will be returned as maybe-s. Otherwise, #t signifying no change to state, so we can reuse the old state.
+                                      (values (conj ==s g) maybe-s)
                                       (values (conj ==s g) s)))]
                                [(out ...)
                                 (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)])))]
 
-      
+      [(_ shared-ids suspended-bindings s () body ...) ; Create fresh vars.
+       (let ([vid (state-varid s)])
+         ;(display vid)
+         (let-values ([(vid^ g) (matcho/fresh vid shared-ids suspended-bindings body ...)])
+           (values (set-state-varid s vid^) succeed g)))]
+
+
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
        (matcho2 shared-ids suspended-bindings is-constraint? ([out! '()] binding ...) body ...)]
 
@@ -113,7 +127,7 @@
           [else (values #t fail fail)]))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
-       (let ([g (== out! ground)]) 
+       (let ([g (== out! ground)])
          (if (fail? g) (values #t fail fail)
              (let-values ([(expanded? c m) (matcho2 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
                (values expanded? (conj g c) m))))]))
@@ -173,7 +187,7 @@
           [else (values fail fail)]))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ground] binding ...) body ...) ; Ground. Matching against ground primitives simplifies to unification.
-       (let ([g (== out! ground)]) 
+       (let ([g (== out! ground)])
          (if (fail? g) (values fail fail)
              (let-values ([(c m) (matcho5 shared-ids suspended-bindings is-constraint? (binding ...) body ...)])
                (values (conj g c) m))))]))
