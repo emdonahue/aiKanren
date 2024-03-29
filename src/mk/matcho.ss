@@ -121,6 +121,7 @@
        (let ([p out!]) ; Create a let binding and add the name to our shared-id list to check for future re-uses of the same name in the match pattern.
          (matcho2 name (p shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))]
 
+      #;
       [(_ name (shared-id ...) suspended-bindings is-constraint? ([out! p] binding ...) body ...) ; Shared identifier
        (and (identifier? #'p) (memp (lambda (i) (bound-identifier=? i #'p)) #'(shared-id ...)))
        (let ([out out!])
