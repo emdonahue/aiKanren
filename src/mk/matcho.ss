@@ -89,7 +89,7 @@
        (cons (pattern->term a) (pattern->term d))]
       [(_ a) a]))
 
-  (meta define (matcho/contains-free-name pattern shared-ids)
+  (meta trace-define (matcho/contains-free-name pattern shared-ids)
         (if (pair? pattern)
             (or (matcho/contains-free-name (car pattern) shared-ids)
                 (matcho/contains-free-name (cdr pattern) shared-ids))

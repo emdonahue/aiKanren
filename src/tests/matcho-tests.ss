@@ -10,7 +10,7 @@
  (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2)))
 
 
- #;
+
  (begin
   ;; Basic pattern tests
 
