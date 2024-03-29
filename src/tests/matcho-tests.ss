@@ -55,14 +55,21 @@
  (begin 
    (tassert "match goal walk var" (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
    (tassert "create fresh vars, ignore ground"
-            (let ([vid 1]
+            (let ([vid 0]
                   [a 1])
-              (matcho/fresh vid (a) ((a b () c) (b . 2) (1 . c) (() d)) (list a b c d))) (list 1 x1 x2 x3))
+              (matcho/fresh vid (a) ((a b () c) (b . 2) (1 . c) ((() d))) (list a b c d))) (list 1 x1 x2 x3))
    (tassert "terms build from patterns"
             (let ([a x1]) (pattern->term (1 () 'one (a)))) (list 1 '() 'one (list x1)))
-   ;(tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+   (tassert "build patterns in fresh"
+            (let ([vid 0])
+              (matcho/fresh vid () ((a . d)) (pattern->term ((a . d))))) (list (cons x1 x2)))
+   (tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
    )
- 
+
+ #;
+ (printf "~%")
+ #;
+ (pretty-print (matcho/fresh2 (matcho/fresh2 (caddr (matcho5 (cadr (caddr (caddr (matcho5 (cadr (caadar (cdadr (caddr (cadddr (matcho5 (cadadr (cdaddr (matcho5 (matcho6 #'(matcho6 ([x1 (a . d)]) (== a 1) (== d 2)))))))))))))))))))))
 
  ;; Eagerly run matcho until we exhaust ground information
  #;
