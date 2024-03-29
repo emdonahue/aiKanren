@@ -64,12 +64,12 @@
            (lambda (v)
              (conde
                [(== v `(val . ,val))]
-               [(matcho ([v ('rec . lambda-expr)])
+               [(matcho3 ([v ('rec . lambda-expr)])
                         (== val `(closure ,lambda-expr ,env)))]))))
 
   (define (evalo-lambda expr env val)
     (fresh ()
-      (matcho ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
+      (matcho3 ([expr ('lambda args body)]) ;TODO enable environment variables in patterns with unquote
               ;(printfo "eval lambda~%")
               (== `(closure (lambda ,args ,body) ,env) val)
               (constraint
@@ -79,7 +79,7 @@
       (not-in-envo 'lambda env)))
 
   (define (evalo-apply expr env val)
-    (matcho
+    (matcho3
      ([expr (rator . rands)])
      (exist (closure args) ;TODO can we use first order matcho to eliminate need for exist?
             (evalo rator env closure)
@@ -94,7 +94,7 @@
                    [(list-of-symbolso params)
                     (extend-env params rands env env
                                 (lambda (env^) (evalo body env^ val)))]))]
-              [(matcho ([closure ('prim . prim-id)])
+              [(matcho3 ([closure ('prim . prim-id)])
                        (evalo-prim prim-id args val)
                        (displayo prim-id rands args val env)
                        (evalo-listo rands env args)
@@ -111,14 +111,14 @@
     (trace-conde
       
       #;
-      [(matcho ([expr (and . e*)])
+      [(matcho3 ([expr (and . e*)])
                (not-in-envo 'and env)
                (evalo-and e* env val))]
-      [cons (== expr 'cons) (matcho ([args (a d)]
+      [cons (== expr 'cons) (matcho3 ([args (a d)]
                                 [val (a . d)]))]
-      [car (== expr 'car) (matcho ([args ((a . d))])
+      [car (== expr 'car) (matcho3 ([args ((a . d))])
                               (== val a))]
-      [cdr (== expr 'cdr) (matcho ([args ((a . d))])
+      [cdr (== expr 'cdr) (matcho3 ([args ((a . d))])
                               (== val d))]
       [null (== expr 'null?) (disj (conj (=/= args '(())) (== val #f))
                               (conj (== args '(())) (== val #t)))]))
@@ -128,7 +128,7 @@
       [(== e* '()) (== val #t)]))
 
   (define (evalo-if expr env val)
-    (matcho ([expr ('if c t f)])
+    (matcho3 ([expr ('if c t f)])
             (exist (tf)
                    (evalo c env tf)
                    (conde
@@ -141,7 +141,7 @@
   (define (extend-env params rands env env^ ctn)
     (conde
       [(== params '()) (== rands '()) (ctn env^)]
-      [(matcho ([params (p . ps)]
+      [(matcho3 ([params (p . ps)]
                 [rands (r . rs)])
                ;(printfo "extend env~%")
                (exist (arg)
@@ -150,7 +150,7 @@
 
   (define (list-of-symbolso xs)
     (disj (== xs '())
-          (matcho ([xs (a . d)])
+          (matcho3 ([xs (a . d)])
                   (symbolo a)
                   (list-of-symbolso d))))
   
@@ -158,7 +158,7 @@
     (trace-goal proper-listo
      (conde
        [(== expr '()) (== val '())]
-       [(matcho ([expr (e . es)]
+       [(matcho3 ([expr (e . es)]
                  [val (v . vs)])
                                         ;(printfo "eval listo~%")
                 (evalo e env v)
