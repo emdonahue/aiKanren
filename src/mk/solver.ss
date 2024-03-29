@@ -75,19 +75,23 @@
     (org-case-lambda matcho/expand
       [(g s) (solve-matcho2/expand g s succeed '())]
       [(g s ==s walked)
+       (cert (goal? g) (goal? ==s) (list? walked)) ; -> expanded? matcho? (conj? ==? ...)
        (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
          (if w (let ([v (walk-var s w)]) ; If there is an unwalked variable, walk it.
-                 (if (var? v) ; If it is a var, swap it out and continue expanding.
-                     (solve-matcho2/expand
-                      (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
-                                    (matcho4-procedure g))
-                      s ==s (cons w walked)) 
-                     (let-values ([(expanded? shared match) ; Otherwise run the matcher.
-                                   (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
-                                          (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
-                       (if expanded? ; If the constraint is fully expanded, return. Else continue expanding.
-                           (values #t match (conj ==s shared))
-                           (solve-matcho2/expand match s (conj ==s shared) (cons w walked))))))
+                 (exclusive-cond
+                  [(var? v) ; If it is a var, swap it out and continue expanding.
+                    (solve-matcho2/expand
+                     (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
+                                   (matcho4-procedure g))
+                     s ==s (cons w walked))]
+                  [(pair? v)
+                   (let-values ([(expanded? shared match) ; Otherwise run the matcher.
+                                 (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
+                                        (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
+                     (if expanded? ; If the constraint is fully expanded, return. Else continue expanding.
+                         (values #t match (conj ==s shared))
+                         (solve-matcho2/expand match s (conj ==s shared) (cons w walked))))]
+                  [else (values #t fail fail)]))
              ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
              (values #f g ==s)))]))
   

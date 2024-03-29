@@ -16,6 +16,7 @@
     (tassert "match number" (matcho3 ([1 1]) succeed) succeed)
     (tassert "match simple variable rename" (matcho3 ([1 a]) (== x1 a)) (== x1 1))
     (tassert "match multiple empty list" (matcho3 (['() ()] ['() ()]) succeed) succeed)
+    (tassert "match prim-pair fail" (run1 x1 (let ([m 1]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) (void))
     (tassert "match ground pair" (matcho3 (['(1 . 2) (a . d)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
     (tassert "match non-pair fail" (matcho3 ([1 (a . d)]) succeed) fail)
     (tassert "match ground car fail" (matcho3 (['(1 . 2) (2 . d)]) succeed) fail)
@@ -44,12 +45,15 @@
     (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
     (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1))))
              '(one (two three)))
-    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1))
+    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
+    (tassert "match expander differentiates between parent and child matcho"
+             (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
+    (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2))))
 
   ;; Constraint matcho
 
   (begin
-    (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) 1)
+    (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) 1)    
     (tassert "match constraint ground-free" (run1 x1 (let ([m (list x1 2)]) (constraint (matcho3 ([m (a 2)]) (== a 1))))) 1)
     (tassert "match constraint free" (matcho4-vars (run1 x1 (constraint (matcho3 ([x1 (a 2)]) (== a 1))))) (list x1))
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
@@ -58,10 +62,7 @@
     (tassert "match constraint no fresh" (run1 (x1 x2) (constraint (matcho3 ([x1 (a b)]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
     (tassert "match constraint simplifies ground" (run1 (x1 x2) (constraint (matcho3 ([x1 (a . d)] [x2 (b . c)]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
     (tassert "match constraint simplifies var" (run1 (x1 x2) (constraint (matcho3 ([x1 (a . d)] [x2 (b . c)]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
-    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho3 ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho4? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho4-vars (conj-rhs (cadr g))) (list x3)))))
-    (tassert "match expander differentiates between parent and child matcho"
-             (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
-    (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2))))
+    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho3 ([x1 (a . d)] [x3 (b . c)]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho4? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho4-vars (conj-rhs (cadr g))) (list x3))))))
 
   ;; Negated matcho
 
@@ -76,7 +77,7 @@
   ;; Suspended constraints
   
   (begin
-    (tassert "matcho lazy constraint primitive fail" (run1 x1 (matcho3 ([x1 (a . d)]) succeed) (== x1 1)) (void)))
+    (tassert "matcho lazy constraint primitive fail" (run1 x1 (constraint (matcho3 ([x1 (a . d)]) succeed)) (== x1 1)) (void)))
 
   ;; Goal matcho
 
