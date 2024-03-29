@@ -32,7 +32,7 @@
   (define (eval-lambda expr env val)
     (trace-goal eval-lambda
      (fresh ()
-       (matcho eval-lambda ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
+       (matcho3 ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
                (== `(closure ,arg ,body ,env) val)
                (symbolo arg))
        (not-in-envo 'lambda env))))

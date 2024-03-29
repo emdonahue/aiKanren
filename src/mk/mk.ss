@@ -2,4 +2,4 @@
   (export)
   (import (chezscheme))
 
-  (export (import (mk core) (mk tracing) (mk debugging)  (mk listo) (mk constraints))))
+  (export (import (matcho) (mk core) (mk tracing) (mk debugging)  (mk listo) (mk constraints))))
