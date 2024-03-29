@@ -8,7 +8,7 @@
  matcho
 
  ;; Basic pattern tests
-#; 
+
  (begin
    (tassert "match no patterns" (matcho3 () succeed) succeed)
    (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
@@ -30,11 +30,10 @@
    (tassert "match shared varname" (matcho3 ([1 a] [2 a]) succeed) fail)
    (tassert "match free" (matcho4-vars (matcho3 ([x1 (a . d)]) (cons d a))) (list x1))
    (tassert "match free expand" ((matcho4-procedure (matcho3 ([x1 (a . d)]) (== x2 (cons d a)))) '(1 . 2)) (list #t succeed (== x2 '(2 . 1))))
-   (tassert "match free expand quote" ((matcho4-procedure (matcho3 ([x1 ('one . d)]) (== x2 d))) '(one . 2)) (list #t succeed (== x2 2)))
-   )
+   (tassert "match free expand quote" ((matcho4-procedure (matcho3 ([x1 ('one . d)]) (== x2 d))) '(one . 2)) (list #t succeed (== x2 2))))
  
  ;; Eager pattern matching
-#;
+
  (begin
    (tassert "match list fail" (run1 () (let ([m '(1 2)]) (matcho3 ([m (a 1)])))) (void))
    (tassert "match list succeed" (run1 () (let ([m '(1 1)]) (matcho3 ([m (a 1)])))) '())
@@ -46,9 +45,7 @@
    (tassert "match pair extend" (run1 x1 (let ([m (cons 1 x1)]) (matcho3 ([m (a . 2)])))) 2)
    (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . 'two)]) (== a x1)))) '(one two))
    (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho3 ([m (a . '(two three))]) (== a x1)))) '(one (two three)))
- (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
- 
-   )
+ (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1))
 
  ;; Fresh var instantiation
 
@@ -72,7 +69,7 @@
  (pretty-print (matcho/fresh2 (matcho/fresh2 (caddr (matcho5 (cadr (caddr (caddr (matcho5 (cadr (caadar (cdadr (caddr (cadddr (matcho5 (cadadr (cdaddr (matcho5 (matcho6 #'(matcho6 ([x1 (a . d)]) (== a 1) (== d 2)))))))))))))))))))))
 
  ;; Eagerly run matcho until we exhaust ground information
- #;
+
  (begin 
    (tassert "match eager" (run* x1 (conde [(let ([m (list 1 2)]) (matcho ([m (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
    (tassert "match eager var" (run* x1 (conde [(let ([m (list x1 2)]) (matcho ([m (a 2)]) (== a 1)))] [(== x1 2)])) '(1 2))
@@ -97,52 +94,11 @@
             (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2)))
 
  ;; Negated matcho
- #;
+
  (begin 
    (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho3 ([x1 (2 . y)]) succeed))) '(1 . 2))
    (tassert "match noto pattern succeed" (run1 x1 (== x1 `(1 . 2)) (noto (matcho3 ([x1 (1 . y)]) succeed))) (void))
    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho3 ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
    (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho3 ([x1 (y . 2)]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
    (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho3 ([x1 (y . z)]) (conde [(== y 1)] [(== z 2)])))) (list (cons (=/= x2 1) (=/= x3 2)) (=/= x2 1) (=/= x3 2)))
-   (tassert "noto expands matcho before negating" (run1 (x1 x2 x3) (== x3 3) (== x1 '(1 . 2)) (noto (matcho3 ([x1 (a . d)]) (disj (=/= x2 a) (== x3 d))))) (list '(1 . 2) 1 3)))
-
-
-
- ;; New-style matcho
- ;(display (expand '(matcho3 (['() ()]) succeed)))
-; (display (expand '(matcho3 (['() ()] ['() ()]) succeed)))
-
- 
-
- ;(display (matcho-tst c c))
- 
-
- ;(trace sc-expand)
- ;(display (matcho-tst #'(matcho-tst 4)))
-#;
- (parameterize ([expand-output (current-output-port)]
-                [current-expand (trace-lambda expander (x) (sc-expand x))]
-                )
-   ;(display (matcho6 #'(matcho6 () succeed)))
-   (pretty-print (matcho5 (cadddr (matcho5 (caddr (caddr (matcho5 (cadr (caddr (caddr (matcho5 (matcho6 #'(matcho6 (['(1 . 2) (a . d)]) (cons d a))))))))))))))
-   ;(matcho5 #'(matcho5 (['(1 . 2) (a . d)]) (cons d a)))
-   #;
- (expand `(matcho3 (['(1 . 2) (a . d)]) (cons d a))))
- 
- ;(printf "~%")
- #;
- (pretty-print
-  (matcho5 (matcho6 #'(matcho6 (['one 'one]) succeed)))
-  ;(matcho5 #'(matcho5 () () #f (['() ()]) succeed))
-
- ; (matcho5 (cadar (cadr (matcho6 #'(matcho6 (['() ()]) succeed)))))
-  ;(matcho5 (cadr (caadr (cadddr (caddr (matcho5 (cadar (cadr (matcho6 #'(matcho6 (['() ()]) succeed))))))))))
-  )
- 
-
-
- 
- 
-
- 
- )
+   (tassert "noto expands matcho before negating" (run1 (x1 x2 x3) (== x3 3) (== x1 '(1 . 2)) (noto (matcho3 ([x1 (a . d)]) (disj (=/= x2 a) (== x3 d))))) (list '(1 . 2) 1 3))))

@@ -110,13 +110,7 @@
       [(_ shared-ids ([var pattern] ...) s () body ...) ; Create fresh vars.
        (let ([vid (state-varid s)])
          (matcho/fresh
-          vid shared-ids (pattern ...)
-
-          (begin
-            (pretty-print (conj* body ...))
-            (pretty-print (conj* (== var (pattern->term pattern)) ...))
-            )
-          
+          vid shared-ids (pattern ...)          
           (values (set-state-varid s vid) (conj* (== var (pattern->term pattern)) ...) (conj* body ...))))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
