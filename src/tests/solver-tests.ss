@@ -4,9 +4,6 @@
 (define x2 (make-var 2))
 (define x3 (make-var 3))
 (define x4 (make-var 4))
-(define matcho-x1 (matcho ([x1 (a . d)])))
-(define matcho-x1-x2 (matcho ([x1 (a . d)] [x2 (b . c)])))
-(define matcho-x3-x2 (make-matcho (list x3 x2) '() #f))
 
 (test-suite
  solver
@@ -90,8 +87,8 @@
                 (proxy x1)))
 
  ;; Multi variable with fresh
- (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho [(x1 (a . d))]) (== x2 2)))
-          (lambda (a) (and (disj? (car a)) (matcho? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
+ (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho3 [(x1 (a . d))]) (== x2 2)))
+          (lambda (a) (and (disj? (car a)) (matcho4? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
  
  ;; === SOLVER ===
  (tassert "constraint ==" (run1 x1 (constraint (== x1 1))) 1)

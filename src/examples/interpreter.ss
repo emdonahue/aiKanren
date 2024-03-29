@@ -150,7 +150,7 @@
 
   (define (list-of-symbolso xs)
     (disj (== xs '())
-          (matcho3 ([xs (a . d)])
+          (matcho ([xs (a . d)])
                   (symbolo a)
                   (list-of-symbolso d))))
   

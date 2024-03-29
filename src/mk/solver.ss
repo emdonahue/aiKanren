@@ -4,7 +4,7 @@
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
-    (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
+              (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
     (let-values ([(delta s) (solve-constraint g s succeed succeed succeed)]) s))
 
   (org-define (solve-constraint g s ctn resolve delta)
@@ -65,14 +65,14 @@
               (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
               (solve-matcho/expand (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
 
-  (define (solve-matcho2 g s ctn resolve delta)
+  (org-define (solve-matcho2 g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (solve-matcho2/expand g s)])
       (if expanded?
           (solve-constraint g s (conj ==s ctn) resolve delta)
-          (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve delta))))
+          (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve (conj delta g)))))
   
   (define solve-matcho2/expand
-    (case-lambda
+    (org-case-lambda matcho/expand
       [(g s) (solve-matcho2/expand g s succeed '())]
       [(g s ==s walked)
        (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
