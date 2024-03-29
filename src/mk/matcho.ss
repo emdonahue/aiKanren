@@ -89,10 +89,16 @@
        (cons (pattern->term a) (pattern->term d))]
       [(_ a) a]))
 
-  (meta trace-define (matcho/contains-free-name pattern shared-ids)
-        (if (pair? (syntax->datum pattern))
-            (or (matcho/contains-free-name (car (syntax->datum pattern)) shared-ids)
-                (matcho/contains-free-name (cdr (syntax->datum pattern)) shared-ids))
+  (meta define (syntax->pair p)
+    (syntax-case p ()
+      [() '()]
+      [(a . d) (cons (syntax->pair #'a) (syntax->pair #'d))]
+      [a #'a]))
+  
+  (meta define (matcho/contains-free-name pattern shared-ids)
+        (if (pair? pattern)
+            (or (matcho/contains-free-name (car pattern) shared-ids)
+                (matcho/contains-free-name (cdr pattern) shared-ids))
             (and (identifier? pattern)
                  (not (memp (lambda (i) (bound-identifier=? i pattern)) shared-ids))))
         )
@@ -139,7 +145,7 @@
                  (values expanded? (conj u c) m)))))]
 
       [(_ name (shared-id ...) (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
-       (and (not (eq? (syntax->datum #'p-car) 'quote)) (matcho/contains-free-name #'(p-car . p-cdr) #'(shared-id ...)))
+       (and (not (eq? (syntax->datum #'p-car) 'quote)) (matcho/contains-free-name (syntax->pair #'(p-car . p-cdr)) #'(shared-id ...)))
        (let ([out out!])
          (exclusive-cond
           [(pair? out) ; Destructure ground pairs and pass their sub-parts to the matcher.
