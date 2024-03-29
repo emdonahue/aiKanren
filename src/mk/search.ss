@@ -38,7 +38,7 @@
                             [else (make-suspended (conj g ctn) s^)]) p)))]
        [(matcho4? g) (let-values ([(g s) (apply (matcho4-procedure g) (cons s (matcho4-vars g)))])
                        (if (exceeds-max-depth? s) (values failure p)
-                           (run-goal g s p ctn)))]
+                           (run-goal (suspend g) s p ctn)))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.

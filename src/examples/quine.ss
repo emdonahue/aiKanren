@@ -32,14 +32,14 @@
   (define (eval-lambda expr env val)
     (trace-goal eval-lambda
      (fresh ()
-       (matcho3 ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
+       (matcho3 lambda ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
                (== `(closure ,arg ,body ,env) val)
                (symbolo arg))
        (not-in-envo 'lambda env))))
 
   (define (eval-list expr env val)
     (trace-goal eval-list
-                (matcho eval-list ([expr ('list . es)])
+                (matcho3 eval-list ([expr ('list . es)])
                         (eval-proper-list es env val)
                         (absento 'closure es)
                         (not-in-envo 'list env))))
@@ -48,7 +48,7 @@
     (trace-goal eval-proper-list
      (conde
        [(== expr '()) (== val '())]
-       [(matcho eval-proper-list ([expr (e . es)]
+       [(matcho3 eval-proper-list ([expr (e . es)]
                  [val (v . vs)])
 ;                (noopo (org-display expr val))
                 (evalo e env v)
@@ -56,12 +56,12 @@
   
   (define (eval-apply expr env val)
     (trace-goal eval-apply
-     (matcho eval-rator
+     (matcho3 eval-rator
       ([expr (rator . rands)])
-      (matcho eval-rands ([rands (rand)])                ;TODO merge optimized matchos
+      (matcho3 eval-rands ([rands (rand)])                ;TODO merge optimized matchos
               (fresh (closure)
                      (trace-goal eval-rator (evalo rator env closure))
-                     (matcho eval-closure
+                     (matcho3 eval-closure
                       ([closure ('closure param body env^)])
                       (symbolo param)
                       (fresh (arg)
@@ -75,7 +75,7 @@
     (trace-goal eval-listo
      (conde
        [(== expr '()) (== val '())]
-       [(matcho eval-listo ([expr (e . es)]
+       [(matcho3 eval-listo ([expr (e . es)]
                  [val (v . vs)])
                 (evalo e env v)
                 (eval-listo es env vs))])))
