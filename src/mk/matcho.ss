@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho matcho-pair
-          matcho3 matcho-tst matcho5 matcho6 matcho/fresh ;matcho5 matcho4
+          matcho3 matcho-tst matcho5 matcho6 matcho/fresh pattern->term ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -65,31 +65,22 @@
            (matcho/match-one shared-ids (suspended-binding ... [out (p-car . p-cdr)]) (binding ...) body ...))]))
 
   (define-syntax matcho/fresh
+    ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
     (syntax-rules ()
-      [(_ vid shared-ids () body ...) (begin body ...) ]
+      [(_ vid shared-ids () body ...) (begin body ...) ] ; When out of patterns, all vars are bound, so simply execute body.
       
-      [(_ vid shared-ids ((p-car . p-cdr) pattern ...) body ...)
+      [(_ vid shared-ids ((p-car . p-cdr) pattern ...) body ...) ; Destructure pair patterns and push identifiers into pattern buffer.
        (not (eq? (syntax->datum #'p-car) 'quote))
        (matcho/fresh vid shared-ids (p-car p-cdr pattern ...) body ...)]
       
-      [(_ vid (shared-id ...) (p0 p ...) body ...)
+      [(_ vid (shared-id ...) (p0 p ...) body ...) ; Create a fresh var if we see an identifier we haven't seen before & bind it.
        (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(shared-id ...))))
        (let ([p0 (make-var vid)])
          (set! vid (fx1+ vid))
          (matcho/fresh vid (p0 shared-id ...) (p ...) body ...))]
 
-      [(_ vid shared-ids (p0 p ...) body ...)
+      [(_ vid shared-ids (p0 p ...) body ...) ; Ignore anything not a new identifier.
        (matcho/fresh vid shared-ids (p ...) body ...)]))
-  
-  (define-syntax matcho/goal
-    (syntax-rules ()
-      [(_ vid shared-ids ([var (p-car . p-cdr)] binding ...) body ...)
-       
-
-       (let* ([p-car (make-var (fx1+ vid))]
-              [p-cdr (make-var (fx+ 2 vid))])
-         (values (fx+ 3 vid) (conj* (== var (cons p-car p-cdr)) body ...)))
-       ]))
 
   (define-syntax pattern->term
     (syntax-rules ()

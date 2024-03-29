@@ -58,6 +58,8 @@
             (let ([vid 1]
                   [a 1])
               (matcho/fresh vid (a) ((a b () c) (b . 2) (1 . c) (() d)) (list a b c d))) (list 1 x1 x2 x3))
+   (tassert "terms build from patterns"
+            (let ([a x1]) (pattern->term (1 () 'one (a)))) (list 1 '() 'one (list x1)))
    ;(tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
    )
  
