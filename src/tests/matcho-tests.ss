@@ -78,7 +78,7 @@
    (tassert "match lazy var" (run* x1 (conde [(matcho ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2)))
 
  ;; Constraint matcho
- #;
+
  (begin
    (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) 1)
    (tassert "match constraint ground-free" (run1 x1 (let ([m (list x1 2)]) (constraint (matcho3 ([m (a 2)]) (== a 1))))) 1)
