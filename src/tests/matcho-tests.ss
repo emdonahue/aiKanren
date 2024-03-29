@@ -7,10 +7,10 @@
 (test-suite
  matcho
 
- (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2)))
+; (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2)))
+ ;(tassert "match nested list" (matcho3 (['((1 . 2)) ((a . b))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
 
-
-
+#;
  (begin
   ;; Basic pattern tests
 

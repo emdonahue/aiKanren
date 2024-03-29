@@ -90,9 +90,9 @@
       [(_ a) a]))
 
   (meta trace-define (matcho/contains-free-name pattern shared-ids)
-        (if (pair? pattern)
-            (or (matcho/contains-free-name (car pattern) shared-ids)
-                (matcho/contains-free-name (cdr pattern) shared-ids))
+        (if (pair? (syntax->datum pattern))
+            (or (matcho/contains-free-name (car (syntax->datum pattern)) shared-ids)
+                (matcho/contains-free-name (cdr (syntax->datum pattern)) shared-ids))
             (and (identifier? pattern)
                  (not (memp (lambda (i) (bound-identifier=? i pattern)) shared-ids))))
         )
