@@ -109,7 +109,7 @@
 
  (tassert "not symbolo fire fail" (run1 x1 (noto (symbolo x1)) (== x1 'symbol)) (void))
  (tassert "not symbolo fire succeed" (run1 x1 (noto (symbolo x1)) (== x1 42)) 42)
- (tassert "noto does not mangle ctn" (run1 x1 (constraint (noto (symbolo x1)) (matcho ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
+ (tassert "noto does not mangle ctn" (run1 x1 (constraint (noto (symbolo x1)) (matcho3 ([x1 (1 2)]))) (== x1 '(1 2))) '(1 2))
 
  (tassert "symbolo-symbolo succeed" (run1 x1 (symbolo x1) (symbolo x1)) (symbolo x1))
  (tassert "symbolo-numbero fail" (run1 x1 (symbolo x1) (numbero x1)) (void))

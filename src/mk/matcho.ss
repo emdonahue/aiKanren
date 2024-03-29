@@ -126,9 +126,8 @@
        (let ([out out!])
          (let ([u (== p out)]) ; Unify with the empty list to handle the tails of list patterns.
            (if (fail? u) (values #t fail fail)
-               (let ([p out])
-                 (let-values ([(expanded? c m) (matcho2 name (p shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
-                   (values expanded? (conj u c) m))))))]
+               (let-values ([(expanded? c m) (matcho2 name (p shared-id ...) suspended-bindings is-constraint? (binding ...) body ...)])
+                 (values expanded? (conj u c) m)))))]
 
       [(_ name shared-ids (suspended-binding ...) is-constraint? ([out! (p-car . p-cdr)] binding ...) body ...) ; Pair
        (not (eq? (syntax->datum #'p-car) 'quote))

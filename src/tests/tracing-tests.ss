@@ -14,7 +14,7 @@
    (tassert "trace == | ==" (trace-run* x1 (conde [(== x1 1)] [(== x1 2)])) '(1 2))
    (tassert "trace exist" (trace-run* x1 (exist (x2) (== x1 x2) (== x2 1))) '(1))
    (tassert "trace fresh" (trace-run* x1 (fresh (x2) (== x1 x2) (== x2 1))) '(1))
-   (tassert "trace matcho" (trace-run* x1 (matcho ([x1 (a . d)]) (== a 1) (== d 2))) '((1 . 2)))
+   (tassert "trace matcho" (trace-run* x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '((1 . 2)))
    (tassert "trace fail if constraint fails" (trace-run* x1 (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])) '(2))
 
    (parameterize ([answer-type 'state])

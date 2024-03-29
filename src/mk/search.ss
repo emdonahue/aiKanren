@@ -89,6 +89,9 @@
              [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
                             (if (exceeds-max-depth? s) (values n answers p)
                                 (run-goal-dfs g s p n answers ctn)))]
+             [(matcho4? g) (let-values ([(g s) (apply (matcho4-procedure g) (cons s (matcho4-vars g)))])
+                       (if (exceeds-max-depth? s) (values n answers p)
+                           (run-goal-dfs g s p n answers ctn)))]
              [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                                (if (exceeds-max-depth? s) (values n answers p)
                                    (run-goal-dfs g s p n answers ctn)))]
