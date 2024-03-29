@@ -32,7 +32,7 @@
 
   ;; === ASSERTIONS ===
   (define-syntax cert
-    (if (zero? (optimize-level))
+    (if (zero? (optimize-level)) ; TODO experiment with meta-cond for optimization time hot swaps
         (syntax-rules ()
           [(_ assertion ...) (begin (assert assertion) ...)])
         (syntax-rules ()
