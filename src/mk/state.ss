@@ -280,5 +280,5 @@
                    (let ([g (substitution-ref (state-substitution s) v)])
                      (extend s v (conj g (proxy (car vs)))))) (extend s (car vs) (conj g c)) (cdr vs))))
 
-  (define (remove-constraint s v) ;TODO rename remove-constraint -> remove-constraint
+  (define (remove-constraint s v)
     (extend s v succeed)))

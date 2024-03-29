@@ -3,7 +3,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho matcho-pair
-          matcho3 matcho-tst matcho5 matcho6 ;matcho5 matcho4
+          matcho3 matcho-tst matcho5 matcho6 matcho/fresh ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -66,13 +66,38 @@
 
   (define-syntax matcho/fresh
     (syntax-rules ()
-      [(_ vid shared-ids ([var (p-car . p-cdr)] binding ...) body ...)
+      [(_ vid shared-ids () body ...) (begin body ...) ]
+      
+      [(_ vid shared-ids ((p-car . p-cdr) pattern ...) body ...)
+       (not (eq? (syntax->datum #'p-car) 'quote))
+       (matcho/fresh vid shared-ids (p-car p-cdr pattern ...) body ...)]
+      
+      [(_ vid (shared-id ...) (p0 p ...) body ...)
+       (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(shared-id ...))))
+       (let ([p0 (make-var vid)])
+         (set! vid (fx1+ vid))
+         (matcho/fresh vid (p0 shared-id ...) (p ...) body ...))]
 
+      [(_ vid shared-ids (p0 p ...) body ...)
+       (matcho/fresh vid shared-ids (p ...) body ...)]))
+  
+  (define-syntax matcho/goal
+    (syntax-rules ()
+      [(_ vid shared-ids ([var (p-car . p-cdr)] binding ...) body ...)
+       
 
        (let* ([p-car (make-var (fx1+ vid))]
               [p-cdr (make-var (fx+ 2 vid))])
          (values (fx+ 3 vid) (conj* (== var (cons p-car p-cdr)) body ...)))
        ]))
+
+  (define-syntax pattern->term
+    (syntax-rules ()
+      [(_ ()) '()]
+      [(_ (a . d))
+       (not (eq? (syntax->datum #'a) 'quote))
+       (cons (pattern->term a) (pattern->term d))]
+      [(_ a) a]))
   
   (define-syntax matcho2
     (syntax-rules ()
@@ -91,12 +116,11 @@
                                [(out ...)
                                 (matcho/match-one shared-ids () ([out (p-car . p-cdr)] ...) body ...)])))]
 
-      [(_ shared-ids suspended-bindings s () body ...) ; Create fresh vars.
+      [(_ shared-ids ([var pattern] ...) s () body ...) ; Create fresh vars.
        (let ([vid (state-varid s)])
-         ;(display vid)
-         (let-values ([(vid^ g) (matcho/fresh vid shared-ids suspended-bindings body ...)])
-           (values (set-state-varid s vid^) succeed g)))]
-
+         (matcho/fresh
+          vid suspended-ids (pattern ...)
+          (values (set-state-varid s vid) (conj* (== var (pattern->term pattern)) ...) (conj* body ...))))]
 
       [(_ shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
        (matcho2 shared-ids suspended-bindings is-constraint? ([out! '()] binding ...) body ...)]

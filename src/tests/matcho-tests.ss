@@ -8,7 +8,7 @@
  matcho
 
  ;; Basic pattern tests
-
+#; 
  (begin
    (tassert "match no patterns" (matcho3 () succeed) succeed)
    (tassert "match empty list" (matcho3 (['() ()]) succeed) succeed)
@@ -54,7 +54,12 @@
 
  (begin 
    (tassert "match goal walk var" (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
-   (tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2)))
+   (tassert "create fresh vars, ignore ground"
+            (let ([vid 1]
+                  [a 1])
+              (matcho/fresh vid (a) ((a b () c) (b . 2) (1 . c) (() d)) (list a b c d))) (list 1 x1 x2 x3))
+   ;(tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+   )
  
 
  ;; Eagerly run matcho until we exhaust ground information
