@@ -103,7 +103,8 @@
                  (not (memp (lambda (i) (bound-identifier=? i pattern)) shared-ids))))
         )
   
-  (define-syntax matcho2
+  (define-syntax matcho2 ;TODO have the new name binder re-introduce the suspended bindings to check if any are now fully ground
+    ;; TODO test if goal continues to walk vars pulled up by walking previous vars into pairs
     (syntax-rules ()
       [(_ name shared-ids () is-constraint? () body ...) (values #t succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
 
@@ -113,7 +114,7 @@
                              (let ([name
                                     (case-lambda
                                       [(s out ...)
-                                       (let-values ([(maybe-s ==s g)
+                                       (let-values ([(maybe-s ==s g) ;TODO swap walk var with walk binding, check constraint for possible failure, and if not continue as normal with var
                                                      (matcho2 name shared-ids () s ([(walk-var s out) (p-car . p-cdr)] ...) body ...)])
                                          (if (state? maybe-s) ; If the state has been modified, it will be returned as maybe-s. Otherwise, #t signifying no change to state, so we can reuse the old state.
                                              (values (conj ==s g) maybe-s)
@@ -130,10 +131,10 @@
       [(_ name shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
        (matcho2 name shared-ids suspended-bindings is-constraint? ([out! '()] binding ...) body ...)]
 
-      [(_ name (shared-id ...) suspended-bindings is-constraint? ([out! p] binding ...) body ...) ; New identifier
+      [(_ name (shared-id ...) (suspended-binding ...) is-constraint? ([out! p] binding ...) body ...) ; New identifier
        (and (identifier? #'p) (not (memp (lambda (i) (bound-identifier=? i #'p)) #'(shared-id ...))))
        (let ([p out!]) ; Create a let binding and add the name to our shared-id list to check for future re-uses of the same name in the match pattern.
-         (matcho2 name (p shared-id ...) suspended-bindings is-constraint? (binding ...) body ...))]
+         (matcho2 name (p shared-id ...) () is-constraint? (suspended-binding ... binding ...) body ...))]
 
       #;
       [(_ name (shared-id ...) suspended-bindings is-constraint? ([out! p] binding ...) body ...) ; Shared identifier

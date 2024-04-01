@@ -48,7 +48,10 @@
     (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho3 ([m (a 2)] [n (a 2)])))) 1)
     (tassert "match expander differentiates between parent and child matcho"
              (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
-    (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2))))
+    (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2)))
+    (tassert "match pattern ids bound" (matcho3 (['(1 . 2) (a . d)] [x1 (d . a)]) succeed) (== x1 '(2 . 1)))
+    (tassert "match pattern ids bound reverse" (matcho3 ([x1 (d . a)] ['(1 . 2) (a . d)]) succeed) (== x1 '(2 . 1)))
+    )
 
   ;; Constraint matcho
 
