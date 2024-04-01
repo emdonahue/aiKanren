@@ -3,15 +3,27 @@
 (test-suite
  interpreter
  (parameterize
-     ([interpreter/quote #t])
+     ([interpreter/quote #t]
+      [interpreter/number #t]
+      [interpreter/boolean #t]
+      [interpreter/lookup #t]
+      [interpreter/lambda #t])
+
    (tassert "evalo quote" (evalo '(quote 42)) 42)
    (tassert "evalo shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
-                                        ;    (tassert "evalo true" (evalo #t) #t)
-                                        ;    (tassert "evalo false" (evalo #f) #f)
-                                        ;    (tassert "evalo number" (evalo 42) 42)
+
+   (tassert "evalo true" (evalo #t) #t)
+   (tassert "evalo false" (evalo #f) #f)
+   (tassert "evalo number" (evalo 42) 42)
+
+   (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
+   (tassert "evalo lookup val later" (evalo-env 'x '((y . (val . 43)) (x . (val . 42)))) 42)
+   (tassert "evalo lookup val earlier" (evalo-env 'x '((x . (val . 42)) (y . (val . 43)))) 42)
+
+   (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
 #;
   (begin
-    (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
+    
 
     (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
     (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
@@ -26,7 +38,7 @@
     (tassert "evalo if null" (evalo '(if (null? '()) 1 2)) 1)
     (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
     
-    (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
+   
     (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
 
                                         ;    (tassert "evalo and" (evalo '(and)) #t)

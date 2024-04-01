@@ -126,7 +126,7 @@
     ;; Can be used between any goals or constraints. Unlike disj, conj is not specific to constraint goals.
     ;(when (or (not (goal? lhs)) (not (goal? rhs))) (pretty-print lhs) (pretty-print rhs))
     (cert (goal? lhs) (goal? rhs))
-    ;TODO replace conj with make-conj or short circuiting conj* where possible
+    ;TODO replace conj with make-conj or short circuiting conj* where possible, especially test in matcho for walking large ground lists
     (cond
      [(or (fail? lhs) (fail? rhs)) fail]
      [(succeed? rhs) lhs]
