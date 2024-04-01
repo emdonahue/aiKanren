@@ -141,7 +141,7 @@
 
  ;; === STORE ===
  #;
- (tassert "normalized constraints removed when further solved" (run1 (x1 x2 x3) (disj (conj (make-matcho (list x1 x2) '() #f) (== x1 x3)) (=/= x1 1))) (list (disj (=/= x1 1) (conj (== x1 x2) matcho-x3-x2) ) x2 x3))
+ (tassert "normalized constraints removed when further solved" (run1 (x1 x2 x3) (disj (conj (make-matcho4 (list x1 x2) '() #f) (== x1 x3)) (=/= x1 1))) (list (disj (=/= x1 1) (conj (== x1 x2) matcho-x3-x2) ) x2 x3))
 
  
  ;; === DISEQUALITY ===
@@ -181,8 +181,8 @@
  (tassert "disunify simplify abort pconstraint" (run1 x1 (symbolo x1) (=/= x1 1)) (symbolo x1))    
  (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (numbero x1) (=/= x1 1)))
  (tassert "disunify simplify abort negative pconstraint" (run1 x1 (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
- (tassert "disunify simplify matcho succeed" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho4? c)))
- (tassert "disunify simplify matcho" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho4? (conj-lhs c)))))
+ (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho4? c)))
+ (tassert "disunify simplify match" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho4? (conj-lhs c)))))
  (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho3 ([x1 (a . d)])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho4? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
  (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) (disj (== x2 2) (== x1 1))))
  (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
@@ -229,7 +229,7 @@
  (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho3 ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
  ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 x1 (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
  (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) x2))
- (tassert "absento failed because matcho wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
+ (tassert "absento failed because match wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
  (tassert "repeatedly solved constraints deduplicate" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1))) (list (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1)) x2))
 
  ;; === PCONSTRAINT ===
@@ -239,9 +239,9 @@
           (lambda (s) (and (pconstraint? (car s)) (conj? (cadr s)) (eq? (cadr s) (caddr s)))))
 
  
- ;; === MATCHO ===
- ;;(tassert "matcho doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)
- (tassert "matcho doesn't overwrite =/=" (run1 x1 (=/= x1 '(())) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ ;; === MATCH ===
+ ;;(tassert "match doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)
+ (tassert "match doesn't overwrite =/=" (run1 x1 (=/= x1 '(())) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
 
  ;; === REDUCTIONS ===
  (tassert "reduce == simplifies =/=" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))

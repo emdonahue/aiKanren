@@ -81,7 +81,7 @@
   (define (evalo-apply expr env val)
     (matcho3
      ([expr (rator . rands)])
-     (exist (closure args) ;TODO can we use first order matcho to eliminate need for exist?
+     (exist (closure args) ;TODO can we use first order match to eliminate need for exist?
             (evalo rator env closure)
             (conde
               [(matcho
@@ -150,7 +150,7 @@
 
   (define (list-of-symbolso xs)
     (disj (== xs '())
-          (matcho ([xs (a . d)])
+          (matcho3 ([xs (a . d)])
                   (symbolo a)
                   (list-of-symbolso d))))
   

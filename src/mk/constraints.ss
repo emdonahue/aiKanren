@@ -115,15 +115,15 @@
       (=/= term absent)
       (disj
        (noto (pairo term))
-       (matcho absento ([term (a . d)])
+       (matcho3 absento ([term (a . d)])
                (absento absent a)
                (absento absent d)))))
 
   (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
     (disj
       [conj (== xxs '()) (== oos '())]
-      (matcho ([xxs (x . xs)])
+      (matcho3 ([xxs (x . xs)])
               (let ([x^ (f x)])
                 (disj
-                  [conj x^ (matcho ([oos (o . os)]) (== x o) (filtero f xs os))]
+                  [conj x^ (matcho3 ([oos (o . os)]) (== x o) (filtero f xs os))]
                   [conj (noto x^) (filtero f xs oos)]))))))

@@ -117,7 +117,7 @@
   (evalo `(letrec ([f (lambda (x) ,body)])
   (f 1)) '(1 . 1))))
 
-  ;;8362 - disj that contains the bad matcho 8385  8383- disj should succeed but fails
+  ;;8362 - disj that contains the bad match 8385  8383- disj should succeed but fails
   #;
   (display (trace-run (body)
   (prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)))))

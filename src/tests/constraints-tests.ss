@@ -144,7 +144,7 @@
  (tassert "absento fire cdr fail" (run1 x1 (absento 1 x1) (== x1 '(2 . 1))) (void))
  (tassert "absento fire cdr succeed" (run1 x1 (absento 3 x1) (== x1 '(2 . 1))) '(2 . 1))
 
- (tassert "absento hangs if matcho generates free vars in constraint"
+ (tassert "absento hangs if match generates free vars in constraint"
           (run1 (x0 x1 x2 x3)
                 (absento 100 x0) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
@@ -225,7 +225,7 @@
  (tassert "noto presento fire cdr fail" (run1 x1 (noto (presento 1 x1)) (== x1 '(2 . 1))) (void))
  (tassert "noto presento fire cdr succeed" (run1 x1 (noto (presento 3 x1)) (== x1 '(2 . 1))) '(2 . 1))
 
- (tassert "noto presento hangs if matcho generates free vars in constraint"
+ (tassert "noto presento hangs if match generates free vars in constraint"
           (run1 (x0 x1 x2 x3)
                 (noto (presento 100 x0)) (== x0 (cons 0 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 3)) '((0 1 2 . 3) (1 2 . 3) (2 . 3) 3))
 
