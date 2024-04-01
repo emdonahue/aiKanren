@@ -29,7 +29,6 @@
  (tassert "assoco constraint not 1" (run* x1 (constraint (noto (assoco 1 '((0 . 1) (1 . 2) (2 . 3)) __)))) '())
  (tassert "assoco constraint not 2" (run* x1 (constraint (noto (assoco 1 '((0 . 1) (1 . 2) (1 . 3)) __)))) '())
 
-
  ;; asspo
  (tassert "asspo 0" (run* x1 (asspo 3 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '())
  (tassert "asspo 1" (run* x1 (asspo 1 '((0 . 1) (1 . 2) (2 . 3)) (lambda (x) (== x x1)))) '(2))

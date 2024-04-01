@@ -2,8 +2,9 @@
 
 (test-suite
  interpreter
-  
-  (tassert "evalo quote" (evalo '(quote 42)) 42)
+ (parameterize
+     ([interpreter/quote #t])
+   (tassert "evalo quote" (evalo '(quote 42)) 42)
   ;(tassert "evalo shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
                                         ;    (tassert "evalo true" (evalo #t) #t)
                                         ;    (tassert "evalo false" (evalo #f) #f)
@@ -174,4 +175,5 @@
     (evalo `(letrec ([f (lambda (x) ,body)])
     (f 1)) '(1 . 1))))
     
-    ))
+   )
+))
