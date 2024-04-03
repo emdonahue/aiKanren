@@ -3,14 +3,54 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho matcho-pair
-          matcho3 matcho-tst matcho5 matcho9 matcho/fresh2 pattern->term2 matcho6 matcho/fresh pattern->term ;matcho5 matcho4
+          matcho3 matcho-tst matcho5 matcho9 matcho/fresh2 pattern->term2 matcho6 matcho11 matcho/fresh pattern->term ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
   #;
   (define-syntax unroll-lst
     (syntax-rules ()
-      [(_ a)]))
+  [(_ a)]))
+
+  #;
+  (comment
+   (let ([in-var (extract-in-vars pattern)])
+     (let ([s (mini-unify (pattern->term pattern) (list out ...))])
+       (let ([in-var (walk in-var s)] ...)
+         (if (no-fresh (list in-var ...))
+             (begin body ...)
+  (make-matcho ))))))
+
+
+  (define-syntax matcho11
+    (syntax-rules ()
+      [(_ (bindings ...) body ...) (matcho11 match (bindings ...) body ...)]
+      [(_ name (bindings ...) body ...)
+       (matcho12 name (bindings ...) (body ...))]))
+
+  (define-syntax matcho12
+    (syntax-rules ()
+      [(_ name ([pattern expr] ...) (body ...))
+       (matcho/fresh3 (pattern ...) (conj* body ...))]))
+
+  (define-syntax matcho/fresh3
+    ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
+    (syntax-rules ()
+      [(_ bindings body) (matcho/fresh3 bindings body ())] ; When initially called, create an empty list of duplicate ids.
+      
+      [(_ () body dup-ids) body ] ; When out of patterns, all vars are bound, so simply execute body.
+      
+      [(_ ((p-car . p-cdr) pattern ...) body dup-ids) ; Destructure pair patterns and push identifiers into pattern buffer.
+       (not (eq? (syntax->datum #'p-car) 'quote))
+       (matcho/fresh3 (p-car p-cdr pattern ...) body dup-ids)]
+      
+      [(_ (p0 p ...) body (dup-id ...)) ; Create a fresh var if we see an identifier we haven't seen before & bind it.
+       (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(dup-id ...))))
+       (let ([p0 (make-var 0)])         
+         (matcho/fresh3 (p ...) body (p0 dup-id ...)))]
+
+      [(_ (p0 p ...) body dup-ids) ; Ignore anything not a new identifier.
+       (matcho/fresh (p ...) body dup-ids)]))
 
   (define matcho-tst
    (syntax-rules ()

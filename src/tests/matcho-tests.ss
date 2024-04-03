@@ -1,5 +1,6 @@
 (import (chezscheme) (test-runner) (mk) (goals) (variables) (matcho) (utils))
 
+(define x0 (make-var 0))
 (define x1 (make-var 1))
 (define x2 (make-var 2))
 (define x3 (make-var 3))
@@ -8,7 +9,12 @@
  matcho
 
  (begin
-  ;; Basic pattern tests
+   ;; Basic pattern tests
+
+   (begin
+     (tassert "match creates inner vars" (matcho11 ([(a . d) x1]) (== a 1)) (== x0 1))
+     (tassert "match sets constants" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
+     )
 
   (begin
     (tassert "match no patterns" (matcho3 () succeed) succeed)
@@ -51,7 +57,19 @@
     (tassert "match full ground pattern" (matcho3 ([x1 (1 . 2)]) succeed) (== x1 '(1 . 2)))
     (tassert "match pattern ids bound" (matcho3 (['(1 . 2) (a . d)] [x1 (d . a)]) succeed) (== x1 '(2 . 1)))
     (tassert "match pattern ids bound reverse" (matcho3 ([x1 (d . a)] ['(1 . 2) (a . d)]) succeed) (== x1 '(2 . 1)))
-    )
+
+    #;
+    (tassert "expands match with nested proper lists"
+             (matcho3 (['(closure (lambda 1 2) 3)
+                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^))) (== x1 '(1 2 3)))
+    #;
+    (tassert "suspends match with nested proper lists"
+             (matcho3 ([x2
+                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^))) (== x1 '(1 2 3))))
+
+  #;
+  (pretty-print (expand '(matcho3 ([x2
+                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^)))))
 
   ;; Constraint matcho
 

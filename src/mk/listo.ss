@@ -32,9 +32,9 @@
   (define (for-eacho proc xs) ; Applies proc to each element of xs.
     (cert (procedure? proc))
     (disj (== xs '())
-          (matcho3 for-eacho ([xs (x . xs^)]) ;TODO test for-eacho with xs^ shadowing xs once match identifiers are fixed
+          (matcho3 for-eacho ([xs (x . xs)])
                   (proc x)
-                  (for-eacho proc xs^))))
+                  (for-eacho proc xs))))
   
   (define (assoco x xs o) ;; Unifies x with all keys of alist xs for which o unifies with the value. Analogous to Scheme assoc.
     (asspo x xs (lambda (y) (== o y))))

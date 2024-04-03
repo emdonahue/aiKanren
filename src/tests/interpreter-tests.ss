@@ -3,15 +3,13 @@
 (test-suite
  interpreter
  (parameterize
-     ([interpreter/quote #t]
-      [interpreter/number #t]
-      [interpreter/boolean #t]
-      [interpreter/lookup #t]
-      [interpreter/lambda #t])
-
+     ([interpreter/number #t]
+      [interpreter/boolean #t])
+   (printf "starting")
    (tassert "evalo quote" (evalo '(quote 42)) 42)
    (tassert "evalo shadow quote" (evalo-env '(quote 42) '((quote . (val . 43)))) (void))
-
+   (printf "quote")
+   
    (tassert "evalo true" (evalo #t) #t)
    (tassert "evalo false" (evalo #f) #f)
    (tassert "evalo number" (evalo 42) 42)
@@ -19,19 +17,35 @@
    (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
    (tassert "evalo lookup val later" (evalo-env 'x '((y . (val . 43)) (x . (val . 42)))) 42)
    (tassert "evalo lookup val earlier" (evalo-env 'x '((x . (val . 42)) (y . (val . 43)))) 42)
-
+   (printf "lookup")
    (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
+   (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
+
+   (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
+   (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
+   (tassert "evalo cdr" (evalo '(cdr (cons 42 43))) 43)
+
+   (tassert "evalo null? number" (run1 () (evalo '(null? 42) #f)) '())
+   (tassert "evalo null? empty" (evalo '(null? '())) #t)
+   (tassert "evalo null? number" (run1 () (evalo '(null? (cons 42 43)) #f)) '())
+
+   (printf "pre-apply")
+   (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
+   (printf "one-apply")
+   (tassert "evalo apply lambda eval arg" (evalo '((lambda (x) x) (cons 42 43))) '(42 . 43))
+   (tassert "evalo apply lambda variadic" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
+   (tassert "evalo apply lambda variadic eval arg" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
+   (tassert "evalo apply var" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
+   (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
+   (printf "done apply")
+   (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
+
+   (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
 #;
   (begin
     
 
-    (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
-    (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
-    (tassert "evalo cdr" (evalo '(cdr (cons 42 43))) 43)
-                                        ;    (display    (trace-run (q) (evalo '(null? 42) q)))
-    (tassert "evalo null? number" (run1 () (evalo '(null? 42) #f)) '())
-    (tassert "evalo null? empty" (evalo '(null? '())) #t)
-    (tassert "evalo null? number" (run1 () (evalo '(null? (cons 42 43)) #f)) '())
+
 
     (tassert "evalo if true" (evalo '(if #t 1 2)) 1)
     (tassert "evalo if false" (evalo '(if #f 1 2)) 2)
@@ -39,20 +53,15 @@
     (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
     
    
-    (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
+   
 
                                         ;    (tassert "evalo and" (evalo '(and)) #t)
 
-    (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
-    (tassert "evalo apply lambda eval arg" (evalo '((lambda (x) x) (cons 42 43))) '(42 . 43))
-    (tassert "evalo apply lambda variadic" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
-    (tassert "evalo apply lambda variadic eval arg" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
-    (tassert "evalo apply var" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
-    (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
+   
+    
+    
 
-    (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
-
-    (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
+   
 
     (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
 
