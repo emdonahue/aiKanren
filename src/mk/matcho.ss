@@ -25,16 +25,17 @@
   (define-syntax matcho11
     (syntax-rules ()
       [(_ (bindings ...) body ...) (matcho11 match (bindings ...) body ...)]
-      [(_ name (bindings ...) body ...)
-       (matcho12 name (bindings ...) (body ...))]))
+      [(_ name ([pattern expr] ...) body ...)
+       (matcho/fresh3 (pattern ...)
+                      (begin
+                        (matcho/ground [pattern expr] ...)
+                        (matcho12 name ([pattern expr] ...) (body ...))))
+       ]))
 
   (define-syntax matcho12
     (syntax-rules ()
       [(_ name ([pattern expr] ...) (body ...))
-       (matcho/fresh3 (pattern ...)
-                      (begin
-                        (matcho/ground [pattern expr] ...)
-                        (conj* body ...)))]))
+       (conj* body ...)]))
 
   (define-syntax matcho/ground
     (syntax-rules ()
