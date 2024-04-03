@@ -15,7 +15,7 @@
   #;
   (comment
    (let ([in-var (extract-in-vars pattern)])
-     (let ([s (mini-unify (pattern->term pattern) (list out ...))])
+  (let ([s (mini-unify (pattern->term pattern) (list out ...))])
        (let ([in-var (walk in-var s)] ...)
          (if (no-fresh (list in-var ...))
              (begin body ...)
@@ -36,24 +36,28 @@
 )
 
   (define-syntax matcho/in-vars
-    (syntax-rules ()
+    (syntax-rules () ; Extracts fresh var identifiers before running the match logic.
       [(_ patterns bindings-body) (matcho/in-vars patterns bindings-body ())] ; When called initially, create empty list for ids.
-      [(_ () (bindings body) ids) (matcho/ground2 bindings body ids)] ; When patterns exhausted, proceed to next phase.
+      [(_ () (([pattern expr] ...) body) (id ...)) ; When patterns exhausted, proceed to next phase.
+       (let ([id (make-var 0)] ...)
+         (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
+           (if (failure? s) fail
+            (let ([id (mini-walk s id)] ...)
+              (let ([in-vars (filter (lambda (v) (and (var? v) (zero? (var-id v)))) (list id ...))])
+                (if (null? in-vars) body
+                    (assertion-violation 'matcho "suspend nyi" (list id ...))))))))] 
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
-       (not (eq? (syntax->datum #'p-car) 'quote))
-       (matcho/in-vars (a d p ...) bindings-body)]
+       (not (eq? (syntax->datum #'a) 'quote))
+       (matcho/in-vars (a d p ...) bindings-body ids)]
       [(_ (p0 p ...) bindings-body (id ...)) ; Store identifiers
        (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(id ...))))
        (matcho/in-vars (p ...) bindings-body (p0 id ...))]
       [(_ (p0 p ...) bindings-body ids) ; Ignore ground terms
-       (matcho/in-vars (p ...) bindings-body ids)]
-      ))
+       (matcho/in-vars (p ...) bindings-body ids)]))
 
-  (define-syntax matcho/ground2
-    (syntax-rules ()
-      [(_ bindings body (id ...))
-       (let ([id (make-var 0)] ...)
-         body)]))
+
+
+  
 
   #;
   (define-syntax matcho12
