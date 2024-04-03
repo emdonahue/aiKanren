@@ -55,7 +55,10 @@
                       (lambda (c lv)
                         (if (no-pattern-vars? lv)
                             (conj (== (car lv) (cdr lv)) c)
-                            c)) succeed s) body)
+                            c)) succeed
+                            (map (lambda (b) (cons (car b) (mini-reify s (cdr b))))
+                             (filter (lambda (b) (not (zero? (var-id (car b))))) s)))
+                     body)
                     (assertion-violation 'matcho "suspend nyi" (list id ...))))))))] 
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
