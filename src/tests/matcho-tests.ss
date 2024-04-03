@@ -43,9 +43,7 @@
     (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho11 ([(a . 'two) m]) (== a x1)))) '(one two))
     (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho11 ([(a . '(two three)) m]) (== a x1))))
              '(one (two three)))
-    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho11 ([(a 2) m] [(a 2) n ])))) 1)
-    (tassert "match expander differentiates between parent and child matcho"
-             (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
+    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho11 ([(a 2) m] [(a 2) n ])))) 1)    
     (tassert "match full ground pattern" (matcho11 ([(1 . 2) x1]) succeed) (== x1 '(1 . 2)))
     (tassert "match pattern ids bound" (matcho11 ([(a . d) '(1 . 2)] [(d . a) x1]) succeed) (== x1 '(2 . 1)))
     (tassert "match pattern ids bound reverse" (matcho11 ([(d . a) x1] [(a . d) '(1 . 2)]) succeed) (== x1 '(2 . 1)))
@@ -101,7 +99,9 @@
       (tassert "match free expand" ((matcho4-procedure (matcho11 ([(a . d) x1]) (== x2 (cons d a)))) '(1 . 2))
                (list #t succeed (== x2 '(2 . 1))))
       (tassert "match free expand quote" ((matcho4-procedure (matcho11 ([('one . d) x1]) (== x2 d))) '(one . 2))
-               (list #t succeed (== x2 2))))
+               (list #t succeed (== x2 2)))
+(tassert "match expander differentiates between parent and child matcho"
+             (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2)))
     (tassert "match goal walk var" (run1 x1 (== x1 '(1 . 2)) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
     (tassert "create fresh vars, ignore ground"
              (let ([vid 0]

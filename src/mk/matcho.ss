@@ -35,6 +35,11 @@
                                          (pattern->identifiers (pattern ...)))
 )
 
+  (define (no-pattern-vars? x)
+    (if (pair? x)
+        (and (no-pattern-vars? (car x)) (no-pattern-vars? (cdr x)))
+        (not (and (var? x) (zero? (var-id x))))))
+  
   (define-syntax matcho/in-vars
     (syntax-rules () ; Extracts fresh var identifiers before running the match logic.
       [(_ patterns bindings-body) (matcho/in-vars patterns bindings-body ())] ; When called initially, create empty list for ids.
@@ -42,9 +47,15 @@
        (let ([id (make-var 0)] ...)
          (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
            (if (failure? s) fail
-            (let ([id (mini-walk s id)] ...)
+            (let ([id (mini-walk s id)] ...) ;TODO do we need reify here?
               (let ([in-vars (filter (lambda (v) (and (var? v) (zero? (var-id v)))) (list id ...))])
-                (if (null? in-vars) body
+                (if (null? in-vars)
+                    (conj
+                     (fold-left
+                      (lambda (c lv)
+                        (if (no-pattern-vars? lv)
+                            (conj (== (car lv) (cdr lv)) c)
+                            c)) succeed s) body)
                     (assertion-violation 'matcho "suspend nyi" (list id ...))))))))] 
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
