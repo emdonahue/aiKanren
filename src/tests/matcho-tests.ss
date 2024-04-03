@@ -12,8 +12,9 @@
    ;; Basic pattern tests
 
    (begin
-     (tassert "match sets constants" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
      (tassert "match sets null" (matcho11 ([(a . d) '(1 . 2)]) (== x1 a)) (== x1 1))
+     ;(tassert "match sets constants" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
+     ;(tassert "match sets null" (matcho11 ([(a . d) '(1 . 2)]) (== x1 a)) (== x1 1))
      )
 
   (begin

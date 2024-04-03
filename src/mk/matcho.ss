@@ -26,22 +26,54 @@
     (syntax-rules ()
       [(_ (bindings ...) body ...) (matcho11 match (bindings ...) body ...)]
       [(_ name ([pattern expr] ...) body ...)
-       (matcho/fresh3 (pattern ...)
-                      (begin
-                        (matcho/ground [pattern expr] ...)
-                        (matcho12 name ([pattern expr] ...) (body ...))))
-       ]))
+       (matcho/in-vars (pattern ...)
+                       (([pattern expr] ...)
+                        (conj* body ...)))]))
+#;
+(let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
+                            (matcho/walk (pattern ...) s
+                                         (pattern->identifiers (pattern ...)))
+)
 
+  (define-syntax matcho/in-vars
+    (syntax-rules ()
+      [(_ patterns bindings-body) (matcho/in-vars patterns bindings-body ())] ; When called initially, create empty list for ids.
+      [(_ () (bindings body) ids) (matcho/ground2 bindings body ids)] ; When patterns exhausted, proceed to next phase.
+      [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
+       (not (eq? (syntax->datum #'p-car) 'quote))
+       (matcho/in-vars (a d p ...) bindings-body)]
+      [(_ (p0 p ...) bindings-body (id ...)) ; Store identifiers
+       (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(id ...))))
+       (matcho/in-vars (p ...) bindings-body (p0 id ...))]
+      [(_ (p0 p ...) bindings-body ids) ; Ignore ground terms
+       (matcho/in-vars (p ...) bindings-body ids)]
+      ))
+
+  (define-syntax matcho/ground2
+    (syntax-rules ()
+      [(_ bindings body (id ...))
+       (let ([id (make-var 0)] ...)
+         body)]))
+
+  #;
   (define-syntax matcho12
     (syntax-rules ()
       [(_ name ([pattern expr] ...) (body ...))
-       (conj* body ...)]))
+       ]))
+
+  #;
+(define-syntax matcho/walk
+(syntax-rules ()
+[(_ patterns s) (matcho/walk patterns s ids)]
+[()]))
 
   (define-syntax matcho/ground
     (syntax-rules ()
       [(_ [(p-car . p-cdr) expr])
        (not (eq? (syntax->datum #'p-car) 'quote))
-       (when (pair? expr) (matcho/ground [p-car (car expr)]) (matcho/ground [p-cdr (cdr expr)]))]
+       (let ([a (car expr)]
+             [d (cdr expr)])
+        (when (pair? expr) (matcho/ground [p-car a] [p-cdr d])))]
       
       [(_ [pattern expr])
        (identifier? #'pattern)
@@ -154,6 +186,18 @@
        (not (eq? (syntax->datum #'a) 'quote))
        (cons (pattern->term a) (pattern->term d))]
       [(_ a) a]))
+
+  (define-syntax pattern->identifiers
+    (syntax-rules ()
+      [(_ pattern) (pattern->identifiers pattern ())] ; When called initially, create an empty list for ids.
+      [(_ () (id ...)) (list id ...)] ; When patterns exhausted, generate the list of ids.
+      [(_ ((a . d) p ...) ids)
+       (not (eq? (syntax->datum #'a) 'quote))
+       (pattern->identifiers (a d p ...) ids)]
+      [(_ (p0 p ...) (id ...))
+       (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(id ...))))
+       (pattern->identifiers (p ...) (p0 id ...))]
+      [(_ (p0 p ...) ids) (pattern->identifiers (p ...) ids)]))
 
   (meta define (syntax->pair p)
     (syntax-case p ()
