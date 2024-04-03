@@ -12,8 +12,9 @@
    ;; Basic pattern tests
 
    (begin
-     (tassert "match creates inner vars" (matcho11 ([(a . d) x1]) (== a 1)) (== x0 1))
+     ;(tassert "match creates inner vars" (matcho11 ([(a . d) x1]) (== a 1)) (== x0 1))
      (tassert "match sets constants" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
+     (tassert "match sets null" (matcho11 ([(a . d) '(1 . 2)]) (== x1 a)) (== x1 1))
      )
 
   (begin

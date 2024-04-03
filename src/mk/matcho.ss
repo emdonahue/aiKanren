@@ -31,7 +31,25 @@
   (define-syntax matcho12
     (syntax-rules ()
       [(_ name ([pattern expr] ...) (body ...))
-       (matcho/fresh3 (pattern ...) (conj* body ...))]))
+       (matcho/fresh3 (pattern ...)
+                      (begin
+                        (matcho/ground [pattern expr] ...)
+                        (conj* body ...)))]))
+
+  (define-syntax matcho/ground
+    (syntax-rules ()
+      [(_ [(p-car . p-cdr) expr])
+       (not (eq? (syntax->datum #'p-car) 'quote))
+       (when (pair? expr) (matcho/ground [p-car (car expr)]) (matcho/ground [p-cdr (cdr expr)]))]
+      
+      [(_ [pattern expr])
+       (identifier? #'pattern)
+       (set! pattern expr)]
+
+      [(_ [pattern expr]) (void)]
+      
+      [(_  binding0 binding ...)
+       (begin (matcho/ground binding0) (matcho/ground binding ...))]))
 
   (define-syntax matcho/fresh3
     ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
