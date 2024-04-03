@@ -43,7 +43,7 @@
     (tassert "match pair symbol" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho11 ([(a . 'two) m]) (== a x1)))) '(one two))
     (tassert "match pair symbol list" (run1 (x1 x2) (let ([m (cons 'one x2)]) (matcho11 ([(a . '(two three)) m]) (== a x1))))
              '(one (two three)))
-    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho11 ([(a 2) m] [n (a 2)])))) 1)
+    (tassert "match duplicate vars" (run1 x1 (let ([m '(1 2)] [n (list x1 2)]) (matcho11 ([(a 2) m] [(a 2) n ])))) 1)
     (tassert "match expander differentiates between parent and child matcho"
              (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2)))) '(1 . 2))
     (tassert "match full ground pattern" (matcho11 ([(1 . 2) x1]) succeed) (== x1 '(1 . 2)))
