@@ -2,7 +2,7 @@
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
-  (export matcho matcho-pair
+  (export matcho matcho-pair matcho/expand
           matcho3 matcho-tst matcho5 matcho9 matcho/fresh2 pattern->term2 matcho6 matcho11 matcho/fresh pattern->term ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
@@ -37,7 +37,23 @@
 (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
                             (matcho/walk (pattern ...) s
                                          (pattern->identifiers (pattern ...)))
-)
+  )
+  
+  (define matcho/expand
+    (case-lambda
+      [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
+      [(g s sub ==s vs)
+       (let ([out-var (find (lambda (b) (not (memq (car b) vs))) (matcho14-out-vars g))])
+         (if out-var
+             (let ([sub (mini-unify sub out-var (walk-var s out-var))])
+               (if (failure? sub) (values #t fail fail)
+                   
+                   )
+               
+               )
+             (values #f ==s (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)))
+             )
+         )]))
 
   (define (no-pattern-vars? x)
     (if (pair? x)
@@ -56,7 +72,7 @@
                        [in-vars (list id ...)]) ;TODO do we need all combos of in/out/free/ground?
                    (let-values ([(in-vars/ground in-vars/free) (partition no-pattern-vars? in-vars)]
                                 [(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
-                     (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ;(null? in-vars/free)
+                     (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ; No rhs patterns => all patterns bound => continue.
                          (let ([id (mini-walk s id)] ...)
                            (conj
                             (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
