@@ -50,21 +50,15 @@
          (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
            (if (failure? s) fail
                (let ([s (map (lambda (b) (cons (car b) (mini-reify s (cdr b)))) s)])
-                (let ([id (mini-walk s id)] ...) ;TODO do we need reify here?
-                  (let-values ([(in-vars out-vars)
-                                (partition (lambda (b) (zero? (var-id (car b))))
-                                           (remp (lambda (b) (no-pattern-vars? (cdr b))) s))])
-                    (if (null? in-vars)
-                        (conj
-                         (fold-left
-                          (lambda (c lv)
-                            (if (no-pattern-vars? (cdr lv))
-                                (conj (== (car lv) (cdr lv)) c)
-                                c)) succeed
-                          (map (lambda (b) (cons (car b) (mini-reify s (cdr b))))
-                               (filter (lambda (b) (not (zero? (var-id (car b))))) s)))
-                         body)
-                        (assertion-violation 'matcho "suspend nyi" (list id ...)))))))))] 
+                 (let ([id (mini-walk s id)] ...)
+                   (let-values ([(in-vars out-vars) (partition (lambda (b) (zero? (var-id (car b)))) s)])
+                     (let-values ([(in-vars/ground in-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) in-vars)]
+                                  [(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
+                       (if (null? in-vars/free)
+                           (conj
+                            (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
+                            body)
+                           (assertion-violation 'matcho "suspend nyi" (list id ...))))))))))] 
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
        (matcho/in-vars (a d p ...) bindings-body ids)]
