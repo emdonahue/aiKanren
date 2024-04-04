@@ -67,7 +67,7 @@
   ;; Constraint matcho
 
   (begin
-    (tassert "match constraint free" (caar (matcho14-substitution (run1 x1 (constraint (matcho11 ([(a 2) x1]) (== a 1)))))) x1)
+    (tassert "match constraint free" (matcho14-substitution (run1 x1 (constraint (matcho11 ([(a 2) x1]) (== a 1))))) (list (cons x1 (cons x0 2))))
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj rest" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
