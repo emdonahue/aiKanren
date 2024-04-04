@@ -25,6 +25,7 @@
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
          [(matcho? g) (solve-matcho g s ctn resolve delta)]
          [(matcho4? g) (solve-matcho2 g s ctn resolve delta)]
+         [(matcho14? g) (solve-matcho14 g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
          [(proxy? g) (solve-proxy g s ctn resolve delta)]
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
@@ -94,6 +95,25 @@
                   [else (values #t fail fail)]))
              ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
              (values #f g ==s)))]))
+
+  (define (solve-matcho14 g s ctn resolve delta)
+    (solve-matcho14/expand g s ctn resolve delta))
+
+  (define solve-matcho14/expand
+    (case-lambda
+      [(g s ctn resolve delta) (solve-matcho14/expand g s ctn resolve delta (matcho14-substitution g) succeed '())]
+      [(g s ctn resolve delta sub ==s vs)
+       (let ([out-var (find (lambda (b) (not (memq (car b) vs))) (matcho14-out-vars g))])
+         (if out-var
+             (let ([sub (mini-unify sub out-var (walk-var s out-var))])
+               (if (failure? sub) (values #t fail fail)
+                   
+                   )
+               
+               )
+             (values #f ==s (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)))
+             )
+         )]))
   
   (define (solve-proxy g s ctn resolve delta) ; Solves the constraint on the proxied varid.
     (let-values ([(v c) (walk-var-val s (proxy-var g))])

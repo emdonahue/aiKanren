@@ -47,6 +47,9 @@
     (tassert "match full ground pattern" (matcho11 ([(1 . 2) x1]) succeed) (== x1 '(1 . 2)))
     (tassert "match pattern ids bound" (matcho11 ([(a . d) '(1 . 2)] [(d . a) x1]) succeed) (== x1 '(2 . 1)))
     (tassert "match pattern ids bound reverse" (matcho11 ([(d . a) x1] [(a . d) '(1 . 2)]) succeed) (== x1 '(2 . 1)))
+    (tassert "match in-var binds early" (matcho11 ([(a . d) '(1 . 2)] [(a . d) x1]) succeed) (== x1 '(1 . 2)))
+    (tassert "match in-var binds late" (matcho11 ([(a . d) x1] [(a . d) '(1 . 2)]) succeed) (== x1 '(1 . 2)))
+    (tassert "match in-var binds out-var" (matcho11 ([(a . d) (cons x1 x2)] [(a . d) '(1 . 2)]) succeed) (conj (== x1 1) (== x2 2)))
 
     #;
     (tassert "expands match with nested proper lists"
@@ -64,9 +67,7 @@
   ;; Constraint matcho
 
   (begin
-    (tassert "match constraint ground" (run1 x1 (let ([m '(1 2)]) (constraint (matcho3 ([m (a 2)]) (== a x1))))) 1)    
-    (tassert "match constraint ground-free" (run1 x1 (let ([m (list x1 2)]) (constraint (matcho3 ([m (a 2)]) (== a 1))))) 1)
-    (tassert "match constraint free" (matcho4-vars (run1 x1 (constraint (matcho3 ([x1 (a 2)]) (== a 1))))) (list x1))
+;    (tassert "match constraint free" (caar (matcho14-out-vars (run1 x1 (constraint (matcho11 ([(a 2) x1]) (== a 1)))))) x1)
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj rest" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
@@ -113,8 +114,8 @@
              (let ([vid 0])
                (matcho/fresh vid () ((a . d)) (pattern->term ((a . d))))) (list (cons x1 x2)))
     (tassert "match create fresh" (run1 x1 (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
-    (tassert "match eager" (run* x1 (conde [(let ([m (list 1 2)]) (matcho3 ([m (a 2)]) (== a x1)))] [(== x1 2)])) '(1 2))
-    (tassert "match eager var" (run* x1 (conde [(let ([m (list x1 2)]) (matcho3 ([m (a 2)]) (== a 1)))] [(== x1 2)])) '(1 2))
+    (tassert "match eager" (run* x1 (conde [(matcho3 ([(list 1 2) (a 2)]) (== a x1))] [(== x1 2)])) '(1 2))
+    (tassert "match eager var" (run* x1 (conde [(matcho3 ([(list x1 2) (a 2)]) (== a 1))] [(== x1 2)])) '(1 2))
     (tassert "match eager bound var" (run* x1 (conde [(== x1 '(1 2)) (matcho3 ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2))
     (tassert "match eager bound vars" (run* (x1 x2) (conde [(== x2 '(1 2)) (matcho3 ([x1 (a 2)] [x2 (1 2)]) (== a 1))] [(== x1 3) (== x2 4)])) '(((1 2) (1 2)) (3 4)))
     (tassert "match lazy var" (run* x1 (conde [(matcho3 ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2)))

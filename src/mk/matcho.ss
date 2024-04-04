@@ -8,6 +8,8 @@
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
   ;; TODO make matcho work for pure values outside of mk. a la carte unification/pattern matching
+  ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
+  ;; TODO can we fail to fail if matcho is waiting un a binding that is partially filled and that has constraints that would make it fail even in its partial state?
   
   #;
   (define-syntax unroll-lst
@@ -50,15 +52,17 @@
          (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
            (if (failure? s) fail
                (let ([s (map (lambda (b) (cons (car b) (mini-reify s (cdr b)))) s)])
-                 (let ([id (mini-walk s id)] ...)
-                   (let-values ([(in-vars out-vars) (partition (lambda (b) (zero? (var-id (car b)))) s)])
-                     (let-values ([(in-vars/ground in-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) in-vars)]
-                                  [(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
-                       (if (null? in-vars/free)
+                 (let ([out-vars (remp (lambda (b) (zero? (var-id (car b)))) s)]
+                       [in-vars (list id ...)]) ;TODO do we need all combos of in/out/free/ground?
+                   (let-values ([(in-vars/ground in-vars/free) (partition no-pattern-vars? in-vars)]
+                                [(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
+                     (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ;(null? in-vars/free)
+                         (let ([id (mini-walk s id)] ...)
                            (conj
                             (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
-                            body)
-                           (assertion-violation 'matcho "suspend nyi" (list id ...))))))))))] 
+                            body))
+                         (make-matcho14 (map car out-vars/free) #f s
+                                        (lambda () 3)))))))))] 
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
        (matcho/in-vars (a d p ...) bindings-body ids)]
