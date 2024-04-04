@@ -40,7 +40,7 @@
   )
   
   (define matcho/expand
-    (case-lambda
+    (org-case-lambda matcho/expand
       [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
       [(g s sub ==s vs)
        (cert (matcho14? g) (state? s) (list? sub) (goal? ==s) (list? vs))
@@ -48,7 +48,7 @@
                                                   (not (memq (car b) vs))
                                                   (not (no-pattern-vars? (cdr b))))) sub)])
          (if free-binding
-             (let ([sub (mini-unify sub (cdr free-binding) (walk-var s (car free-binding)))])
+             (let ([sub (mini-unify (remq free-binding sub) (cdr free-binding) (walk-var s (car free-binding)))])
                (if (failure? sub) (values #t fail fail)
                    (let ([sub (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub)

@@ -96,7 +96,7 @@
              ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
              (values #f g ==s)))]))
 
-  (define (solve-matcho14 g s ctn resolve delta)
+  (org-define (solve-matcho14 g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
           (solve-constraint g s ctn resolve delta)

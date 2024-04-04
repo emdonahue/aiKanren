@@ -17,6 +17,7 @@
     (tassert "match no patterns" (matcho11 () succeed) succeed)
     (tassert "match empty list" (matcho11 ([() '()]) succeed) succeed)
     (tassert "match number" (matcho11 ([1 1]) succeed) succeed)
+    (tassert "match empty body" (matcho11 ([1 1])) succeed)
     (tassert "match simple variable rename" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
     (tassert "match multiple empty list" (matcho11 ([() '()] [() '()]) succeed) succeed)
     (tassert "match prim-pair fail" (run1 x1 (matcho11 ([(a 2) 1]) (== a x1))) (void))
@@ -67,7 +68,10 @@
   ;; Constraint matcho
 
   (begin
-    (tassert "match constraint free" (matcho14-substitution (run1 x1 (constraint (matcho11 ([(a 2) x1]) (== a 1))))) (list (cons x1 (cons x0 2))))
+    (tassert "match constraint free" (matcho14-substitution (run1 x1 (constraint (matcho11 ([(a 2) x1]))))) (list (cons x1 (list x0 2))))
+    (tassert "match constraint moves to free"
+             (matcho14-substitution
+              (run1 x1 (exist (x2) (constraint (matcho11 ([(a 2) x1]))) (== x1 x2)))) (list (cons x2 (list x0 2))))
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj rest" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))
