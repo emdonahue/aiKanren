@@ -72,6 +72,9 @@
     (tassert "match constraint moves to free"
              (matcho14-substitution
               (run1 x1 (exist (x2) (constraint (matcho11 ([(a 2) x1]))) (== x1 x2)))) (list (cons x2 (list x0 2))))
+    (tassert "match constraint unifies ground"
+             (run1 (x1 x2 x3) (== x2 (list x3)) (constraint (matcho11 ([(a 2) x1] [(3) x2]))))
+             (lambda (a) (and (matcho14? (car a)) (equal? (cadr a) '(3)) (equal? (caddr a) 3))))
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj rest" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))

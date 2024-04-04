@@ -273,12 +273,13 @@
   
   (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
-                                        ;let-values ([(s c) (if (null? (cdr vs)) (values s c) (values (state-extend-store s c) c))]) ; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
-    (let ([g (substitution-ref (state-substitution s) (car vs))])
-      (cert (goal? g))
+    ;; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
+    (let ([stored-constraint (substitution-ref (state-substitution s) (car vs))])
+      (cert (goal? stored-constraint))
       (fold-left (lambda (s v)
-                   (let ([g (substitution-ref (state-substitution s) v)])
-                     (extend s v (conj g (proxy (car vs)))))) (extend s (car vs) (conj g c)) (cdr vs))))
+                   (let ([stored-constraint (substitution-ref (state-substitution s) v)])
+                     (cert (goal? stored-constraint))
+                     (extend s v (conj stored-constraint (proxy (car vs)))))) (extend s (car vs) (conj stored-constraint c)) (cdr vs))))
 
   (define (remove-constraint s v)
     (extend s v succeed)))

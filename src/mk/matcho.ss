@@ -53,7 +53,12 @@
                    (let ([sub (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub)
                          (nyi constraint resolved)
-                         (matcho/expand g s sub ==s (cons (car free-binding) vs))))))
+                         (let-values ([(sub/ground sub/free)
+                                       (partition (lambda (b) (and (not (zero? (var-id (car b))))
+                                                                   (no-pattern-vars? (cdr b)))) sub)])
+                           (matcho/expand g s sub/free
+                                          (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
+                                          (cons (car free-binding) vs)))))))
              (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)) ==s)))]))
 
   (define (no-pattern-vars? x)

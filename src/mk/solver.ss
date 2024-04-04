@@ -99,8 +99,8 @@
   (org-define (solve-matcho14 g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
-          (solve-constraint g s ctn resolve delta)
-          (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))
+          (solve-constraint ==s s (conj g ctn) resolve delta)
+          (solve-constraint ==s (store-constraint s g) ctn resolve (conj delta g)))))
 
   
   
