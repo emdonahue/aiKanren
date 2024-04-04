@@ -52,14 +52,14 @@
                (if (failure? sub) (values #t fail fail)
                    (let ([sub (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub)
-                         (nyi constraint resolved)
+                         (values #t ((matcho14-ctn g) sub) ==s)
                          (let-values ([(sub/ground sub/free)
                                        (partition (lambda (b) (and (not (zero? (var-id (car b))))
                                                                    (no-pattern-vars? (cdr b)))) sub)])
                            (matcho/expand g s sub/free
                                           (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
                                           (cons (car free-binding) vs)))))))
-             (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)) ==s)))]))
+             (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-ctn g)) ==s)))]))
 
   (define (no-pattern-vars? x)
     (if (pair? x)
@@ -83,8 +83,11 @@
                            (conj
                             (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
                             body))
-                         (make-matcho14 (map car out-vars/free) #f s
-                                        (lambda () 3)))))))))] 
+                         (make-matcho14
+                          (map car out-vars/free) #f s
+                          (lambda (s)
+                            (let ([id (mini-walk s id)] ...)
+                              body))))))))))]  ;TODO should this be reify
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
        (matcho/in-vars (a d p ...) bindings-body ids)]

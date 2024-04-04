@@ -8,7 +8,7 @@
           suspend suspend? suspend-goal
           make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           make-matcho4 matcho4? matcho4-vars matcho4-procedure
-          make-matcho14 matcho14? matcho14-out-vars matcho14-in-vars matcho14-procedure matcho14-substitution
+          make-matcho14 matcho14? matcho14-out-vars matcho14-in-vars matcho14-ctn matcho14-substitution
           proxy proxy? proxy-var proxy
           conde conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
@@ -290,7 +290,7 @@
   (define-structure (noto goal)) ; Negated goal
   (define-structure (matcho out-vars in-vars goal)) ; TODO rename matcho-goal to procedure
   (define-structure (matcho4 vars procedure))
-  (define-structure (matcho14 out-vars in-vars substitution procedure))
+  (define-structure (matcho14 out-vars in-vars substitution ctn))
   
   
   
