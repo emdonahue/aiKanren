@@ -97,7 +97,10 @@
              (values #f g ==s)))]))
 
   (define (solve-matcho14 g s ctn resolve delta)
-    (matcho/expand g s ctn resolve delta))
+    (let-values ([(expanded? g ==s) (matcho/expand g s)])
+      (if expanded?
+          (solve-constraint g s ctn resolve delta)
+          (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))
 
   
   
@@ -326,7 +329,7 @@
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda ;TODO create a defrel that encodes context information about what vars were available for use in reasoning about which freshes might be able to unify them within their lexical scope
       [(g) (let-values ([(vs unifies) (attributed-vars g '() #f)]) vs)]
-      [(g vs unifies)
+      [(g vs unifies) ;TODO do we still need this unifies flag in attr var?
        (cert (goal? g))
        (exclusive-cond
         [(succeed? g) (values vs unifies)]
@@ -348,6 +351,7 @@
          (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
         [(matcho4? g)
          (values (matcho4-vars g) unifies)]
+        [(matcho14? g) (values (map car (remp (lambda (b) (zero? (var-id (car b)))) (matcho14-substitution g))) unifies)]
         [(pconstraint? g)
          (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
         [(constraint? g) (attributed-vars (constraint-goal g) vs unifies)]

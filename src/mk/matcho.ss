@@ -43,17 +43,18 @@
     (case-lambda
       [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
       [(g s sub ==s vs)
-       (let ([out-var (find (lambda (b) (not (memq (car b) vs))) (matcho14-out-vars g))])
-         (if out-var
-             (let ([sub (mini-unify sub out-var (walk-var s out-var))])
+       (cert (matcho14? g) (state? s) (list? sub) (goal? ==s) (list? vs))
+       (let ([free-binding (find (lambda (b) (and (not (zero? (var-id (car b))))
+                                                  (not (memq (car b) vs))
+                                                  (not (no-pattern-vars? (cdr b))))) sub)])
+         (if free-binding
+             (let ([sub (mini-unify sub (cdr free-binding) (walk-var s (car free-binding)))])
                (if (failure? sub) (values #t fail fail)
-                   
-                   )
-               
-               )
-             (values #f ==s (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)))
-             )
-         )]))
+                   (let ([sub (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
+                     (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub)
+                         (nyi constraint resolved)
+                         (matcho/expand g s sub ==s (cons (car free-binding) vs))))))
+             (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-procedure g)) ==s)))]))
 
   (define (no-pattern-vars? x)
     (if (pair? x)
