@@ -125,6 +125,12 @@
          (if expanded?
              (solve-constraint g s ctn resolve delta)
              (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))]
+     [(matcho14? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of the negated conj into the state, which will mean some branches may contain stale variables.
+      (let-values ([(expanded? g ==s) (matcho/expand g s)])
+        (let ([g (disj (noto ==s) (noto g))])
+         (if expanded?
+             (solve-constraint g s ctn resolve delta)
+             (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))]
      [else
       (let-values ([(g s^) ; Evaluate the positive constraint hypothetically and invert the result (success <=> failure). Discard the state, which may have changed under the hypothetical positive constraint, and keep only the simplified constraint g, which we negate and return to the store. This is the same logic as for classical implementations of disequality (inverting the substitution of unification), but generalized to arbitrary constraints.
                     (solve-constraint g s succeed succeed succeed)])

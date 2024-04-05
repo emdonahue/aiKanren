@@ -90,12 +90,12 @@
   ;; Negated matcho
 
   (begin 
-    (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho3 ([x1 (2 . y)]) succeed))) '(1 . 2))
-    (tassert "match noto pattern succeed" (run1 x1 (== x1 `(1 . 2)) (noto (matcho3 ([x1 (1 . y)]) succeed))) (void))
-    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho3 ([x1 (1 . y)]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
-    (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho3 ([x1 (y . 2)]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
-    (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho3 ([x1 (y . z)]) (conde [(== y 1)] [(== z 2)])))) (list (cons (=/= x2 1) (=/= x3 2)) (=/= x2 1) (=/= x3 2)))
-    (tassert "noto expands match before negating" (run1 (x1 x2 x3) (== x3 3) (== x1 '(1 . 2)) (noto (matcho3 ([x1 (a . d)]) (disj (=/= x2 a) (== x3 d))))) (list '(1 . 2) 1 3)))
+    (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho11 ([(2 . y) x1]) succeed))) '(1 . 2))
+    (tassert "match noto pattern succeed" (run1 x1 (== x1 `(1 . 2)) (noto (matcho11 ([(1 . y) x1]) succeed))) (void))
+    (tassert "match noto pattern disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho11 ([(1 . y) x1]) succeed))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
+    (tassert "match noto contents disequality" (run1 (x1 x2) (== x1 `(,x2 . 2)) (noto (matcho11 ([(y . 2) x1]) (== 1 y)))) `((,(=/= x2 1) . 2) ,(=/= x2 1)))
+    (tassert "match noto optimized pair disequality" (run1 (x1 x2 x3) (== x1 `(,x2 . ,x3)) (noto (matcho11 ([(y . z) x1]) (conde [(== y 1)] [(== z 2)])))) (list (cons (=/= x2 1) (=/= x3 2)) (=/= x2 1) (=/= x3 2)))
+    (tassert "noto expands match before negating" (run1 (x1 x2 x3) (== x3 3) (== x1 '(1 . 2)) (noto (matcho11 ([(a . d) x1]) (disj (=/= x2 a) (== x3 d))))) (list '(1 . 2) 1 3)))
 
   ;; Suspended constraints
   
