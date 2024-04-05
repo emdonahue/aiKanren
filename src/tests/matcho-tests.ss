@@ -52,14 +52,7 @@
     (tassert "match in-var binds late" (matcho11 ([(a . d) x1] [(a . d) '(1 . 2)]) succeed) (== x1 '(1 . 2)))
     (tassert "match in-var binds out-var" (matcho11 ([(a . d) (cons x1 x2)] [(a . d) '(1 . 2)]) succeed) (conj (== x1 1) (== x2 2)))
 
-    #;
-    (tassert "expands match with nested proper lists"
-             (matcho3 (['(closure (lambda 1 2) 3)
-                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^))) (== x1 '(1 2 3)))
-    #;
-    (tassert "suspends match with nested proper lists"
-             (matcho3 ([x2
-                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^))) (== x1 '(1 2 3))))
+
 
   #;
   (pretty-print (expand '(matcho3 ([x2
@@ -101,31 +94,14 @@
   ;; Goal matcho
 
   (begin
-    #;
-    (begin 
-      (tassert "match free" (matcho4-vars (matcho11 ([(a . d) x1]) (cons d a))) (list x1))
-      (tassert "match free expand" ((matcho4-procedure (matcho11 ([(a . d) x1]) (== x2 (cons d a)))) '(1 . 2))
-               (list #t succeed (== x2 '(2 . 1))))
-      (tassert "match free expand quote" ((matcho4-procedure (matcho11 ([('one . d) x1]) (== x2 d))) '(one . 2))
-               (list #t succeed (== x2 2)))
-(tassert "match expander differentiates between parent and child matcho"
-             (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2)))
     (tassert "match goal walk var" (run1 (x1 x2) (== x1 (cons 1 x2)) (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '((1 . 2) 2))
-    #;
-    (tassert "create fresh vars, ignore ground"
-             (let ([vid 0]
-                   [a 1])
-               (matcho/fresh vid (a) ((a b () c) (b . 2) (1 . c) ((() d))) (list a b c d))) (list 1 x1 x2 x3))
-    (tassert "terms build from patterns"
-             (let ([a x1]) (pattern->term (1 () 'one (a)))) (list 1 '() 'one (list x1)))
-    #;
-    (tassert "build patterns in fresh"
-             (let ([vid 0])
-               (matcho/fresh vid () ((a . d)) (pattern->term ((a . d))))) (list (cons x1 x2)))
     (tassert "match create fresh" (run1 x1 (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '(1 . 2))
-    (tassert "match eager" (run* x1 (conde [(matcho3 ([(list 1 2) (a 2)]) (== a x1))] [(== x1 2)])) '(1 2))
-    (tassert "match eager var" (run* x1 (conde [(matcho3 ([(list x1 2) (a 2)]) (== a 1))] [(== x1 2)])) '(1 2))
-    (tassert "match eager bound var" (run* x1 (conde [(== x1 '(1 2)) (matcho3 ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2))
-    (tassert "match eager bound vars" (run* (x1 x2) (conde [(== x2 '(1 2)) (matcho3 ([x1 (a 2)] [x2 (1 2)]) (== a 1))] [(== x1 3) (== x2 4)])) '(((1 2) (1 2)) (3 4)))
-    (tassert "match lazy var" (run* x1 (conde [(matcho3 ([x1 (a 2)]) (== a 1))] [(== x1 2)])) '((1 2) 2)))
-))
+    (tassert "match goal fail" (run1 x1 (matcho11 ([(a . d) x1]) fail)) (void))
+    (tassert "match expander differentiates between parent and child matcho"
+             (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2)))
+
+  ;; Internal utilities
+  
+  (begin
+    (tassert "terms build from patterns"
+             (let ([a x1]) (pattern->term (1 () 'one (a)))) (list 1 '() 'one (list x1))))))

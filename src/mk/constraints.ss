@@ -104,7 +104,7 @@
   (define (presento present term) ; Constrains term so that it must contain present. Logical negation of absento.
     (disj
      (== term present)
-     (matcho3 presento ([term (a . d)])
+     (matcho11 presento ([(a . d) term])
              (disj
               (presento present a)
               (presento present d)))))
@@ -115,15 +115,15 @@
       (=/= term absent)
       (disj
        (noto (pairo term))
-       (matcho3 absento ([term (a . d)])
+       (matcho11 absento ([(a . d) term])
                (absento absent a)
                (absento absent d)))))
 
   (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
     (disj
       [conj (== xxs '()) (== oos '())]
-      (matcho3 ([xxs (x . xs)])
+      (matcho11 ([(x . xs) xxs])
               (let ([x^ (f x)]) ; TODO should f be wrapped in constraint to filter properly?
                 (disj
-                  [conj x^ (matcho3 ([oos (o . os)]) (== x o) (filtero f xs os))]
+                  [conj x^ (matcho11 ([(o . os) oos]) (== x o) (filtero f xs os))]
                   [conj (noto x^) (filtero f xs oos)]))))))

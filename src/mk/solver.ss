@@ -186,6 +186,8 @@
      [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
                       (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
      [(matcho4? g) (if (and (memq x (matcho4-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
+                       (values g g succeed d))]
+     [(matcho14? g) (if (and (memq x (matcho-attributed-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
                       (values g g succeed d))]
      [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
                   (cert (succeed? recheck)) ; noto only wraps primitive goals since its a =/=, which should never need rechecking on their own
