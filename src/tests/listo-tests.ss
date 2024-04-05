@@ -40,4 +40,11 @@
  (tassert "for-eacho succeed 2" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
  (tassert "for-eacho fail" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))
  (tassert "for-eacho commit" (run1 (x1 x2) (for-eacho (lambda (x) (== x 1)) x1) (== x1 `(1 ,x2))) '((1 1) 1))
- )
+
+ ;; === FILTERO ===
+
+ (tassert "filtero null" (run* q (filtero (lambda (x) succeed) '() q)) '(()))
+ (tassert "filtero succeed" (run* q (filtero (lambda (x) succeed) '(1 2 3) q)) '((1 2 3)))
+ (tassert "filtero fail" (run* q (filtero (lambda (x) fail) '(1 2 3) q)) '(()))
+ (tassert "filtero ==" (run* q (filtero (lambda (x) (== x 2)) '(1 2 3) q)) '((2)))
+ (tassert "filtero |" (run* q (filtero (lambda (x) (disj (== x 2) (== x 3))) '(1 2 3) q)) '((2 3))))

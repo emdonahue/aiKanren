@@ -1,15 +1,15 @@
 (library (listo) ; Relational list library
-  (export appendo assoco containso asspo listo for-eacho membero)
+  (export appendo assoco containso asspo listo for-eacho membero filtero)
   (import (chezscheme) (goals) (matcho) (negation) (debugging) (utils))
 
   (define (listo l) ; Constrains l to be a proper list.
     (disj
      (== l '())
-     (matcho3 listo ([l (a . d)])
+     (matcho11 listo ([(a . d) l])
              (listo d))))
 
   (define (membero x xs) ; Generates all lists xs containing x at least once.
-    (matcho3 ([xs (a . d)])
+    (matcho11 ([(a . d) xs])
             (conde
               [(== x a)]
               [(membero x d)])))
@@ -17,14 +17,14 @@
   (define (appendo h t ht) ; Appends h and t, yielding ht.
     (conde
       [(== h '()) (== t ht)]
-      [(matcho3 appendo ([h (a . d)]
-                        [ht (a . es)])
+      [(matcho11 appendo ([(a . d) h]
+                        [(a . es) ht])
                (== (cons a d) h)
                (== ht (cons a es))
                (appendo d t es))]))
 
   (define (containso x xs) ; Generates all lists xs containing x, stopping after x is found.
-    (matcho3 containso ([xs (a . d)])
+    (matcho11 containso ([(a . d) xs])
             (conde
               [(== x a)]
               [(=/= x a) (containso x d)])))
@@ -45,4 +45,13 @@
     (matcho3 asspo ([xs ((a . d) . t)]) 
              (conde ;TODO can alist relations just be constraints if they only return 1 and use constraint semantics to terminate search?
                [(== x a) (proc d)]
-               [(=/= x a) (asspo x t proc)]))))
+               [(=/= x a) (asspo x t proc)])))
+
+  (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
+    (conde
+      [(== xxs '()) (== oos '())]
+      [(matcho11 ([(x . xs) xxs])
+                 (let ([x^ (constraint (f x))])
+                   (conde
+                     [x^ (matcho11 ([(o . os) oos]) (== x o) (filtero f xs os))]
+                     [(noto x^) (filtero f xs oos)])))])))

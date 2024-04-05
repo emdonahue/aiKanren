@@ -233,15 +233,6 @@
           (run1 (x1 x2 x3 x4 x5)
                 (noto (presento 100 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
- (tassert "noto presento found by generative test" (run1 (x1 x2) (noto (presento x2 `((,x2) ,x1 . ,x1))) (== x1 1)) (void))
-
-
- ;; === FILTERO ===
-
- (tassert "filtero null" (run* q (filtero (lambda (x) succeed) '() q)) '(()))
- (tassert "filtero succeed" (run* q (filtero (lambda (x) succeed) '(1 2 3) q)) '((1 2 3)))
- (tassert "filtero fail" (run* q (filtero (lambda (x) fail) '(1 2 3) q)) '(()))
- (tassert "filtero ==" (run* q (filtero (lambda (x) (== x 2)) '(1 2 3) q)) '((2)))
- (tassert "filtero |" (run* q (filtero (lambda (x) (disj (== x 2) (== x 3))) '(1 2 3) q)) '((2 3))))
+ (tassert "noto presento found by generative test" (run1 (x1 x2) (noto (presento x2 `((,x2) ,x1 . ,x1))) (== x1 1)) (void)))
 
 

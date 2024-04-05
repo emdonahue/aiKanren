@@ -1,5 +1,5 @@
 (library (constraints)
-  (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo filtero)
+  (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo)
   (import (chezscheme) (goals) (variables) (negation) (state) (matcho) (utils))
   
   (define (booleano v) ; Constrains a term to be either #t or #f.
@@ -117,13 +117,4 @@
        (noto (pairo term))
        (matcho11 absento ([(a . d) term])
                (absento absent a)
-               (absento absent d)))))
-
-  (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
-    (disj
-      [conj (== xxs '()) (== oos '())]
-      (matcho11 ([(x . xs) xxs])
-              (let ([x^ (f x)])
-                (disj
-                  [conj x^ (matcho11 ([(o . os) oos]) (== x o) (filtero f xs os))]
-                  [conj (noto x^) (filtero f xs oos)]))))))
+               (absento absent d))))))
