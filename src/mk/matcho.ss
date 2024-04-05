@@ -57,7 +57,48 @@
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded? ;TODO try returning expanded and not suspending if true
           (values (conj ==s g) s)
-          (nyi non expanded goals))))
+          (let* ([vid (state-varid s)]
+                 [pattern-bindings (map (lambda (b) (set! vid (fx1+ vid)) (cons b (make-var vid)))
+                                        (substitution-pattern-vars (matcho14-substitution g)))]
+                 [sub/ground (map (lambda (b) ;TODO can pattern vars be rhs to both pattern and attributed or just one?
+                                     (cons (car b)
+                                           (fresh-patterns (cdr b) pattern-bindings))) (matcho14-substitution g))])
+            (let-values ([(sub/pattern sub/attributed) (partition pattern-binding? sub/ground)])
+              (values (conj* ==s (substitution->unification sub/attributed) ((matcho14-ctn g) (append pattern-bindings sub/pattern))) (set-state-varid s vid)))))))
+
+  (define matcho/make-fresh
+    (case-lambda
+      [(s vid) (matcho/make-fresh s vid s)]
+      [(s vid s/fresh)
+       (if (null? s) (values s/fresh vid)
+           (let-values ([(s/fresh vid) (matcho/make-fresh/binding (cdar s) vid s/fresh)])
+             (matcho/make-fresh (cdr s) vid s/fresh)))]))
+
+  (define (substitution->unification sub)
+    (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed sub))
+  
+  (define (fresh-patterns b vs)
+    (exclusive-cond
+     [(pair? b) (cons (fresh-patterns (car b) vs) (fresh-patterns (cdr b) vs))]
+     [(and (var? b) (pattern-var? b)) (cdr (assq b vs))]
+     [else b]))
+
+  (define (matcho/make-fresh/binding b vid s)
+    (exclusive-cond
+     [(pair? b) (let-values ([(vid s) (matcho/make-fresh/binding (car b) vid s)])
+                  (matcho/make-fresh/binding (cdr b) vid s))]
+     [(and (var? b) (pattern-var? b) (not (assq b s)))
+      (let ([vid (fx1+ vid)]) (values ))]))
+  
+  (define substitution-pattern-vars
+    (case-lambda
+      [(s) (fold-left
+            (lambda (vs b) (substitution-pattern-vars (cdr b) vs)) '() s)]
+      [(b vs)
+       (exclusive-cond
+        [(pair? b) (substitution-pattern-vars (cdr b) (substitution-pattern-vars (car b) vs))]
+        [(and (var? b) (pattern-var? b) (not (memq b vs))) (cons b vs)]
+        [else vs])]))
   
   (define matcho/expand
     (org-case-lambda matcho/expand
