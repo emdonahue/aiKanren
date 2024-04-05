@@ -21,6 +21,7 @@
    (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
    (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
    (tassert "evalo cdr" (evalo '(cdr (cons 42 43))) 43)
+   (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
 
    (tassert "evalo null? number" (run1 () (evalo '(null? 42) #f)) '())
    (tassert "evalo null? empty" (evalo '(null? '())) #t)
@@ -31,8 +32,7 @@
    (tassert "evalo apply lambda variadic" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
    (tassert "evalo apply lambda variadic eval arg" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
    (tassert "evalo apply var" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda (x) x)))))) 42)
-   (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))
-   (tassert "evalo list" (evalo '(list 42 42)) '(42 42))
+   (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))   
 
    (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
 #;
@@ -191,4 +191,10 @@
     (f 1)) '(1 . 1))))
     
    )
-))
+   )
+
+ (parameterize ([interpreter/lambda/variadic #t])
+  (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
+    (tassert "evalo quine" (evalo q) q)))
+; (tassert "evalo quine" (run1 x1 (evalo x1 (list (assq 'list initial-env)) x1)) 1)
+ )

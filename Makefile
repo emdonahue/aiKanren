@@ -26,7 +26,7 @@ bench:
 # Builds a set of benchmarks to test performance improvements.
 	@mkdir -p benchmarks
 	@echo '(generate-wpo-files #t) (compile-program "src/benchmarks/benchmarks.ss") (compile-whole-program "src/benchmarks/benchmarks.wpo" "src/benchmarks/benchmarks.so")' | scheme -q --compile-imported-libraries --libdirs src/mk:src/benchmarks:src/examples --optimize-level 3
-	@scheme  --compile-imported-libraries --optimize-level 3 --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
+	@scheme --compile-imported-libraries --optimize-level 3 --program src/benchmarks/benchmarks.so | sed -E 's/#<time-duration ([[:digit:].]+)>/\1/g' | LC_COLLATE=C sort > benchmarks/bench
 	@if [[ 1 < $$(ls -1 benchmarks | wc -l) ]]; then BENCHMARK=$$(ls -1v benchmarks | tail -n1); LC_COLLATE=C join -e0 -oauto -a1 -a2 -t$$'\t' benchmarks/$$BENCHMARK benchmarks/bench | awk -vOFS='\t' -F'\t' -vBENCHMARK=$$BENCHMARK 'BEGIN {print "benchmark",BENCHMARK,"current","% improvement","% > prev","slower?"} {if ($$2==0||$$3==0) {$$4="-"; $$5="-"} else {$$4=-100*($$3-$$2)/$$2" %"; $$5=$$2/$$3; $$5=($$2/$$3-1)*100; if($$5<0) $$6="x"} print}' | column -ts$$'\t'; else cat benchmarks/bench | column -ts$$'\t'; fi
 	@cp benchmarks/bench benchmarks/bench-$$(ls -1v benchmarks | wc -l)
 
