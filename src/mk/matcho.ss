@@ -2,7 +2,7 @@
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
-  (export matcho matcho-pair matcho/expand matcho-attributed-vars
+  (export matcho matcho-pair matcho/expand matcho-attributed-vars matcho/run
           matcho3 matcho-tst matcho5 matcho9 matcho/fresh2 pattern->term2 matcho6 matcho11 matcho/fresh pattern->term ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
@@ -11,7 +11,7 @@
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
   ;; TODO can we fail to fail if matcho is waiting un a binding that is partially filled and that has constraints that would make it fail even in its partial state?
   ;; TODO do we need expanded? for constraints?
-  
+
   #;
   (define-syntax unroll-lst
     (syntax-rules ()
@@ -47,10 +47,17 @@
   (define (pattern-binding? b)
     (cert (pair? b) (var? (car b)))
     (pattern-var? (car b)))
-  
+
   (define (matcho-attributed-vars g)
     (cert (matcho14? g))
     (map car (remp pattern-binding? (matcho14-substitution g))))
+
+  (define (matcho/run g s)
+    (cert (matcho14? g) (state? s))
+    (let-values ([(expanded? g ==s) (matcho/expand g s)])
+      (if expanded? ;TODO try returning expanded and not suspending if true
+          (values (conj ==s g) s)
+          (nyi non expanded goals))))
   
   (define matcho/expand
     (org-case-lambda matcho/expand
@@ -60,7 +67,7 @@
        (let ([free-binding (find (lambda (b) (and (not (zero? (var-id (car b)))) ; Get an unwalked attributed var
                                                   (not (memq (car b) vs))
                                                   (not (no-pattern-vars? (cdr b))))) sub)])
-         (if free-binding ; If one exists, 
+         (if free-binding ; If one exists,
              (let ([sub (mini-unify (remq free-binding sub) ; walk the var and unify its value into the mini substitution.
                                     (cdr free-binding)  (walk-var s (car free-binding)))])
                (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
@@ -78,11 +85,13 @@
              ;; If there are no unwalked attributed vars remaining, suspend expansion and return.
              (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-ctn g)) ==s)))]))
 
+
+
   (define (no-pattern-vars? x)
     (if (pair? x)
         (and (no-pattern-vars? (car x)) (no-pattern-vars? (cdr x)))
         (not (and (var? x) (zero? (var-id x))))))
-  
+
   (define-syntax matcho/in-vars
     (syntax-rules () ; Extracts fresh var identifiers before running the match logic.
       [(_ patterns bindings-body) (matcho/in-vars patterns bindings-body ())] ; When called initially, create empty list for ids.
@@ -116,7 +125,7 @@
 
 
 
-  
+
 
   #;
   (define-syntax matcho12
@@ -137,13 +146,13 @@
        (let ([a (car expr)]
              [d (cdr expr)])
         (when (pair? expr) (matcho/ground [p-car a] [p-cdr d])))]
-      
+
       [(_ [pattern expr])
        (identifier? #'pattern)
        (set! pattern expr)]
 
       [(_ [pattern expr]) (void)]
-      
+
       [(_  binding0 binding ...)
        (begin (matcho/ground binding0) (matcho/ground binding ...))]))
 
@@ -151,16 +160,16 @@
     ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
     (syntax-rules ()
       [(_ bindings body) (matcho/fresh3 bindings body ())] ; When initially called, create an empty list of duplicate ids.
-      
+
       [(_ () body dup-ids) body ] ; When out of patterns, all vars are bound, so simply execute body.
-      
+
       [(_ ((p-car . p-cdr) pattern ...) body dup-ids) ; Destructure pair patterns and push identifiers into pattern buffer.
        (not (eq? (syntax->datum #'p-car) 'quote))
        (matcho/fresh3 (p-car p-cdr pattern ...) body dup-ids)]
-      
+
       [(_ (p0 p ...) body (dup-id ...)) ; Create a fresh var if we see an identifier we haven't seen before & bind it.
        (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(dup-id ...))))
-       (let ([p0 (make-var 0)])         
+       (let ([p0 (make-var 0)])
          (matcho/fresh3 (p ...) body (p0 dup-id ...)))]
 
       [(_ (p0 p ...) body dup-ids) ; Ignore anything not a new identifier.
@@ -181,7 +190,7 @@
       [(_ name ([p v] ...) body ...)
        (let-values ([(expanded? c m) (matcho2 name () () #f ([v p] ...) body ...)])
          (conj c m))]))
-  
+
   (define-syntax matcho3
     (syntax-rules ()
       [(_ (bindings ...) body ...) (matcho3 match (bindings ...) body ...)]
@@ -228,15 +237,15 @@
     ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
     (syntax-rules ()
       [(_ vid shared-ids () body ...) (begin body ...) ] ; When out of patterns, all vars are bound, so simply execute body.
-      
+
       [(_ vid shared-ids ((p-car . p-cdr) pattern ...) body ...) ; Destructure pair patterns and push identifiers into pattern buffer.
        (not (eq? (syntax->datum #'p-car) 'quote))
        (matcho/fresh vid shared-ids (p-car p-cdr pattern ...) body ...)]
-      
+
       [(_ vid (shared-id ...) (p0 p ...) body ...) ; Create a fresh var if we see an identifier we haven't seen before & bind it.
        (and (identifier? #'p0) (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(shared-id ...))))
        (let ([vid (fx1+ vid)])
-         (let ([p0 (make-var vid)])         
+         (let ([p0 (make-var vid)])
           (matcho/fresh vid (p0 shared-id ...) (p ...) body ...)))]
 
       [(_ vid shared-ids (p0 p ...) body ...) ; Ignore anything not a new identifier.
@@ -267,7 +276,7 @@
       [() '()]
       [(a . d) (cons (syntax->pair #'a) (syntax->pair #'d))]
       [a #'a]))
-  
+
   (meta define (matcho/contains-free-name pattern shared-ids)
         (if (pair? pattern)
             (or (matcho/contains-free-name (car pattern) shared-ids)
@@ -275,7 +284,7 @@
             (and (identifier? pattern)
                  (not (memp (lambda (i) (bound-identifier=? i pattern)) shared-ids))))
         )
-  
+
   (define-syntax matcho2 ;TODO have the new name binder re-introduce the suspended bindings to check if any are now fully ground
     ;; TODO test if goal continues to walk vars pulled up by walking previous vars into pairs
     (syntax-rules ()
@@ -298,7 +307,7 @@
       [(_ name shared-ids ([var pattern] ...) s () body ...) ; Create fresh vars.
        (let ([vid (state-varid s)])
          (matcho/fresh
-          vid shared-ids (pattern ...)          
+          vid shared-ids (pattern ...)
           (values (set-state-varid s vid) (conj* (== var (pattern->term pattern)) ...) (conj* body ...))))]
 
       [(_ name shared-ids suspended-bindings is-constraint? ([out! ()] binding ...) body ...) ; Empty lists quote the empty list and recurse as ground.
@@ -350,11 +359,11 @@
     ;; Called when matcho runs as a goal to instantiate any fresh variables in the patterns and bind them in the lexical environment.
     (syntax-rules ()
       [(_ vid shared-ids () body ...) (begin body ...) ] ; When out of patterns, all vars are bound, so simply execute body.
-      
+
       [(_ vid shared-ids ((p-car . p-cdr) pattern ...) body ...) ; Destructure pair patterns and push identifiers into pattern buffer.
        (not (eq? (syntax->datum #'p-car) 'quote))
        (matcho/fresh2 vid shared-ids (p-car p-cdr pattern ...) body ...)]
-      
+
       [(_ vid (shared-id ...) (p0 p ...) body ...) ; Create a fresh var if we see an identifier we haven't seen before & bind it.
        (and (identifier? #'p0)
             (not (memp (lambda (i) (bound-identifier=? i #'p0)) #'(shared-id ...)))
@@ -373,7 +382,7 @@
        (not (eq? (syntax->datum #'a) 'quote))
        (cons (pattern->term2 a) (pattern->term2 d))]
       [(_ a) a]))
-  
+
   (define matcho5
     (syntax-rules ()
       [(_ shared-ids () is-constraint? () body ...) (values #t succeed (conj* body ...))] ; No-op. Once all bindings have been processed, run the body.
