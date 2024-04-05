@@ -2,11 +2,9 @@
 
   (bench "quine" 100
          ;; Greedily consume ground terms without extending the substitution/store
-         (run 1 (q) (quine-evalo q q)))
+         (parameterize ([interpreter/number #f]
+                        [interpreter/boolean #f]
+                        [interpreter/lambda/variadic #f]
+                        [interpreter/lambda/multi-arg #f])
 
-  )
-#;
-(parameterize ([lazy-solver #f])
-  (bench "quine" 1
-         ;; Greedily consume ground terms without extending the substitution/store
-         (run 1 (q) (quine-evalo q q))))
+           (run 1 (x1) (evalo x1 (list (assq 'list initial-env)) x1)))))
