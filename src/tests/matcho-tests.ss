@@ -21,6 +21,7 @@
     (tassert "match simple variable rename" (matcho11 ([a 1]) (== x1 a)) (== x1 1))
     (tassert "match multiple empty list" (matcho11 ([() '()] [() '()]) succeed) succeed)
     (tassert "match prim-pair fail" (run1 x1 (matcho11 ([(a 2) 1]) (== a x1))) (void))
+    (tassert "match prim-null fail" (run1 x1 (matcho11 ([(a 2) '()]) (== a x1))) (void))
     (tassert "match ground pair" (matcho11 ([(a . d) '(1 . 2)]) (== x1 (cons d a))) (== x1 '(2 . 1)))
     (tassert "match non-pair fail" (matcho11 ([(a . d) 1]) succeed) fail)
     (tassert "match ground car fail" (matcho11 ([(2 . d) '(1 . 2)]) succeed) fail)
@@ -51,6 +52,9 @@
     (tassert "match in-var binds early" (matcho11 ([(a . d) '(1 . 2)] [(a . d) x1]) succeed) (== x1 '(1 . 2)))
     (tassert "match in-var binds late" (matcho11 ([(a . d) x1] [(a . d) '(1 . 2)]) succeed) (== x1 '(1 . 2)))
     (tassert "match in-var binds out-var" (matcho11 ([(a . d) (cons x1 x2)] [(a . d) '(1 . 2)]) succeed) (conj (== x1 1) (== x2 2)))
+    (tassert "match duplicate patterns" (matcho11 ([(a . a) (cons x1 x2)])) (== x1 x2))
+    (tassert "match pattern vars shadow bindings" (matcho11 ([(x2 . x1) (cons x1 x2)]) (== x2 2) (== x1 1)) (conj (== x1 2) (== x2 1)))
+    )
 
 
 
@@ -58,7 +62,8 @@
   (pretty-print (expand '(matcho3 ([x2
                         ('closure ('lambda params body) env^)]) (== x1 (list params body env^)))))
 
-  ;; Constraint matcho
+    ;; Constraint matcho
+    
 
   (begin
     (tassert "match constraint free" (matcho14-substitution (run1 x1 (constraint (matcho11 ([(a 2) x1]))))) (list (cons x1 (list x0 2))))
@@ -66,6 +71,7 @@
              (matcho14-substitution
               (run1 x1 (exist (x2) (constraint (matcho11 ([(a 2) x1]))) (== x1 x2)))) (list (cons x2 (list x0 2))))
     (tassert "match lazy constraint primitive fail" (run1 x1 (constraint (matcho11 ([(a . d) x1]) succeed)) (== x1 1)) (void))
+    (tassert "match lazy constraint null fail" (run1 x1 (constraint (matcho11 ([(a . d) x1]) succeed)) (== x1 '())) (void))
     (tassert "match constraint unifies ground"
              (run1 (x1 x2 x3) (== x2 (list x3)) (constraint (matcho11 ([(a 2) x1] [(3) x2]))))
              (lambda (a) (and (matcho14? (car a)) (equal? (cadr a) '(3)) (equal? (caddr a) 3))))
@@ -82,6 +88,7 @@
     (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho11 ([(a . d) x1] [(b . c) x3]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho14? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho-attributed-vars (conj-rhs (cadr g))) (list x3))))))
 
   ;; Negated matcho
+  
 
   (begin 
     (tassert "match noto pattern fail" (run1 x1 (== x1 `(1 . 2)) (noto (matcho11 ([(2 . y) x1]) succeed))) '(1 . 2))
@@ -92,6 +99,7 @@
     (tassert "noto expands match before negating" (run1 (x1 x2 x3) (== x3 3) (== x1 '(1 . 2)) (noto (matcho11 ([(a . d) x1]) (disj (=/= x2 a) (== x3 d))))) (list '(1 . 2) 1 3)))
 
   ;; Goal matcho
+  
 
   (begin
     (tassert "match goal walk var" (run1 (x1 x2) (== x1 (cons 1 x2)) (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '((1 . 2) 2))
@@ -101,6 +109,7 @@
              (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2)))
 
   ;; Internal utilities
+  
   
   (begin
     (tassert "terms build from patterns"

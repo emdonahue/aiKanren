@@ -29,11 +29,14 @@
               [(== x a)]
               [(=/= x a) (containso x d)])))
 
-  (define (for-eacho proc xs) ; Applies proc to each element of xs.
+  (trace-define (for-eacho proc xs) ; Applies proc to each element of xs.
     (cert (procedure? proc))
+    (printf "START")
+
     (disj (== xs '())
-          (matcho3 for-eacho ([xs (x . xs)])
-                  (proc x)
+
+          (matcho11  ([(x . xs2) xs])
+                  (proc x)#;
                   (for-eacho proc xs))))
   
   (define (assoco x xs o) ;; Unifies x with all keys of alist xs for which o unifies with the value. Analogous to Scheme assoc.

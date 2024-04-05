@@ -29,11 +29,10 @@
 
   (define-syntax matcho11
     (syntax-rules ()
-      [(_ (bindings ...) body ...) (matcho11 match (bindings ...) body ...)]
+      [(_ ([pattern expr] ...) body ...) (matcho11 match ([pattern expr] ...) body ...)]
       [(_ name ([pattern expr] ...) body ...)
-       (matcho/in-vars (pattern ...)
-                       (([pattern expr] ...)
-                        (conj* body ...)))]))
+       (identifier? #'name)
+       (matcho/shadow name ([pattern expr] ...) (conj* body ...))]))
 #;
 (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))])
                             (matcho/walk (pattern ...) s
@@ -133,6 +132,14 @@
         (and (no-pattern-vars? (car x)) (no-pattern-vars? (cdr x)))
         (not (and (var? x) (zero? (var-id x))))))
 
+  (define-syntax matcho/shadow
+    (syntax-rules ()
+      [(_ name ([pattern expr] ...) body) (matcho/in-vars (pattern ...) (([pattern expr] ...) body))]
+      #;
+      [(_ patterns bindings-body shadows) (matcho/shadow patterns bindings-body)]
+      #;
+      [(_ ([p e] pe ...) bindings-body (shadow ...)) (let ([v e]) (matcho/shadow (pe ...) bindings-body (shadow ... [p v])))]))
+  
   (define-syntax matcho/in-vars
     (syntax-rules () ; Extracts fresh var identifiers before running the match logic.
       [(_ patterns bindings-body) (matcho/in-vars patterns bindings-body ())] ; When called initially, create empty list for ids.
