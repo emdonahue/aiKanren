@@ -87,8 +87,8 @@
                 (proxy x1)))
 
  ;; Multi variable with fresh
- (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho3 [(x1 (a . d))]) (== x2 2)))
-          (lambda (a) (and (disj? (car a)) (matcho4? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
+ (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho11 ([(a . d) x1])) (== x2 2)))
+          (lambda (a) (and (disj? (car a)) (matcho14? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
  
  ;; === SOLVER ===
  (tassert "constraint ==" (run1 x1 (constraint (== x1 1))) 1)
@@ -181,9 +181,9 @@
  (tassert "disunify simplify abort pconstraint" (run1 x1 (symbolo x1) (=/= x1 1)) (symbolo x1))    
  (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (numbero x1) (=/= x1 1)))
  (tassert "disunify simplify abort negative pconstraint" (run1 x1 (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
- (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 1)) (lambda (c) (matcho4? c)))
- (tassert "disunify simplify match" (run1 x1 (constraint (matcho3 ([x1 (a . d)]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho4? (conj-lhs c)))))
- (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho3 ([x1 (a . d)])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho4? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
+ (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho11 ([(a . d) x1]))) (=/= x1 1)) (lambda (c) (matcho14? c)))
+ (tassert "disunify simplify match" (run1 x1 (constraint (matcho11 ([(a . d) x1]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho14? (conj-lhs c)))))
+ (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho11 ([(a . d) x1])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho14? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
  (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) (disj (== x2 2) (== x1 1))))
  (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
  (tassert "disunify suspends and preserves whole ctn" (run1 (x1 x2 x3) (constraint (=/= (cons x1 x2) '(())) (== x3 1))) (list (disj (=/= x1 '()) (=/= x2 '())) x2 1))
@@ -226,7 +226,7 @@
  (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list (conj (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) x2))
 
  ;; === NOTO ===
- (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho3 ([x2 (a . d)]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
+ (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho11 ([(a . d) x2]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
  ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 x1 (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
  (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) x2))
  (tassert "absento failed because match wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
@@ -241,7 +241,7 @@
  
  ;; === MATCH ===
  ;;(tassert "match doesnt blend" (caddr (run1 (x1 x2 x3) (== x1 (cons x2 x3)) (absento 'closure x1))) 1)
- (tassert "match doesn't overwrite =/=" (run1 x1 (=/= x1 '(())) (matcho3 ([x1 (a . d)]) (== a 1) (== d 2))) '(1 . 2))
+ (tassert "match doesn't overwrite =/=" (run1 x1 (=/= x1 '(())) (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '(1 . 2))
 
  ;; === REDUCTIONS ===
  (tassert "reduce == simplifies =/=" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
@@ -250,7 +250,7 @@
  (tassert "reduce == =/= fail" (run1 (x1 x2) (constraint (== x1 x2) (=/= x1 x2))) (void))
  (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
  (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
- (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho3 ([x1 (a . b)]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
+ (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho11 ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
  (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
  ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==
 
