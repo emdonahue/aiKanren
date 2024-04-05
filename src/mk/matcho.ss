@@ -132,13 +132,14 @@
         (and (no-pattern-vars? (car x)) (no-pattern-vars? (cdr x)))
         (not (and (var? x) (zero? (var-id x))))))
 
-  (define-syntax matcho/shadow
+  (define-syntax matcho/shadow 
     (syntax-rules ()
-      [(_ name ([pattern expr] ...) body) (matcho/in-vars (pattern ...) (([pattern expr] ...) body))]
+      [(_ name ([pattern expr] ...) body) (matcho/shadow name ([pattern expr] ...) body ())] ; Initially introduce an empty list for shadowed bindings
       #;
       [(_ patterns bindings-body shadows) (matcho/shadow patterns bindings-body)]
-      #;
-      [(_ ([p e] pe ...) bindings-body (shadow ...)) (let ([v e]) (matcho/shadow (pe ...) bindings-body (shadow ... [p v])))]))
+      [(_ name () body ([pattern expr] ...)) (matcho/in-vars (pattern ...) (([pattern expr] ...) body))] ; When all exprs are shadowed, proceed.
+      ;; For each pattern, bind the expr to a new identifier and replace the expr binding with an identifier binding.
+      [(_ name ([p e] pe ...) body (shadow ...)) (let ([v e]) (matcho/shadow name (pe ...) body (shadow ... [p v])))]))
   
   (define-syntax matcho/in-vars
     (syntax-rules () ; Extracts fresh var identifiers before running the match logic.

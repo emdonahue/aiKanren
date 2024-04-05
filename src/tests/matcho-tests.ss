@@ -33,7 +33,7 @@
     (tassert "match nested car" (matcho11 ([((a . b) . d) '((1 . 3) . 2)]) (== x1 (list a d b))) (== x1 '(1 2 3)))
     (tassert "match nested list" (matcho11 ([((a . b)) '((1 . 2))]) (== x1 (cons b a))) (== x1 '(2 . 1)))
     (tassert "match nested list var" (matcho11 ([((a . b)) '((1 . 2))]) (== x1 (cons b a))) (== x1 '(2 . 1))) 
-    (tassert "match shared varname" (matcho11 ([a 1] [2 a]) succeed) fail)    
+    (tassert "match shared varname" (matcho11 ([a 1] [a 2]) succeed) fail)    
     (tassert "match list fail" (run1 () (matcho11 ([(a 1) '(1 2)]))) (void))
     (tassert "match list succeed" (run1 () (matcho11 ([(a 1) '(1 1)]))) '())
     (tassert "match list extract" (run1 (x1 x2) (matcho11 ([(a b) '(1 2)]) (== x1 a) (== x2 b))) '(1 2))
