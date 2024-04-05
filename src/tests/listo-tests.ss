@@ -35,12 +35,8 @@
  (tassert "asspo 2" (run* x1 (asspo 1 '((0 . 1) (1 . 2) (1 . 3)) (lambda (x) (== x x1)))) '(2))
 
  ;; for-eacho
- (pretty-print  (for-eacho (lambda (x) (== x 1)) x1))
- (exit)
- (org-trace (tassert "for-eacho empty" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1)) '()))
- (exit)
- (org-trace (tassert "for-eacho empty" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '()))
- (exit)
+
+ (tassert "for-eacho empty" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
  (tassert "for-eacho succeed 1" (run1 x1 (for-eacho (lambda (x) (org-printf "for-eacho succeed 1 test~%") (org-display x) (== x 1)) x1) (== x1 '(1))) '(1))
  (tassert "for-eacho succeed 2" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
  (tassert "for-eacho fail" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))

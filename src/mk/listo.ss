@@ -29,15 +29,12 @@
               [(== x a)]
               [(=/= x a) (containso x d)])))
 
-  (trace-define (for-eacho proc xs) ; Applies proc to each element of xs.
+  (define (for-eacho proc xs) ; Applies proc to each element of xs.
     (cert (procedure? proc))
-    (printf "START")
-
     (disj (== xs '())
-
-          (matcho11  ([(x . xs2) xs])
-                  (proc x)#;
-                  (for-eacho proc xs))))
+          (matcho11  ([(x . xs) xs])
+                     (proc x)
+                     (for-eacho proc xs))))
   
   (define (assoco x xs o) ;; Unifies x with all keys of alist xs for which o unifies with the value. Analogous to Scheme assoc.
     (asspo x xs (lambda (y) (== o y))))
@@ -45,7 +42,7 @@
   (define (asspo x xs proc) ; Binds x to all keys of alist xs for which proc does not fail on the value. Analogous to Scheme assp.
 
                                         
-    (matcho3 asspo ([xs ((a . d) . t)]) 
+    (matcho11 asspo ([((a . d) . t) xs]) 
              (conde ;TODO can alist relations just be constraints if they only return 1 and use constraint semantics to terminate search?
                [(== x a) (proc d)]
                [(=/= x a) (asspo x t proc)])))
