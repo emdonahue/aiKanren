@@ -57,7 +57,7 @@
                      (let-values ([(sub/ground sub/free) ; Extract ground attributed variables as unifications by inspection of reified rhs.
                                        (partition (lambda (b) (and (not (zero? (var-id (car b))))
                                                                    (no-pattern-vars? (cdr b)))) sub)])
-                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub) ; If there are no rhs pattern variables, all attributed variables must be fully ground.
+                      (if (for-all (lambda (b) (zero? (var-id (car b)))) sub/free) ; If there are no more attributed vars, we can never add new information, so we must have all the ground information and we can expand the body.
                           (values #t ((matcho14-ctn g) sub/free) (conj
                                                                   (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground) ==s)) ; Therefore execute the body.
                           (matcho/expand g s sub/free ; and continue walking unwalked variables.
@@ -84,7 +84,7 @@
                    (let-values ([(in-vars/ground in-vars/free) (partition no-pattern-vars? in-vars)]
                                 [(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ; No rhs patterns => all patterns bound => continue.
-                         (let ([id (mini-walk s id)] ...)
+                         (let ([id (mini-walk s id)] ...) ; TODO instead of checking patterns, check for attr vars
                            (conj
                             (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
                             body))
