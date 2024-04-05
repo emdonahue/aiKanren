@@ -77,6 +77,9 @@
              (lambda (a) (and (matcho14? (car a)) (equal? (cadr a) '(3)) (equal? (caddr a) 3))))
     (tassert "match constraint runs immediately when bound"
              (run1 (x1 x2) (== x1 (cons x2 2)) (constraint (matcho11 ([(a . d) x1]) (== a 1)))) '((1 . 2) 1))
+    (tassert "match constraint makes all unifications when fully ground"
+             (run1 (x1 x2) (== x1 '(1 . 2)) (constraint (matcho11 ([(a . d) x1] [(a . d) x2])))) '((1 . 2) (1 . 2)))
+    ;;TODO test that it still sloughs off the unifications when it runs the bound ctn
     (tassert "match constraint disj first" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj rest" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x2 '(1 2))) '((1 2) (1 2)))
     (tassert "match constraint disj all" (run1 (x1 x2) (constraint (matcho3 ([x1 (a 2)] [x2 (a 2)]) (== a 1))) (== x1 '(1 2)) (== x2 x1)) '((1 2) (1 2)))

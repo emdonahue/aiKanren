@@ -10,6 +10,7 @@
   ;; TODO make matcho work for pure values outside of mk. a la carte unification/pattern matching
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
   ;; TODO can we fail to fail if matcho is waiting un a binding that is partially filled and that has constraints that would make it fail even in its partial state?
+  ;; TODO do we need expanded? for constraints?
   
   #;
   (define-syntax unroll-lst
@@ -44,21 +45,25 @@
       [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
       [(g s sub ==s vs)
        (cert (matcho14? g) (state? s) (list? sub) (goal? ==s) (list? vs))
-       (let ([free-binding (find (lambda (b) (and (not (zero? (var-id (car b))))
+       (let ([free-binding (find (lambda (b) (and (not (zero? (var-id (car b)))) ; Get an unwalked attributed var
                                                   (not (memq (car b) vs))
                                                   (not (no-pattern-vars? (cdr b))))) sub)])
-         (if free-binding
-             (let ([sub (mini-unify (remq free-binding sub) (cdr free-binding) (walk-var s (car free-binding)))])
-               (if (failure? sub) (values #t fail fail)
-                   (let ([sub (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
-                     (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub)
-                         (values #t ((matcho14-ctn g) sub) ==s)
-                         (let-values ([(sub/ground sub/free)
+         (if free-binding ; If one exists, 
+             (let ([sub (mini-unify (remq free-binding sub) ; walk the var and unify its value into the mini substitution.
+                                    (cdr free-binding)  (walk-var s (car free-binding)))])
+               (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
+                   (let ([sub ; reify the entire mini substitution so that fully ground attributed vars can be identified by inspection.
+                          (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
+                     (let-values ([(sub/ground sub/free) ; Extract ground attributed variables as unifications by inspection of reified rhs.
                                        (partition (lambda (b) (and (not (zero? (var-id (car b))))
                                                                    (no-pattern-vars? (cdr b)))) sub)])
-                           (matcho/expand g s sub/free
-                                          (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
-                                          (cons (car free-binding) vs)))))))
+                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) sub) ; If there are no rhs pattern variables, all attributed variables must be fully ground.
+                          (values #t ((matcho14-ctn g) sub/free) (conj
+                                                                  (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground) ==s)) ; Therefore execute the body.
+                          (matcho/expand g s sub/free ; and continue walking unwalked variables.
+                                         (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
+                                         (cons (car free-binding) vs)))))))
+             ;; If there are no unwalked attributed vars remaining, suspend expansion and return.
              (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-ctn g)) ==s)))]))
 
   (define (no-pattern-vars? x)
