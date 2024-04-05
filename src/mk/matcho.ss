@@ -2,7 +2,7 @@
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
-  (export matcho matcho-pair matcho/expand
+  (export matcho matcho-pair matcho/expand matcho-attributed-vars
           matcho3 matcho-tst matcho5 matcho9 matcho/fresh2 pattern->term2 matcho6 matcho11 matcho/fresh pattern->term ;matcho5 matcho4
           expand-matcho matcho-attributed? matcho-attributed? matcho-test-eq?)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
@@ -39,6 +39,18 @@
                             (matcho/walk (pattern ...) s
                                          (pattern->identifiers (pattern ...)))
   )
+
+  (define (pattern-var? v)
+    (cert (var? v))
+    (zero? (var-id v)))
+
+  (define (pattern-binding? b)
+    (cert (pair? b) (var? (car b)))
+    (pattern-var? (car b)))
+  
+  (define (matcho-attributed-vars g)
+    (cert (matcho14? g))
+    (map car (remp pattern-binding? (matcho14-substitution g))))
   
   (define matcho/expand
     (org-case-lambda matcho/expand
