@@ -124,7 +124,7 @@
                                          (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
                                          (cons (car free-binding) vs)))))))
              ;; If there are no unwalked attributed vars remaining, suspend expansion and return.
-             (values #f (make-matcho14 (matcho14-out-vars g) (matcho14-in-vars g) sub (matcho14-ctn g)) ==s)))]))
+             (values #f (make-matcho14 sub (matcho14-ctn g)) ==s)))]))
 
 
 
@@ -150,11 +150,10 @@
                            (conj
                             (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) succeed out-vars/ground)
                             body))
-                         (make-matcho14
-                          (map car out-vars/free) #f s
-                          (lambda (s)
-                            (let ([id (mini-walk s id)] ...)
-                              body))))))))))]  ;TODO should this be reify
+                         (make-matcho14 s
+                                        (lambda (s)
+                                          (let ([id (mini-walk s id)] ...)
+                                            body))))))))))]  ;TODO should this be reify
       [(_ ((a . d) p ...) bindings-body ids) ; Recurse on pairs
        (not (eq? (syntax->datum #'a) 'quote))
        (matcho/in-vars (a d p ...) bindings-body ids)]

@@ -123,7 +123,7 @@
     (disj
       [conj (== xxs '()) (== oos '())]
       (matcho11 ([(x . xs) xxs])
-              (let ([x^ (f x)]) ; TODO should f be wrapped in constraint to filter properly?
+              (let ([x^ (f x)])
                 (disj
                   [conj x^ (matcho11 ([(o . os) oos]) (== x o) (filtero f xs os))]
                   [conj (noto x^) (filtero f xs oos)]))))))
