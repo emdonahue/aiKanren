@@ -32,14 +32,14 @@
   (define (eval-lambda expr env val)
     (trace-goal eval-lambda
      (fresh ()
-       (matcho3 lambda ([expr ('lambda (arg) body)]) ;TODO enable environment variables in patterns with unquote
+       (matcho11 lambda ([('lambda (arg) body) expr]) ;TODO enable environment variables in patterns with unquote
                (== `(closure ,arg ,body ,env) val)
                (symbolo arg))
        (not-in-envo 'lambda env))))
 
   (define (eval-list expr env val)
     (trace-goal eval-list
-                (matcho3 eval-list ([expr ('list . es)])
+                (matcho11 eval-list ([('list . es) expr])
                         (eval-proper-list es env val)
                         (absento 'closure es)
                         (not-in-envo 'list env))))
@@ -48,21 +48,21 @@
     (trace-goal eval-proper-list
      (conde
        [(== expr '()) (== val '())]
-       [(matcho3 eval-proper-list ([expr (e . es)]
-                 [val (v . vs)])
+       [(matcho11 eval-proper-list ([(e . es) expr]
+                 [(v . vs) val])
 ;                (noopo (org-display expr val))
                 (evalo e env v)
                 (eval-proper-list es env vs))])))
   
   (define (eval-apply expr env val)
     (trace-goal eval-apply
-     (matcho3 eval-rator
-      ([expr (rator . rands)])
-      (matcho3 eval-rands ([rands (rand)])                ;TODO merge optimized matchos
+     (matcho11 eval-rator
+      ([(rator . rands) expr])
+      (matcho11 eval-rands ([(rand) rands])                ;TODO merge optimized matchos
               (fresh (closure)
                      (trace-goal eval-rator (evalo rator env closure))
-                     (matcho3 eval-closure
-                      ([closure ('closure param body env^)])
+                     (matcho11 eval-closure
+                      ([('closure param body env^) closure])
                       (symbolo param)
                       (fresh (arg)
                              (trace-goal evalo-rand (evalo rand env arg))                            
@@ -75,8 +75,8 @@
     (trace-goal eval-listo
      (conde
        [(== expr '()) (== val '())]
-       [(matcho3 eval-listo ([expr (e . es)]
-                 [val (v . vs)])
+       [(matcho11 eval-listo ([(e . es) expr]
+                 [(v . vs) val])
                 (evalo e env v)
                 (eval-listo es env vs))])))
 )
