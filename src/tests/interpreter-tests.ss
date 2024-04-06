@@ -200,6 +200,16 @@
     (tassert "evalo quine" (evalo q) q))
   
    (tassert "evalo quine" (run1 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
+   (tassert "evalo 10 quine" (run 10 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
    (tassert "quine synthesis structure test" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
+
+   (tassert "evalo twine" (run1 (x1 x2) (=/= x1 x2)
+                                (evalo x1 (list (assq 'list initial-env)) x2)
+                                (evalo x2 (list (assq 'list initial-env)) x1)) list?)
+
+   (tassert "evalo thrine" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3) (=/= x2 x3)
+                                 (evalo x1 (list (assq 'list initial-env)) x2)
+                                 (evalo x2 (list (assq 'list initial-env)) x3)
+                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?)
   )
  )

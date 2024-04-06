@@ -60,7 +60,7 @@
                  [pattern-bindings (map (lambda (b) (set! vid (fx1+ vid)) (cons b (make-var vid)))
                                         (substitution-pattern-vars (matcho14-substitution g)))]
                  [sub/ground (map (lambda (b) ;TODO can pattern vars be rhs to both pattern and attributed or just one?
-                                     (cons (car b)
+                                     (cons (car b) ; TODO instead of walking/replacing the rhs pattern vars, just stick them on the front and use reify. may b able to save time by only reifynig pattern vars, since attr vars wont be lhs
                                            (fresh-patterns (cdr b) pattern-bindings))) (matcho14-substitution g))])
             (let-values ([(sub/pattern sub/attributed) (partition pattern-binding? sub/ground)])
               (values (conj* ==s (substitution->unification sub/attributed) ((matcho14-ctn g) (append pattern-bindings sub/pattern))) (set-state-varid s vid)))))))
@@ -112,7 +112,7 @@
                                     (cdr free-binding)  (walk-var s (car free-binding)))])
                (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
                    (let ([sub ; reify the entire mini substitution so that fully ground attributed vars can be identified by inspection.
-                          (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)])
+                          (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)]) ; TODO we may only need to reify attr vars
                      (let-values ([(sub/ground sub/free) ; Extract ground attributed variables as unifications by inspection of reified rhs.
                                        (partition (lambda (b) (and (not (zero? (var-id (car b))))
                                                                    (no-pattern-vars? (cdr b)))) sub)])
