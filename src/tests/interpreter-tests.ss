@@ -25,6 +25,11 @@
  (tassert "evalo null? empty" (evalo '(null? '())) #t)
  (tassert "evalo null? number" (run1 () (evalo '(null? (cons 42 43)) #f)) '())
 
+ (tassert "evalo if true" (evalo '(if #t 1 2)) 1)
+ (tassert "evalo if false" (evalo '(if #f 1 2)) 2)
+ (tassert "evalo if null" (evalo '(if (null? '()) 1 2)) 1)
+ (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
+ 
  (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
  (tassert "evalo apply lambda eval arg" (evalo '((lambda (x) x) (cons 42 43))) '(42 . 43))
  (tassert "evalo apply lambda variadic" (evalo '((lambda x x) (cons 42 43))) '((42 . 43)))
@@ -39,10 +44,7 @@
 
 
 
- (tassert "evalo if true" (evalo '(if #t 1 2)) 1)
- (tassert "evalo if false" (evalo '(if #f 1 2)) 2)
- (tassert "evalo if null" (evalo '(if (null? '()) 1 2)) 1)
- (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
+ 
  
  
  
@@ -194,7 +196,8 @@
  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
                 [interpreter/lambda/variadic #f]
-                [interpreter/lambda/multi-arg #f])
+                [interpreter/lambda/multi-arg #f]
+                [interpreter/if #f])
 
    (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (tassert "evalo quine" (evalo q) q))
