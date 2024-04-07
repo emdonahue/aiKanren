@@ -13,8 +13,8 @@
  (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
  (tassert "evalo lookup val later" (evalo-env 'x '((y . (val . 43)) (x . (val . 42)))) 42)
  (tassert "evalo lookup val earlier" (evalo-env 'x '((x . (val . 42)) (y . (val . 43)))) 42)
- (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (x x) ((x . (val . 42)))))
- (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure ((x) x) ((x . (val . 42)))))
+ (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure x x ((x . (val . 42)))))
+ (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (x) x ((x . (val . 42)))))
 
  (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
  (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
