@@ -70,48 +70,6 @@
  
 
 
-
- 
- 
- 
- 
-
-                                        ;    (tassert "evalo and" (evalo '(and)) #t) ;
-
- 
- 
- 
-
- 
-
-
-
- (tassert "evalo append null"
- (evalo '(letrec ([append (lambda (lhs rhs)
- (if (null? lhs) rhs
- (cons (car lhs) (append (cdr lhs) rhs))))])
- (append '() '()))) '())
- (tassert "evalo append lhs null"
- (evalo '(letrec ([append (lambda (lhs rhs)
- (if (null? lhs) rhs
- (cons (car lhs) (append (cdr lhs) rhs))))])
- (append '() '(1 2)))) '(1 2))
-
- (tassert "evalo append recursive 1"
- (evalo '(letrec ([append (lambda (lhs rhs)
- (if (null? lhs) rhs
- (cons (car lhs) (append (cdr lhs) rhs))))])
- (append '(1) '(2 3)))) '(1 2 3))
-
- (tassert "evalo append recursive"
- (evalo '(letrec ([append (lambda (lhs rhs)
- (if (null? lhs) rhs
- (cons (car lhs) (append (cdr lhs) rhs))))])
- (append '(1 2 3) '(4 5 6)))) '(1 2 3 4 5 6))
- 
- (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
- (tassert "evalo quine" (evalo q) q))
-
  (tassert "synthesize duplicate ground"
  (run1 body
  (absento 1 body)
@@ -220,7 +178,7 @@
  )
 
  ;; Quines
-
+#;
  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
                 [interpreter/lambda/variadic #f]
@@ -245,6 +203,10 @@
                                  (evalo x3 (list (assq 'list initial-env)) x1)) list?))
 
  ;; Synthesis
-
-; (tassert "evalo append" (evalo '()))
- )
+ (parameterize ([interpreter/number #f]
+                [interpreter/boolean #f]
+                [interpreter/lambda/variadic #f]
+                [interpreter/letrec #f])
+(let ([env initial-env])
+ (tassert "synthesize check environment injected append"
+          (run1 q (evalo '(append x y) `((append . (rec . ((a b) (if (null? a) b (cons (car a) (append (cdr a) b)))))) (x . (val . (1 2))) (y . (val . (3))) . ,env) q)) '(1 2 3)))))
