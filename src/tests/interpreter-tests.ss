@@ -206,7 +206,18 @@
  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
                 [interpreter/lambda/variadic #f]
-                [interpreter/letrec #f])
-(let ([env initial-env])
+                [interpreter/letrec #f]
+                [interpreter/quote #f])
+(let ([env (filter (lambda (b) (memq (car b) '(null? cons car cdr))) initial-env)])
  (tassert "synthesize check environment injected append"
-          (run1 q (evalo '(append x y) `((append . (rec . ((a b) (if (null? a) b (cons (car a) (append (cdr a) b)))))) (x . (val . (1 2))) (y . (val . (3))) . ,env) q)) '(1 2 3)))))
+          (run1 q (evalo '(append x y) `((append . (rec . ((a b) (if (null? a) b (cons (car a) (append (cdr a) b)))))) (x . (val . (1 2))) (y . (val . (3))) . ,env) q)) '(1 2 3))
+
+ (tassert "synthesize append"
+          (run1 (body)
+                (== body '(if (null? a) b (cons (car a) (f (cdr a) b))))
+                (synthesizeo body
+                             '(
+                               ((() (1)) . (1))
+                               (((1) (2)) . (1 2))
+                               )
+                             env)) 2))))
