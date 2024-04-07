@@ -39,7 +39,7 @@
 
  (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
 
- (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
+ (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure ((y) (cons y y)) ((x . (rec . ((y) (cons y y)))) . ,initial-env)))
  #;
  (begin
  
