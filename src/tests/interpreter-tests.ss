@@ -221,11 +221,9 @@
                                (((1) (2)) . (1 2))
                                )
                              env)) '())
- #;
  (tassert "synthesize append"
           (run1 (body)
-;                (== body '(if (null? a) b (cons (car a) (f (cdr a) b))))
-                (synthesizeo body
+                (synthesizeo `(if (null? a) b (cons (car a) (f ,body b)))
                              '(
                                ((() (1)) . (1))
                                (((1) (2)) . (1 2))
