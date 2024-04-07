@@ -13,8 +13,8 @@
  (tassert "evalo lookup val" (evalo-env 'x '((x . (val . 42)))) 42)
  (tassert "evalo lookup val later" (evalo-env 'x '((y . (val . 43)) (x . (val . 42)))) 42)
  (tassert "evalo lookup val earlier" (evalo-env 'x '((x . (val . 42)) (y . (val . 43)))) 42)
- (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (lambda x x) ((x . (val . 42)))))
- (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure (lambda (x) x) ((x . (val . 42)))))
+ (tassert "evalo lambda single arg" (evalo-env '(lambda x x) '((x . (val . 42)))) `(closure (x x) ((x . (val . 42)))))
+ (tassert "evalo lambda multi arg" (evalo-env '(lambda (x) x) '((x . (val . 42)))) `(closure ((x) x) ((x . (val . 42)))))
 
  (tassert "evalo cons" (evalo '(cons 42 43)) '(42 . 43))
  (tassert "evalo car" (evalo '(car (cons 42 43))) 42)
@@ -191,7 +191,8 @@
  (f 1)) '(1 . 1))))
  
  )
- 
+
+ ;; Quines
 
  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
@@ -213,6 +214,9 @@
    (tassert "evalo thrine" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3) (=/= x2 x3)
                                  (evalo x1 (list (assq 'list initial-env)) x2)
                                  (evalo x2 (list (assq 'list initial-env)) x3)
-                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?)
-  )
+                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?))
+
+ ;; Synthesis
+
+; (tassert "evalo append" (evalo '()))
  )

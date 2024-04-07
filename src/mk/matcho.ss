@@ -11,6 +11,10 @@
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
   ;; TODO can we fail to fail if matcho is waiting un a binding that is partially filled and that has constraints that would make it fail even in its partial state?
   ;; TODO do we need expanded? for constraints?
+  ;; TODO return old state if we expand inner goal and it trivially succeeds
+  ;; TODO replace not pairo in absento with not matcho on a pair, which will preverve fresh id bc of trivial succeed
+  ;; TODO consider else clause for returning a new goal if matcho fails the pattern match
+  ;; TODO consider a cond form that nests matcho else clauses to create a cond like form without lots of negation
 
   #;
   (define-syntax unroll-lst

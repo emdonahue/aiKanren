@@ -54,6 +54,7 @@
     (tassert "match in-var binds out-var" (matcho11 ([(a . d) (cons x1 x2)] [(a . d) '(1 . 2)]) succeed) (conj (== x1 1) (== x2 2)))
     (tassert "match duplicate patterns" (matcho11 ([(a . a) (cons x1 x2)])) (== x1 x2))
     (tassert "match pattern vars shadow bindings" (matcho11 ([(x2 . x1) (cons x1 x2)]) (== x2 2) (== x1 1)) (conj (== x1 2) (== x2 1)))
+    (tassert "match destructures nested lists" (matcho11 ([('closure (params body) env^) '(closure (x y) ())]) (list params body env^)) '(x y ()))
     )
 
 
