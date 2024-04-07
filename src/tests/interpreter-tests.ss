@@ -231,6 +231,4 @@
    (tassert "evalo thrine" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3) (=/= x2 x3)
                                  (evalo x1 (list (assq 'list initial-env)) x2)
                                  (evalo x2 (list (assq 'list initial-env)) x3)
-                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?))
-
-)
+                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?)))
