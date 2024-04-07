@@ -38,6 +38,8 @@
  (tassert "evalo apply var variadic" (evalo-env '(x 42) `((x . (val . ,(evalo '(lambda x x)))))) '(42))   
 
  (tassert "evalo lambda list" (evalo '((lambda (x) (list x)) 42)) '(42))
+
+ (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
  #;
  (begin
  
@@ -57,7 +59,7 @@
 
  
 
- (tassert "evalo letrec" (evalo '(letrec ([x (lambda (y) (cons y y))]) x)) `(closure (lambda (y) (cons y y)) ((x . (rec . (lambda (y) (cons y y)))) . ,initial-env)))
+
 
  (tassert "evalo append null"
  (evalo '(letrec ([append (lambda (lhs rhs)
@@ -198,7 +200,8 @@
                 [interpreter/boolean #f]
                 [interpreter/lambda/variadic #f]
                 [interpreter/lambda/multi-arg #f]
-                [interpreter/if #f])
+                [interpreter/if #f]
+                [interpreter/letrec #f])
 
    (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
     (tassert "evalo quine" (evalo q) q))
