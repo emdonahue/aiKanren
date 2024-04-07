@@ -17,7 +17,6 @@
 (load "src/tests/listo-tests.ss")
 (load "src/tests/tracing-tests.ss")
 (load "src/tests/generative-tests.ss")
-(load "src/tests/quine-tests.ss")
 (load "src/tests/interpreter-tests.ss")
 
 (parameterize ([benchmark-testing #t])

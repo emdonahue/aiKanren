@@ -177,8 +177,39 @@
  
  )
 
+ ;; Synthesis
+ 
+ (parameterize ([interpreter/number #f]
+                [interpreter/boolean #f]
+                [interpreter/lambda #f]
+                [interpreter/letrec #f]
+                [interpreter/quote #f]
+                [max-depth 70])
+(let ([env (filter (lambda (b) (memq (car b) '(null? cons car cdr))) initial-env)])
+ (tassert "synthesize check environment injected append"
+          (run1 q (evalo '(append x y) `((append . (rec . ((a b) (if (null? a) b (cons (car a) (append (cdr a) b)))))) (x . (val . (1 2))) (y . (val . (3))) . ,env) q)) '(1 2 3))
+
+ (tassert "synthesize append ground"
+          (run1 ()
+                (synthesizeo '(if (null? a) b (cons (car a) (f (cdr a) b)))
+                             '(
+                               ((() (1)) . (1))
+                               (((1) (2)) . (1 2))
+                               )
+                             env)) '())
+ 
+ (tassert "synthesize append"
+          (run1 a
+                (synthesizeo `(if (null? a) b (cons (car a) (f ,a b)))
+                             '(
+                               ((() (1)) . (1))
+                               (((1) (2)) . (1 2))
+;                               (((1 2) (3)) . (1 2 3))
+                               )
+                             env)) '(cdr a))))
+ 
  ;; Quines
-#;
+
  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
                 [interpreter/lambda/variadic #f]
@@ -202,30 +233,4 @@
                                  (evalo x2 (list (assq 'list initial-env)) x3)
                                  (evalo x3 (list (assq 'list initial-env)) x1)) list?))
 
- ;; Synthesis
- (parameterize ([interpreter/number #f]
-                [interpreter/boolean #f]
-                [interpreter/lambda #f]
-                [interpreter/letrec #f]
-                [interpreter/quote #f]
-                [max-depth 70])
-(let ([env (filter (lambda (b) (memq (car b) '(null? cons car cdr))) initial-env)])
- (tassert "synthesize check environment injected append"
-          (run1 q (evalo '(append x y) `((append . (rec . ((a b) (if (null? a) b (cons (car a) (append (cdr a) b)))))) (x . (val . (1 2))) (y . (val . (3))) . ,env) q)) '(1 2 3))
-
- (tassert "synthesize append ground"
-          (run1 ()
-                (synthesizeo '(if (null? a) b (cons (car a) (f (cdr a) b)))
-                             '(
-                               ((() (1)) . (1))
-                               (((1) (2)) . (1 2))
-                               )
-                             env)) '())
- (tassert "synthesize append"
-          (run1 (body)
-                (synthesizeo `(if (null? a) b (cons (car a) (f ,body b)))
-                             '(
-                               ((() (1)) . (1))
-                               (((1) (2)) . (1 2))
-                               )
-                             env)) 2))))
+)
