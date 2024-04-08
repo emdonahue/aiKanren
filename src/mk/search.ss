@@ -31,7 +31,7 @@
        [(matcho14? g)
         (let-values ([(expanded? g ==s) (matcho/expand g s)]) ;(matcho/run g s)
           (if expanded?
-              (run-goal (suspend (conj ==s g)) s p ctn)
+              (run-goal (conj ==s g) s p ctn)
               (let-values ([(g s) (matcho/run2 g s ==s)])
                 (if (exceeds-max-depth? s) (values failure p)
                            (run-goal (suspend g) s p ctn))))
