@@ -271,28 +271,24 @@
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
     (case-lambda
-      [(g) (let-values ([(vs unifies) (attributed-vars g '())]) vs)]
+      [(g) (attributed-vars g '())]
       [(g vs)
        (cert (goal? g))
-       (let ([unifies #f])
-        (exclusive-cond
-         [(succeed? g) (values vs unifies)]
-         [(disj? g) (attributed-vars (disj-car g) vs)]
-         [(conj? g) (call-with-values
-                        (lambda () (attributed-vars (conj-rhs g) vs))
-                      (lambda (vs unifies) (attributed-vars (conj-lhs g) vs)))]
-         [(noto? g)
-          (if (==? (noto-goal g))
-              (let ([vs (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs))) (cons (==-rhs (noto-goal g)) vs) vs)])
-                (let-values ([(vars _) (attributed-vars (noto-goal g) vs)])
-                  (values vars unifies)))
-              (let-values ([(vars _) (attributed-vars (noto-goal g) vs)])
-                (values vars unifies)))]
-         [(==? g) ;TODO test whether == must attribute to both vars like =/=
-          (cert (var? (==-lhs g)))
-          (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
-         [(matcho14? g) (values (map car (remp (lambda (b) (zero? (var-id (car b)))) (matcho14-substitution g))) unifies)]
-         [(pconstraint? g)
-          (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
-         [(constraint? g) (attributed-vars (constraint-goal g) vs)]
-         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)]))])))
+       (exclusive-cond
+        [(succeed? g) vs]
+        [(disj? g) (attributed-vars (disj-car g) vs)]
+        [(conj? g) (attributed-vars (conj-lhs g) (attributed-vars (conj-rhs g) vs))]
+        [(noto? g)
+         (if (==? (noto-goal g))
+             (attributed-vars
+              (noto-goal g)
+              (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs)))
+                  (cons (==-rhs (noto-goal g)) vs) vs))
+             (attributed-vars (noto-goal g) vs))]
+        [(==? g) ;TODO test whether == must attribute to both vars like =/=
+         (cert (var? (==-lhs g)))
+         (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+        [(matcho14? g) (map car (remp (lambda (b) (zero? (var-id (car b)))) (matcho14-substitution g)))]
+        [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
+        [(constraint? g) (attributed-vars (constraint-goal g) vs)]
+        [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
