@@ -126,8 +126,8 @@
                  (reify-substitution (cdr s) s-full ==s (cons (car s) s-out) fully-ground?)
               (let ([rhs (mini-reify s-full (cdar s))])
                 (if (pattern-vars? rhs)
-                    (reify-substitution (cdr s) s-full ==s (cons (cons lhs rhs) s-out) fully-ground?)
-                    (reify-substitution (cdr s) s-full (conj (== lhs rhs) ==s) s-out #f))))))]))
+                    (reify-substitution (cdr s) s-full ==s (cons (cons lhs rhs) s-out) #f)
+                    (reify-substitution (cdr s) s-full (conj (== lhs rhs) ==s) s-out fully-ground?))))))]))
   
   (define-syntax pattern->term
     (syntax-rules (quote)
@@ -176,11 +176,18 @@
                 (let ([s (reify-substitution2 s)]) ; Fully reify all terms in substitution so we can inspect directly which still contain pattern vars.
                   (let ([out-vars (remp (lambda (b) (zero? (var-id (car b)))) s)]) ; if no out vars at all, fire. split into ground and out+in. check whether out+in is actually just in, and if so fire. reify as we filter, and just generate the unification constraint directly. tail recursion will avoid let value
                     (let-values ([(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
-                      (if (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ; No rhs patterns => all patterns bound => continue.
+                      (when (not (eq? fully-ground? (for-all (lambda (b) (no-pattern-vars? (cdr b))) s)))
+                        (printf "fully ground: ~s for all: ~s~%" fully-ground? (for-all (lambda (b) (no-pattern-vars? (cdr b))) s))
+                        (pretty-print s)
+                        (pretty-print s^)
+                        (exit))
+                      
+                      (if ;fully-ground?
+                          (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ; No rhs patterns => all patterns bound => continue.
                           (let ([id (mini-walk s id)] ...) ; TODO instead of checking patterns, check for attr vars
                             (conj
-                             ==s
-                             ;(substitution->unification out-vars/ground)
+                                        ;==s
+                             (substitution->unification out-vars/ground)
                              body))
                           (make-matcho14 s
                                          (lambda (s)
