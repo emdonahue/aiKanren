@@ -28,22 +28,19 @@
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
-       [(matcho14? g)
-        (let-values ([(expanded? g ==s) (matcho/expand g s)]) ;(matcho/run g s)
-          (if expanded?
-              (run-goal (conj ==s g) s p ctn)
-              (let-values ([(g s) (matcho/run2 g s ==s)])
-                (if (exceeds-max-depth? s) (values failure p)
-                           (run-goal (suspend g) s p ctn))))
-          
-          #;
-          (if (exceeds-max-depth? s) (values failure p)
-                           (run-goal (suspend g) s p ctn)))]
+       [(matcho14? g) (let-values ([(g s) (run-matcho g s)]) (run-goal g s p ctn))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.
                (if (failure? s) (values failure p) (run-goal ctn s p)))])]))
 
+  (define (run-matcho g s)
+    (let-values ([(expanded? g ==s) (matcho/expand g s)])
+          (if expanded? (values (conj ==s g) s)
+              (let-values ([(g s) (matcho/run g s)])
+                (if (exceeds-max-depth? s) (values fail failure)
+                    (values (conj ==s (suspend g)) s))))))
+  
   (define (stream-step s p) ;TODO experiment with mutation-based mplus branch swap combined with answer return in one call
     (cert (stream? s) (package? p)) ; -> goal? stream? package?
     (exclusive-cond ;TODO after optimizing matcho stopping only if branch detected, consider making that a merge point for a parallel execution where the other branch is put in the queue rather than an mplus
@@ -86,10 +83,7 @@
              [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n answers ctn)])
                            (if (zero? num-remaining) (values num-remaining answers p)
                                (run-goal-dfs (conde-rhs g) s p num-remaining answers ctn)))]
-             [(matcho14? g) ;TODO tidy up dfs matcho
-              (let-values ([(g s) (matcho/run g s)])
-                (if (exceeds-max-depth? s) (values n answers p)
-                    (run-goal-dfs g s p n answers ctn)))]
+             [(matcho14? g) (let-values ([(g s) (run-matcho g s)]) (run-goal-dfs g s p n answers ctn))]
              [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                                (if (exceeds-max-depth? s) (values n answers p)
                                    (run-goal-dfs g s p n answers ctn)))]

@@ -103,6 +103,14 @@
     (tassert "match expander differentiates between parent and child matcho"
              (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2)))
 
+  (parameterize ([search-strategy 'dfs])
+   (begin
+     (tassert "match goal walk var" (run1 (x1 x2) (== x1 (cons 1 x2)) (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '((1 . 2) 2))
+     (tassert "match create fresh" (run1 x1 (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '(1 . 2))
+     (tassert "match goal fail" (run1 x1 (matcho11 ([(a . d) x1]) fail)) (void))
+     (tassert "match expander differentiates between parent and child matcho"
+              (run1 x1 (== x1 '(1 . 2)) (matcho11 ([(a . d) x1]) (matcho11 ([(a . d) x1]) (== a 1) (== d 2)))) '(1 . 2))))
+
   ;; Internal utilities
   
   
