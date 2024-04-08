@@ -57,12 +57,6 @@
     (tassert "match destructures nested lists" (matcho11 ([('closure (params body) env^) '(closure (x y) ())]) (== x1 (list params body env^))) (== x1 '(x y ())))
     )
 
-
-
-  #;
-  (pretty-print (expand '(matcho3 ([x2
-                        ('closure ('lambda params body) env^)]) (== x1 (list params body env^)))))
-
     ;; Constraint matcho
     
 

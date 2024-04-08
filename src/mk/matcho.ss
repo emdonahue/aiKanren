@@ -2,7 +2,7 @@
 ;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
-  (export matcho/expand matcho-attributed-vars matcho/run
+  (export matcho/expand matcho-attributed-vars matcho/run matcho/run2
           matcho11 pattern->term)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
@@ -32,15 +32,29 @@
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded? ;TODO try returning expanded and not suspending if true
           (values (conj ==s g) s)
-          (let* ([vid (state-varid s)]
-                 [pattern-bindings (map (lambda (b) (set! vid (fx1+ vid)) (cons b (make-var vid)))
-                                        (substitution-pattern-vars (matcho14-substitution g)))]
-                 [sub/ground (map (lambda (b) ;TODO can pattern vars be rhs to both pattern and attributed or just one?
-                                     (cons (car b) ; TODO instead of walking/replacing the rhs pattern vars, just stick them on the front and use reify. may b able to save time by only reifynig pattern vars, since attr vars wont be lhs
-                                           (fresh-patterns (cdr b) pattern-bindings))) (matcho14-substitution g))])
-            (let-values ([(sub/pattern sub/attributed) (partition pattern-binding? sub/ground)])
-              (values (conj* ==s (substitution->unification sub/attributed) ((matcho14-ctn g) (append pattern-bindings sub/pattern))) (set-state-varid s vid)))))))
+          (matcho/run2 g s ==s))))
 
+  (define (matcho/run2 g s ==s)
+    (let*-values ([(sub vid) (fresh-substitution (matcho14-substitution g) (state-varid s))]
+                        [(sub ==s^ fully-ground?) (reify-substitution sub)])
+            (values (conj* ==s ==s^ ((matcho14-ctn g) sub)) (set-state-varid s vid))))
+
+  (define fresh-substitution
+    (case-lambda
+      [(s vid) (fresh-substitution s s vid)]
+      [(s s^ vid) (if (null? s) (values s^ vid)
+                      (let-values ([(s^ vid) (fresh-pattern (cdar s) s^ vid)])
+                        (fresh-substitution (cdr s) s^ vid)))]))
+
+  (define (fresh-pattern p s vid)
+    (if (pair? p)
+        (let-values ([(s vid) (fresh-pattern (car p) s vid)])
+          (fresh-pattern (cdr p) s vid))
+        (if (and (var? p) (pattern-var? p) (not (assq p s)))
+            (let ([vid (fx1+ vid)])
+              (values (cons (cons p (make-var vid)) s) vid))
+            (values s vid))))
+  
   (define matcho/make-fresh
     (case-lambda
       [(s vid) (matcho/make-fresh s vid s)]
