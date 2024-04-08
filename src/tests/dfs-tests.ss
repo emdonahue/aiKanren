@@ -14,7 +14,7 @@
      (tassert "dfs == | (|) depth 1" (run -1 x1 (conde [(== x1 3)] [(fresh (x2) (conde [(== x1 1)] [(== x1 2)]))])) '(3)))
    (tassert "dfs exist" (run1 x1 (exist (x2) (== x1 x2) (== x2 1))) 1)
    (tassert "dfs fresh" (run1 x1 (fresh (x2) (== x1 x2) (== x2 1))) 1)
-   (tassert "dfs matcho" (run1 x1 (matcho11 ([(a . d) x1]) (== a 1) (== d 2))) '(1 . 2))
+   (tassert "dfs matcho" (run1 x1 (matcho ([(a . d) x1]) (== a 1) (== d 2))) '(1 . 2))
    (tassert "dfs fail if constraint fails" (run* x1 (conde [(== x1 3) (conde [(== x1 1)] [(== x1 2)])] [(== x1 2)])) '(2)))
 
  ;; Interleaving search also makes use of depth-limiting, so test that without setting the dfs strategy parameter

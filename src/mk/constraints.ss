@@ -104,7 +104,7 @@
   (define (presento present term) ; Constrains term so that it must contain present. Logical negation of absento.
     (disj
      (== term present)
-     (matcho11 presento ([(a . d) term])
+     (matcho presento ([(a . d) term])
              (disj
               (presento present a)
               (presento present d)))))
@@ -114,6 +114,6 @@
       (=/= term absent)
       (disj
        (noto (pairo term))
-       (matcho11 absento ([(a . d) term])
+       (matcho absento ([(a . d) term])
                (absento absent a)
                (absento absent d))))))

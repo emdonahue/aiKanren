@@ -1,7 +1,7 @@
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho/expand matcho-attributed-vars matcho/run
-          matcho11 pattern->term)
+          matcho pattern->term)
   (import (chezscheme) (streams) (variables) (goals) (mini-substitution) (state) (utils))
 
   ;; TODO make matcho work for pure values outside of mk. a la carte unification/pattern matching
@@ -93,9 +93,9 @@
       [(_ (a . d)) (cons (pattern->term a) (pattern->term d))]
       [(_ a) a]))
 
-  (define-syntax matcho11
+  (define-syntax matcho
     (syntax-rules ()
-      [(_ ([pattern expr] ...) body ...) (matcho11 match ([pattern expr] ...) body ...)]
+      [(_ ([pattern expr] ...) body ...) (matcho match ([pattern expr] ...) body ...)]
       [(_ name ([pattern expr] ...) body ...)
        (identifier? #'name)
        (matcho/attributed-vars name ([pattern expr] ...) (conj* body ...))]))

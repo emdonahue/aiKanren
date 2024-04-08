@@ -5,11 +5,11 @@
   (define (listo l) ; Constrains l to be a proper list.
     (disj
      (== l '())
-     (matcho11 listo ([(a . d) l])
+     (matcho listo ([(a . d) l])
              (listo d))))
 
   (define (membero x xs) ; Generates all lists xs containing x at least once.
-    (matcho11 ([(a . d) xs])
+    (matcho ([(a . d) xs])
             (conde
               [(== x a)]
               [(membero x d)])))
@@ -17,14 +17,14 @@
   (define (appendo h t ht) ; Appends h and t, yielding ht.
     (conde
       [(== h '()) (== t ht)]
-      [(matcho11 appendo ([(a . d) h]
+      [(matcho appendo ([(a . d) h]
                         [(a . es) ht])
                (== (cons a d) h)
                (== ht (cons a es))
                (appendo d t es))]))
 
   (define (containso x xs) ; Generates all lists xs containing x, stopping after x is found.
-    (matcho11 containso ([(a . d) xs])
+    (matcho containso ([(a . d) xs])
             (conde
               [(== x a)]
               [(=/= x a) (containso x d)])))
@@ -32,7 +32,7 @@
   (define (for-eacho proc xs) ; Applies proc to each element of xs.
     (cert (procedure? proc))
     (disj (== xs '())
-          (matcho11  ([(x . xs) xs])
+          (matcho  ([(x . xs) xs])
                      (proc x)
                      (for-eacho proc xs))))
   
@@ -42,7 +42,7 @@
   (define (asspo x xs proc) ; Binds x to all keys of alist xs for which proc does not fail on the value. Analogous to Scheme assp.
 
                                         
-    (matcho11 asspo ([((a . d) . t) xs]) 
+    (matcho asspo ([((a . d) . t) xs]) 
              (conde ;TODO can alist relations just be constraints if they only return 1 and use constraint semantics to terminate search?
                [(== x a) (proc d)]
                [(=/= x a) (asspo x t proc)])))
@@ -50,8 +50,8 @@
   (define (filtero f xxs oos) ; Constrains oos to be the subset of xxs for which f does not fail.
     (conde
       [(== xxs '()) (== oos '())]
-      [(matcho11 ([(x . xs) xxs])
+      [(matcho ([(x . xs) xxs])
                  (let ([x^ (constraint (f x))])
                    (conde
-                     [x^ (matcho11 ([(o . os) oos]) (== x o) (filtero f xs os))]
+                     [x^ (matcho ([(o . os) oos]) (== x o) (filtero f xs os))]
                      [(noto x^) (filtero f xs oos)])))])))

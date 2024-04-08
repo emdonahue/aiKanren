@@ -11,27 +11,27 @@
   (conde
     [(if (zero? depth) fail
          (conde
-           [(matcho11 ([('conde lhs rhs) e]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
-           [(matcho11 ([('conj lhs rhs) e]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]))]
+           [(matcho ([('conde lhs rhs) e]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]
+           [(matcho ([('conj lhs rhs) e]) (mk-expression lhs (fx1- depth)) (mk-expression rhs (fx1- depth)))]))]
     
-    [(matcho11 ([('noto goal) e]) (mk-expression/primitive goal))]
+    [(matcho ([('noto goal) e]) (mk-expression/primitive goal))]
     [(mk-expression/primitive e)]))
 
 (define (mk-expression/primitive e)
   (conde
-    [(matcho11 ([('== lhs rhs) e])
+    [(matcho ([('== lhs rhs) e])
              (conde
                [(mk-var lhs) (mk-term rhs max-term-depth)]
                [(mk-term lhs max-term-depth) (mk-var rhs)]))]
-    [(matcho11 ([('numbero var) e]) (mk-var var))]
-    [(matcho11 ([('symbolo var) e]) (mk-var var))]
-    [(matcho11 ([('pairo var) e]) (mk-var var))]))
+    [(matcho ([('numbero var) e]) (mk-var var))]
+    [(matcho ([('symbolo var) e]) (mk-var var))]
+    [(matcho ([('pairo var) e]) (mk-var var))]))
 
 (define (mk-term t depth)
   (if (zero? depth) fail
       (conde
         [(== t '())]
-        [(matcho11 ([(a . d) t]) (mk-term a (fx1- depth)) (mk-term d (fx1- depth)))]
+        [(matcho ([(a . d) t]) (mk-term a (fx1- depth)) (mk-term d (fx1- depth)))]
         [(membero t (map fx1+ (iota max-vals)))]
         [(membero t symbols)]
         [(mk-var t)])))
@@ -80,7 +80,7 @@
         [(== t (make-mk-var 0))]
         [(== t 2)]
         [(== t (make-mk-var 1))]
-        [(matcho11 ([(a . d) t]) (mk-term/presento a (fx1- depth)) (mk-term/presento d (fx1- depth)))])))
+        [(matcho ([(a . d) t]) (mk-term/presento a (fx1- depth)) (mk-term/presento d (fx1- depth)))])))
 
 (define (present? v t)
   (cond

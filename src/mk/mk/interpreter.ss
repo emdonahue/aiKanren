@@ -77,29 +77,29 @@
            (lambda (v)
              (conde
                [(== v `(val . ,val))] ; Normal values are tagged as (key . ('val . value))
-               [(matcho11 ([('rec . (args body)) v]) ; Recursive functions are tagged (key . ('rec . (args body))
+               [(matcho ([('rec . (args body)) v]) ; Recursive functions are tagged (key . ('rec . (args body))
                          (== val `(closure ,args ,body ,env)))]))))
 
   (define (evalo-lambda expr env val)
     (if (not (interpreter/lambda)) fail
      (exist ()
-            (matcho11 ([('lambda args body) expr])
+            (matcho ([('lambda args body) expr])
                       (== `(closure ,args ,body ,env) val)
                       (constraint
                        (conde
                          [(if (not (interpreter/lambda/variadic)) fail (symbolo args))]
                          [(if (interpreter/lambda/multi-arg)
                               (for-eacho (lambda (x) (symbolo x)) args)
-                              (matcho11 ([(x) args]) (symbolo x)))])))
+                              (matcho ([(x) args]) (symbolo x)))])))
             (not-shadowedo 'lambda env))))
 
   (define (evalo-apply expr env val)
-    (matcho11
+    (matcho
      ([(rator . rands) expr])
      (fresh (closure args)
             (evalo rator env closure)
             (conde
-              [(matcho11 ; Normal closure
+              [(matcho ; Normal closure
                 ([('closure params body env^) closure])
                 (conde
                   [(if (not (interpreter/lambda/variadic)) fail ; Variadic closure
@@ -113,21 +113,21 @@
                            (for-eacho (lambda (x) (symbolo x)) params)
                            (extend-env params rands env env
                                        (lambda (env^) (evalo body env^ val))))
-                    (matcho11 ([(x) params])
+                    (matcho ([(x) params])
                               (symbolo x)
                               (extend-env params rands env env
                                           (lambda (env^) (evalo body env^ val)))))]))]
-              [(matcho11 ([('prim . prim-id) closure]) ; Primitive operator
+              [(matcho ([('prim . prim-id) closure]) ; Primitive operator
                        (evalo-prim prim-id args val)
                        (evalo-listo rands env args))]))))
 
   (define (evalo-letrec expr env val)
     (if (not (interpreter/letrec)) fail
-     (matcho11 ([('letrec ([name ('lambda args body)]) letrec-body) expr])
+     (matcho ([('letrec ([name ('lambda args body)]) letrec-body) expr])
                (fresh (closure)
                       (evalo-lambda `(lambda ,args ,body) env closure)
                       (not-shadowedo 'letrec env)
-                      (matcho11 ([('closure args body env^) closure])
+                      (matcho ([('closure args body env^) closure])
                                 (evalo letrec-body `((,name . (rec . (,args ,body))) . ,env) val)))
                )))
   
@@ -135,14 +135,14 @@
     (trace-conde
       
       #;
-      [(matcho113 ([expr (and . e*)])
+      [(matcho3 ([expr (and . e*)])
                (not-shadowedo 'and env)
                (evalo-and e* env val))]
-      [cons (== expr 'cons) (matcho11 ([(a d) args]
+      [cons (== expr 'cons) (matcho ([(a d) args]
                                       [(a . d) val]))]
-      [car (== expr 'car) (matcho11 ([((a . d)) args])
+      [car (== expr 'car) (matcho ([((a . d)) args])
                                    (== val a))]
-      [cdr (== expr 'cdr) (matcho11 ([((a . d)) args])
+      [cdr (== expr 'cdr) (matcho ([((a . d)) args])
                                    (== val d))]
       [null (== expr 'null?) (disj (conj (=/= args '(())) (== val #f))
                                    (conj (== args '(())) (== val #t)))]
@@ -154,7 +154,7 @@
 
   (define (evalo-if expr env val)
     (if (not (interpreter/if)) fail
-     (matcho11 ([('if c t f) expr])
+     (matcho ([('if c t f) expr])
                (fresh (tf)
                       (evalo c env tf)
                       (conde
@@ -167,7 +167,7 @@
   (define (extend-env params rands env env^ ctn)
     (conde
       [(== params '()) (== rands '()) (ctn env^)]
-      [(matcho11 ([(p . ps) params]
+      [(matcho ([(p . ps) params]
                  [(r . rs) rands])
                (fresh (arg)
                       (evalo r env arg)
@@ -175,7 +175,7 @@
 
   (define (list-of-symbolso xs) ;TODO replace with for-eacho and rename to for-allo
     (disj (== xs '())
-          (matcho11 ([(a . d) xs])
+          (matcho ([(a . d) xs])
                   (symbolo a)
                   (list-of-symbolso d))))
   
@@ -184,7 +184,7 @@
     (trace-goal evalo-listo
      (conde
        [(== expr '()) (== val '())]
-       [(matcho11 ([(e . es) expr ]
+       [(matcho ([(e . es) expr ]
                  [(v . vs) val])
                 (evalo e env v)
                 (evalo-listo es env vs))]))))
