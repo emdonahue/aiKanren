@@ -172,27 +172,12 @@
        (let ([id (make-var 0)] ...) ; Generate bindings for all pattern identifiers and create dummy pattern variables.
          (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))]) ; Run the mini unifier on the reified patterns and matched terms.
            (if (failure? s) fail
-               (let-values ([(s^ ==s fully-ground?) (reify-substitution s)])
-                (let ([s (reify-substitution2 s)]) ; Fully reify all terms in substitution so we can inspect directly which still contain pattern vars.
-                  (let ([out-vars (remp (lambda (b) (zero? (var-id (car b)))) s)]) ; if no out vars at all, fire. split into ground and out+in. check whether out+in is actually just in, and if so fire. reify as we filter, and just generate the unification constraint directly. tail recursion will avoid let value
-                    (let-values ([(out-vars/ground out-vars/free) (partition (lambda (b) (no-pattern-vars? (cdr b))) out-vars)])
-                      (when (not (eq? fully-ground? (for-all (lambda (b) (no-pattern-vars? (cdr b))) s)))
-                        (printf "fully ground: ~s for all: ~s~%" fully-ground? (for-all (lambda (b) (no-pattern-vars? (cdr b))) s))
-                        (pretty-print s)
-                        (pretty-print s^)
-                        (exit))
-                      
-                      (if ;fully-ground?
-                          (for-all (lambda (b) (no-pattern-vars? (cdr b))) s) ; No rhs patterns => all patterns bound => continue.
-                          (let ([id (mini-walk s id)] ...) ; TODO instead of checking patterns, check for attr vars
-                            (conj
-                                        ;==s
-                             (substitution->unification out-vars/ground)
-                             body))
-                          (make-matcho14 s
-                                         (lambda (s)
-                                           (let ([id (mini-walk s id)] ...)
-                                             body)))))))))))]))
+               (let-values ([(s^ ==s fully-ground?) (reify-substitution s)]) ; Extract the fully ground attr-vars as unifications we can make immediately, and use the remaining pattern vars and incomplete attr vars as the current substitution.
+                 (if fully-ground?
+                     (let ([id (mini-reify s^ id)] ...) (conj ==s body))
+                     (conj ==s (make-matcho14 s^ (lambda (s)
+                                                   (let ([id (mini-reify s id)] ...)
+                                                     body)))))))))]))
 
   ;; === HUGE MACRO EXPANSION VERSION ===
   
