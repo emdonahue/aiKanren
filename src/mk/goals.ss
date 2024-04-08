@@ -6,7 +6,7 @@
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
           suspend suspend? suspend-goal
-          make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
+          ;make-matcho matcho? matcho-out-vars matcho-in-vars matcho-goal
           make-matcho14 matcho14? matcho14-ctn matcho14-substitution
           proxy proxy? proxy-var proxy
           conde conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
@@ -297,4 +297,4 @@
   
   ;; === CONTRACTS ===  
   (define (goal? g)
-    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho4? g) (matcho14? g))))
+    (or (matcho? g) (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho14? g))))

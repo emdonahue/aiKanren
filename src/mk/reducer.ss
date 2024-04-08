@@ -6,10 +6,14 @@
 
   (define (expand-matcho g s p)
     ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
+    (nyi expand-matcho)
+    #;
     ((matcho-goal g) s p (matcho-in-vars g)))
 
   (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
-    (cert (not (and (null? out) (null? in))))
+    (nyi normalize-matcho)
+    ;(cert (not (and (null? out) (null? in))))
+    #;
     (exclusive-cond
      [(null? out)
       (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
@@ -36,7 +40,8 @@
                         
                         (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
                                 (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-                                     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
+                                     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho14? g) (null? (nyi reduce-constraint/matcho) #;(matcho-attributed-vars g)
+                                                                                                           )))))))
                             (values succeed (disj-factorized lhs rhs))
                             (values (disj-factorized lhs rhs) succeed)))))]
      #;
@@ -60,12 +65,14 @@
      [(or (fail? g) (succeed? g)) (values g g)]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
                 (values simplified recheck))]     
-     [(matcho? g) (reduce-==/matcho g c s)]
+     [(matcho14? g) (reduce-==/matcho g c s)]
      [(pconstraint? g) (reduce-==/pconstraint g c s (pconstraint-vars g) #t)]
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
   (define (reduce-==/matcho g c s)
+    (nyi reduce-==/matcho)
+    #;
     (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
                  [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
       (let ([g (normalize-matcho out-vars in-vars (matcho-goal g))])

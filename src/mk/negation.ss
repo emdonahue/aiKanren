@@ -14,7 +14,7 @@
     (exclusive-cond
      [(succeed? g) fail]
      [(fail? g) succeed]
-     [(or (==? g) (matcho? g) (matcho14? g) (pconstraint? g)) (make-noto g)]
+     [(or (==? g) (matcho14? g) (pconstraint? g)) (make-noto g)]
      [(disj? g) (conj (noto (disj-car g)) (noto (disj-cdr g)))]
      [(conde? g) (conj (noto (conde-lhs g)) (noto (conde-rhs g)))]
      [(conj? g) (disj (noto (conj-lhs g)) (noto (conj-rhs g)))]
