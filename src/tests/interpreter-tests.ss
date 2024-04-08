@@ -65,121 +65,36 @@
                                          (cons (car lhs) (append (cdr lhs) rhs))))])
                     (append '(1 2 3) '(4 5 6)))) '(1 2 3 4 5 6))
  
- #;
- (begin
- 
 
+ ;; Quines
 
- (tassert "synthesize duplicate ground"
- (run1 body
- (absento 1 body)
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1))) '(cons x x))
- (tassert "synthesize duplicate" (synthesizeo '([1 . (1 . 1)])) '(cons x x))
- 
- #;
- (parameterize ([trace-goals #t]
- [reify-constraints #f])
- (pretty-print (trace-run (body)
- (absento 1 body)
- #;
- (== body `(('(closure ;
- (lambda () (closure (lambda a '(1 . 1)) b)) ;
- c))))
- (evalo '(f 1) `((f . (rec . (lambda (x) ,body))) . ,initial-env) '(1 . 1)))))
- 
- #;
- (display (trace-run (body)
- (absento '(1 . 1) body)
- (absento 1 body)
- (== body '(cons x x))
-                ;(== body (list 'cons 'x vars)) ; ; ;
- ;;(== body `(cons . vars))
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1))))
+ (parameterize ([interpreter/number #f]
+                [interpreter/boolean #f]
+                [interpreter/lambda/variadic #f]
+                [interpreter/lambda/multi-arg #f]
+                [interpreter/if #f]
+                [interpreter/letrec #f])
 
- ;;8362 - disj that contains the bad match 8385  8383- disj should succeed but fails
+   (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
+    (tassert "evalo quine" (evalo q) q))
+  
+   (tassert "evalo quine" (run1 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
+   (tassert "evalo 10 quine" (run 10 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
+   (tassert "quine synthesis structure test" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
 
- #;
- (display (trace-run (body)
- (prove ((letrec (apply (lookup) (literal) (apply (lookup) (prim) (proper-listo (lookup) (proper-listo (lookup) (proper-listo)))))))
- (absento '(1 . 1) body)
- (absento 1 body)
- ;;(== body '(cons x x))
- ;;(== body (list 'cons 'x vars))
- ;;(== body `(cons . vars))
- 
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1)))))
- 
-                                        ;((letrec (apply (lookup) (literal) (apply (lookup) (prim) (lookup) (lookup) (eval-prim-args))))) ;
+   (tassert "evalo twine" (run1 (x1 x2) (=/= x1 x2)
+                                (evalo x1 (list (assq 'list initial-env)) x2)
+                                (evalo x2 (list (assq 'list initial-env)) x1)) list?)
 
- #;
- (display (run 1 (body)
- (absento '(1 . 1) body)
- (absento 1 body)
- ;;(== body '(cons x x))
-                                        ;(== body (list 'cons 'x vars)) ; ; ; ;
- ;;(== body `(cons . vars))
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1))))
+   (tassert "evalo thrine" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3) (=/= x2 x3)
+                                 (evalo x1 (list (assq 'list initial-env)) x2)
+                                 (evalo x2 (list (assq 'list initial-env)) x3)
+                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?))
 
- 
- #;
- (run 1 (body)
- (absento '(1 . 1) body)
- ;;               (== body '(cons x x))
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1)))
-
-
- #;
- ((letrec (apply
- [lookup]
- [literal]
- [apply (lookup) (prim) (lookup) (lookup) (eval-prim-args)]))
- __)
- 
- 
- #;
- (parameterize ([reify-constraints #f])
- (pretty-print (run1 (body)
-                     ;(absento '(1 . 1) body) ; ; ;
- (absento 1 body)
- (evalo '(f 1) `((f . (rec . (lambda (x) ,body))) . ,initial-env) '(1 . 1)))
- #;
- (evalo `(letrec ([f (lambda (x) ,body)]) ;
- (f 1)) '(1 . 1))))
- 
- #;
- (tassert "evalo quine" (run 5 (y) (evalo y y)) 1)
-
- 
- ;;(display (run 1 (q) (evalo q '() q)))
-
- ;;27719 - pconstraint should be rechecked but is normalized
- #;
- (org-trace    (display (run 1 (body)
- (absento '(1 . 1) body)
- (absento 1 body)
- ;;(== body '(cons x x))
- ;;(== body (list 'cons 'x vars))
- ;;(== body `(cons . vars))
- 
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1)))))
-
- #;
- (display (run 1 (body)
- (absento 1 body)
- (evalo `(letrec ([f (lambda (x) ,body)])
- (f 1)) '(1 . 1))))
- 
- )
 
  ;; Synthesis
  
- (parameterize ([interpreter/number #f]
+  (parameterize ([interpreter/number #f]
                 [interpreter/boolean #f]
                 [interpreter/lambda #f]
                 [interpreter/letrec #f]
@@ -206,29 +121,4 @@
                                (((1) (2)) . (1 2))
 ;                               (((1 2) (3)) . (1 2 3))
                                )
-                             env)) '(cdr a))))
- 
- ;; Quines
-
- (parameterize ([interpreter/number #f]
-                [interpreter/boolean #f]
-                [interpreter/lambda/variadic #f]
-                [interpreter/lambda/multi-arg #f]
-                [interpreter/if #f]
-                [interpreter/letrec #f])
-
-   (let ([q '((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))])
-    (tassert "evalo quine" (evalo q) q))
-  
-   (tassert "evalo quine" (run1 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
-   (tassert "evalo 10 quine" (run 10 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
-   (tassert "quine synthesis structure test" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
-
-   (tassert "evalo twine" (run1 (x1 x2) (=/= x1 x2)
-                                (evalo x1 (list (assq 'list initial-env)) x2)
-                                (evalo x2 (list (assq 'list initial-env)) x1)) list?)
-
-   (tassert "evalo thrine" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3) (=/= x2 x3)
-                                 (evalo x1 (list (assq 'list initial-env)) x2)
-                                 (evalo x2 (list (assq 'list initial-env)) x3)
-                                 (evalo x3 (list (assq 'list initial-env)) x1)) list?)))
+                             env)) '(cdr a)))))

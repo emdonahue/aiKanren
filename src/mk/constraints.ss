@@ -111,7 +111,6 @@
 
   (define (absento absent term) ; Constrains term so that absent cannot appear anywhere within it. Logical negation of presento.
     (conj*
-     ;TODO create defconstraint that tags any matchos returned with the function pointer so they can dedup themselves
       (=/= term absent)
       (disj
        (noto (pairo term))

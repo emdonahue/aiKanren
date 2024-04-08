@@ -103,6 +103,9 @@
                                  (pconstraint-data g)))]))
 
   (define (pconstraint-check p var val)
+    (when (not (memq var (pconstraint-vars p))) ;TODO remove debug
+      (printf "var ~s val ~s~%" var val)
+      (pretty-print p))
     (cert (memq var (pconstraint-vars p)))
     ((pconstraint-procedure p) var val succeed succeed p))
 

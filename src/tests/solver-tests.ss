@@ -237,6 +237,7 @@
  (tassert "proxy constraints eq? value even when vars not unified"
           (run1 (x1 x2 x3) (pconstraint (list x1 x2 x3) (lambda (x y x-c y-c p) p) #f) (== x2 x3))
           (lambda (s) (and (pconstraint? (car s)) (conj? (cadr s)) (eq? (cadr s) (caddr s)))))
+ (tassert "pconstraint stale var" (run1 (x1 x2)  (== x1 x2) (== x1 'symbol) (symbolo x1)) '(symbol symbol))
 
  
  ;; === MATCH ===

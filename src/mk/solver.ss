@@ -177,6 +177,10 @@
            (let ([var (find (lambda (v) (not (memq v vs))) (pconstraint-vars g))])
              (if (not var) (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)) ; All vars walked. Store constraint.
                  (let-values ([(var^ val) (walk-var-val s var)])
+                   #;
+                   (when (and (equal? var^ (make-var 17)) (equal? val 'list))
+                     ;(pretty-print (walk-substitution s))
+                     )
                    (let ([vs (cons var^ vs)])
                      (cond
                       [(var? val) (solve-pconstraint (pconstraint-rebind-var g var val) s ctn resolve delta vs)] ; Assume for the moment that pconstraints only operate on ground values, so we can simply replace var-var bindings. Identical free vars can always be skipped.
@@ -186,7 +190,7 @@
                                          (if (or (fail? simplified) (fail? recheck)) (values fail failure)
                                              (solve-pconstraint g (extend s var^ simplified) ;TODO can we just stash the pconstraint with the simplified under certain conditions if we know it wont need further solving?
                                                                 ctn (conj recheck resolve) delta vs))))]
-                      [else (solve-pconstraint (pconstraint-check g var^ val) s ctn resolve delta vs)]))))))]))
+                      [else (solve-pconstraint (pconstraint-check g var val) s ctn resolve delta vs)]))))))]))
 
   (define simplify-pconstraint
     (case-lambda
