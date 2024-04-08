@@ -28,7 +28,7 @@
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
-       [(matcho14? g) (let-values ([(g s) (run-matcho g s)]) (run-goal g s p ctn))]
+       [(matcho? g) (let-values ([(g s) (run-matcho g s)]) (run-goal g s p ctn))]
        [(suspend? g) (values (make-suspended (conj (suspend-goal g) ctn) s) p)]
        ;; TODO use the ==s from constraints to simplify continuations in normal goal interpreter
        [else (let ([s (run-constraint g s)]) ; If constraints fail, return. Otherwise, run continuation.
@@ -83,7 +83,7 @@
              [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n answers ctn)])
                            (if (zero? num-remaining) (values num-remaining answers p)
                                (run-goal-dfs (conde-rhs g) s p num-remaining answers ctn)))]
-             [(matcho14? g) (let-values ([(g s) (run-matcho g s)]) (run-goal-dfs g s p n answers ctn))]
+             [(matcho? g) (let-values ([(g s) (run-matcho g s)]) (run-goal-dfs g s p n answers ctn))]
              [(procedure? g) (let-values ([(g s p ctn) (g s p ctn)])
                                (if (exceeds-max-depth? s) (values n answers p)
                                    (run-goal-dfs g s p n answers ctn)))]

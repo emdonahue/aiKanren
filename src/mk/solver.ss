@@ -23,7 +23,7 @@
          [(conj? g) (solve-constraint (conj-lhs g) s (conj (conj-rhs g) ctn) resolve delta)]
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
-         [(matcho14? g) (solve-matcho14 g s ctn resolve delta)]
+         [(matcho? g) (solve-matcho g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
          [(proxy? g) (solve-proxy g s ctn resolve delta)]
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
@@ -47,7 +47,7 @@
           (solve-constraint ctn (store-constraint s simplified-lhs)
                             succeed resolve (conj delta simplified-lhs)))])))
 
-  (org-define (solve-matcho14 g s ctn resolve delta)
+  (org-define (solve-matcho g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
           (solve-constraint ==s s (conj g ctn) resolve delta)
@@ -64,7 +64,7 @@
     (cert (not (noto? g))) ; g is the already unwrapped inner goal of the noto.
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
-     [(matcho14? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of the negated conj into the state, which will mean some branches may contain stale variables.
+     [(matcho? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of the negated conj into the state, which will mean some branches may contain stale variables.
       (let-values ([(expanded? g ==s) (matcho/expand g s)])
         (let ([g (disj (noto ==s) (noto g))])
          (if expanded?
@@ -122,7 +122,7 @@
                    [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
                    [else (values g g succeed d)])))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (noto (pconstraint-check g x y)) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
-     [(matcho14? g) (if (and (memq x (matcho-attributed-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
+     [(matcho? g) (if (and (memq x (matcho-attributed-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
                       (values g g succeed d))]
      [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
                   (cert (succeed? recheck)) ; noto only wraps primitive goals since its a =/=, which should never need rechecking on their own
@@ -288,7 +288,7 @@
         [(==? g) ;TODO test whether == must attribute to both vars like =/=
          (cert (var? (==-lhs g)))
          (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
-        [(matcho14? g) (matcho-attributed-vars g)]
+        [(matcho? g) (matcho-attributed-vars g)]
         [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
         [(constraint? g) (attributed-vars (constraint-goal g) vs)]
         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))

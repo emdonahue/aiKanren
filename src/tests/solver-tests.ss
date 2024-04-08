@@ -88,7 +88,7 @@
 
  ;; Multi variable with fresh
  (tassert "attribute x1:~x1=>x2=2" (run1 (x1 x2) (disj (matcho ([(a . d) x1])) (== x2 2)))
-          (lambda (a) (and (disj? (car a)) (matcho14? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
+          (lambda (a) (and (disj? (car a)) (matcho? (disj-lhs (car a))) (equal? (disj-rhs (car a)) (== x2 2)) (equal? x2 (cadr a)))))
  
  ;; === SOLVER ===
  (tassert "constraint ==" (run1 x1 (constraint (== x1 1))) 1)
@@ -181,9 +181,9 @@
  (tassert "disunify simplify abort pconstraint" (run1 x1 (symbolo x1) (=/= x1 1)) (symbolo x1))    
  (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (numbero x1) (=/= x1 1)))
  (tassert "disunify simplify abort negative pconstraint" (run1 x1 (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
- (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 1)) (lambda (c) (matcho14? c)))
- (tassert "disunify simplify match" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho14? (conj-lhs c)))))
- (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho ([(a . d) x1])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho14? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
+ (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 1)) (lambda (c) (matcho? c)))
+ (tassert "disunify simplify match" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
+ (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho ([(a . d) x1])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
  (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) (disj (== x2 2) (== x1 1))))
  (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
  (tassert "disunify suspends and preserves whole ctn" (run1 (x1 x2 x3) (constraint (=/= (cons x1 x2) '(())) (== x3 1))) (list (disj (=/= x1 '()) (=/= x2 '())) x2 1))

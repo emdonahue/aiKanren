@@ -25,13 +25,13 @@
 
   (define (matcho-attributed-vars g)
     ;; The matcho attributed vars are the non pattern vars still in the substitution because they have not been fully grounded.
-    (cert (matcho14? g))
-    (map car (remp pattern-binding? (matcho14-substitution g))))
+    (cert (matcho? g))
+    (map car (remp pattern-binding? (matcho-substitution g))))
 
   (define (matcho/run g s)
-    (let*-values ([(sub vid) (fresh-substitution (matcho14-substitution g) (state-varid s))] ; Replace pattern vars with fresh vars
+    (let*-values ([(sub vid) (fresh-substitution (matcho-substitution g) (state-varid s))] ; Replace pattern vars with fresh vars
                   [(sub ==s^ fully-ground?) (reify-substitution sub)]) ; Remove now ground attributed vars and unify them
-      (values (conj* ==s^ ((matcho14-ctn g) sub)) (set-state-varid s vid))))
+      (values (conj* ==s^ ((matcho-ctn g) sub)) (set-state-varid s vid))))
 
   (define fresh-substitution
     ;; Replace pattern vars in the substitution with fresh vars
@@ -54,9 +54,9 @@
   (define matcho/expand
     ;; Expand the matcho as much as possible using the variables in the substitution
     (org-case-lambda matcho/expand
-      [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
+      [(g s) (matcho/expand g s (matcho-substitution g) succeed '())]
       [(g s sub ==s vs)
-       (cert (matcho14? g) (state? s) (list? sub) (goal? ==s) (list? vs))
+       (cert (matcho? g) (state? s) (list? sub) (goal? ==s) (list? vs))
        (let ([attr-binding (find (lambda (b) (not (or (pattern-binding? b) ; Get an unwalked attributed var
                                                       (memq (car b) vs)))) sub)])
          (if attr-binding ; If one exists,
@@ -65,12 +65,12 @@
                (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
                    (let-values ([(sub ==s^ fully-ground?) (reify-substitution sub)])
                      (if fully-ground?
-                         (values #t ((matcho14-ctn g) sub) (conj ==s^ ==s)) ; Therefore execute the body.
+                         (values #t ((matcho-ctn g) sub) (conj ==s^ ==s)) ; Therefore execute the body.
                          (matcho/expand g s sub ; and continue walking unwalked variables.
                                         (conj ==s^ ==s)
                                         (cons (car attr-binding) vs))))))
              ;; If there are no unwalked attributed vars remaining, suspend expansion and return.
-             (values #f (make-matcho14 sub (matcho14-ctn g)) ==s)))]))
+             (values #f (make-matcho sub (matcho-ctn g)) ==s)))]))
 
   (define reify-substitution
     ;; Separate fully ground attributed vars from the substitution.
@@ -132,6 +132,6 @@
                (let-values ([(s ==s fully-ground?) (reify-substitution s)]) ; Extract the fully ground attr-vars as unifications we can make immediately, and use the remaining pattern vars and incomplete attr vars as the current substitution.
                  (if fully-ground?
                      (let ([id (mini-reify s id)] ...) (conj ==s body))
-                     (conj ==s (make-matcho14 s (lambda (s)
+                     (conj ==s (make-matcho s (lambda (s)
                                                    (let ([id (mini-reify s id)] ...)
                                                      body)))))))))])))

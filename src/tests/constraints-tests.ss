@@ -170,7 +170,7 @@
 
  (tassert "presento unbound term succeed" (run1 x1 (presento 1 x1) (== x1 1)) 1)
  (tassert "presento unbound term fail" (run1 x1 (presento 1 x1) (== x1 2)) (void))
- (tassert "presento unbound term" (run1 x1 (presento 1 x1)) (lambda (a) (and (disj? a) (equal? (disj-lhs a) (== x1 1)) (matcho14? (disj-rhs a)))))
+ (tassert "presento unbound term" (run1 x1 (presento 1 x1)) (lambda (a) (and (disj? a) (equal? (disj-lhs a) (== x1 1)) (matcho? (disj-rhs a)))))
 
  (tassert "presento ground succeed" (run1 () (presento 1 1)) '())
  (tassert "presento ground fail" (run1 () (presento 1 2)) (void))

@@ -40,7 +40,7 @@
                         
                         (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
                                 (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-                                     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho14? g) (null? (nyi reduce-constraint/matcho) #;(matcho-attributed-vars g)
+                                     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (nyi reduce-constraint/matcho) #;(matcho-attributed-vars g)
                                                                                                            )))))))
                             (values succeed (disj-factorized lhs rhs))
                             (values (disj-factorized lhs rhs) succeed)))))]
@@ -65,7 +65,7 @@
      [(or (fail? g) (succeed? g)) (values g g)]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
                 (values simplified recheck))]     
-     [(matcho14? g) (reduce-==/matcho g c s)]
+     [(matcho? g) (reduce-==/matcho g c s)]
      [(pconstraint? g) (reduce-==/pconstraint g c s (pconstraint-vars g) #t)]
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))

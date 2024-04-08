@@ -6,7 +6,7 @@
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
           suspend suspend? suspend-goal
-          make-matcho14 matcho14? matcho14-ctn matcho14-substitution
+          make-matcho matcho? matcho-ctn matcho-substitution
           proxy proxy? proxy-var proxy
           conde conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
@@ -289,10 +289,10 @@
 
   ;; === OTHER GOALS ===    
   (define-structure (noto goal)) ; Negated goal
-  (define-structure (matcho14 substitution ctn))
+  (define-structure (matcho substitution ctn))
   
   
   
   ;; === CONTRACTS ===  
   (define (goal? g)
-    (or (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho14? g))))
+    (or (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho? g))))

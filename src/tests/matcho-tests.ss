@@ -61,15 +61,15 @@
     
 
   (begin
-    (tassert "match constraint free" (matcho14-substitution (run1 x1 (constraint (matcho ([(a 2) x1]))))) (list (cons x1 (list x0 2))))
+    (tassert "match constraint free" (matcho-substitution (run1 x1 (constraint (matcho ([(a 2) x1]))))) (list (cons x1 (list x0 2))))
     (tassert "match constraint moves to free"
-             (matcho14-substitution
+             (matcho-substitution
               (run1 x1 (exist (x2) (constraint (matcho ([(a 2) x1]))) (== x1 x2)))) (list (cons x2 (list x0 2))))
     (tassert "match lazy constraint primitive fail" (run1 x1 (constraint (matcho ([(a . d) x1]) succeed)) (== x1 1)) (void))
     (tassert "match lazy constraint null fail" (run1 x1 (constraint (matcho ([(a . d) x1]) succeed)) (== x1 '())) (void))
     (tassert "match constraint unifies ground"
              (run1 (x1 x2 x3) (== x2 (list x3)) (constraint (matcho ([(a 2) x1] [(3) x2]))))
-             (lambda (a) (and (matcho14? (car a)) (equal? (cadr a) '(3)) (equal? (caddr a) 3))))
+             (lambda (a) (and (matcho? (car a)) (equal? (cadr a) '(3)) (equal? (caddr a) 3))))
     (tassert "match constraint runs immediately when bound"
              (run1 (x1 x2) (== x1 (cons x2 2)) (constraint (matcho ([(a . d) x1]) (== a 1)))) '((1 . 2) 1))
     (tassert "match constraint makes all unifications when fully ground"
@@ -80,7 +80,7 @@
     (tassert "match constraint no fresh" (run1 (x1 x2) (constraint (matcho ([(a b) x1]))) (== x1 (list x2 x2))) (list (list x2 x2) x2))
     (tassert "match constraint simplifies ground" (run1 (x1 x2) (constraint (matcho ([(a . d) x1] [(b . c) x2]) (== (list a d b c) '(1 2 3 4)))) (== x1 '(1 . 2)) (== x2 '(3 . 4))) '((1 . 2) (3 . 4)))
     (tassert "match constraint simplifies var" (run1 (x1 x2) (constraint (matcho ([(a . d) x1] [(b . c) x2]) (== a 1))) (== x1 x2) (== x2 '(1 . 2))) '((1 . 2) (1 . 2)))
-    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho ([(a . d) x1] [(b . c) x3]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho14? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho-attributed-vars (conj-rhs (cadr g))) (list x3))))))
+    (tassert "match constraint rechecks var" (run1 (x1 x2 x3) (== x3 x2) (constraint (matcho ([(a . d) x1] [(b . c) x3]) (== a 1))) (== x1 '(1 . 2))) (lambda (g) (and (equal? (car g) '(1 . 2)) (equal? (cadr g) (caddr g)) (matcho? (conj-rhs (cadr g))) (proxy? (conj-lhs (cadr g))) (equal? (matcho-attributed-vars (conj-rhs (cadr g))) (list x3))))))
 
   ;; Negated matcho
   
