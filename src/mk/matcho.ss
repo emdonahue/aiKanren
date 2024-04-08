@@ -80,24 +80,18 @@
       [(g s) (matcho/expand g s (matcho14-substitution g) succeed '())]
       [(g s sub ==s vs)
        (cert (matcho14? g) (state? s) (list? sub) (goal? ==s) (list? vs))
-       (let ([free-binding (find (lambda (b) (and (not (zero? (var-id (car b)))) ; Get an unwalked attributed var
-                                                  (not (memq (car b) vs))
-                                                  (not (no-pattern-vars? (cdr b))))) sub)])
-         (if free-binding ; If one exists,
-             (let ([sub (mini-unify (remq free-binding sub) ; walk the var and unify its value into the mini substitution.
-                                    (cdr free-binding)  (walk-var s (car free-binding)))])
+       (let ([attr-binding (find (lambda (b) (not (or (pattern-binding? b) ; Get an unwalked attributed var
+                                                      (memq (car b) vs)))) sub)])
+         (if attr-binding ; If one exists,
+             (let ([sub (mini-unify (remq attr-binding sub) ; walk the var and unify its value into the mini substitution.
+                                    (cdr attr-binding)  (walk-var s (car attr-binding)))])
                (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
-                   (let ([sub ; reify the entire mini substitution so that fully ground attributed vars can be identified by inspection.
-                          (map (lambda (b) (cons (car b) (mini-reify sub (cdr b)))) sub)]) ; TODO we may only need to reify attr vars
-                     (let-values ([(sub/ground sub/free) ; Extract ground attributed variables as unifications by inspection of reified rhs.
-                                       (partition (lambda (b) (and (not (zero? (var-id (car b))))
-                                                                   (no-pattern-vars? (cdr b)))) sub)])
-                      (if (for-all (lambda (b) (zero? (var-id (car b)))) sub/free) ; If there are no more attributed vars, we can never add new information, so we must have all the ground information and we can expand the body.
-                          (values #t ((matcho14-ctn g) sub/free) (conj
-                                                                  (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground) ==s)) ; Therefore execute the body.
-                          (matcho/expand g s sub/free ; and continue walking unwalked variables.
-                                         (fold-left (lambda (c b) (conj (== (car b) (cdr b)) c)) ==s sub/ground)
-                                         (cons (car free-binding) vs)))))))
+                   (let-values ([(sub ==s^ fully-ground?) (reify-substitution sub)])
+                     (if fully-ground?
+                         (values #t ((matcho14-ctn g) sub) (conj ==s^ ==s)) ; Therefore execute the body.
+                         (matcho/expand g s sub ; and continue walking unwalked variables.
+                                        (conj ==s^ ==s)
+                                        (cons (car attr-binding) vs))))))
              ;; If there are no unwalked attributed vars remaining, suspend expansion and return.
              (values #f (make-matcho14 sub (matcho14-ctn g)) ==s)))]))
 
@@ -172,10 +166,10 @@
        (let ([id (make-var 0)] ...) ; Generate bindings for all pattern identifiers and create dummy pattern variables.
          (let ([s (mini-unify '() (list (pattern->term pattern) ...) (list expr ...))]) ; Run the mini unifier on the reified patterns and matched terms.
            (if (failure? s) fail
-               (let-values ([(s^ ==s fully-ground?) (reify-substitution s)]) ; Extract the fully ground attr-vars as unifications we can make immediately, and use the remaining pattern vars and incomplete attr vars as the current substitution.
+               (let-values ([(s ==s fully-ground?) (reify-substitution s)]) ; Extract the fully ground attr-vars as unifications we can make immediately, and use the remaining pattern vars and incomplete attr vars as the current substitution.
                  (if fully-ground?
-                     (let ([id (mini-reify s^ id)] ...) (conj ==s body))
-                     (conj ==s (make-matcho14 s^ (lambda (s)
+                     (let ([id (mini-reify s id)] ...) (conj ==s body))
+                     (conj ==s (make-matcho14 s (lambda (s)
                                                    (let ([id (mini-reify s id)] ...)
                                                      body)))))))))]))
 
