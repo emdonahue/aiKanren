@@ -28,17 +28,6 @@
                        ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
-       [(matcho? g) (let-values ;TODO check whether structural recursion check is needed anymore for matcho or if single state return is enough
-                        ([(structurally-recursive? g s^ p) (expand-matcho g s p)]) ; TODO If any vars are non-free, there is structurally recursive information to exploit, so continue running aggressively on this branch. Otherwise suspend like a normal fresh.
-                      (if (exceeds-max-depth? s) (values failure p)
-                          (values
-                           (exclusive-cond
-                            [(fail? g) failure]
-                            [(succeed? g) s]     
-                            [else (make-suspended (conj g ctn) s^)]) p)))]
-       [(matcho4? g) (let-values ([(g s) (apply (matcho4-procedure g) (cons s (matcho4-vars g)))])
-                       (if (exceeds-max-depth? s) (values failure p)
-                           (run-goal (suspend g) s p ctn)))]
        [(matcho14? g)
         (let-values ([(g s) (matcho/run g s)])
                        (if (exceeds-max-depth? s) (values failure p)
@@ -90,12 +79,6 @@
              [(conde? g) (let-values ([(num-remaining answers p) (run-goal-dfs (conde-lhs g) s p n answers ctn)])
                            (if (zero? num-remaining) (values num-remaining answers p)
                                (run-goal-dfs (conde-rhs g) s p num-remaining answers ctn)))]
-             [(matcho? g) (let-values ([(_ g s p) (expand-matcho g s p)])
-                            (if (exceeds-max-depth? s) (values n answers p)
-                                (run-goal-dfs g s p n answers ctn)))]
-             [(matcho4? g) (let-values ([(g s) (apply (matcho4-procedure g) (cons s (matcho4-vars g)))])
-                       (if (exceeds-max-depth? s) (values n answers p)
-                           (run-goal-dfs g s p n answers ctn)))]
              [(matcho14? g) ;TODO tidy up dfs matcho
               (let-values ([(g s) (matcho/run g s)])
                 (if (exceeds-max-depth? s) (values n answers p)

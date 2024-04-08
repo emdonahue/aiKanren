@@ -23,8 +23,6 @@
          [(conj? g) (solve-constraint (conj-lhs g) s (conj (conj-rhs g) ctn) resolve delta)]
          [(constraint? g) (solve-constraint (constraint-goal g) s ctn resolve delta)]
          [(suspend? g) (solve-constraint (suspend-goal g) s ctn resolve delta)]
-         [(matcho? g) (solve-matcho g s ctn resolve delta)]
-         [(matcho4? g) (solve-matcho2 g s ctn resolve delta)]
          [(matcho14? g) (solve-matcho14 g s ctn resolve delta)]
          [(pconstraint? g) (solve-pconstraint g s ctn resolve delta)]
          [(proxy? g) (solve-proxy g s ctn resolve delta)]
@@ -49,53 +47,6 @@
           (solve-constraint ctn (store-constraint s simplified-lhs)
                             succeed resolve (conj delta simplified-lhs)))])))
 
-  (define (solve-matcho g s ctn resolve delta) 
-    (let-values ([(g s expanded?) (solve-matcho/expand g s)])
-      (if expanded?
-          (solve-constraint g s ctn resolve delta)
-          (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))
-
-  (define (solve-matcho/expand g s)
-    ;; Simplify matcho using s, but do not solve the contained constraint if matcho simplifies completely.
-    (cert (goal? g) (state? s)) ; -> constraint? state? simplified-completely?
-    (if (null? (matcho-out-vars g)) ; If all external variables have been assigned ground values,
-        (let-values ([(_ g s p) (expand-matcho g s empty-package)]) ; expand the inner goal procedure.
-          (values g s #t)) ; Otherwise walk the first external var in the current state.
-        (let ([v (walk-var s (car (matcho-out-vars g)))]) ;TODO replace walkvar in matcho solver with walk once matcho handles walks
-          (if (var? v) ; If it is free, continue to suspend matcho. Otherwise, continue walking variables.
-              (values (make-matcho (cons v (cdr (matcho-out-vars g))) (matcho-in-vars g) (matcho-goal g)) s #f)
-              (solve-matcho/expand (make-matcho (cdr (matcho-out-vars g)) (cons v (matcho-in-vars g)) (matcho-goal g)) s)))))
-
-  (org-define (solve-matcho2 g s ctn resolve delta)
-    (let-values ([(expanded? g ==s) (solve-matcho2/expand g s)])
-      (if expanded?
-          (solve-constraint g s (conj ==s ctn) resolve delta)
-          (solve-constraint (conj ==s ctn) (store-constraint s g) succeed resolve (conj delta g)))))
-  
-  (define solve-matcho2/expand
-    (org-case-lambda matcho/expand
-      [(g s) (solve-matcho2/expand g s succeed '())]
-      [(g s ==s walked)
-       (cert (goal? g) (goal? ==s) (list? walked)) ; -> expanded? matcho? (conj? ==? ...)
-       (let ([w (find (lambda (v) (not (memq v walked))) (matcho4-vars g))]) ; Find the next variable we haven't walked.
-         (if w (let ([v (walk-var s w)]) ; If there is an unwalked variable, walk it.
-                 (exclusive-cond
-                  [(var? v) ; If it is a var, swap it out and continue expanding.
-                    (solve-matcho2/expand
-                     (make-matcho4 (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g))
-                                   (matcho4-procedure g))
-                     s ==s (cons w walked))]
-                  [(pair? v)
-                   (let-values ([(expanded? shared match) ; Otherwise run the matcher.
-                                 (apply (matcho4-procedure g) ; Replace the unwalked var with its walked value.
-                                        (map (lambda (x) (if (eq? w x) v x)) (matcho4-vars g)))]) 
-                     (if expanded? ; If the constraint is fully expanded, return. Else continue expanding.
-                         (values #t match (conj ==s shared))
-                         (solve-matcho2/expand match s (conj ==s shared) (cons w walked))))]
-                  [else (values #t fail fail)]))
-             ;; If we've walked them all and the constraint is still unsolved, store the constraint continue solving.
-             (values #f g ==s)))]))
-
   (org-define (solve-matcho14 g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
@@ -113,18 +64,6 @@
     (cert (not (noto? g))) ; g is the already unwrapped inner goal of the noto.
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
-     [(matcho? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of a conj into the state, though some branches may contain stale variables.
-      (let-values ([(g s^ expanded?) (solve-matcho/expand g s)])
-        (let ([s (if (failure? s^) s s^)]) ; Negating a failure gives a success, but since we cant invert a failure s^ directly, we return the previous s as its inversion.
-          (if expanded?
-              (solve-constraint (noto g) s ctn resolve delta)
-              (solve-constraint ctn (store-constraint s (noto g)) succeed resolve (conj delta (noto g))))))]
-     [(matcho4? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of a conj into the state, though some branches may contain stale variables.
-      (let-values ([(expanded? g ==s) (solve-matcho2/expand g s)])
-        (let ([g (disj (noto ==s) (noto g))])
-         (if expanded?
-             (solve-constraint g s ctn resolve delta)
-             (solve-constraint ctn (store-constraint s g) succeed resolve (conj delta g)))))]
      [(matcho14? g) ; Because matcho may return a negatable complex constraint (like disj), we must expand it and see if we can perform the negation before we know how to solve the resulting constraint. Otherwise eg we might solve only 1 branch of a disj, but then attempt to store all branches of the negated conj into the state, which will mean some branches may contain stale variables.
       (let-values ([(expanded? g ==s) (matcho/expand g s)])
         (let ([g (disj (noto ==s) (noto g))])
@@ -183,10 +122,6 @@
                    [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
                    [else (values g g succeed d)])))] ; free vars => =/= undecidable
      [(pconstraint? g) (if (pconstraint-attributed? g x) (values (noto (pconstraint-check g x y)) g succeed d) (values g g succeed d))] ; The unified term succeeds or fails with the pconstraint. The disunified term simply preserves the pconstraint.
-     [(matcho? g) (if (and (matcho-attributed? g x) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
-                      (values g g succeed d))] ;TODO add patterns to matcho and check them in simplify-=/=
-     [(matcho4? g) (if (and (memq x (matcho4-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
-                       (values g g succeed d))]
      [(matcho14? g) (if (and (memq x (matcho-attributed-vars g)) (not (or (var? y) (pair? y)))) (values succeed g succeed d) ; Check that y could be a pair.
                       (values g g succeed d))]
      [(noto? g) (let-values ([(unified disunified recheck d) (simplify-=/= (noto-goal g) x y d)]) ; Cannot contain disjunctions so no need to inspect returns.
@@ -288,10 +223,6 @@
                      (cert (succeed? recheck))
                      (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
                        (values p (noto simplified) succeed c)))]
-        [(matcho? g) (let ([v (memp (lambda (v) (memq v (matcho-out-vars g))) (pconstraint-vars p))])
-                       (if (not v) (values p g succeed c)
-                           (let-values ([(entailed simplified recheck) ((pconstraint-procedure p) v v p g p)])
-                             (values entailed simplified recheck c))))]
         [else (values p g succeed c)])]))
 
   (define (simplify-pconstraint-disj g p d)
@@ -355,10 +286,6 @@
         [(==? g) ;TODO test whether == must attribute to both vars like =/=
          (cert (var? (==-lhs g)))
          (values (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs)) #t)]
-        [(matcho? g)
-         (values (if (or (null? (matcho-out-vars g)) (memq (car (matcho-out-vars g)) vs)) vs (cons (car (matcho-out-vars g)) vs)) unifies)]
-        [(matcho4? g)
-         (values (matcho4-vars g) unifies)]
         [(matcho14? g) (values (map car (remp (lambda (b) (zero? (var-id (car b)))) (matcho14-substitution g))) unifies)]
         [(pconstraint? g)
          (values (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g)) unifies)]
