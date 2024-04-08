@@ -288,7 +288,7 @@
         [(==? g) ;TODO test whether == must attribute to both vars like =/=
          (cert (var? (==-lhs g)))
          (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
-        [(matcho14? g) (map car (remp (lambda (b) (zero? (var-id (car b)))) (matcho14-substitution g)))]
+        [(matcho14? g) (matcho-attributed-vars g)]
         [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
         [(constraint? g) (attributed-vars (constraint-goal g) vs)]
         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
