@@ -1,5 +1,3 @@
-;;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
-;;TODO consider a way to give matcho a global identity (maybe baking it into a defrel form?) so that matcho constraints with the same payload can simplify one another. eg, calling absento with the same payload on subparts of the same list many times
 (library (matcho) ; Adapted from the miniKanren workshop paper "Guarded Fresh Goals: Dependency-Directed Introduction of Fresh Logic Variables"
 
   (export matcho/expand matcho-attributed-vars matcho/run
@@ -10,7 +8,8 @@
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
   ;; TODO consider else clause for returning a new goal if matcho fails the pattern match
   ;; TODO consider a cond form that nests matcho else clauses to create a cond like form without lots of negation
-
+  ;;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
+  
   (define (pattern-var? v)
     (cert (var? v))
     (zero? (var-id v)))
