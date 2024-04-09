@@ -1,6 +1,6 @@
 (library (mk interpreter)
   (export evalo initial-env evalo-env synthesizeo
-          interpreter/quote interpreter/number interpreter/boolean interpreter/lambda interpreter/lambda/variadic interpreter/lambda/multi-arg interpreter/if interpreter/letrec)
+          interpreter/quote interpreter/number interpreter/boolean interpreter/lambda interpreter/lambda/variadic interpreter/lambda/multi-arg interpreter/if interpreter/letrec interpreter/if/non-null)
   (import (chezscheme) (tracing) (constraints) (listo) (running) (goals) (matcho) (negation))
 
   (define interpreter/quote (make-parameter #t))
@@ -9,7 +9,8 @@
   (define interpreter/lambda (make-parameter #t))
   (define interpreter/lambda/variadic (make-parameter #t))
   (define interpreter/lambda/multi-arg (make-parameter #t))
-  (define interpreter/if (make-parameter #t))  
+  (define interpreter/if (make-parameter #t))
+  (define interpreter/if/non-null (make-parameter #t))  
   (define interpreter/letrec (make-parameter #t))
   
   (define empty-env '())
@@ -155,11 +156,12 @@
   (define (evalo-if expr env val)
     (if (not (interpreter/if)) fail
      (matcho ([('if c t f) expr])
-               (fresh (tf)
-                      (evalo c env tf)
-                      (conde
-                        [(== tf #f) (evalo f env val)]
-                        [(=/= tf #f) (evalo t env val)])))))
+             (fresh (tf)
+               (if (interpreter/if/non-null) succeed (booleano tf))
+               (evalo c env tf)
+               (conde
+                 [(== tf #f) (evalo f env val)]
+                 [(=/= tf #f) (evalo t env val)])))))
 
   (define (not-shadowedo sym env)
     (noto (asspo sym env (lambda (v) succeed))))

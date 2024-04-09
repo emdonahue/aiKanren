@@ -29,6 +29,8 @@
  (tassert "evalo if false" (evalo '(if #f 1 2)) 2)
  (tassert "evalo if null" (evalo '(if (null? '()) 1 2)) 1)
  (tassert "evalo if not null" (evalo '(if (null? (cons 3 4)) 1 2)) 2)
+ (parameterize ([interpreter/if/non-null #f])
+   (tassert "evalo if not null param" (evalo '(if '() 1 2)) (void)))
  
  (tassert "evalo apply lambda" (evalo '((lambda (x) x) 42)) 42)
  (tassert "evalo apply lambda eval arg" (evalo '((lambda (x) x) (cons 42 43))) '(42 . 43))
@@ -95,10 +97,11 @@
  ;; Synthesis
  
   (parameterize ([interpreter/number #f]
-                [interpreter/boolean #f]
-                [interpreter/lambda #f]
-                [interpreter/letrec #f]
-                [interpreter/quote #f]
+                 [interpreter/boolean #f]
+                 [interpreter/lambda #f]
+                 [interpreter/letrec #f]
+                 [interpreter/quote #f]
+                 [interpreter/if/non-null #f]
                 [max-depth 70])
 (let ([env (filter (lambda (b) (memq (car b) '(null? cons car cdr))) initial-env)])
  (tassert "synthesize check environment injected append"

@@ -18,6 +18,7 @@
                  [interpreter/boolean #f]
                  [interpreter/lambda #f]
                  [interpreter/letrec #f]
+                 [interpreter/if/non-null #f]
                  [interpreter/quote #f]
                  [max-depth 70])
     (let ([env (filter (lambda (b) (memq (car b) '(null? cons car cdr))) initial-env)])
