@@ -14,7 +14,8 @@ lib/mk.so lib/mk.wpo:
 	echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss") (compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
 
 clean:
-	rm -rf profile src/*/*.so src/*/*.wpo src/*/*/*.so src/*/*/*.wpo lib
+	rm -rf profile lib
+	find src -name '*.wpo' -delete -o -name '*.so' -delete
 
 profile:
 # Builds an html heatmap of function calls for optimization purposes.
