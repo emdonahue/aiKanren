@@ -1,6 +1,6 @@
-(import (test-runner) (mk) (variables) (goals))
+(import (test-runner) (mk core) (mk core goals))
 
-(define x1 (make-var 1))
+(define x1 (var 1))
 
 (test-suite
  negation

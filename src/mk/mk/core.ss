@@ -6,7 +6,9 @@
    lazy-run lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-cdr* ; Lazy
    succeed fail == conde fresh exist matcho constraint conj disj noto =/= ; Goals
    __ ; Quantification
-   answer-type max-depth search-strategy ; Parameters          
+   answer-type max-depth search-strategy ; Parameters
+   var ; Variables
+   failure state? state-varid ; Streams
    )
   
-  (import (chezscheme) (negation) (matcho) (search) (running) (variables) (goals)))
+  (import (chezscheme) (mk core negation) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams)))

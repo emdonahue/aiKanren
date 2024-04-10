@@ -1,5 +1,5 @@
 ;; Utilities for working with multiple value returns
-(library (utils)
+(library (mk core utils)
   (export with-values values-car values->list values-ref
           cert
           comment

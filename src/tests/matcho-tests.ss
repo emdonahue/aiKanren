@@ -1,9 +1,9 @@
-(import (chezscheme) (test-runner) (mk) (goals) (variables) (matcho) (utils))
+(import (chezscheme) (test-runner) (mk core) (mk core matcho) (mk core goals))
 
-(define x0 (make-var 0))
-(define x1 (make-var 1))
-(define x2 (make-var 2))
-(define x3 (make-var 3))
+(define x0 (var 0))
+(define x1 (var 1))
+(define x2 (var 2))
+(define x3 (var 3))
 
 (test-suite
  matcho

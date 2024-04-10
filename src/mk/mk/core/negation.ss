@@ -1,6 +1,6 @@
-(library (negation)
+(library (mk core negation)
   (export noto =/= =/=-lhs =/=-rhs)
-  (import (chezscheme) (goals) (utils))
+  (import (chezscheme) (mk core goals) (mk core utils))
 
   (define (noto g) ; Logical negation of constraints.
     ;; Goals wrapped with noto will be interpreted as negated constraints. Negation in this context should be understood in terms of a few simple operations:

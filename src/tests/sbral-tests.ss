@@ -1,4 +1,4 @@
-(import (test-runner) (sbral))
+(import (test-runner) (mk core sbral))
 
 (test-suite
  sbral

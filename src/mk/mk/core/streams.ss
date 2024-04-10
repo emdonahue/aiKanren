@@ -1,4 +1,4 @@
-(library (streams) ; Definitions for core mk goals
+(library (mk core streams) ; Definitions for core mk goals
   (export empty-state state? state-substitution state-varid set-state-substitution set-state-varid increment-varid set-state-datum state-datum instantiate-var
           empty-substitution
           failure failure?
@@ -7,7 +7,7 @@
           make-state+stream state+stream? state+stream-state state+stream-stream
           make-suspended suspended? suspended-goal suspended-state
           maybe-state? stream?)
-  (import (chezscheme) (sbral) (variables) (utils))
+  (import (chezscheme) (mk core sbral) (mk core variables) (mk core utils))
 
   
   ;; === FALIURE ===

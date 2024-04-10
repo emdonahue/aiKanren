@@ -1,7 +1,7 @@
 (library (mk interpreter)
   (export evalo initial-env evalo-env synthesizeo
           interpreter/quote interpreter/number interpreter/boolean interpreter/lambda interpreter/lambda/variadic interpreter/lambda/multi-arg interpreter/if interpreter/letrec interpreter/if/non-null)
-  (import (chezscheme) (tracing) (constraints) (listo) (running) (goals) (matcho) (negation))
+  (import (chezscheme) (mk core) (mk constraints) (mk lists) (mk tracing))
 
   (define interpreter/quote (make-parameter #t))
   (define interpreter/number (make-parameter #t))

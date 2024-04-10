@@ -1,7 +1,7 @@
-(import (test-runner) (mk) (utils) (debugging) (tracing) (variables) (goals))
+(import (test-runner) (mk core) (mk core utils) (mk tracing))
 
-(define x1 (make-var 1))
-(define x2 (make-var 2))
+(define x1 (var 1))
+(define x2 (var 2))
 
 (test-suite
  tracing
@@ -9,7 +9,7 @@
  (parameterize ([trace-goals #f])
    (tassert "trace ==" (trace-run* x1 (== x1 1)) '(1))
    (tassert "trace ==" (trace-run* x1 (== x1 1)) '(1))
-   (tassert "trace == & ==" (trace-run* (x1 x2) (conj* (== x1 1) (== x2 2))) '((1 2)))
+   (tassert "trace == & ==" (trace-run* (x1 x2) (conj (== x1 1) (== x2 2))) '((1 2)))
    (tassert "trace == & == depth 1" (trace-run* (x1 x2) (== x1 1) (== x2 2)) '((1 2)))
    (tassert "trace == | ==" (trace-run* x1 (conde [(== x1 1)] [(== x1 2)])) '(1 2))
    (tassert "trace exist" (trace-run* x1 (exist (x2) (== x1 x2) (== x2 1))) '(1))

@@ -1,6 +1,6 @@
-(import (test-runner) (mk) (utils) (variables))
+(import (test-runner) (mk core) (mk lists))
 
-(define x1 (make-var 1))
+(define x1 (var 1))
 
 (test-suite
  listo
@@ -37,7 +37,7 @@
  ;; for-eacho
 
  (tassert "for-eacho empty" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '())) '())
- (tassert "for-eacho succeed 1" (run1 x1 (for-eacho (lambda (x) (org-printf "for-eacho succeed 1 test~%") (org-display x) (== x 1)) x1) (== x1 '(1))) '(1))
+ (tassert "for-eacho succeed 1" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1))) '(1))
  (tassert "for-eacho succeed 2" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 1))) '(1 1))
  (tassert "for-eacho fail" (run1 x1 (for-eacho (lambda (x) (== x 1)) x1) (== x1 '(1 2))) (void))
  (tassert "for-eacho commit" (run1 (x1 x2) (for-eacho (lambda (x) (== x 1)) x1) (== x1 `(1 ,x2))) '((1 1) 1))

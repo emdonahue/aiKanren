@@ -1,4 +1,4 @@
-(import (test-runner) (mk) (mk interpreter) (utils))
+(import (test-runner) (mk core) (mk interpreter))
 
 (test-suite
  interpreter

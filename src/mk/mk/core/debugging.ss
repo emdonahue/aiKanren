@@ -1,8 +1,8 @@
-(library (debugging)
+(library (mk core debugging)
   (export printfo displayo noopo
           print-substitution
           walk-substitution)
-  (import (chezscheme) (goals) (streams) (sbral) (state) (utils))
+  (import (chezscheme) (mk core goals) (mk core streams) (mk core sbral) (mk core state) (mk core utils))
 
   ;; === DEBUG PRINTING ===
   

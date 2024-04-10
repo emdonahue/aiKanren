@@ -1,4 +1,4 @@
-(import (test-runner) (mk) (utils))
+(import (test-runner) (mk core))
 
 (test-suite
  dfs

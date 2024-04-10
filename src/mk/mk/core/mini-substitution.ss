@@ -1,6 +1,6 @@
-(library (mini-substitution)
+(library (mk core mini-substitution)
   (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized?)
-  (import (chezscheme) (variables) (streams) (goals) (utils))
+  (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
 
   (define (->mini-substitution g)
     (cert (==? g))

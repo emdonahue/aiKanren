@@ -1,4 +1,4 @@
-(library (package)
+(library (mk core package)
   (export )
   (import (chezscheme))
 )

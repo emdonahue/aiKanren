@@ -1,7 +1,7 @@
-(import (test-runner) (mk) (variables) (goals))
+(import (test-runner) (mk core) (mk constraints))
 
 (define-structure (mk-var id))
-(define vars (map make-var '(1 2 3)))
+(define vars (map var '(1 2 3)))
 (define max-vals 2)
 (define max-term-depth 1)
 (define max-expr-depth 2)

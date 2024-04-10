@@ -1,11 +1,11 @@
-(library (running) ; Manages the top level search behaviors and primary user interface.
+(library (mk core running) ; Manages the top level search behaviors and primary user interface.
   (export run run* run1
           lazy-run
           query
           search-strategy search-strategy/interleaving search-strategy/dfs
           answer-type answer-type/reified answer-type/state
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
-  (import (chezscheme) (search) (failure) (state) (streams) (utils) (goals) (variables))
+  (import (chezscheme) (mk core search) (mk core state) (mk core streams) (mk core utils) (mk core goals) (mk core variables))
 
   ;; === RUNTIME PARAMETERS ===
   

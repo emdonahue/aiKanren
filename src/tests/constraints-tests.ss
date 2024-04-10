@@ -1,13 +1,13 @@
-(import (test-runner) (mk) (goals) (variables) (utils) (state) (mk constraints) (mk listo))
+(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals))
 
 (define (forever x)
   (fresh (y) (forever x)))
 
 
-(define x1 (make-var 1))
-(define x2 (make-var 2))
-(define x3 (make-var 3))
-(define x4 (make-var 4))
+(define x1 (var 1))
+(define x2 (var 2))
+(define x3 (var 3))
+(define x4 (var 4))
 (define stale (lambda (s p) (cert #f))) ; Fresh that should never be expanded
 
 (test-suite
@@ -86,7 +86,7 @@
 
  ;; === IMPLIES ===
  (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (=/= x1 1) (== x2 2)) 2))
- (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (disj* (=/= x1 1) (== x2 2)) 3))
+ (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (disj (=/= x1 1) (== x2 2)) 3))
 
  ;; === SYMBOLO ===
  (tassert "symbolo simplifies succeed" (symbolo 'symbol) succeed)

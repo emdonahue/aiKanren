@@ -1,7 +1,7 @@
-(import (test-runner) (mk) (utils) (goals) (streams) (variables))
+(import (test-runner) (mk core))
 
-(define x1 (make-var 1))
-(define x2 (make-var 2))
+(define x1 (var 1))
+(define x2 (var 2))
 
 (test-suite
  goals
@@ -36,14 +36,14 @@
 
  (tassert "succeed goal" (run -1 x1 succeed) (list x1))
  (tassert "fail goal" (run -1 x1 fail) '())
- (tassert "conj fail" (run -1 x1 (conj* succeed fail)) '())
- (tassert "conj fail 2" (run -1 x1 (conj* fail succeed)) '())
+ (tassert "conj fail" (run -1 x1 (conj succeed fail)) '())
+ (tassert "conj fail 2" (run -1 x1 (conj fail succeed)) '())
  (tassert "bind" (run -1 x1 (fresh (x2) (fresh (x3) (fresh (x4) (== x1 1))))) '(1))
 
  (tassert "run* succeed goal" (run* x1 succeed) (list x1))
  (tassert "run* fail goal" (run* x1 fail) '())
- (tassert "run* conj fail" (run* x1 (conj* succeed fail)) '())
- (tassert "run* conj fail 2" (run* x1 (conj* fail succeed)) '())
+ (tassert "run* conj fail" (run* x1 (conj succeed fail)) '())
+ (tassert "run* conj fail 2" (run* x1 (conj fail succeed)) '())
  (tassert "run* bind" (run* x1 (fresh (x2) (fresh (x3) (fresh (x4) (== x1 1))))) '(1))
 
  (tassert "mplus fail lhs" (run -1 x1 (conde [fail] [(== x1 1)])) '(1))

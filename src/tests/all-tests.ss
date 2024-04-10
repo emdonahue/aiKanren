@@ -1,7 +1,7 @@
 (import (test-runner) (benchmark-runner))
 
 #;
-(define (run-suite filename)
+(define (run-suite filename) ; Automatically load test suites from calling file path.
   (load (string-append (path-parent (car (command-line))) (string (directory-separator)) filename)))
 
 (load "src/tests/sbral-tests.ss")
@@ -14,7 +14,7 @@
 (load "src/tests/negation-tests.ss")
 (load "src/tests/dfs-tests.ss")
 (load "src/tests/constraints-tests.ss")
-(load "src/tests/listo-tests.ss")
+(load "src/tests/lists-tests.ss")
 (load "src/tests/tracing-tests.ss")
 (load "src/tests/generative-tests.ss")
 (load "src/tests/interpreter-tests.ss")

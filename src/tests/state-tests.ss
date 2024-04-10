@@ -1,7 +1,7 @@
-(import (test-runner) (state) (streams) (variables) (utils) (mk))
+(import (test-runner) (mk core state) (mk core utils) (mk core))
 
-(define x1 (make-var 1))
-(define x2 (make-var 2))
+(define x1 (var 1))
+(define x2 (var 2))
 
 (test-suite
  state

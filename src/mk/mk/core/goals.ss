@@ -1,4 +1,4 @@
-(library (goals) ; Definitions for core mk goals
+(library (mk core goals) ; Definitions for core mk goals
   (export goal?
           make-== ==? ==-lhs ==-rhs ==
           succeed fail succeed? fail?
@@ -15,7 +15,7 @@
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition 
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           fresh-vars fresh exist)
-  (import (chezscheme) (variables) (streams) (utils))
+  (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
 
   
   ;; === SUCCEED & FAIL ===

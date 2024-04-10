@@ -1,9 +1,9 @@
-(import (test-runner) (mk) (goals) (variables) (matcho) (utils) (state) (solver) (mk constraints))
+(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints))
 
-(define x1 (make-var 1))
-(define x2 (make-var 2))
-(define x3 (make-var 3))
-(define x4 (make-var 4))
+(define x1 (var 1))
+(define x2 (var 2))
+(define x3 (var 3))
+(define x4 (var 4))
 
 (test-suite
  reducer
