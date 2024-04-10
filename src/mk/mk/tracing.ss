@@ -6,9 +6,7 @@
           prove)
   (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core sbral) (mk core search) (mk core running) (mk core state))
 
-
   ;; === PARAMETERS ===
-
 
   (define trace-goals (make-parameter #t)) ; External flag to enable or disable trace printing.
   (define tracing (make-parameter #f)) ; Internal flag that signals the trace system is running.
@@ -36,7 +34,6 @@
 
   ;; === DATA STRUCTURES ===
 
-
   (define-structure (trace-data theorem proof)) ; Tracing data records the path of trace-goal names taken by a specific state and is stored in the state in a trace-data structure.
 
   (define (state-theorem s) ; The theorem is the (potentially partial) path of trace-goal names the search is constrained to follow. Once this path has been satisfied (assuming it ends with the wildcard __ path), the search can continue as normal. Useful for constraining the search to explore a particular part of the space without changing the search itself.
@@ -53,7 +50,6 @@
 
 
   ;; === INTERFACE ===
-
 
   (define-syntax trace-goal ; Wraps one or more goals and adds a level of nesting to the trace output.
     ;; (trace-goal name goals...)
@@ -123,7 +119,6 @@
 
   ;; === PRINTING ===
 
-
   (define (print-trace-header s name source)
     (when (trace-goals)
       (org-print-header name)
@@ -160,7 +155,6 @@
           (for-each (lambda (b) (org-print-item (car b) (cdr b))) substitution)))))
 
   ;; === PROOFS ===
-
 
   (define cursor '__) ; The cursor represents the 'current' location in the proof tree. It will be replaced by the next trace-goal name encountered and a new cursor will be inserted.
 

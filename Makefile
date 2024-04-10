@@ -14,8 +14,8 @@ lib/mk.so lib/mk.wpo:
 	echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss") (compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
 
 clean:
-	rm -rf profile lib
-	find src -name '*.wpo' -delete -o -name '*.so' -delete
+	@rm -rf profile lib
+	@find src -name '*.wpo' -delete -o -name '*.so' -delete
 
 profile:
 # Builds an html heatmap of function calls for optimization purposes.
@@ -66,7 +66,8 @@ doc:
 
 test:
 # Run unit tests
-	scheme --compile-imported-libraries --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
+	make clean
+	scheme --libdirs src/mk:src/tests:src/benchmarks:src/examples --script src/tests/all-tests.ss
 
 debug:
 # Run unit tests with debugging enabled
