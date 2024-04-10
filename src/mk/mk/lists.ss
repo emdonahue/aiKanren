@@ -1,6 +1,6 @@
 (library (mk lists) ; Relational list library
   (export appendo assoco containso asspo listo for-eacho membero filtero)
-  (import (chezscheme) (mk core goals) (mk core matcho) (mk core negation) (mk core debugging) (mk core utils))
+  (import (chezscheme) (mk core goals) (mk core matcho) (mk core debugging) (mk core utils))
 
   (define (listo l) ; Constrains l to be a proper list.
     (disj

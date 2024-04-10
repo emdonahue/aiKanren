@@ -1,7 +1,7 @@
 (library (mk core state) ; Main state object that holds substitution & constraints
   (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid set-state-datum state-datum
           reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend simplify-unification) ;;TODO double check state exports. remove extend at least
-  (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core negation))
+  (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer))
 
   #;
   (comment

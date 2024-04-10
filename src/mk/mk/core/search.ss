@@ -1,6 +1,6 @@
 (library (mk core search) ; Deals with the pure search aspects without constraints.
   (export run-goal run-goal-dfs stream-step max-depth)
-  (import (chezscheme) (mk core state) (mk core package) (mk core negation) (mk core goals) (mk core streams) (mk core matcho) (mk core solver) (mk core utils) (mk core debugging)) 
+  (import (chezscheme) (mk core state) (mk core package) (mk core goals) (mk core streams) (mk core matcho) (mk core solver) (mk core utils) (mk core debugging)) 
 
   (define max-depth ; Specifies the maximum search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution. This parameter applies to all search types, including interleaving.
     ; Default: (most-positive-fixnum).

@@ -1,7 +1,7 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (mk core reducer)
   (export reduce-constraint reduce-const2)
-  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core negation) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
+  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
   ;;TODO simplify with negated pconstraints as well
 
   (define (expand-matcho g s p)

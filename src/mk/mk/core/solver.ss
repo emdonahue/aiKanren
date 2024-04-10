@@ -1,6 +1,6 @@
 (library (mk core solver) ; Central logic of the constraint solver
   (export run-constraint simplify-=/= simplify-pconstraint)
-  (import (chezscheme) (mk core state) (mk core negation) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core debugging) (mk core mini-substitution) (mk core reducer) (mk core matcho))
+  (import (chezscheme) (mk core state) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core debugging) (mk core mini-substitution) (mk core reducer) (mk core matcho))
 
   (org-define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.

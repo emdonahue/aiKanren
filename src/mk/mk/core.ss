@@ -11,4 +11,4 @@
    failure state? state-varid ; Streams
    )
   
-  (import (chezscheme) (mk core negation) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams)))
+  (import (chezscheme) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams)))

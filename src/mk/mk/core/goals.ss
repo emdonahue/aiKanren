@@ -12,7 +12,8 @@
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
           constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
-          make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition 
+          make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition
+          noto =/= =/=-lhs =/=-rhs
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           fresh-vars fresh exist)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
@@ -285,10 +286,37 @@
     (syntax-rules ()
       [(_ q g ...)
        (exist q (suspend (conj* g ...)))]))
-  
 
-  ;; === OTHER GOALS ===    
+  ;; === NEGATION ===
   (define-structure (noto goal)) ; Negated goal
+  (define (=/= lhs rhs) ; Disequality between terms.
+    (cert (not (or (goal? lhs) (goal? rhs))))
+    (noto (== lhs rhs)))
+  (define (=/=-lhs g) (==-lhs (noto-goal g)))
+  (define (=/=-rhs g) (==-rhs (noto-goal g)))
+
+  (define (noto g) ; Logical negation of constraints.
+    ;; Goals wrapped with noto will be interpreted as negated constraints. Negation in this context should be understood in terms of a few simple operations:
+    ;; == and =/= become the other when negated
+    ;; conj and disj become the other when negated and their children are negated in accordance with De Morgan's laws
+    ;; primitive constraints (such as symbolo) become negated versions of themselves (e.g. not-symbolo)
+    ;; matcho lazily waits until it can expand and then negates its expansion
+    ;; fresh cannot currently be negated
+    
+    (cert (goal? g))
+    (exclusive-cond
+     [(succeed? g) fail]
+     [(fail? g) succeed]
+     [(or (==? g) (matcho? g) (pconstraint? g)) (make-noto g)]
+     [(disj? g) (conj (noto (disj-car g)) (noto (disj-cdr g)))]
+     [(conde? g) (conj (noto (conde-lhs g)) (noto (conde-rhs g)))]
+     [(conj? g) (disj (noto (conj-lhs g)) (noto (conj-rhs g)))]
+     [(noto? g) (noto-goal g)]
+     [(constraint? g) (noto (constraint-goal g))]
+     [else (assertion-violation 'noto "Unrecognized constraint type" g)]))
+
+  ;; === MATCHO ===
+  
   (define-structure (matcho substitution ctn))
   
   

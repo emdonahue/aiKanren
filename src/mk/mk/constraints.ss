@@ -1,6 +1,6 @@
 (library (mk constraints)
   (export booleano presento absento finite-domain ==> typeo symbolo numbero pairo)
-  (import (chezscheme) (mk core goals) (mk core variables) (mk core negation) (mk core state) (mk core matcho) (mk core utils))
+  (import (chezscheme) (mk core goals) (mk core variables) (mk core state) (mk core matcho) (mk core utils))
   
   (define (booleano v) ; Constrains a term to be either #t or #f.
     (disj (== v #t) (== v #f)))
