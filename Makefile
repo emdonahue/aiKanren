@@ -7,11 +7,13 @@ SHELL := /bin/bash
 #scheme --libdirs .:../lib --script main.ss
 #echo '(generate-wpo-files #t) (compile-program "main.ss") (compile-whole-program "main.wpo" "main.so")' | scheme -q --libdirs ../lib:. --import-notify --optimize-level 3
 
-default: lib/mk.so lib/mk.wpo
+default: lib/mk.so
 
-lib/mk.so lib/mk.wpo:
-	mkdir -p lib
-	echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss") (compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
+lib/mk.so:
+	make clean
+	mkdir -p lib	
+	echo '(generate-wpo-files #t) (compile-library "src/mk/mk.ss")' | scheme -q --compile-imported-libraries --libdirs src/mk --optimize-level 3
+	echo '(compile-whole-library "src/mk/mk.wpo" "lib/mk.so")' | scheme -q --libdirs src/mk --optimize-level 3
 
 clean:
 	@rm -rf profile lib
