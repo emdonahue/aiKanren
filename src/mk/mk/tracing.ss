@@ -2,8 +2,9 @@
   (export trace-run trace-run*
           trace-goal trace-conde trace-goals
           state-proof
+          printfo displayo noopo walk-substitution
           prove)
-  (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core debugging) (mk core search) (mk core running) (mk core state))
+  (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core sbral) (mk core search) (mk core running) (mk core state))
 
 
   ;; === PARAMETERS ===
@@ -12,6 +13,26 @@
   (define trace-goals (make-parameter #t)) ; External flag to enable or disable trace printing.
   (define tracing (make-parameter #f)) ; Internal flag that signals the trace system is running.
 
+  ;; === SIMPLE DEBUG PRINTING ===
+  
+  (define (printfo . args) ; A no-op goal that prints its arguments as part of the debug logging system.
+    (noopo (apply org-printf args) (org-printf "~%")))
+
+  (define-syntax displayo ; A no-op goal that reifies and displays its arguments as part of the debug logging system.
+    (syntax-rules ()
+      [(_ expr ...)
+       (let ([displayo (lambda (s p c) (org-display (reify s expr) ...) (values succeed s p c))]) displayo)]))
+
+  (define-syntax noopo ; A no-op goal that executes arbitrary code when called as part of the search.
+    (syntax-rules ()
+      [(_ body ...)
+       (let ([noopo (lambda (s p c) body ... (values succeed s p c))]) noopo)]))
+
+  (define (walk-substitution s)
+    (cert (state? s))
+    (org-untrace
+     (let ([bindings (reverse (sbral->list (state-substitution s)))])
+       (map (lambda (i b) (cons (fx1+ i) b)) (enumerate bindings) bindings))))
 
   ;; === DATA STRUCTURES ===
 
