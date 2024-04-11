@@ -135,7 +135,9 @@ Advances the search stream by one step
 Advances the search stream as many times as needed until it arrives at an answer or fails.
 
 ### Internals & Extensions
-This section documents utilities for those trying to extend the language or otherwise working at a much deeper level with the internal representations.
+This section documents utilities for those trying to extend the language or otherwise working at a much deeper level with the internal representations. 
+
+The easiest and most general way to extend the system is simply to use raw Scheme procedures as goals. These procedures must accept three arguments: the state, a package containing global data relevant to the entire seach tree (such as tabling data), and a goal representing the future of the computation. The procedure must return four values: the goal to run next (the trivial succeed goal will do if there is no more specific goal), and the new state, package, and continuation goal representing the future of the search. The procedure can do anything any other goal can do provided it fits the appropriate signature.
 #### var
 ```scheme
 (var id)
