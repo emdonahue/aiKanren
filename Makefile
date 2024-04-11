@@ -43,12 +43,19 @@ repl:
 # Boot up a REPL preloaded with miniKanren
 	scheme --libdirs src/mk src/repl/repl.ss
 
-todo:
-# Extract TODOs from source and build TODO file
+doc:
+# Extract documentation from source and build doc file
+	sed -Ei '/^## core/,$$ d' DOCUMENTATION.md
+	for lib in core; do \
+		echo "## $$lib" >> DOCUMENTATION.md; \
+		find src/mk/mk/$$lib* -name '*.ss' -print0 | xargs -0 -I{} sed -En '/DOC/,/^[^;]*$$/ s/.*[;] (DOC )?(.*)/\2/p' {} >> DOCUMENTATION.md; \
+#xargs -0 -I{} sed -nE '/[;] DOC/,/^[^;]*$/ s/.*[;] (.*)/\1/p' {} >> DOCUMENTATION.md; \
+	done
+
 	echo '# Not Yet Implemented' > TODO.md
-	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
+#	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
 	echo '# TODO' >> TODO.md
-	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
+#	grep -nr -e 'TODO' src | sed -E 's|^([^:]+):([^:]+):.*TODO (.*)|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|' >> TODO.md
 
 test:
 # Run unit tests

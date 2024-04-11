@@ -38,7 +38,7 @@ Contributions are welcome. A complete list of TODO items automatically extracted
 
 `make repl` opens a command line repl with the library pre-loaded for use in experimentation.
 
-`make todo` will automatically update the TODO file by extracting all source file comments that begin with TODO.
+`make doc` will automatically update the TODO and DOCUMENTATION files by extracting all source file comments that begin with TODO or DOC.
 
 # Citation
 This repository implements the paper [Goals as Constraints: Writing miniKanren Constraints in miniKanren](https://dash.harvard.edu/bitstream/handle/1/37377201/tr.pdf?sequence=1&isAllowed=y). If you use this repository in your research, please cite that paper.

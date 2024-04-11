@@ -272,8 +272,12 @@
       [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...) ; Single variables are treated as 1-length lists.
        (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
 
-  (define-syntax exist ; Equivalent to fresh, but does not suspend search. Only creates fresh variables.
+  (define-syntax exist
+    ;; DOC ### exist
+    ;; ```scheme
     ;; (exist (x y z) ...)
+    ;; ```
+    ;; `exist` is the most elementary way to introduce fresh variables. This goal simply instantiates one fresh variable per identifier in its binding form and runs its body goals with the fresh variables bound to those identifiers. With no identifiers, it can simply be used to conjoin its subgoals.
     (syntax-rules ()
       [(_ q g ...)
        (lambda (start-state p c)
