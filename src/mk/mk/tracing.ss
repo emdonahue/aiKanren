@@ -1,9 +1,9 @@
 (library (mk tracing)
   (export trace-run trace-run*
-          trace-goal trace-conde trace-goals
-          state-proof
+          trace-goal trace-conde trace-goals          
           printfo displayo noopo walk-substitution
-          prove)
+          prove state-proof
+          org-trace)
   (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core sbral) (mk core search) (mk core running) (mk core state))
 
   ;; === PARAMETERS ===
@@ -38,15 +38,15 @@
 
   (define (state-theorem s) ; The theorem is the (potentially partial) path of trace-goal names the search is constrained to follow. Once this path has been satisfied (assuming it ends with the wildcard __ path), the search can continue as normal. Useful for constraining the search to explore a particular part of the space without changing the search itself.
     (cert (state? s))
-    (trace-data-theorem (state-datum s trace-data?)))
+    (trace-data-theorem (state-attr s trace-data?)))
 
   (define (state-proof s) ; The proof is the current path through trace-goal names a given state has followed to this point in the search. Used in debug printing understand what path this state has taken, as well as to compare with the current theorem to determine if the state should be discarded.
     (cert (state? s))
-    (trace-data-proof (state-datum s trace-data?)))
+    (trace-data-proof (state-attr s trace-data?)))
 
   (define (set-state-trace s theorem proof)
     (cert (state? s))
-    (set-state-datum s trace-data? (make-trace-data theorem proof)))
+    (set-state-attr s trace-data? (make-trace-data theorem proof)))
 
 
   ;; === INTERFACE ===

@@ -1,34 +1,7 @@
 (library (mk core state) ; Main state object that holds substitution & constraints
-  (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid set-state-datum state-datum
+  (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid
           reify reify-var instantiate-var walk state-add-constraint unify disunify walk-var walk-var-val extend simplify-unification) ;;TODO double check state exports. remove extend at least
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer))
-
-  #;
-  (comment
-   (define-structure (state substitution varid data))
-   (define empty-state (make-state empty-substitution 0 '()))
-
-   (define (set-state-substitution s substitution) ;TODO try replacing state vector copy with manual updates using mutators
-     (if (not (failure? substitution))
-         (let ([s (vector-copy s)])
-           (set-state-substitution! s substitution) s) substitution))
-   
-   (define (increment-varid s)
-     (cert (state? s))
-     (make-state (state-substitution s) #f (fx1+ (state-varid s))))
-
-   (define (set-state-varid s v)
-     ;;TODO remove set-state-varid
-     (cert (state? s) (number? v) (fx<= (state-varid s) v))
-     (if (fx= (state-varid s) v) s
-         (let ([s (vector-copy s)])
-           (set-state-varid! s v) s)))
-
-   (define (set-state-datum s pred? data)
-     (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-data s)))))
-
-   (define (state-datum s pred?)
-     (find pred? (state-data s))))
   
   ;; === WALK & REIFY ===
   

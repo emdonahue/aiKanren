@@ -1,4 +1,4 @@
-(import (test-runner) (mk core mini-substitution) (mk core))
+(import (test-runner) (mk core mini-substitution) (mk core) (mk core streams))
 
 (define x1 (var 1))
 (define x2 (var 2))
