@@ -227,7 +227,6 @@
 
  ;; === NOTO ===
  (tassert "noto continues to solve pending constraints" (run1 (x1 x2 x3) (== x1 1) (== x2 (cons x3 x3)) (noto (matcho ([(a . d) x2]) (disj (=/= x3 3) (== x1 2))))) '(1 (3 . 3) 3))
- ;;(org-trace    (tassert "noto does not negate rechecked constraints" (run1 x1 (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1))) (conj (disj (disj (=/= x1 1) (=/= x1 2)) matcho-x1) (noto (numbero x1)))))
  (tassert "noto does not negate rechecked constraints" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) (list (conj (disj (== x1 1) (== x2 2)) (noto (symbolo x1))) x2))
  (tassert "absento failed because match wasn't eager" (run1 (x1 x2) (noto (absento x2 (list x1 '()))) (== x1 1) (== x2 3)) (void))
  (tassert "repeatedly solved constraints deduplicate" (run1 (x1 x2) (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1))) (list (disj (conj (=/= x1 1) (== x1 x2)) (== x1 1)) x2))

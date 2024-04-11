@@ -53,7 +53,7 @@
   
   (define matcho/expand
     ;; Expand the matcho as much as possible using the variables in the substitution
-    (org-case-lambda matcho/expand
+    (case-lambda
       [(g s) (matcho/expand g s (matcho-substitution g) succeed '())]
       [(g s sub ==s vs)
        (cert (matcho? g) (state? s) (list? sub) (goal? ==s) (list? vs))

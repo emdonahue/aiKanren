@@ -59,7 +59,7 @@
         (if (eq? v v^) v (mini-reify s v^)))] ;TODO should minireify check eq or var?
      [else v]))
 
-  (org-define (mini-reify-normalized s v)
+  (define (mini-reify-normalized s v)
     (cert (list? s))
     (exclusive-cond
      [(pair? v)

@@ -14,7 +14,7 @@
     ;;TODO define a secondary run goal that runs children of conde and only that one should suspend fresh because it represents having to make a choice instead of pursuing a goal linearly into its depths
     ;;TODO if we convert interleaving to cps, we can use the goal structure to store tracing info and trace the interleaving search without special affordances. might work if tracing goals just mutate rather than shadow params
     ;;TODO if convert search to cps, can we use the results of walk to simplify the ctn and decide not to walk some of its goals?
-    (org-case-lambda run-goal
+    (case-lambda
      [(g s p) (run-goal g s p succeed)] ; Create an empty 'succeed' continuation representing the future conjuncts. This interpreter is written in "conjunction passing style," so rather than binding the lhs of a conj to the stream of the rhs, we run the lhs, passing in the conjunction of its rhs and the current continuation (ctn) to be evaluated later. 
      [(g s p ctn)
       (cert (goal? g) (or (fail? g) (state? s)) (package? p)) ; -> stream? package?      

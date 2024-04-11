@@ -2,12 +2,12 @@
   (export run-constraint simplify-=/= simplify-pconstraint)
   (import (chezscheme) (mk core state) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core matcho))
 
-  (org-define (run-constraint g s)
+  (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
               (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
     (let-values ([(delta s) (solve-constraint g s succeed succeed succeed)]) s))
 
-  (org-define (solve-constraint g s ctn resolve delta)
+  (define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     ;; resolve: constraints retrieved from the store that we need to recheck, but which should not be negated by noto on the return (so we cant just solve them immediately. we must delay rechecking until we are done with g).
     ;; delta: conjunction of all the simplified goals we have added to the store. reflects the change (delta) of the returned state's constraint store.
@@ -29,7 +29,7 @@
          [else (assertion-violation 'solve-constraint "Unrecognized constraint type" g)])))
 
 
-  (org-define (solve-succeed s ctn resolve delta)
+  (define (solve-succeed s ctn resolve delta)
     (if (succeed? ctn) ; Solve until continuation is trivial.
         (if (succeed? resolve) ; If we have no ctn and nothing left to recheck, we're done.
             (values delta s)
@@ -47,7 +47,7 @@
           (solve-constraint ctn (store-constraint s simplified-lhs)
                             succeed resolve (conj delta simplified-lhs)))])))
 
-  (org-define (solve-matcho g s ctn resolve delta)
+  (define (solve-matcho g s ctn resolve delta)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
           (solve-constraint ==s s (conj g ctn) resolve delta)
@@ -60,7 +60,7 @@
       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
           (solve-constraint ctn s succeed resolve delta))))
 
-  (org-define (solve-noto g s ctn resolve delta)
+  (define (solve-noto g s ctn resolve delta)
     (cert (not (noto? g))) ; g is the already unwrapped inner goal of the noto.
     (exclusive-cond
      [(==? g) (solve-=/= g s ctn resolve delta)]
@@ -82,7 +82,7 @@
 
 
 
-  (org-define (solve-== g s ctn resolve delta)
+  (define (solve-== g s ctn resolve delta)
               ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
               ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
               ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
@@ -101,7 +101,6 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
           (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
               (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs g) (=/=-rhs g) g)]) ; Simplify the constraints with the first disjoined =/=.
-                                        ;(org-display unified disunified recheck diseq)
                 (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
                     (solve-constraint ctn (store-constraint (extend s (=/=-lhs g) disunified) diseq) succeed (conj recheck resolve) (conj delta g))))))))
 
@@ -222,7 +221,7 @@
         ;; numbero & =/='symbol -> fail fail -> numbero succeed
         ;; numbero & not symbolo x2 -> numbero symbolo x2 -> numbero not symbolo x2
         [(noto? g) (let-values ([(entailed simplified recheck c) (simplify-pconstraint (noto-goal g) p c)])
-                     (org-display entailed simplified recheck)
+                     ;(display entailed simplified recheck)
                      (when (not (succeed? recheck)) (display p))
                      (cert (succeed? recheck))
                      (let ([p (if (and (succeed? entailed) (succeed? simplified)) fail p)])
@@ -241,14 +240,12 @@
             (if (succeed? disunified-rhs) (values unified-rhs succeed succeed d)
                 (let ([unified (if (and (succeed? unified-lhs) (succeed? unified-rhs)) succeed p)])
                   (let-values ([(conjs disjs lhs rhs) (disj-factorize disunified-lhs disunified-rhs)])
-                                        ;(org-display unified-lhs unified-rhs simplified-rhs lhs rhs d)
                     (let ([disunified
                            (conj conjs (conj
                                         (if (not (or (succeed? unified-lhs) (succeed? unified-rhs)))
                                             (conj d (disj lhs rhs))
                                             (disj (if (succeed? unified-lhs) lhs (conj d lhs))
                                                   (if (succeed? unified-rhs) rhs (conj d rhs)))) disjs))])
-                                        ;(org-display unified unified-lhs unified-rhs)
                       (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs))
                               (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
                                    (conj-memp simplified-lhs ==?))) ; Only need to check simplified since any non succeed recheck will force a recheck
