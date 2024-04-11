@@ -111,3 +111,90 @@ Returns all answers. Shortcut for:
 (parameterize ([search-strategy 'dfs]) (run -1 ...))
 ```
 Always uses a depth first search for speed, although this may affect the order of returned answers. To force a different type of search, use `run` with -1 as the number of answers.
+#### lazy-run
+```scheme
+(lazy-run (x y z) ...)
+(lazy-run x ...)
+(lazy-run () ...)
+```
+Returns a lazy stream representing the answers to the search specified by the body goals. Other lazy-* functions can be used to manipulate this stream.
+#### lazy-run-null?
+#t if the lazy stream is out of answers
+#### lazy-run-car?
+#t if the lazy stream has an answer ready
+#### lazy-stream-car
+Returns the current answer
+#### lazy-stream-cdr
+Advances the search stream by one step
+#### lazy-stream-cdr*
+Advances the search stream as many times as needed until it arrives at an answer or fails.
+
+### Internals & Extensions
+This section documents utilities for those trying to extend the language or otherwise working at a much deeper level with the internal representations.
+#### var
+```scheme
+(var id)
+```
+Creates a new variable. `id` is an integer representing the variable's id number. Each fresh variable in a search has a unique id, which is tracked in the state. Variables are represented as vectors created by define-structure, and can be tested or accessed in the corresponding manner.
+#### state
+```scheme
+(state substitution varid attributes)
+```
+A constructor for state objects defined with define-structure and implementing all the expected predicates and accessors. 
+
+`substitution` is a skew binary random access list implemented internally.
+
+`varid` represents the variable id of the most recently instantiated variable. Must be incremented before it can be used to create a new variable.
+
+`attributes` contains the extensible attribute data that has been added to the state by external libraries, such as tracing.
+#### state-attr
+```scheme
+(state-attr s attr?)
+```
+Retrieves an attribute from state `s` recognized by predicate attr?. Attributes are stored in a list, usually of structures created with define-structure, and are stored and retrieved by using the predicate generated with each structure. 
+#### set-state-attr
+```scheme
+(set-state-attr s attr? attr)
+```
+Removes any previous attribute recognized by predicate `attr?` and installs the new attribute `attr`.
+
+## Lists
+```scheme
+(import mk lists)
+```
+Contains a variety of useful functions for dealing with lists and trees in miniKanren.
+#### appendo
+```scheme
+(appendo h t h+t)
+```
+Relational `append`.
+#### assoco
+```scheme
+(assoco k kv v)
+```
+Relational `assoc`. Unifies `v` with the values of all pairs in `kv` for which `k` unifies with its key.
+#### asspo
+```scheme
+(asspo k kv p)
+```
+Relational `assp`. For each pair in `kv` for which `k` unifies with its key, pass its value to the function `p`, which must return a goal.
+#### listo
+```scheme
+(listo l)
+```
+A constraint that checks that `l` is a proper list.
+#### for-eacho
+```scheme
+(for-eacho p xs)
+```
+A relational `for-each` constraint. Applies function `p` to each element of `xs`, which must return a constraint. Ensures that all elements of `xs` satisfy a given constraint.
+#### membero
+```scheme
+(membero x xs)
+```
+A relational `member`. Unifies 'x' with all elements of `xs`.
+#### filtero
+```scheme
+(filtero f xs ys)
+```
+A relational `filter`. Unifies `ys` with a list of all elements for which `f` produces a satisfiable constraint.
