@@ -41,4 +41,18 @@ Contributions are welcome. A complete list of TODO items automatically extracted
 `make doc` will automatically update the TODO and DOCUMENTATION files by extracting all source file comments that begin with TODO or DOC.
 
 # Citation
-This repository implements the paper [Goals as Constraints: Writing miniKanren Constraints in miniKanren](https://dash.harvard.edu/bitstream/handle/1/37377201/tr.pdf?sequence=1&isAllowed=y). If you use this repository in your research, please cite that paper.
+This repository implements the paper [Goals as Constraints: Writing miniKanren Constraints in miniKanren](https://dash.harvard.edu/bitstream/handle/1/37377201/tr.pdf?sequence=1&isAllowed=y). If you use this repository in your research, please cite that paper:
+```bibtex
+@incollection{donahue2023constraints,
+  title={Goals as Constraints: Writing miniKanren Constraints in miniKanren},
+  author={Donahue, Evan},
+  journal={miniKanren and Relational Programming Workshop},
+  year={2023},
+  booktitle={Proceedings of the 2023 miniKanren and Relational Programming Workshop},
+  editor={Amin, Nada and Byrd, William E.},
+  pages={1-12},
+  year={2023},
+  address={Cambridge},
+  publisher={Harvard Technical Report}
+}
+```
