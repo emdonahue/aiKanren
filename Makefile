@@ -43,24 +43,8 @@ repl:
 # Boot up a REPL preloaded with miniKanren
 	scheme --libdirs src/mk src/repl/repl.ss
 
-doc:
-# Extract documentation from source and build doc file
-	echo '# Documentation' > DOCUMENTATION.md
-	for lib in core; do \
-		echo "## $$lib" >> DOCUMENTATION.md; \
-		echo -e '```scheme\n(import (mk '$$lib'))\n```' >> DOCUMENTATION.md; \
-		sed -En '/\(library/,/\(export/ s/.*; *(.*)/\1/p' src/mk/mk/"$$lib.ss" >> DOCUMENTATION.md; \
-		sed -En '/\(export/,/\(import/ {/;/ p}' src/mk/mk/"$$lib.ss" | while read -a fns; do \
-			echo '### '$${fns[-1]} >> DOCUMENTATION.md; \
-			for f in $${fns[@]::$${#fns[@]}-2}; do \
-				echo -e '#### '$$f >> DOCUMENTATION.md; \
-				sed -En -e 's|.*define \('"$${f/\?/[?]}"' (.*)\).*|```scheme\n('"$$f"' _\1_)\n```|p' \
-					-e '\%define-syntax '"$$f"' %,\%^ *$$% s|.*\(_ (.*)\).*|```scheme\n('"$$f"' \1)\n```|p' src/mk/*.ss >> DOCUMENTATION.md; \
-				sed -En "\%define(-syntax)? \(?$$f[ )]%,\%^[^;]*$$% s/.*; (.*)/\1/p" src/mk/*.ss >> DOCUMENTATION.md; \
-			done \
-		done \
-	done
-
+todo:
+# Extract TODOs from source and build TODO file
 	echo '# Not Yet Implemented' > TODO.md
 	grep -nr --exclude=utils.ss -e '(nyi' src | sed -E 's|^([^:]+):([^:]+):.*\(nyi([^)]*)\).*|- \3 ([\1:\2](https://github.com/emdonahue/aiKanren/blob/main/\1#L\2))|g' >> TODO.md
 	echo '# TODO' >> TODO.md
