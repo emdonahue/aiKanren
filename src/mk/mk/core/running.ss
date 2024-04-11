@@ -42,7 +42,13 @@
        (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
                    (make-lazy-run (make-suspended start-goal start-state) (vars->list q) empty-package))]))
 
-  (define-syntax run ; Runs a standard interleaving search and returns the first n answers.
+  (define-syntax run ; DOC ### run
+    ;; ```scheme
+    ;; (run n (x y z) ...)
+    ;; (run n x ...)
+    ;; (run n () ...)
+    ;; ```
+    ;; Runs a standard interleaving search and returns the first n answers.
     (syntax-rules ()
       [(_ n q g ...)
        (if (eq? (search-strategy) search-strategy/interleaving)

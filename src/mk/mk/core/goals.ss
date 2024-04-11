@@ -272,8 +272,7 @@
       [(_ [(end-state end-goal) (start-state (start-goal ...) q)] body ...) ; Single variables are treated as 1-length lists.
        (fresh-vars [(end-state end-goal) (start-state (start-goal ...) (q))] body ...)]))
 
-  (define-syntax exist
-    ;; DOC ### exist
+  (define-syntax exist ; DOC ### exist
     ;; ```scheme
     ;; (exist (x y z) ...)
     ;; ```

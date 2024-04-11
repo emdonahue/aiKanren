@@ -43,12 +43,12 @@ repl:
 # Boot up a REPL preloaded with miniKanren
 	scheme --libdirs src/mk src/repl/repl.ss
 
-doc:
+todo:
 # Extract documentation from source and build doc file
 	sed -Ei '/^## core/,$$ d' DOCUMENTATION.md
 	for lib in core; do \
-		echo "## $$lib" >> DOCUMENTATION.md; \
-		find src/mk/mk/$$lib* -name '*.ss' -print0 | xargs -0 -I{} sed -En '/DOC/,/^[^;]*$$/ s/.*[;] (DOC )?(.*)/\2/p' {} >> DOCUMENTATION.md; \
+		echo -e '## '$$lib'\n```scheme\n(import (mk '$$lib'))\n```' >> DOCUMENTATION.md; \
+		find src/mk/mk/$$lib* -name '*.ss' | tac | xargs -I{} sed -En '/; DOC/,/^[^;]*$$/ s/.*[;] ((DOC )?)(.*)/\3/p' {} >> DOCUMENTATION.md; \
 #xargs -0 -I{} sed -nE '/[;] DOC/,/^[^;]*$/ s/.*[;] (.*)/\1/p' {} >> DOCUMENTATION.md; \
 	done
 
