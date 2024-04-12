@@ -1,5 +1,5 @@
 (library (mk core streams) ; Definitions for core mk goals
-  (export empty-state state state? state-substitution state-varid state-attributes set-state-substitution set-state-varid increment-varid set-state-attr state-attr instantiate-var
+  (export empty-state state state? state-substitution state-varid state-attributes set-state-substitution set-state-varid increment-varid state-attr instantiate-var
           empty-substitution
           failure failure?
           package? empty-package
@@ -47,11 +47,10 @@
     (if (fx= (state-varid s) v) s
         (make-state (state-substitution s) v (state-attributes s))))
 
-  (define (set-state-attr s pred? data)
-    (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-attributes s)))))
-
-  (define (state-attr s pred?)
-    (find pred? (state-attributes s)))
+  (define state-attr
+    (case-lambda
+      [(s pred?) (find pred? (state-attributes s))]
+      [(s pred? data) (make-state (state-substitution s) (state-varid s) (cons data (remp pred? (state-attributes s))))]))
 
   (define (instantiate-var s)
     ;; Return a new var and the state with an incremented varid
@@ -67,7 +66,7 @@
     (case-lambda
       [(s) (let ([p (state-attr s search-priority?)])
              (if p (search-priority-score p) 0))]
-      [(s p) (set-state-attr s search-priority? (make-search-priority p))]))
+      [(s p) (state-attr s search-priority? (make-search-priority p))]))
 
   (define-structure (priority-stream streams))
   
