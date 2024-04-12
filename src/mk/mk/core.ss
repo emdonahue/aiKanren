@@ -8,6 +8,7 @@
    answer-type max-depth search-strategy ; Parameters
    var var? var-id ; Variables
    state state? state-substitution state-varid state-attributes ; Streams
+   state-priority ; Priority
    )
   
   (import (chezscheme) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams)))

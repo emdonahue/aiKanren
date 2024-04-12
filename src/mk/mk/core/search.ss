@@ -1,11 +1,15 @@
 (library (mk core search) ; Deals with the pure search aspects without constraints.
-  (export run-goal run-goal-dfs stream-step max-depth)
+  (export run-goal run-goal-dfs stream-step max-depth priority-mplus)
   (import (chezscheme) (mk core state) (mk core package) (mk core goals) (mk core streams) (mk core matcho) (mk core solver) (mk core utils)) 
 
   (define max-depth ; Specifies the maximum search, beyond which the search branch will automatically terminate. Depth corresponds to the number of allocated fresh variables in the substitution. This parameter applies to all search types, including interleaving.
     ; Default: (most-positive-fixnum).
     (make-parameter (most-positive-fixnum)
                     (lambda (d) (unless (integer? d) (assertion-violation 'max-depth "max-depth must be an integer" d)) d)))
+
+  (define (exceeds-max-depth? s)
+    (cert (maybe-state? s))
+    (or (failure? s) (fx< (max-depth) (state-varid s))))
   
   ;; === INTERLEAVING INTERPRETER ===
   
@@ -50,6 +54,12 @@
      [(mplus? s) (let-values ([(lhs p) (stream-step (mplus-lhs s) p)])
                    (values (mplus (mplus-rhs s) lhs) p))]
      [(state+stream? s) (values (state+stream-stream s) p)]
+     [(priority-stream? s)
+      (let ([ss (priority-stream-streams s)])
+        (if (null? ss) (values failure p)
+            (let-values ([(lhs p) (stream-step (car ss) p)])
+              (values (priority-mplus lhs (make-priority-stream (cdr ss)))
+                      p))))]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
   
   (define (mplus lhs rhs)
@@ -64,6 +74,14 @@
      [(state+stream? rhs) (make-state+stream (state+stream-state rhs) (mplus lhs (state+stream-stream rhs)))]
      [else (make-mplus lhs rhs)]))
 
+  (define (priority-mplus s p)
+    (cert (stream? s) (priority-stream? p))
+    (cond
+     [(suspended? s) (make-priority-stream (cons s (priority-stream-streams p)))]
+     [(mplus? s) (nyi mplus priority)] ; Float answers to the front of the tree
+     [(state+stream? s) (make-state+stream (state+stream-state s) (priority-mplus (state+stream-stream s) p))]
+     [else (mplus s p)]))
+  
 
   ;; === DEPTH FIRST INTERPRETER ===
 
@@ -89,8 +107,4 @@
                                    (run-goal-dfs g s p n answers ctn)))]
              [(suspend? g) (run-goal-dfs (suspend-goal g) s p n answers ctn)]
              [(dfs-goal? g) ((dfs-goal-procedure g) s p n answers ctn)]
-             [else (run-goal-dfs ctn (run-constraint g s) p n answers succeed)]))]))
-
-  (define (exceeds-max-depth? s)
-    (cert (maybe-state? s))
-    (or (failure? s) (fx< (max-depth) (state-varid s))))) 
+             [else (run-goal-dfs ctn (run-constraint g s) p n answers succeed)]))]))) 

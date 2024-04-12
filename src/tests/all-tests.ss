@@ -13,6 +13,7 @@
 (load "src/tests/matcho-tests.ss")
 (load "src/tests/negation-tests.ss")
 (load "src/tests/dfs-tests.ss")
+(load "src/tests/priority-tests.ss")
 (load "src/tests/constraints-tests.ss")
 (load "src/tests/lists-tests.ss")
 (load "src/tests/tracing-tests.ss")

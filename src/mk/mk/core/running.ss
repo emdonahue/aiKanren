@@ -2,7 +2,7 @@
   (export run run* run1
           lazy-run
           query
-          search-strategy search-strategy/interleaving search-strategy/dfs
+          search-strategy search-strategy/interleaving search-strategy/dfs search-strategy/priority
           answer-type answer-type/reified answer-type/state
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
   (import (chezscheme) (mk core search) (mk core state) (mk core streams) (mk core utils) (mk core goals) (mk core variables))
@@ -11,11 +11,12 @@
   
   (define search-strategy/interleaving 'interleaving)
   (define search-strategy/dfs 'dfs)
+  (define search-strategy/priority 'priority)
   (define search-strategy ; Specifies the search strategy used by run. May be 'interleaving or 'dfs.
     ; Default: 'interleaving.
     (make-parameter search-strategy/interleaving
                     (lambda (s)
-                      (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs))
+                      (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs) (eq? s search-strategy/priority))
                         (assertion-violation 'answer-type "Unrecognized search-strategy" s))
                       s)))
 
@@ -40,19 +41,24 @@
     (syntax-rules ()
       [(_ q g ...)
        (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
-                   (make-lazy-run (make-suspended start-goal start-state) (vars->list q) empty-package))]))
+                   (let ([stream (make-suspended start-goal start-state)])
+                     (make-lazy-run
+                      (if (eq? (search-strategy) search-strategy/priority)
+                          (priority-mplus stream empty-priority-stream)
+                          stream)
+                      (vars->list q) empty-package)))]))
 
   (define-syntax run 
     (syntax-rules ()
       [(_ n q g ...)
-       (if (eq? (search-strategy) search-strategy/interleaving)
-           (lazy-run-take n (lazy-run q g ...))
+       (if (eq? (search-strategy) search-strategy/dfs)
            (fresh-vars [(start-state start-goal) (empty-state (g ...) q)]
-                       (parameterize ([query (vars->list q)])
+                      (parameterize ([query (vars->list q)])
                         (let-values ([(answers p) 
                                       (run-goal-dfs start-goal start-state empty-package n)])
                           (map (lambda (s) (reify-answer (query) s))
-                               (reverse answers))))))]))
+                               (reverse answers)))))
+           (lazy-run-take n (lazy-run q g ...)))]))
 
   (define-syntax run1 ; Returns the first answer instead of a list of answers. Returns (void) if no answers are returned. Useful to quickly obtain an answer without needing to check for failure.
     (syntax-rules ()
@@ -63,7 +69,8 @@
   (define-syntax run* ; Returns all answers using a depth-first search. Equivalent to (search-strategy 'dfs), number of answers = -1. Because all answers are returned, the search must be finite, so the more efficient dfs is used in place of interleaving.
     (syntax-rules ()
       [(_ q g ...)
-       (parameterize ([search-strategy search-strategy/dfs])
+       (parameterize ([search-strategy (if (eq? (search-strategy) search-strategy/interleaving)
+                                           search-strategy/dfs (search-strategy))])
          (run -1 q g ...))]))
   
   (define (lazy-run-null? r) ; Tests whether the stream is completely exhausted of answers.

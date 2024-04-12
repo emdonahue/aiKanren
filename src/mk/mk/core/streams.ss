@@ -6,6 +6,7 @@
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           make-suspended suspended? suspended-goal suspended-state
+          state-priority empty-priority-stream make-priority-stream priority-stream-streams priority-stream?
           maybe-state? stream?)
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core utils))
 
@@ -56,6 +57,18 @@
     ;; Return a new var and the state with an incremented varid
     (values (make-var (state-varid s)) (increment-varid s)))
 
+  ;; === PRIORITY ===
+  (define-structure (search-priority score))
+  
+  (define state-priority
+    (case-lambda
+      [(s) (let ([p (state-attr s search-priority?)])
+             (if p (search-priority-score p) 0))]
+      [(s p) (set-state-attr s search-priority? (make-search-priority p))]))
+
+  (define-structure (priority-stream streams))
+
+  (define empty-priority-stream (make-priority-stream '()))
   
   ;; === PACKAGE ===
   (define-structure (package data))
@@ -66,4 +79,4 @@
   (define (maybe-state? s) (or (state? s) (failure? s)))
   
   (define (stream? s)
-    (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s))))
+    (or (failure? s) (mplus? s) (suspended? s) (state? s) (state+stream? s) (priority-stream? s))))
