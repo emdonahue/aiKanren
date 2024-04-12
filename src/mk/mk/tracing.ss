@@ -46,7 +46,7 @@
 
   (define (set-state-trace s theorem proof)
     (cert (state? s))
-    (set-state-attr s trace-data? (make-trace-data theorem proof)))
+    (state-attr s trace-data? (make-trace-data theorem proof)))
 
 
   ;; === INTERFACE ===

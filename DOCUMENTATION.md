@@ -157,13 +157,11 @@ A constructor for state objects defined with define-structure and implementing a
 #### state-attr
 ```scheme
 (state-attr s attr?)
+(state-attr s attr? attr)
 ```
-Retrieves an attribute from state `s` recognized by predicate attr?. Attributes are stored in a list, usually of structures created with define-structure, and are stored and retrieved by using the predicate generated with each structure. 
-#### set-state-attr
-```scheme
-(set-state-attr s attr? attr)
-```
-Removes any previous attribute recognized by predicate `attr?` and installs the new attribute `attr`.
+The first form retrieves an attribute from state `s` recognized by predicate attr?. Attributes are stored in a list, usually of structures created with define-structure, and are stored and retrieved by using the predicate generated with each structure.
+
+The second form removes any previous attribute recognized by predicate `attr?` and installs the new attribute `attr`.
 #### state-priority
 ```scheme
 (state-priority s)
