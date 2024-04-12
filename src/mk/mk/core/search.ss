@@ -56,10 +56,9 @@
      [(state+stream? s) (values (state+stream-stream s) p)]
      [(priority-stream? s)
       (let ([ss (priority-stream-streams s)])
-        (if (null? ss) (values failure p)
-            (let-values ([(lhs p) (stream-step (car ss) p)])
-              (values (priority-mplus lhs (make-priority-stream (cdr ss)))
-                      p))))]
+        (let-values ([(lhs p) (stream-step (car ss) p)]) ; Run the highest priority stream,
+          (values (priority-mplus lhs (make-priority-stream (cdr ss))) ; and merge it back into the priority queue.
+                  p)))]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
   
   (define (mplus lhs rhs)
@@ -75,12 +74,19 @@
      [else (make-mplus lhs rhs)]))
 
   (define (priority-mplus s p)
+    ;; Merges a regular stream into a priority stream.
     (cert (stream? s) (priority-stream? p))
     (cond
-     [(suspended? s) (make-priority-stream (cons s (priority-stream-streams p)))]
-     [(mplus? s) (nyi mplus priority)] ; Float answers to the front of the tree
-     [(state+stream? s) (make-state+stream (state+stream-state s) (priority-mplus (state+stream-stream s) p))]
-     [else (mplus s p)]))
+     [(suspended? s) (make-priority-stream ; Suspended streams get sorted by the priority value of their state.
+                      (merge (lambda (a b) ((priority-<)
+                                            (state-priority (suspended-state b))
+                                            (state-priority (suspended-state a))))
+                             (list s) (priority-stream-streams p)))]
+     [(mplus? s) (priority-mplus (mplus-lhs s) (priority-mplus (mplus-rhs s) p))] ; Walk mplus and store all suspended streams.
+     [(state+stream? s) ; Ignore states, which will return as soon as found and not necessarily in priority order.
+      (make-state+stream (state+stream-state s) (priority-mplus (state+stream-stream s) p))] 
+     [else ; If there are no suspended streams, mplus like normal.
+      (mplus s (if (null? (priority-stream-streams p)) failure p))]))
   
 
   ;; === DEPTH FIRST INTERPRETER ===

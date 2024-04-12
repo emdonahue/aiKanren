@@ -164,7 +164,14 @@ Retrieves an attribute from state `s` recognized by predicate attr?. Attributes 
 (set-state-attr s attr? attr)
 ```
 Removes any previous attribute recognized by predicate `attr?` and installs the new attribute `attr`.
-
+#### state-priority
+```scheme
+(state-priority s)
+(state-priority s n)
+```
+Accesses with the first form or sets with the second form the priority score of the state. By default, higher priority states are searched before lower priority states. This order can be changed by setting the priority-< parameter.
+#### priority-<
+A parameter that controls the sort order of streams based on their priority score. Defaults to <.
 ## Lists
 ```scheme
 (import mk lists)

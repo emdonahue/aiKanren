@@ -6,7 +6,7 @@
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           make-suspended suspended? suspended-goal suspended-state
-          state-priority empty-priority-stream make-priority-stream priority-stream-streams priority-stream?
+          state-priority empty-priority-stream make-priority-stream priority-stream-streams priority-stream? priority-<
           maybe-state? stream?)
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core utils))
 
@@ -59,15 +59,18 @@
 
   ;; === PRIORITY ===
   (define-structure (search-priority score))
+
+  (define priority-< (make-parameter <)) ; Used to determine priority sort order.
   
   (define state-priority
+    ;; Access or set the priority score of the state
     (case-lambda
       [(s) (let ([p (state-attr s search-priority?)])
              (if p (search-priority-score p) 0))]
       [(s p) (set-state-attr s search-priority? (make-search-priority p))]))
 
   (define-structure (priority-stream streams))
-
+  
   (define empty-priority-stream (make-priority-stream '()))
   
   ;; === PACKAGE ===
