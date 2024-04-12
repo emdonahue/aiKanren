@@ -15,6 +15,13 @@
                 [(lambda (s p c) (values (== x1 2) (state-priority s 2) p c)) (fresh () (== x2 3))]
                 [(lambda (s p c) (values (== x1 1) (state-priority s 1) p c)) (fresh () (== x2 3))])) '((2 3) (1 3)))
 
+   (parameterize ([beam-size 1])
+    (tassert "priority score beam 1"
+             (run -1 (x1 x2)
+               (conde
+                 [(lambda (s p c) (values (== x1 2) (state-priority s 2) p c)) (fresh () (== x2 3))]
+                 [(lambda (s p c) (values (== x1 1) (state-priority s 1) p c)) (fresh () (== x2 3))])) '((2 3))))
+
    (parameterize ([priority-< >])
      (tassert "priority score reorder reverse"
             (run -1 (x1 x2)

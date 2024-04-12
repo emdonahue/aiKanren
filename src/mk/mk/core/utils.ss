@@ -3,6 +3,7 @@
   (export with-values values-car values->list values-ref
           cert
           comment
+          take
           org-define org-lambda org-case-lambda org-trace org-untrace org-cond org-exclusive-cond org-printf org-display org-max-depth org-print-header org-print-item org-depth org-tracing org-if
           nyi)
   (import (chezscheme))
@@ -30,6 +31,10 @@
       [(_) (nyi nyi)]
       [(_ message ...) (assertion-violation (string-append (string-append (symbol->string 'message) " ") ...) "Not Yet Implemented")]))
 
+  ;; === LISTS ===
+  (define (take l n)
+    (if (or (null? l) (zero? n)) '() (cons (car l) (take (cdr l) (fx1- n)))))
+  
   ;; === ASSERTIONS ===
   (define-syntax cert
     (if (zero? (optimize-level)) ; TODO experiment with meta-cond for optimization time hot swaps

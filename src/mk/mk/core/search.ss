@@ -55,10 +55,9 @@
                    (values (mplus (mplus-rhs s) lhs) p))]
      [(state+stream? s) (values (state+stream-stream s) p)]
      [(priority-stream? s)
-      (let ([ss (priority-stream-streams s)])
-        (let-values ([(lhs p) (stream-step (car ss) p)]) ; Run the highest priority stream,
-          (values (priority-mplus lhs (make-priority-stream (cdr ss))) ; and merge it back into the priority queue.
-                  p)))]
+      (let-values ([(lhs p) (stream-step (priority-stream-car s) p)]) ; Run the highest priority stream,
+        (values ; and merge it back into the priority queue.
+         (priority-mplus lhs (priority-stream-cdr s)) p))]
      [else (assertion-violation 'stream-step "Unrecognized stream type" s)]))
   
   (define (mplus lhs rhs)
@@ -77,16 +76,12 @@
     ;; Merges a regular stream into a priority stream.
     (cert (stream? s) (priority-stream? p))
     (cond
-     [(suspended? s) (make-priority-stream ; Suspended streams get sorted by the priority value of their state.
-                      (merge (lambda (a b) ((priority-<)
-                                            (state-priority (suspended-state b))
-                                            (state-priority (suspended-state a))))
-                             (list s) (priority-stream-streams p)))]
+     [(suspended? s) (priority-stream-cons s p)]
      [(mplus? s) (priority-mplus (mplus-lhs s) (priority-mplus (mplus-rhs s) p))] ; Walk mplus and store all suspended streams.
      [(state+stream? s) ; Ignore states, which will return as soon as found and not necessarily in priority order.
       (make-state+stream (state+stream-state s) (priority-mplus (state+stream-stream s) p))] 
      [else ; If there are no suspended streams, mplus like normal.
-      (mplus s (if (null? (priority-stream-streams p)) failure p))]))
+      (mplus s (if (priority-stream-null? p) failure p))]))
   
 
   ;; === DEPTH FIRST INTERPRETER ===

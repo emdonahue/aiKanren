@@ -6,7 +6,7 @@
           make-mplus mplus? mplus-lhs mplus-rhs
           make-state+stream state+stream? state+stream-state state+stream-stream
           make-suspended suspended? suspended-goal suspended-state
-          state-priority empty-priority-stream make-priority-stream priority-stream-streams priority-stream? priority-<
+          state-priority empty-priority-stream make-priority-stream priority-stream-streams priority-stream? priority-< beam-size priority-stream-null? priority-stream-cdr priority-stream-car priority-stream-cons
           maybe-state? stream?)
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core utils))
 
@@ -57,20 +57,47 @@
     (values (make-var (state-varid s)) (increment-varid s)))
 
   ;; === PRIORITY ===
-  (define-structure (search-priority score))
-
-  (define priority-< (make-parameter <)) ; Used to determine priority sort order.
+  (define-structure (search-priority score)) ; A state attribute for storing the priority score of the search branch corresponding to that state.
   
   (define state-priority
-    ;; Access or set the priority score of the state
+    ;; Access or set the priority score of the state depending on num args
     (case-lambda
       [(s) (let ([p (state-attr s search-priority?)])
              (if p (search-priority-score p) 0))]
       [(s p) (state-attr s search-priority? (make-search-priority p))]))
 
-  (define-structure (priority-stream streams))
+
+  (define priority-< (make-parameter <)) ; Used to determine priority sort order.
+  (define beam-size (make-parameter (most-positive-fixnum))) ; Maximum number of elements allowed in a priority stream
+  
+  (define-structure (priority-stream streams)) ; A stream type that sorts sub streams by priority score.
   
   (define empty-priority-stream (make-priority-stream '()))
+  
+  (define (priority-stream-car p)
+    (cert (priority-stream? p))
+    ;; Retrieve the highest priority stream from the priority-stream
+    (car (priority-stream-streams p)))
+  
+  (define (priority-stream-cdr p)
+    (cert (priority-stream? p))
+    ;; Retrieve the rest of the priority-stream without its highest priority member
+    (make-priority-stream (cdr (priority-stream-streams p))))
+  
+  (define (priority-stream-null? p)
+    (cert (priority-stream? p))
+    ;; Test whether the priority stream is empty
+    (null? (priority-stream-streams p)))
+  
+  (define (priority-stream-cons s p)
+    (cert (stream? s) (priority-stream? p))
+    ;; Add a new substream to the priority-stream in the appropriate priority order
+    (make-priority-stream 
+     (take (merge (lambda (a b) ((priority-<)
+                                 (state-priority (suspended-state b)) ; Suspended streams get sorted by the priority value of their state.
+                                 (state-priority (suspended-state a))))
+                  (list s) (priority-stream-streams p)) (beam-size))))
+  
   
   ;; === PACKAGE ===
   (define-structure (package data))

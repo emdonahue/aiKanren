@@ -170,6 +170,8 @@ The second form removes any previous attribute recognized by predicate `attr?` a
 Accesses with the first form or sets with the second form the priority score of the state. By default, higher priority states are searched before lower priority states. This order can be changed by setting the priority-< parameter.
 #### priority-<
 A parameter that controls the sort order of streams based on their priority score. Defaults to <.
+#### beam-size
+A parameter that specifies the maximum number of priority elements that may be contained within a priority stream.
 ## Lists
 ```scheme
 (import mk lists)
