@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints))
+(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints) (mk core reducer))
 
 (define x1 (var 1))
 (define x2 (var 2))
@@ -14,12 +14,12 @@
        [s-free (list (cons x1 x2))]
        [s-pair (list (cons x1 (cons x2 x3)))])
    
-   (tassert "reduce == & ==" (simplify-unification (== x1 1) s) (list succeed succeed))
-   (tassert "reduce == & ==!" (simplify-unification (== x1 2) s) (list fail fail))
-   (tassert "reduce == & ==?" (simplify-unification (== x1 x2) s) (list succeed (== x2 1)))
-   (tassert "reduce == & ?==" (simplify-unification (== x2 2) s) (list succeed (== x2 2)))
-   (tassert "reduce == & ^==" (simplify-unification (== x2 2) s-free) (list (== x2 2) succeed))
-   (tassert "reduce == & ==*" (simplify-unification (== x1 '(2 . 3)) s-pair) (list succeed (conj (== x3 3) (== x2 2))))
+   (tassert "reduce == & ==" (reduce-== (== x1 1) s) (list succeed succeed))
+   (tassert "reduce == & ==!" (reduce-== (== x1 2) s) (list fail fail))
+   (tassert "reduce == & ==?" (reduce-== (== x1 x2) s) (list succeed (== x2 1)))
+   (tassert "reduce == & ?==" (reduce-== (== x2 2) s) (list succeed (== x2 2)))
+   (tassert "reduce == & ^==" (reduce-== (== x2 2) s-free) (list (== x2 2) succeed))
+   (tassert "reduce == & ==*" (reduce-== (== x1 '(2 . 3)) s-pair) (list succeed (conj (== x3 3) (== x2 2))))
    (tassert "reduce == & ==!&==" (simplify-unification (conj (== x1 2) (== x1 1)) s) (list fail fail))
    (tassert "reduce == & ==&==!" (simplify-unification (conj (== x1 1) (== x1 2)) s) (list fail fail))
 
