@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk core goals))
+(import (test-runner) (mk core) (mk core goals) (mk constraints))
 
 (define x1 (var 1))
 (define x2 (var 2))

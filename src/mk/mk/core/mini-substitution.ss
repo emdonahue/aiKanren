@@ -23,7 +23,7 @@
       (let ([normalized (and x-normalized y-normalized)])
        (cond
         [(eq? x y) (values s simplified recheck)]
-        [(var? x) (values (extend-simplified s x y simplified recheck normalized))]
+        [(var? x) (extend-simplified s x y simplified recheck normalized)]
         [(var? y) (extend-simplified s y x simplified recheck normalized)]
         [(and (pair? x) (pair? y))
          (let-values ([(s simplified recheck) (mini-simplify s (car x) (car y) simplified recheck)])
