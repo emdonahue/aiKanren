@@ -84,6 +84,13 @@
  (tassert "finite domain fired succeed" (run1 x1 (finite-domain x1 '(1 2 3)) (== x1 2)) 2)
  (tassert "finite domain fired fail" (run1 x1 (finite-domain x1 '(1 2 3)) (== x1 4)) (void))
 
+ ;; === ALL DIFFERENT ===
+ (tassert "all different trivial" (run1 () (all-different '())) '())
+ (tassert "all different ground succeed" (run1 () (all-different '(1 2))) '())
+ (tassert "all different ground fail" (run1 () (all-different '(1 1))) (void))
+ (tassert "all different ground fail gap" (run1 () (all-different '(1 2 1))) (void))
+ (tassert "all different ground fail gap bound" (run1 (x1) (all-different `(1 2 ,x1)) (== x1 1)) (void))
+ (tassert "all different ground succeed gap bound" (run1 (x1) (all-different `(1 2 ,x1)) (== x1 3)) '(3))
  ;; === IMPLIES ===
  (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (=/= x1 1) (== x2 2)) 2))
  (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (disj (=/= x1 1) (== x2 2)) 3))
@@ -233,6 +240,11 @@
           (run1 (x1 x2 x3 x4 x5)
                 (noto (presento 100 x1)) (== x1 (cons 1 x2)) (== x2 (cons 2 x3)) (== x3 (cons 3 x4)) (== x4 (cons 4 x5)) (== x5 '(5))) '((1 2 3 4 5) (2 3 4 5) (3 4 5) (4 5) (5)))
 
- (tassert "noto presento found by generative test" (run1 (x1 x2) (noto (presento x2 `((,x2) ,x1 . ,x1))) (== x1 1)) (void)))
+ (tassert "noto presento found by generative test" (run1 (x1 x2) (noto (presento x2 `((,x2) ,x1 . ,x1))) (== x1 1)) (void))
+
+ ;; TODO add infinite handling clause to matcho
+ ;; make absento and presento generate a =/= between their arguments when first merged and let that handle conflicts
+ ;;(display (run* (q) (fresh (b) (booleano b) (presento b q) (absento #f q) (absento #t q))))
+ )
 
 

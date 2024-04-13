@@ -4,21 +4,6 @@
   (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
   ;;TODO simplify with negated pconstraints as well
 
-  (define (expand-matcho g s p)
-    ;; Runs the matcho goal with whatever ground variables have already been provided, assuming the remaining variables are unbound.
-    (nyi expand-matcho)
-    #;
-    ((matcho-goal g) s p (matcho-in-vars g)))
-
-  (define (normalize-matcho out in proc) ;TODO see if normalize-matcho adds anything to solve-matcho
-    (nyi normalize-matcho)
-    ;(cert (not (and (null? out) (null? in))))
-    #;
-    (exclusive-cond
-     [(null? out)
-      (let-values ([(_ g s p) (proc empty-state empty-package in)]) g)]
-     [(var? (car out)) (make-matcho out in proc)]
-     [else (if (pair? (car out)) (normalize-matcho (cdr out) (cons (car out) in) proc) fail)]))
   
   (define (reduce-const2 g s)
 
