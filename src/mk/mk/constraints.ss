@@ -7,10 +7,13 @@
 
   (define (finite-domain v ds) ; Constrains v to be one of the elements of ds. ds may contain logic variables.
     (cert (list? ds))
-    ;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
-    (apply disj* (map (lambda (d) (== v d)) ds)))
+    ;;TODO look into making large con/disjunctions of the same variable gather into a binary tree or something other than a random list and automatically build a decent data structure for it
+    (matcho ([(a . d) ds])
+            (disj (== v a)
+                  (finite-domain v d))))
 
   (define (all-different diffs)
+    ;; Takes a list of values so that the list itself can be of indeterminate length.
     (disj
      (== diffs '())
      (matcho ([(a . d) diffs])
