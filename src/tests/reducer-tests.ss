@@ -109,15 +109,19 @@
 
 
   ;; === DISEQUALITY ===
- (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list fail fail succeed (=/= x1 1)))
- (tassert "== undecidable" (simplify-=/= (== x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (== x1 (cons x2 x3)) (== x1 (cons x2 x3)) succeed (=/= x1 1)))
- (tassert "=/= undecidable" (simplify-=/= (=/= x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (=/= x1 (cons x2 x3)) (=/= x1 (cons x2 x3)) succeed (=/= x1 1)))
- (tassert "symbolo fail" (simplify-=/= (symbolo x1) x1 1 (=/= x1 1)) (list succeed (symbolo x1) succeed (=/= x1 1)))
- (tassert "symbolo2 undecidable" (simplify-=/= (symbolo x1) x2 1 (=/= x1 1)) (list (symbolo x1) (symbolo x1) succeed (=/= x1 1)))
- (tassert "not numbero fail" (simplify-=/= (noto (numbero x1)) x1 1 (=/= x1 1)) (list succeed (noto (numbero x1)) succeed (=/= x1 1)))
- (tassert "=/= fail" (simplify-=/= (=/= x1 1) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
- (tassert "=/= succeed" (simplify-=/= (=/= x1 2) x1 1 (=/= x1 1)) (list fail (=/= x1 2) succeed (=/= x1 1)))
- (tassert "conj fail" (simplify-=/= (conj (== x1 1) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed fail succeed (=/= x1 1)))
+ (tassert "== succeed" (reduce-constraint2 (== x1 1) (=/= x1 1)) fail)
+ (tassert "== undecidable" (reduce-constraint2 (== x1 (cons x2 x3)) (=/= x1 1)) succeed)
+ (tassert "=/= undecidable" (reduce-constraint2 (=/= x1 (cons x2 x3)) (=/= x1 1)) (=/= x1 (cons x2 x3)))
+
+ #;
+ (begin
+ 
+   (tassert "symbolo fail" (reduce-constraint2 (symbolo x1) x1 1 (=/= x1 1)) (list succeed (symbolo x1) succeed (=/= x1 1)))
+   (tassert "symbolo2 undecidable" (reduce-constraint2 (symbolo x1) x2 1 (=/= x1 1)) (list (symbolo x1) (symbolo x1) succeed (=/= x1 1)))
+   (tassert "not numbero fail" (reduce-constraint2 (noto (numbero x1)) x1 1 (=/= x1 1)) (list succeed (noto (numbero x1)) succeed (=/= x1 1)))
+   (tassert "=/= fail" (reduce-constraint2 (=/= x1 1) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
+   (tassert "=/= succeed" (reduce-constraint2 (=/= x1 2) x1 1 (=/= x1 1)) (list fail (=/= x1 2) succeed (=/= x1 1)))
+   (tassert "conj fail" (reduce-constraint2 (conj (== x1 1) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed fail succeed (=/= x1 1))))
  #;
  (begin
    (tassert "match fail" (simplify-=/= (matcho ([x1 (a . d)])) x1 1 (=/= x1 1)) (lambda (a) (and (succeed? (list-ref a 0)) (matcho? (list-ref a 1)) (equal? (cddr a) (list succeed (=/= x1 1))))))

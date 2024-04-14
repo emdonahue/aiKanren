@@ -1,7 +1,7 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (mk core reducer)
   (export reduce-constraint reduce-constraint2 reduce-const2)
-  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams) (mk core matcho))
+  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams) (mk core matcho) (mk core goals))
   ;;TODO simplify with negated pconstraints as well
 
   
@@ -55,7 +55,8 @@
      [(noto? g) (noto (reduce-constraint2 (noto-goal g) c))]
      [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
      [else (exclusive-cond
-            [(list? c) (reduce-==2 g c)])])
+            [(list? c) (reduce-==2 g c)]
+            [(noto? c) (reduce-=/= g (=/=->substitution c))])])
     )
 
   (define (reduce-==2 g s)
@@ -70,7 +71,6 @@
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
     (exclusive-cond
-     [(or (fail? g) (succeed? g)) (values g g)]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
                 (values simplified recheck))]     
      [(matcho? g) (reduce-==/matcho g s)]
@@ -78,6 +78,17 @@
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
+  (define (reduce-=/= g s)
+
+
+    (exclusive-cond
+     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+                (exclusive-cond
+                 [(eq? s s^) fail]
+                 [(failure? s^) succeed]
+                 [else g]))]
+     [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
+  
   (define (reduce-==/matcho g s)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
@@ -137,7 +148,7 @@
               (reduce-==/pconstraint g s (cdr vars) (and normalized? var-normalized?))
               (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) s)))))
 
-  (define (reduce-==/pconstraint2 g s vars)
+  (define (reduce-==/pconstraint2 g s vars) ;TODO extract an expander for pconstraints analagous to matcho/expand
     ;; Walk all variables of the pconstraint and ensure they are normalized.
     (if (null? vars) g 
         (let ([v (mini-reify s (car vars))])
