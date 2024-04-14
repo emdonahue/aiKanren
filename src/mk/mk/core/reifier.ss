@@ -1,6 +1,6 @@
 (library (mk core reifier) ; Responsible for walking and reifying vars
-  (export reify reify-var walk walk-var walk-var-val substitution-ref)
-  (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core utils) (mk core goals))
+  (export reify reify-var walk walk-var walk-var-val substitution-ref walk-var*)
+  (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core utils) (mk core goals) (mk core mini-substitution))
   
   ;; === WALK & REIFY ===
   
@@ -42,6 +42,10 @@
     ;; Returns the value or constraints on v, and whatever is the last logic variable in the chain.
     (cert (state? s)) ; -> (or var? ground?) (or (ground? var? constraint?)
     (walk-binding (state-substitution s) v))
+
+  (define (walk-var* s v)
+    (cert (or (state? s) (mini-substitution? s))
+          (if (state? s) (walk-var s v) (mini-walk s v))))
   
   (define (walk-binding s v)
     ;; Returns the walked value or constraint of v and whatever is the last logic variable in the chain (possibly equal to the value if the var is completely free). If v is ground, it will return two grounds.

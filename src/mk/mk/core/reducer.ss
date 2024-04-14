@@ -1,7 +1,7 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (mk core reducer)
   (export reduce-constraint reduce-constraint2 reduce-const2)
-  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
+  (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams) (mk core matcho))
   ;;TODO simplify with negated pconstraints as well
 
   
@@ -78,7 +78,12 @@
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
-  (define reduce-==/matcho
+  (define (reduce-==/matcho g s)
+    (let-values ([(expanded? g ==s) (matcho/expand g s)])
+      (if expanded?
+          (conj ==s (reduce-constraint g s))
+          (conj ==s g)))
+    #;
     (case-lambda
       [(g s)
        (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
@@ -97,7 +102,12 @@
                                       (or (zero? (var-id lhs))
              (mini-normalized s lhs)))))))]))
 
-  (define reduce-==/matcho2
+  (define (reduce-==/matcho2 g s)
+    (let-values ([(expanded? g ==s) (matcho/expand g s)])
+      (if expanded?
+          (conj ==s (reduce-constraint2 g s))
+          (conj ==s g)))
+    #;
     (case-lambda
       [(g s)
        (let ([s^ (mini-unify-substitution s (matcho-substitution g))])

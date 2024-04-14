@@ -2,7 +2,7 @@
 
   (export matcho/expand matcho-attributed-vars matcho/run
           matcho pattern->term)
-  (import (chezscheme) (mk core streams) (mk core variables) (mk core goals) (mk core mini-substitution) (mk core state) (mk core reifier) (mk core utils))
+  (import (chezscheme) (mk core streams) (mk core variables) (mk core goals) (mk core mini-substitution) (mk core reifier) (mk core utils))
 
   ;; TODO make matcho work for pure values outside of mk. a la carte unification/pattern matching
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
@@ -49,15 +49,15 @@
   
   (define matcho/expand
     ;; Expand the matcho as much as possible using the variables in the substitution
-    (case-lambda
+    (case-lambda ; -> expanded? matcho? ==s
       [(g s) (matcho/expand g s (matcho-substitution g) succeed '())]
       [(g s sub ==s vs)
-       (cert (matcho? g) (state? s) (list? sub) (goal? ==s) (list? vs))
+       (cert (matcho? g) (or (state? s) (mini-substitution? s)) (list? sub) (goal? ==s) (list? vs))
        (let ([attr-binding (find (lambda (b) (not (or (pattern-binding? b) ; Get an unwalked attributed var
                                                       (memq (car b) vs)))) sub)])
          (if attr-binding ; If one exists,
              (let ([sub (mini-unify (remq attr-binding sub) ; walk the var and unify its value into the mini substitution.
-                                    (cdr attr-binding)  (walk-var s (car attr-binding)))])
+                                    (cdr attr-binding)  (walk-var* s (car attr-binding)))])
                (if (failure? sub) (values #t fail fail) ; If that unification doesn't fail,
                    (let-values ([(sub ==s^ fully-ground?) (reify-substitution sub)])
                      (if fully-ground?
