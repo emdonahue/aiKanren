@@ -1,6 +1,6 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (mk core reducer)
-  (export reduce-constraint reduce-const2 reduce-==)
+  (export reduce-constraint reduce-const2)
   (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
   ;;TODO simplify with negated pconstraints as well
 
@@ -9,18 +9,19 @@
 
     (values succeed g))
   
-  (define (reduce-constraint g c s)
-    (cert (goal? g) (goal? c) (mini-substitution? s)) ; -> simplified recheck
+  (define (reduce-constraint g c)
+    ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
+    (cert (goal? g) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
-     [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c s)])
+     [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c)])
                   (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
-                      (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c s)])
+                      (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c)])
                         (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
-     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c s)]
+     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c)]
                               [(lhs) (conj simplified-lhs recheck-lhs)])
                   (if (succeed? lhs) (values succeed succeed)
-                      (let*-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c s)]
+                      (let*-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c)]
                                     [(rhs) (conj simplified-rhs recheck-rhs)])
                         
                         (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
@@ -35,36 +36,28 @@
                       (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
      (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
 
-     [(noto? g) (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c s)])
+     [(noto? g) (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c)])
                   (if (succeed? recheck) (values (noto simplified) succeed)
                       (values succeed (noto (conj simplified recheck)))))]
-     [(constraint? g) (reduce-constraint (constraint-goal g) c s)]
-     [(conde? g) (reduce-constraint (conde->disj g) c s)]
+     [(constraint? g) (reduce-constraint (constraint-goal g) c)]
+     [(conde? g) (reduce-constraint (conde->disj g) c)]
      [else (exclusive-cond
-            [(==? c) (reduce-==2 g c s)])])
+            [(list? c) (reduce-== g c )])])
     )
-
-  (define (reduce-== g s)
-    (cert (goal? g) (list? s))
-    (exclusive-cond
-     [(==? g) (let-values ([(s simplified recheck)
-                            (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
-                (values simplified recheck))]
-     [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
   
-  (define (reduce-==2 g c s)
-    (cert (goal? g) (goal? c) (mini-substitution? s))
+  (define (reduce-== g s)
+    (cert (goal? g) (mini-substitution? s))
     (exclusive-cond
      [(or (fail? g) (succeed? g)) (values g g)]
      [(==? g) (let-values ([(s simplified recheck) (mini-simplify s (==-lhs g) (==-rhs g) succeed succeed)])
                 (values simplified recheck))]     
-     [(matcho? g) (reduce-==2/matcho g c s)]
-     [(pconstraint? g) (reduce-==2/pconstraint g c s (pconstraint-vars g) #t)]
+     [(matcho? g) (reduce-==/matcho g s)]
+     [(pconstraint? g) (reduce-==/pconstraint g s (pconstraint-vars g) #t)]
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
-     [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
+     [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
-  (define (reduce-==2/matcho g c s)
-    (nyi reduce-==2/matcho)
+  (define (reduce-==/matcho g s)
+    (nyi reduce-==/matcho)
     #;
     (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
                  [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
@@ -79,12 +72,12 @@
          [normalized (values g succeed)]
          [else (values succeed g)]))))
   
-  (define (reduce-==2/pconstraint g c s vars normalized)
+  (define (reduce-==/pconstraint g s vars normalized)
     (if (null? vars)
         (if normalized (values g succeed) (values succeed g)) 
         (let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
           (if (eq? (car vars) walked)
-              (reduce-==2/pconstraint g c s (cdr vars) (and normalized normalized-var))
-              (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) c s)))))
+              (reduce-==/pconstraint g s (cdr vars) (and normalized normalized-var))
+              (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) s)))))
 
   )

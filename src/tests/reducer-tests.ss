@@ -10,18 +10,21 @@
 
  ;; === EQUALITY ===
 
- (let ([s (list (cons x1 1))]
+ (let* ([s (list (cons x1 1))]
+       [x1=1 s]
        [s-free (list (cons x1 x2))]
-       [s-pair (list (cons x1 (cons x2 x3)))])
-   
-   (tassert "reduce == & ==" (reduce-== (== x1 1) s) (list succeed succeed))
-   (tassert "reduce == & ==!" (reduce-== (== x1 2) s) (list fail fail))
-   (tassert "reduce == & ==?" (reduce-== (== x1 x2) s) (list succeed (== x2 1)))
-   (tassert "reduce == & ?==" (reduce-== (== x2 2) s) (list succeed (== x2 2)))
-   (tassert "reduce == & ^==" (reduce-== (== x2 2) s-free) (list (== x2 2) succeed))
-   (tassert "reduce == & ==*" (reduce-== (== x1 '(2 . 3)) s-pair) (list succeed (conj (== x3 3) (== x2 2))))
-   (tassert "reduce == & ==!&==" (simplify-unification (conj (== x1 2) (== x1 1)) s) (list fail fail))
-   (tassert "reduce == & ==&==!" (simplify-unification (conj (== x1 1) (== x1 2)) s) (list fail fail))
+       [x1=x2 s-free]
+       [s-pair (list (cons x1 (cons x2 x3)))]
+       [x1=x2x3 s-pair])
+   ;; nothing=ground succeed, !=ground conflict, ?=free var, ^=bound var
+   (tassert "reduce == & ==" (reduce-constraint (== x1 1) x1=1) (list succeed succeed))
+   (tassert "reduce == & ==!" (reduce-constraint (== x1 2) x1=1) (list fail fail))
+   (tassert "reduce == & ==?" (reduce-constraint (== x1 x2) x1=1) (list succeed (== x2 1)))
+   (tassert "reduce == & ?==" (reduce-constraint (== x2 2) x1=1) (list succeed (== x2 2)))
+   (tassert "reduce == & ^==" (reduce-constraint (== x1 2) x1=x2) (list (== x2 2) succeed))
+   (tassert "reduce == & ==*" (reduce-constraint (== x1 '(2 . 3)) x1=x2x3) (list succeed (conj (== x3 3) (== x2 2))))
+   (tassert "reduce == & ==!&==" (reduce-constraint (conj (== x1 2) (== x1 1)) x1=1) (list fail fail))
+   (tassert "reduce == & ==&==!" (reduce-constraint (conj (== x1 1) (== x1 2)) x1=1) (list fail fail))
 
    (tassert "reduce == & =/=" (simplify-unification (=/= x1 1) s) (list fail succeed))
    (tassert "reduce == & =/=!" (simplify-unification (=/= x1 2) s) (list succeed succeed))

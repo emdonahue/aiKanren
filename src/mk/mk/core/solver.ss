@@ -7,7 +7,7 @@
               (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
     (let-values ([(delta s) (solve-constraint g s succeed succeed succeed)]) s))
 
-  (define (solve-constraint g s ctn resolve delta)
+  (org-define (solve-constraint g s ctn resolve delta)
     ;; Reduces a constraint as much as needed to determine failure and returns constraint that is a conjunction of primitive goals and disjunctions, and state already containing all top level conjuncts in the constraint but none of the disjuncts. Because we cannot be sure about adding disjuncts to the state while simplifying them, no disjuncts in the returned goal will have been added, but all of the top level primitive conjuncts will have, so we can throw those away and only add the disjuncts to the store.
     ;; resolve: constraints retrieved from the store that we need to recheck, but which should not be negated by noto on the return (so we cant just solve them immediately. we must delay rechecking until we are done with g).
     ;; delta: conjunction of all the simplified goals we have added to the store. reflects the change (delta) of the returned state's constraint store.
@@ -94,13 +94,14 @@
 
 
 
-  (define (solve-=/= g s ctn resolve delta)
+  (org-define (solve-=/= g s ctn resolve delta)
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y that need to be rechecked
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
-          (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving
+          (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO add flag to let solve-disj know that its constraint might be normalized and to skip initial solving. or can we just store it?
               (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs g) (=/=-rhs g) g)]) ; Simplify the constraints with the first disjoined =/=.
+                (org-display unified disunified recheck diseq)
                 (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn.
                     (solve-constraint ctn (store-constraint (extend s (=/=-lhs g) disunified) diseq) succeed (conj recheck resolve) (conj delta g))))))))
 
@@ -115,7 +116,7 @@
      [(succeed? g) (values fail succeed succeed d)] ; If no constraints on x, add succeed back to the store.
      [(==? g) (let* ([s (if (eq? (==-lhs g) x) '() (list (cons (==-lhs g) (==-rhs g))))]
                      [s^ (if (eq? (==-lhs g) x) (mini-unify '() (==-rhs g) y) (mini-unify s x y))]) ;TODO is mini-unify necessary in solve-disj since the constraints should be normalized so we don't have two pairs?
-                (let-values ([(simplified recheck) (reduce-constraint g (== x y) `((,x . ,y)))])
+                (let-values ([(simplified recheck) (reduce-constraint g `((,x . ,y)))])
                   (exclusive-cond ; unification necessary in case of free vars that might be unified but are not equal, such as (<1> . <2>) == (<2> . <1>)
                    [(failure? s^) (values succeed g succeed d)] ; == different from =/= => =/= satisfied
                    [(eq? s s^) (values fail fail succeed d)] ; == same as =/= => =/= unsatisfiable
@@ -254,7 +255,7 @@
 
 
 
-  (define (store-constraint s g)
+  (org-define (store-constraint s g)
     ;; Store simplified constraints into the constraint store.
     (cert (maybe-state? s) (goal? g) (not (conde? g))) ; -> state?
     (exclusive-cond
@@ -267,7 +268,7 @@
 
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (case-lambda
+    (org-case-lambda atrv
       [(g) (attributed-vars g '())]
       [(g vs)
        (cert (goal? g))

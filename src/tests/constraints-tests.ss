@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals))
+(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals) (mk tracing))
 
 (define (forever x)
   (fresh (y) (forever x)))
@@ -91,6 +91,21 @@
  (tassert "all different ground fail gap" (run1 () (all-different '(1 2 1))) (void))
  (tassert "all different ground fail gap bound" (run1 (x1) (all-different `(1 2 ,x1)) (== x1 1)) (void))
  (tassert "all different ground succeed gap bound" (run1 (x1) (all-different `(1 2 ,x1)) (== x1 3)) '(3))
+ (tassert "booleans-all different fail"
+          (run1 (x y z)
+                (all-different (list x y z))
+                (booleano x)
+                (booleano y)
+                (booleano z)) (void))
+ #;
+(org-trace
+ (tassert "all different-booleans fail"
+          (run1 (x y z)
+                (booleano x)
+                (booleano y)
+                (booleano z)
+                (all-different (list x y z))) (void)))
+ 
  ;; === IMPLIES ===
  (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (=/= x1 1) (== x2 2)) 2))
  (tassert "implies consequent false" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 3)) (list (disj (=/= x1 1) (== x2 2)) 3))

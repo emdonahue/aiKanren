@@ -193,7 +193,7 @@
      (simplify-unification g s))] ; TODO should we thread the real state when expanding matcho while simplifying ==?
      [normalized (values g succeed)]
      [else (values succeed g)])))]
-     [else (reduce-constraint g (== (make-var 0) 1) s)]))
+     [else (reduce-constraint g s)]))
 
   #;
   (define (simplify-unification/pconstraint g s vars normalized) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
