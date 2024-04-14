@@ -4,7 +4,7 @@
           printfo displayo noopo walk-substitution
           prove state-proof
           org-trace)
-  (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core sbral) (mk core search) (mk core running) (mk core state))
+  (import (chezscheme) (mk core streams) (mk core goals) (mk core solver) (mk core utils) (mk core state) (mk core sbral) (mk core search) (mk core running) (mk core state) (mk core reifier))
 
   ;; === PARAMETERS ===
 

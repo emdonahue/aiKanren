@@ -1,4 +1,4 @@
-(import (test-runner) (mk core state) (mk core utils) (mk core))
+(import (test-runner) (mk core state) (mk core utils) (mk core) (mk core reifier))
 
 (define x1 (var 1))
 (define x2 (var 2))

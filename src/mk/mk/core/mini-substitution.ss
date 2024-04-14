@@ -6,7 +6,7 @@
     (cert (==? g))
     (list (cons (==-lhs g) (==-rhs g))))
 
-  (define (mini-substitution? s) (and (list? s) (for-all (lambda (b) (and (pair? b) (var? (car b)))) s)))
+  (define mini-substitution? list?)
   
   (define (mini-walk s v)
     (cert (list? s))
