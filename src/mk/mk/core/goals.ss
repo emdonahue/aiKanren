@@ -13,7 +13,7 @@
           constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition
-          noto =/= =/=-lhs =/=-rhs =/=->substitution
+          noto =/= =/=-lhs =/=-rhs =/=->substitution =/=?
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           fresh-vars fresh exist)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
@@ -288,11 +288,21 @@
 
   ;; === NEGATION ===
   (define-structure (noto goal)) ; Negated goal
-  (define (=/= lhs rhs) ; Disequality between terms.
-    (cert (not (or (goal? lhs) (goal? rhs))))
-    (noto (== lhs rhs)))
+  (define (=/= lhs rhs) (noto (== lhs rhs)))
   (define (=/=-lhs g) (==-lhs (noto-goal g)))
   (define (=/=-rhs g) (==-rhs (noto-goal g)))
+  (define (=/=? g) (and (noto? g) (==? (noto-goal g))))
+  ;;(define-structure (=/= lhs rhs))
+  #;
+  (define (=/= x y) ; Implements disunification between terms.
+    (cond
+     [(or (eq? x __) (eq? y __)) succeed]
+     [(equal? x y) fail]
+     [(var? x) (if (var? y) (if (var< x y) (make-=/= x y) (make-=/= y x)) (make-=/= x y))]
+     [(var? y) (make-=/= y x)]
+     [(and (pair? x) (pair? y)) (make-=/= x y)]
+     [else succeed]))
+
   
   (define (=/=->substitution g) (list (cons (=/=-lhs g) (=/=-rhs g))))
 
@@ -308,7 +318,10 @@
     (exclusive-cond
      [(succeed? g) fail]
      [(fail? g) succeed]
-     [(or (==? g) (matcho? g) (pconstraint? g)) (make-noto g)]
+     [(==? g) (make-noto g)]
+     ;[(==? g) (=/= (==-lhs g) (==-rhs g))]
+     ;[(=/=? g) (== (=/=-lhs g) (=/=-rhs g))]
+     [(or (matcho? g) (pconstraint? g)) (make-noto g)]
      [(disj? g) (conj (noto (disj-car g)) (noto (disj-cdr g)))]
      [(conde? g) (conj (noto (conde-lhs g)) (noto (conde-rhs g)))]
      [(conj? g) (disj (noto (conj-lhs g)) (noto (conj-rhs g)))]
@@ -324,4 +337,4 @@
   
   ;; === CONTRACTS ===  
   (define (goal? g)
-    (or (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho? g))))
+    (or (procedure? g) (==? g) (conj? g) (disj? g) (succeed? g) (fail? g) (=/=? g) (noto? g) (constraint? g) (pconstraint? g) (conde? g) (suspend? g) (proxy? g) (dfs-goal? g) (matcho? g))))

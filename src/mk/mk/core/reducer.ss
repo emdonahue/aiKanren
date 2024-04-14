@@ -56,13 +56,15 @@
      [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
      [else (exclusive-cond
             [(list? c) (reduce-==2 g c)]
-            [(noto? c) (reduce-=/= g (=/=->substitution c))])])
+            [(=/=? c) (reduce-=/= g (=/=->substitution c))]
+            [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" c)])])
     )
 
   (define (reduce-==2 g s)
     (cert (goal? g) (mini-substitution? s))
     (exclusive-cond
-     [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]     
+     [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]
+     [(=/=? g) (noto (reduce-==2 (noto g) s))]
      [(matcho? g) (reduce-==/matcho2 g s)]
      [(pconstraint? g) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
      [(proxy? g) g]
@@ -79,14 +81,14 @@
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
   (define (reduce-=/= g s)
-
-
     (exclusive-cond
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
                 (exclusive-cond
                  [(eq? s s^) fail]
                  [(failure? s^) succeed]
                  [else g]))]
+     [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
+                (if (eq? s s^) succeed g))]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
   
   (define (reduce-==/matcho g s)
