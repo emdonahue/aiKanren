@@ -54,8 +54,10 @@
     (cert (var? x) (or (not (var? y)) (fx< (var-id x) (var-id y))))
     (if (occurs-check/binding s x y)
         (values fail fail fail fail fail failure)
-        (let-values ([(x-c/simplified x-c/recheck) (reduce-const2 x-c bindings)])
-         (values (cons (cons x y) bindings) succeed x-c y-c (conj d (== x y)) (extend s x y)))
+        ;;let-values ([(x-c/simplified x-c/recheck) (reduce-const2 x-c bindings)])
+        (let* ([bindings (cons (cons x y) bindings)]
+               [x-c (reduce-constraint2 x-c bindings)]) ;TODO is there ever a reason to simplify y-c? 
+          (values bindings succeed x-c y-c (conj d (== x y)) (extend s x y)))
         #;
      (let-values ([(pending committed)
                   
