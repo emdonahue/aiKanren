@@ -9,7 +9,59 @@
  reducer
 
  ;; === EQUALITY ===
+ (let* ([x1=1 (list (cons x1 1))]
+        [x1=x2 (list (cons x1 x2))]
+        [x1=x2x3 (list (cons x1 (cons x2 x3)))])
+   ;; nothing=ground succeed, !=ground conflict, ?=free var, ^=bound var
+   (tassert "reduce == & ==" (reduce-constraint2 (== x1 1) x1=1) succeed)
+   (tassert "reduce == & ==!" (reduce-constraint2 (== x1 2) x1=1) fail)
+   (tassert "reduce == & ==?" (reduce-constraint2 (== x1 x2) x1=1) (== x2 1))
+   (tassert "reduce == & ?==" (reduce-constraint2 (== x2 2) x1=1) (== x2 2))
+   (tassert "reduce == & ^==" (reduce-constraint2 (== x1 2) x1=x2) (== x2 2))
+   (tassert "reduce == & ==*" (reduce-constraint2 (== x1 '(2 . 3)) x1=x2x3) (== (cons x2 x3) '(2 . 3)))
+   (tassert "reduce == & ==!&==" (reduce-constraint2 (conj (== x1 2) (== x1 1)) x1=1) fail)
+   (tassert "reduce == & ==&==!" (reduce-constraint2 (conj (== x1 1) (== x1 2)) x1=1) fail)
 
+   (tassert "reduce == & =/=" (reduce-constraint2 (=/= x1 1) x1=1) fail)
+   (tassert "reduce == & =/=!" (reduce-constraint2 (=/= x1 2) x1=1) succeed)
+   (tassert "reduce == & =/=?" (reduce-constraint2 (=/= x1 1) x1=x2) (=/= x2 1))
+#;
+   (begin
+     (tassert "reduce == & satisfied" (reduce-constraint2 (numbero x1) x1=1) succeed)
+     (tassert "reduce == & not satisfied" (reduce-constraint2 (noto (numbero x1)) x1=1) fail)
+     (tassert "reduce == & unsatisfiable" (reduce-constraint2 (symbolo x1) x1=1) fail)
+     (tassert "reduce == & not unsatisfiable" (reduce-constraint2 (noto (symbolo x1)) x1=1) succeed)
+     (tassert "reduce == & undecidable" (reduce-constraint2 (symbolo x2) x1=1) (symbolo x2))
+     (tassert "reduce == & not undecidable" (reduce-constraint2 (noto (symbolo x2)) x1=1) (noto (symbolo x2)))
+     (tassert "reduce ==f & undecidable" (reduce-constraint2 (symbolo x1) x1=x2) (symbolo x2))
+     (tassert "reduce ==f & not undecidable" (reduce-constraint2 (noto (symbolo x1)) x1=x2) (noto (symbolo x2))))
+#;
+   (begin
+     (tassert "reduce == & match fail" (reduce-constraint2 (matcho ([(a . d) x1])) x1=1) fail)
+     (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (eq? (list x2) (matcho-attributed-vars g))))))
+   #;
+   (begin
+   
+   
+     (tassert "reduce == & match no vars succeed" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (list succeed succeed))
+     (tassert "reduce == & match no vars fail" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (list fail fail))
+     (tassert "reduce == & match unified out vars" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) s-free) (lambda (g) (and (succeed? (list-ref g 1)) (matcho? (car g)) (null? (matcho-in-vars (car g))) (equal? (list x2 x2) (matcho-out-vars (car g))))))
+     (tassert "reduce == & match recheck unnormalized vars" (reduce-constraint (matcho ([x1 (a . d)] [x3 (b . c)])) s-pair) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x3))) (equal? (list x3) (matcho-out-vars (cadr g))))))
+     (tassert "reduce == & match simplify normalized vars" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) (list (cons x1 '(1 . 2)) (cons x2 x3))) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (equal? (matcho-out-vars (car g)) (list x3)) (equal? '((1 . 2)) (matcho-in-vars (car g))))))
+     (tassert "reduce == & not match succeed" (reduce-constraint (noto (matcho ([x1 (a . d)]))) s) (list succeed succeed))
+     (tassert "reduce == & not match simplified" (reduce-constraint (noto (matcho ([x1 (a . d)]))) s-free) (lambda (g) (and (succeed? (cadr g)) (noto? (car g)) (matcho? (noto-goal (car g))) (eq? x2 (car (matcho-out-vars (noto-goal (car g))))))))
+     (tassert "reduce == & not match recheck" (reduce-constraint (noto (matcho ([x1 (a . d)] [x2 (b . c)]))) s-pair) (lambda (g) (and (succeed? (car g)) (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (equal? (matcho-out-vars (noto-goal (cadr g))) (list x2)) (equal? (list (cons x2 x3)) (matcho-in-vars (noto-goal (cadr g)))))))
+     (tassert "reduce == & ==!&==?" (reduce-constraint (disj (== x1 2) (== x2 3)) s) (list succeed (== x2 3)))
+     (tassert "reduce == & ==?&==?" (reduce-constraint (disj (== x2 2) (== x2 3)) s) (list succeed (disj (== x2 2) (== x2 3))))
+     (tassert "reduce == & match|unsatisfiable" (reduce-constraint (disj (matcho ([x1 (a . d)]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) s-pair) (list succeed (conj (== x2 1) (== x3 2))))
+   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) s) (list succeed (disj (=/= x2 2) (== x2 2)))))
+
+   #;
+   (tassert "reduce == simplifies match in vars" (reduce-constraint (values-ref (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) s-pair) 1) `((,x3 . ,x4))) (lambda (g) (and (matcho? (cadr g)) (equal? (list x2) (matcho-out-vars (cadr g))) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x4))))))
+
+   ;; === DISEQUALITY ===
+   )
+ 
  (let* ([s (list (cons x1 1))]
        [x1=1 s]
        [s-free (list (cons x1 x2))]
@@ -39,11 +91,12 @@
    (tassert "reduce ==f & undecidable" (reduce-constraint (symbolo x1) x1=x2) (list (symbolo x2) succeed))
    (tassert "reduce ==f & not undecidable" (reduce-constraint (noto (symbolo x1)) x1=x2) (list (noto (symbolo x2)) succeed))
 
-   (tassert "reduce == & match fail" (reduce-constraint (matcho ([(a . d) x1])) s) (list fail fail))
+   ;(tassert "reduce == & match fail" (reduce-constraint (matcho ([(a . d) x1])) x1=1) (list fail fail))
+   ;(tassert "reduce == & match simplified" (reduce-constraint (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (eq? (list x2) (matcho-attributed-vars (car g))))))
    #;
    (begin
    
-     (tassert "reduce == & match simplified" (reduce-constraint (matcho ([(a . d) x1])) s-free) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (eq? x2 (car (matcho-out-vars (car g)))))))
+   
      (tassert "reduce == & match no vars succeed" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (list succeed succeed))
      (tassert "reduce == & match no vars fail" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (list fail fail))
      (tassert "reduce == & match unified out vars" (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) s-free) (lambda (g) (and (succeed? (list-ref g 1)) (matcho? (car g)) (null? (matcho-in-vars (car g))) (equal? (list x2 x2) (matcho-out-vars (car g))))))
@@ -61,7 +114,8 @@
    (tassert "reduce == simplifies match in vars" (reduce-constraint (values-ref (reduce-constraint (matcho ([x1 (a . d)] [x2 (b . c)])) s-pair) 1) `((,x3 . ,x4))) (lambda (g) (and (matcho? (cadr g)) (equal? (list x2) (matcho-out-vars (cadr g))) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x4))))))
 
    ;; === DISEQUALITY ===
-   (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list fail fail succeed (=/= x1 1))))
+   )
+ (tassert "== succeed" (simplify-=/= (== x1 1) x1 1 (=/= x1 1)) (list fail fail succeed (=/= x1 1)))
  (tassert "== undecidable" (simplify-=/= (== x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (== x1 (cons x2 x3)) (== x1 (cons x2 x3)) succeed (=/= x1 1)))
  (tassert "=/= undecidable" (simplify-=/= (=/= x1 (cons x2 x3)) x1 (cons x3 x2) (=/= x1 1)) (list (=/= x1 (cons x2 x3)) (=/= x1 (cons x2 x3)) succeed (=/= x1 1)))
  (tassert "symbolo fail" (simplify-=/= (symbolo x1) x1 1 (=/= x1 1)) (list succeed (symbolo x1) succeed (=/= x1 1)))

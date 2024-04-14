@@ -1,6 +1,6 @@
 ;; Constraint normalizer that simplifies constraints using only information contained mutually among the collection of constraints--no walking or references to variable bindings in the substitution. Used as an optimization in the solver to extract what information can be extracted from constraints before continuing with full solving using the substitution.
 (library (mk core reducer)
-  (export reduce-constraint reduce-const2)
+  (export reduce-constraint reduce-constraint2 reduce-const2)
   (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams)) ;TODO remove streams dependency by not expanding matcho without state
   ;;TODO simplify with negated pconstraints as well
 
@@ -44,6 +44,28 @@
      [else (exclusive-cond
             [(list? c) (reduce-== g c )])])
     )
+
+  (define (reduce-constraint2 g c)
+    ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
+    (cert (goal? g) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
+    (exclusive-cond
+     [(or (fail? g) (succeed? g)) g]
+     [(conj? g) (conj (reduce-constraint2 (conj-lhs g) c) (reduce-constraint2 (conj-rhs g) c))]
+     [(disj? g) (disj (reduce-constraint2 (disj-lhs g) c) (reduce-constraint2 (disj-rhs g) c))]
+     [(noto? g) (noto (reduce-constraint2 (noto-goal g) c))]
+     [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
+     [else (exclusive-cond
+            [(list? c) (reduce-==2 g c)])])
+    )
+
+  (define (reduce-==2 g s)
+    (cert (goal? g) (mini-substitution? s))
+    (exclusive-cond
+     [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]     
+     [(matcho? g) g]
+     [(pconstraint? g) g]
+     [(proxy? g) g]
+     [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
   
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
@@ -60,8 +82,8 @@
     (case-lambda
       [(g s)
        (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
-         (if (failure? s^) (values fail fail) (reduce-==/matcho g s (matcho-substitution) '() #t)))]
-      [(g s sub sub^ normalized?)
+         (if (failure? s^) (values fail fail) (reduce-==/matcho g s s^ (matcho-substitution) '() #t)))]
+      [(g s s^ sub sub^ normalized?)
        (if (null? sub)
            (let ([g (make-matcho sub^ (matcho-ctn g))])
              (if normalized? (values g succeed) (values succeed g)))

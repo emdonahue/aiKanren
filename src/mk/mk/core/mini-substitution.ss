@@ -60,7 +60,7 @@
         (if (eq? v v^) v (mini-reify s v^)))] ;TODO should minireify check eq or var?
      [else v]))
 
-  (define (mini-reify-normalized s v)
+  (define (mini-reify-normalized s v) ;TODO do we need to check sub variables for normalization or just attr vars?
     (cert (list? s))
     (exclusive-cond
      [(pair? v)
