@@ -40,12 +40,9 @@
      (tassert "reduce == & match fail" (reduce-constraint2 (matcho ([(a . d) x1])) x1=1) fail)
      (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-attributed-vars g))))))
    (tassert "reduce == & match no vars succeed" (reduce-constraint2 (matcho ([(a . d) x1] [(b . c) x2])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) succeed)
+   (tassert "reduce == & match no vars fail" (reduce-constraint2 (matcho ([(a . d) x1] [(b . c) x2]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) fail)
    #;
    (begin
-   
-   
-   
-     (tassert "reduce == & match no vars fail" (reduce-constraint2 (matcho ([x1 (a . d)] [x2 (b . c)]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) (list fail fail))
      (tassert "reduce == & match unified out vars" (reduce-constraint2 (matcho ([x1 (a . d)] [x2 (b . c)])) s-free) (lambda (g) (and (succeed? (list-ref g 1)) (matcho? (car g)) (null? (matcho-in-vars (car g))) (equal? (list x2 x2) (matcho-out-vars (car g))))))
      (tassert "reduce == & match recheck unnormalized vars" (reduce-constraint2 (matcho ([x1 (a . d)] [x3 (b . c)])) s-pair) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (equal? (matcho-in-vars (cadr g)) (list (cons x2 x3))) (equal? (list x3) (matcho-out-vars (cadr g))))))
      (tassert "reduce == & match simplify normalized vars" (reduce-constraint2 (matcho ([x1 (a . d)] [x2 (b . c)])) (list (cons x1 '(1 . 2)) (cons x2 x3))) (lambda (g) (and (succeed? (cadr g)) (matcho? (car g)) (equal? (matcho-out-vars (car g)) (list x3)) (equal? '((1 . 2)) (matcho-in-vars (car g))))))
