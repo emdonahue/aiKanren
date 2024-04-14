@@ -1,5 +1,5 @@
 (library (mk core mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized?)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
 
   (define (->mini-substitution g)
@@ -89,7 +89,11 @@
     ;; Returns a conjunction of == representing the bindings in s^ that are not in s
     (if (eq? s^ s) succeed
         (conj (make-== (caar s^) (cdar s^)) (mini-diff (cdr s^) s))))
-  
+
+  (define (mini-unify-substitution s s^)
+    ;; Unify all bindings in s^ into s.
+    (if (or (failure? s) (null? s^)) s
+        (mini-unify s (caar s^) (cdar s^))))
 
   (define (extend s x y)
     (cons (cons x y) s)))

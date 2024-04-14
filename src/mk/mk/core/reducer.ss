@@ -56,21 +56,24 @@
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
-  (define (reduce-==/matcho g s)
-    (nyi reduce-==/matcho)
-    #;
-    (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
-                 [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
-      (let ([g (normalize-matcho out-vars in-vars (matcho-goal g))])
-        (cond
-         [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
-         [(not (matcho? g)) (reduce-constraint g c s)]
-         [(null? (matcho-out-vars g))
-          (nyi reduce-matcho)
-          (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
-                                        (reduce-constraint g c s))] ; TODO should we thread the real state when expanding matcho while reducing ==?
-         [normalized (values g succeed)]
-         [else (values succeed g)]))))
+  (define reduce-==/matcho
+    (case-lambda
+      [(g s)
+       (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
+         (if (failure? s^) (values fail fail) (reduce-==/matcho g s (matcho-substitution) '() #t)))]
+      [(g s sub sub^ normalized?)
+       (if (null? sub)
+           (let ([g (make-matcho sub^ (matcho-ctn g))])
+             (if normalized? (values g succeed) (values succeed g)))
+           (let* ([lhs (caar sub)]
+                  [rhs (cdar sub)])
+             (nyi reducer matcho)
+             #;
+             (let-values ([(rhs-normalized? rhs) (mini-reify-normalized s^ rhs)])
+               (reduce-==/matcho g s (cdr sub) (cons (cons lhs rhs) sub^)
+                                 (and normalized? rhs-normalized
+                                      (or (zero? (var-id lhs))
+                                          (mini-normalized s lhs)))))))]))
   
   (define (reduce-==/pconstraint g s vars normalized?)
     ;; Walk all variables of the pconstraint and ensure they are normalized.
