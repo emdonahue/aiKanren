@@ -25,7 +25,7 @@
    (tassert "reduce == & =/=" (reduce-constraint2 (=/= x1 1) x1=1) fail)
    (tassert "reduce == & =/=!" (reduce-constraint2 (=/= x1 2) x1=1) succeed)
    (tassert "reduce == & =/=?" (reduce-constraint2 (=/= x1 1) x1=x2) (=/= x2 1))
-#;
+
    (begin
      (tassert "reduce == & satisfied" (reduce-constraint2 (numbero x1) x1=1) succeed)
      (tassert "reduce == & not satisfied" (reduce-constraint2 (noto (numbero x1)) x1=1) fail)

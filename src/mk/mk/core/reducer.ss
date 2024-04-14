@@ -63,7 +63,7 @@
     (exclusive-cond
      [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]     
      [(matcho? g) g]
-     [(pconstraint? g) g]
+     [(pconstraint? g) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
      [(proxy? g) g]
      [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
   
@@ -105,5 +105,13 @@
           (if (eq? (car vars) walked) ; If any have been updated, run the pconstraint.
               (reduce-==/pconstraint g s (cdr vars) (and normalized? var-normalized?))
               (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) s)))))
+
+  (define (reduce-==/pconstraint2 g s vars)
+    ;; Walk all variables of the pconstraint and ensure they are normalized.
+    (if (null? vars) g 
+        (let ([v (mini-reify s (car vars))])
+          (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
+              (reduce-==/pconstraint2 g s (cdr vars))
+              (reduce-constraint2 ((pconstraint-procedure g) (car vars) v g succeed g) s)))))
 
   )
