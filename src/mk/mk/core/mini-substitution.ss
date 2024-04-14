@@ -1,5 +1,5 @@
 (library (mk core mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
 
   (define (->mini-substitution g)
@@ -14,6 +14,10 @@
         (let ([b (assq v s)])
           (if b (mini-walk s (cdr b)) v))
         v))
+
+  (define (mini-walk-binding s v)
+    (let ([b (assq v s)])
+      (if (var? (cdr b)) (mini-walk-binding s (cdr b)) b)))
 
   (define (mini-simplify s x y simplified recheck)
     ;; Unifier that sorts bindings by normalized and unnormalized
@@ -61,7 +65,7 @@
      [else v]))
 
   (define (mini-reify-normalized s v) ;TODO do we need to check sub variables for normalization or just attr vars?
-    (cert (list? s))
+    (cert (list? s)) ;TODO do we need mini-*-normalized anymore?
     (exclusive-cond
      [(pair? v)
       (let-values ([(normalized-lhs reified-lhs) (mini-reify-normalized s (car v))]
@@ -94,6 +98,12 @@
     ;; Unify all bindings in s^ into s.
     (if (or (failure? s) (null? s^)) s
         (mini-unify s (caar s^) (cdar s^))))
+
+  (define (mini-reify-substitution s s^)
+    ;; Update s^ to contain the same bindings it has but with the newest information reflected in s. Lhs should be walked to their maximum variable, rhs should be reified.
+    (fold-left (lambda (r b)
+                 (let ([b^ (mini-walk-binding s (car b))])
+                   (if (assq (car b^) r) r (cons (cons (car b^) (mini-reify s (cdr b^))) r)))) '() s^))
 
   (define (extend s x y)
     (cons (cons x y) s)))

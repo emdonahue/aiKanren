@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints) (mk core reducer))
+(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints) (mk core reducer) (mk core goals) (mk core matcho))
 
 (define x1 (var 1))
 (define x2 (var 2))
@@ -35,10 +35,10 @@
      (tassert "reduce == & not undecidable" (reduce-constraint2 (noto (symbolo x2)) x1=1) (noto (symbolo x2)))
      (tassert "reduce ==f & undecidable" (reduce-constraint2 (symbolo x1) x1=x2) (symbolo x2))
      (tassert "reduce ==f & not undecidable" (reduce-constraint2 (noto (symbolo x1)) x1=x2) (noto (symbolo x2))))
-#;
+
    (begin
      (tassert "reduce == & match fail" (reduce-constraint2 (matcho ([(a . d) x1])) x1=1) fail)
-     (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (eq? (list x2) (matcho-attributed-vars g))))))
+     (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-attributed-vars g))))))
    #;
    (begin
    

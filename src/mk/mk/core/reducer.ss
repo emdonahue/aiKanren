@@ -62,7 +62,7 @@
     (cert (goal? g) (mini-substitution? s))
     (exclusive-cond
      [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]     
-     [(matcho? g) g]
+     [(matcho? g) (reduce-==/matcho2 g s)]
      [(pconstraint? g) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
      [(proxy? g) g]
      [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
@@ -93,6 +93,27 @@
              #;
              (let-values ([(rhs-normalized? rhs) (mini-reify-normalized s^ rhs)])
                (reduce-==/matcho g s (cdr sub) (cons (cons lhs rhs) sub^)
+                                 (and normalized? rhs-normalized
+                                      (or (zero? (var-id lhs))
+             (mini-normalized s lhs)))))))]))
+
+  (define reduce-==/matcho2
+    (case-lambda
+      [(g s)
+       (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
+         (if (failure? s^) fail
+             (make-matcho (mini-reify-substitution s^ (matcho-substitution g)) (matcho-ctn g))))]
+      #;
+      [(g s s^ sub sub^ normalized?)
+       (if (null? sub)
+           (let ([g (make-matcho sub^ (matcho-ctn g))])
+             (if normalized? (values g succeed) (values succeed g)))
+           (let* ([lhs (caar sub)]
+                  [rhs (cdar sub)])
+             (nyi reducer matcho)
+             #;
+             (let-values ([(rhs-normalized? rhs) (mini-reify-normalized s^ rhs)])
+               (reduce-==/matcho2 g s (cdr sub) (cons (cons lhs rhs) sub^)
                                  (and normalized? rhs-normalized
                                       (or (zero? (var-id lhs))
                                           (mini-normalized s lhs)))))))]))
