@@ -111,24 +111,22 @@
   ;; === DISEQUALITY ===
  (tassert "== succeed" (reduce-constraint2 (== x1 1) (=/= x1 1)) fail)
  (tassert "== undecidable" (reduce-constraint2 (== x1 (cons x2 x3)) (=/= x1 1)) succeed)
+ (tassert "=/= fail" (reduce-constraint2 (=/= x1 1) (=/= x1 1)) succeed)
  (tassert "=/= undecidable" (reduce-constraint2 (=/= x1 (cons x2 x3)) (=/= x1 1)) (=/= x1 (cons x2 x3)))
+ (tassert "symbolo fail" (reduce-constraint2 (symbolo x1) (=/= x1 1)) (symbolo x1))
+ (tassert "not numbero fail" (reduce-constraint2 (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
+ (tassert "=/= succeed" (reduce-constraint2 (=/= x1 2) (=/= x1 1)) (=/= x1 2))
+ (tassert "conj fail" (reduce-constraint2 (conj (== x1 1) (=/= x1 1)) (=/= x1 1)) fail)
+ (tassert "match fail" (reduce-constraint2 (matcho ([(a . d) x1])) (=/= x1 1)) matcho?)
+ 
 
  #;
  (begin
- 
-   (tassert "symbolo fail" (reduce-constraint2 (symbolo x1) x1 1 (=/= x1 1)) (list succeed (symbolo x1) succeed (=/= x1 1)))
-   (tassert "symbolo2 undecidable" (reduce-constraint2 (symbolo x1) x2 1 (=/= x1 1)) (list (symbolo x1) (symbolo x1) succeed (=/= x1 1)))
-   (tassert "not numbero fail" (reduce-constraint2 (noto (numbero x1)) x1 1 (=/= x1 1)) (list succeed (noto (numbero x1)) succeed (=/= x1 1)))
-   (tassert "=/= fail" (reduce-constraint2 (=/= x1 1) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
-   (tassert "=/= succeed" (reduce-constraint2 (=/= x1 2) x1 1 (=/= x1 1)) (list fail (=/= x1 2) succeed (=/= x1 1)))
-   (tassert "conj fail" (reduce-constraint2 (conj (== x1 1) (=/= x1 1)) x1 1 (=/= x1 1)) (list succeed fail succeed (=/= x1 1))))
- #;
- (begin
-   (tassert "match fail" (simplify-=/= (matcho ([x1 (a . d)])) x1 1 (=/= x1 1)) (lambda (a) (and (succeed? (list-ref a 0)) (matcho? (list-ref a 1)) (equal? (cddr a) (list succeed (=/= x1 1))))))
-   (tassert "match undecidable" (simplify-=/= (matcho ([x1 (a . d)])) x2 1 (=/= x1 1)) (lambda (a) (and (matcho? (car a)) (matcho? (cadr a)) (succeed? (caddr a))) (=/= x1 1)))
-   (tassert "not match succeed" (simplify-=/= (noto (matcho ([x1 (a . d)]))) x1 1 (=/= x1 1)) (lambda (a) (and (fail? (car a)) (noto? (cadr a)) (succeed? (caddr a)) (equal? (cadddr a) (=/= x1 1)))))
-   (tassert "match undecidable" (simplify-=/= (matcho ([x1 (a . d)])) x1 '(1 . 2) (=/= x1 1)) (lambda (a) (and (matcho? (car a)) (matcho? (cadr a)) (succeed? (caddr a))) (=/= x1 1)))
-   (tassert "not match undecidable" (simplify-=/= (noto (matcho ([x1 (a . d)]))) x1 '(1 . 2) (=/= x1 '(1 . 2))) (lambda (a) (and (noto? (car a)) (noto? (cadr a)) (succeed? (caddr a))) (=/= x1 '(1 . 2)))))
+
+   (tassert "match undecidable" (reduce-constraint2 (matcho ([x1 (a . d)])) x2 1 (=/= x1 1)) (lambda (a) (and (matcho? (car a)) (matcho? (cadr a)) (succeed? (caddr a))) (=/= x1 1)))
+   (tassert "not match succeed" (reduce-constraint2 (noto (matcho ([x1 (a . d)]))) x1 1 (=/= x1 1)) (lambda (a) (and (fail? (car a)) (noto? (cadr a)) (succeed? (caddr a)) (equal? (cadddr a) (=/= x1 1)))))
+   (tassert "match undecidable" (reduce-constraint2 (matcho ([x1 (a . d)])) x1 '(1 . 2) (=/= x1 1)) (lambda (a) (and (matcho? (car a)) (matcho? (cadr a)) (succeed? (caddr a))) (=/= x1 1)))
+   (tassert "not match undecidable" (reduce-constraint2 (noto (matcho ([x1 (a . d)]))) x1 '(1 . 2) (=/= x1 '(1 . 2))) (lambda (a) (and (noto? (car a)) (noto? (cadr a)) (succeed? (caddr a))) (=/= x1 '(1 . 2)))))
  (tassert "=/= satisfied|satisfies" (simplify-=/= (disj (=/= x1 1) (symbolo x1)) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))
  (tassert "=/= satisfies|satisfies" (simplify-=/= (disj (symbolo x1) (symbolo x1)) x1 1 (=/= x1 1)) (list succeed (symbolo x1) succeed succeed))
  (tassert "=/= satisfies|satisfied|unnormalized" (simplify-=/= (disj (=/= x1 1) (disj (symbolo x1) (=/= x2 2))) x1 1 (=/= x1 1)) (list succeed succeed succeed (=/= x1 1)))

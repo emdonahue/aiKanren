@@ -52,7 +52,7 @@
      [(or (fail? g) (succeed? g)) g]
      [(conj? g) (conj (reduce-constraint2 (conj-lhs g) c) (reduce-constraint2 (conj-rhs g) c))]
      [(disj? g) (disj (reduce-constraint2 (disj-lhs g) c) (reduce-constraint2 (disj-rhs g) c))]
-     [(noto? g) (noto (reduce-constraint2 (noto-goal g) c))]
+     [(and (noto? g) (not (=/=? g))) (noto (reduce-constraint2 (noto-goal g) c))] ;TODO remove =/= check
      [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
      [else (exclusive-cond
             [(list? c) (reduce-==2 g c)]
@@ -88,7 +88,8 @@
                  [(failure? s^) succeed]
                  [else g]))]
      [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
-                (if (eq? s s^) succeed g))]
+                 (if (eq? s s^) succeed g))]
+     [(pconstraint? g) g]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
   
   (define (reduce-==/matcho g s)
