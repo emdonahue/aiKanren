@@ -26,18 +26,18 @@
    (tassert "reduce == & ==!&==" (reduce-constraint (conj (== x1 2) (== x1 1)) x1=1) (list fail fail))
    (tassert "reduce == & ==&==!" (reduce-constraint (conj (== x1 1) (== x1 2)) x1=1) (list fail fail))
 
-   (tassert "reduce == & =/=" (simplify-unification (=/= x1 1) s) (list fail succeed))
-   (tassert "reduce == & =/=!" (simplify-unification (=/= x1 2) s) (list succeed succeed))
-   (tassert "reduce == & =/=?" (simplify-unification (=/= x1 1) s-free) (list (=/= x2 1) succeed))
+   (tassert "reduce == & =/=" (reduce-constraint (=/= x1 1) x1=1) (list fail succeed))
+   (tassert "reduce == & =/=!" (reduce-constraint (=/= x1 2) x1=1) (list succeed succeed))
+   (tassert "reduce == & =/=?" (reduce-constraint (=/= x1 1) x1=x2) (list (=/= x2 1) succeed))
 
-   (tassert "reduce == & satisfied" (simplify-unification (numbero x1) s) (list succeed succeed))
-   (tassert "reduce == & not satisfied" (simplify-unification (noto (numbero x1)) s) (list fail succeed))
-   (tassert "reduce == & unsatisfiable" (simplify-unification (symbolo x1) s) (list fail fail))
-   (tassert "reduce == & not unsatisfiable" (simplify-unification (noto (symbolo x1)) s) (list succeed succeed))
-   (tassert "reduce == & undecidable" (simplify-unification (symbolo x2) s) (list succeed (symbolo x2)))
-   (tassert "reduce == & not undecidable" (simplify-unification (noto (symbolo x2)) s) (list succeed (noto (symbolo x2))))
-   (tassert "reduce ==f & undecidable" (simplify-unification (symbolo x1) s-free) (list (symbolo x2) succeed))
-   (tassert "reduce ==f & not undecidable" (simplify-unification (noto (symbolo x1)) s-free) (list (noto (symbolo x2)) succeed))
+   (tassert "reduce == & satisfied" (reduce-constraint (numbero x1) x1=1) (list succeed succeed))
+   (tassert "reduce == & not satisfied" (reduce-constraint (noto (numbero x1)) x1=1) (list fail succeed))
+   (tassert "reduce == & unsatisfiable" (reduce-constraint (symbolo x1) x1=1) (list fail fail))
+   (tassert "reduce == & not unsatisfiable" (reduce-constraint (noto (symbolo x1)) x1=1) (list succeed succeed))
+   (tassert "reduce == & undecidable" (reduce-constraint (symbolo x2) x1=1) (list succeed (symbolo x2)))
+   (tassert "reduce == & not undecidable" (reduce-constraint (noto (symbolo x2)) x1=1) (list succeed (noto (symbolo x2))))
+   (tassert "reduce ==f & undecidable" (reduce-constraint (symbolo x1) x1=x2) (list (symbolo x2) succeed))
+   (tassert "reduce ==f & not undecidable" (reduce-constraint (noto (symbolo x1)) x1=x2) (list (noto (symbolo x2)) succeed))
 
    ;TODO simplify matcho
    #;

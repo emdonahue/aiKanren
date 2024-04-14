@@ -47,6 +47,7 @@
         [else (mini-walk-normalized s v (cdr tail) (or normalized (eq? v (cdar tail))))])]))
   
   (define (mini-normalized? s v)
+    ;; A variable is normalized when it is guaranteed not to be bound to something unknown in the substitution. This happens when it is on the lhs, so we know exactly what it is bound to, or it is the sole rhs, so we know that it has been looked up and found to be free.
     (cert (list? s))
     (if (var? v) (memp (lambda (b) (or (eq? v (car b)) (eq? v (cdr b)))) s) #t))
 

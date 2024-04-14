@@ -72,12 +72,13 @@
          [normalized (values g succeed)]
          [else (values succeed g)]))))
   
-  (define (reduce-==/pconstraint g s vars normalized)
+  (define (reduce-==/pconstraint g s vars normalized?)
+    ;; Walk all variables of the pconstraint and ensure they are normalized.
     (if (null? vars)
-        (if normalized (values g succeed) (values succeed g)) 
-        (let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
-          (if (eq? (car vars) walked)
-              (reduce-==/pconstraint g s (cdr vars) (and normalized normalized-var))
+        (if normalized? (values g succeed) (values succeed g)) 
+        (let-values ([(var-normalized? walked) (mini-walk-normalized s (car vars))])
+          (if (eq? (car vars) walked) ; If any have been updated, run the pconstraint.
+              (reduce-==/pconstraint g s (cdr vars) (and normalized? var-normalized?))
               (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) s)))))
 
   )
