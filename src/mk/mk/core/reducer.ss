@@ -47,22 +47,25 @@
 
   (define (reduce-constraint2 g c)
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
-    (cert (goal? g) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
-    (exclusive-cond
-     [(or (fail? g) (succeed? g)) g]
-     [(conj? g) (conj (reduce-constraint2 (conj-lhs g) c) (reduce-constraint2 (conj-rhs g) c))]
-     [(disj? g) (disj (reduce-constraint2 (disj-lhs g) c) (reduce-constraint2 (disj-rhs g) c))]
-     [(and (noto? g) (not (=/=? g))) (noto (reduce-constraint2 (noto-goal g) c))] ;TODO remove =/= check
-     [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
-     [else (exclusive-cond
-            [(list? c) (reduce-==2 g c)]
-            [(=/=? c) (reduce-=/= g (=/=->substitution c))]
-            [(pconstraint? c) (reduce-pconstraint g c)]
-            [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
-            [(disj? c) (let ([g-lhs (reduce-constraint2 g (disj-lhs c))]
-                             [g-rhs (reduce-constraint2 g (disj-rhs c))])
-                         (if (equal? g-lhs g-rhs) g-lhs g))]
-            [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" c)])])
+    (cert (goal? g) (not (fail? c)) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
+    (if (succeed? c) g
+     (exclusive-cond
+      [(or (fail? g) (succeed? g)) g]
+      [(conj? g) (conj (reduce-constraint2 (conj-lhs g) c) (reduce-constraint2 (conj-rhs g) c))]
+      [(disj? g) (disj (reduce-constraint2 (disj-lhs g) c) (reduce-constraint2 (disj-rhs g) c))]
+      [(and (noto? g) (not (=/=? g))) (noto (reduce-constraint2 (noto-goal g) c))] ;TODO remove =/= check
+      [(constraint? g) (reduce-constraint2 (constraint-goal g) c)]
+      [else
+       (exclusive-cond
+        [(list? c) (reduce-==2 g c)]
+        [(=/=? c) (reduce-=/= g (=/=->substitution c))]
+        [(pconstraint? c) (reduce-pconstraint g c)]
+        [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
+        [(disj? c) (let ([g-lhs (reduce-constraint2 g (disj-lhs c))]
+                         [g-rhs (reduce-constraint2 g (disj-rhs c))])
+                     (if (and (succeed? g-lhs) (succeed? g-rhs)) succeed g))]
+        [(pconstraint? c) (reduce-pconstraint2 g c)]
+        [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" (cons g c))])]))
     )
 
   (define (reduce-==2 g s)
@@ -74,6 +77,12 @@
      [(pconstraint? g) (reduce-==/pconstraint2 g s)]
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
      [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
+
+  (define (reduce-pconstraint2 g c)
+    (cert (pconstraint? c))
+    (exclusive-cond
+     [(=/=? g) (noto (reduce-==2 (noto g) c))]
+     [else (assertion-violation 'reduce-pconstraint2 "Unrecognized constraint type" g)]))
   
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
