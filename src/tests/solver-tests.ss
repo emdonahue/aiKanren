@@ -34,8 +34,10 @@
  (tassert "substitution constraint-free high var" (run1 (x1 x2) (=/= x2 1) (== x1 x2)) (list (=/= x2 1) (=/= x2 1)))
  (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
  (tassert "substitution free-constraint high var" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
- 
+
  (tassert "substitution constraint-constraint" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
+   (printf "flag") (exit)
+
  (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 2) (=/= x2 1)) (conj (=/= x2 2) (=/= x2 1))))
  (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 2) (=/= x2 1)) (conj (=/= x2 2) (=/= x2 1))))
  (tassert "substitution constraint disunify free" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) (list (conj (=/= x1 1) (=/= x1 x2)) (proxy x1)))
