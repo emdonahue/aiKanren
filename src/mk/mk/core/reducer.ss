@@ -58,6 +58,7 @@
             [(list? c) (reduce-==2 g c)]
             [(=/=? c) (reduce-=/= g (=/=->substitution c))]
             [(pconstraint? c) (reduce-pconstraint g c)]
+            [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
             [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" c)])])
     )
 

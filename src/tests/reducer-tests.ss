@@ -88,7 +88,11 @@
  (tassert "reduce =/= =/= (satisfies|undecidable)|(satisfied|undecidable)" (reduce-constraint2 (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) (=/= x1 1)) (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))))
  (tassert "reduce =/= & proxy succeed" (reduce-constraint2 (proxy x1) (=/= x1 1)) succeed)
  (tassert "reduce =/= & proxy undecidable" (reduce-constraint2 (proxy x2) (=/= x1 1)) (proxy x2))
- 
+
+ ;; === CONJUNCTION ===
+ (tassert "reduce conj =/= first simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x1 1) (=/= x2 2))) succeed)
+ (tassert "reduce conj =/= second simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x2 2) (=/= x1 1))) succeed)
+ (tassert "reduce conj =/= neither simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x2 1) (=/= x2 2))) (=/= x1 1))
 
  ;; === PCONSTRAINT ===
  (tassert "reduce pconstraint ==" (reduce-constraint2 (== x1 1) (numbero x1)) (== x1 1))

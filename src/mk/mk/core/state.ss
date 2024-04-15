@@ -1,6 +1,6 @@
 (library (mk core state) ; Main state object that holds substitution & constraints
   (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid
-          instantiate-var state-add-constraint unify disunify extend simplify-unification) 
+          instantiate-var state-add-constraint unify disunify extend simplify-unification remove-constraint) 
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core reifier))
   
   ;; === UNIFICATION ===
