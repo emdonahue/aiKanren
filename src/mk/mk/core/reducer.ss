@@ -59,6 +59,9 @@
             [(=/=? c) (reduce-=/= g (=/=->substitution c))]
             [(pconstraint? c) (reduce-pconstraint g c)]
             [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
+            [(disj? c) (let ([g-lhs (reduce-constraint2 g (disj-lhs c))]
+                             [g-rhs (reduce-constraint2 g (disj-rhs c))])
+                         (if (equal? g-lhs g-rhs) g-lhs g))]
             [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" c)])])
     )
 

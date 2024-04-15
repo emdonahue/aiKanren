@@ -93,6 +93,13 @@
  (tassert "reduce conj =/= first simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x1 1) (=/= x2 2))) succeed)
  (tassert "reduce conj =/= second simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x2 2) (=/= x1 1))) succeed)
  (tassert "reduce conj =/= neither simplifies" (reduce-constraint2 (=/= x1 1) (conj (=/= x2 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce conj =/= both simplify" (reduce-constraint2 (=/= x1 1) (conj (=/= x1 1) (=/= x1 1))) succeed)
+
+ ;; === DISJUNCTION ===
+ (tassert "reduce disj =/= first simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce disj =/= second simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 2) (=/= x1 1))) (=/= x1 1))
+ (tassert "reduce disj =/= neither simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce disj =/= both simplify" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x1 1))) succeed)
 
  ;; === PCONSTRAINT ===
  (tassert "reduce pconstraint ==" (reduce-constraint2 (== x1 1) (numbero x1)) (== x1 1))
