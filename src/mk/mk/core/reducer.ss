@@ -94,6 +94,7 @@
     (cert (pconstraint? c))
     (exclusive-cond
      [(==? g) (if (fail? (reduce-==/pconstraint2 c (==->substitution g))) fail g)]
+     [(=/=? g) (if (fail? (reduce-==/pconstraint2 c (=/=->substitution g))) succeed g)]
      [else (assertion-violation 'reduce-pconstraint "Unrecognized constraint type" g)]))
   
   (define (reduce-==/matcho g s)
