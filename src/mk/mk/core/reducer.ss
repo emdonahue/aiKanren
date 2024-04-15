@@ -45,7 +45,7 @@
             [(list? c) (reduce-== g c )])])
     )
 
-  (define (reduce-constraint2 g c)
+  (org-define (reduce-constraint2 g c)
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
     (cert (goal? g) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
     (exclusive-cond
@@ -80,13 +80,10 @@
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
-  (define (reduce-=/= g s)
+  (org-define (reduce-=/= g s)
     (exclusive-cond
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
-                (exclusive-cond
-                 [(eq? s s^) fail]
-                 [(failure? s^) succeed]
-                 [else g]))]
+                (if (eq? s s^) fail g))]
      [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
                  (if (eq? s s^) succeed g))]
      [(or (matcho? g) (pconstraint? g)) g]
