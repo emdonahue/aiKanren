@@ -68,7 +68,7 @@
      [(=/=? g) (noto (reduce-==2 (noto g) s))]
      [(matcho? g) (reduce-==/matcho2 g s)]
      [(pconstraint? g) (reduce-==/pconstraint2 g s)]
-     [(proxy? g) g]
+     [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
      [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
   
   (define (reduce-== g s)
@@ -120,7 +120,7 @@
 
   (define reduce-==/pconstraint2 ;TODO extract an expander for pconstraints analagous to matcho/expand
     ;; Walk all variables of the pconstraint and ensure they are normalized.
-    (case-lambda
+    (case-lambda ;TODO can we reuse this like matcho/expand in solver?
       [(g s) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
       [(g s vars)
        (if (null? vars) g 

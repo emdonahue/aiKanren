@@ -26,19 +26,17 @@
    (tassert "reduce == & =/=!" (reduce-constraint2 (=/= x1 2) x1=1) succeed)
    (tassert "reduce == & =/=?" (reduce-constraint2 (=/= x1 1) x1=x2) (=/= x2 1))
 
-   (begin
-     (tassert "reduce == & satisfied" (reduce-constraint2 (numbero x1) x1=1) succeed)
-     (tassert "reduce == & not satisfied" (reduce-constraint2 (noto (numbero x1)) x1=1) fail)
-     (tassert "reduce == & unsatisfiable" (reduce-constraint2 (symbolo x1) x1=1) fail)
-     (tassert "reduce == & not unsatisfiable" (reduce-constraint2 (noto (symbolo x1)) x1=1) succeed)
-     (tassert "reduce == & undecidable" (reduce-constraint2 (symbolo x2) x1=1) (symbolo x2))
-     (tassert "reduce == & not undecidable" (reduce-constraint2 (noto (symbolo x2)) x1=1) (noto (symbolo x2)))
-     (tassert "reduce ==f & undecidable" (reduce-constraint2 (symbolo x1) x1=x2) (symbolo x2))
-     (tassert "reduce ==f & not undecidable" (reduce-constraint2 (noto (symbolo x1)) x1=x2) (noto (symbolo x2))))
+   (tassert "reduce == & satisfied" (reduce-constraint2 (numbero x1) x1=1) succeed)
+   (tassert "reduce == & not satisfied" (reduce-constraint2 (noto (numbero x1)) x1=1) fail)
+   (tassert "reduce == & unsatisfiable" (reduce-constraint2 (symbolo x1) x1=1) fail)
+   (tassert "reduce == & not unsatisfiable" (reduce-constraint2 (noto (symbolo x1)) x1=1) succeed)
+   (tassert "reduce == & undecidable" (reduce-constraint2 (symbolo x2) x1=1) (symbolo x2))
+   (tassert "reduce == & not undecidable" (reduce-constraint2 (noto (symbolo x2)) x1=1) (noto (symbolo x2)))
+   (tassert "reduce ==f & undecidable" (reduce-constraint2 (symbolo x1) x1=x2) (symbolo x2))
+   (tassert "reduce ==f & not undecidable" (reduce-constraint2 (noto (symbolo x1)) x1=x2) (noto (symbolo x2)))
 
-   (begin
-     (tassert "reduce == & match fail" (reduce-constraint2 (matcho ([(a . d) x1])) x1=1) fail)
-     (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-attributed-vars g))))))
+   (tassert "reduce == & match fail" (reduce-constraint2 (matcho ([(a . d) x1])) x1=1) fail)
+   (tassert "reduce == & match simplified" (reduce-constraint2 (matcho ([(a . d) x1])) x1=x2) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-attributed-vars g)))))
    (tassert "reduce == & match no vars succeed" (reduce-constraint2 (matcho ([(a . d) x1] [(b . c) x2])) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) succeed)
    (tassert "reduce == & match no vars fail" (reduce-constraint2 (matcho ([(a . d) x1] [(b . c) x2]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4)))) fail)
    (tassert "reduce == & match unified out vars" (reduce-constraint2 (matcho ([(a . d) x1] [(b . c) x2])) x1=x2) (lambda (g) (and (matcho? g) (equal? (list x2) (matcho-attributed-vars g)))))
@@ -51,8 +49,10 @@
    (tassert "reduce == & ==!&==?" (reduce-constraint2 (disj (== x1 2) (== x2 3)) x1=1) (== x2 3))
    (tassert "reduce == & ==?&==?" (reduce-constraint2 (disj (== x2 2) (== x2 3)) x1=1) (disj (== x2 2) (== x2 3)))   
    (tassert "reduce == & match|unsatisfiable" (reduce-constraint2 (disj (matcho ([(a . d) x1]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) x1=x2x3) (conj (== x2 1) (== x3 2)))
-   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint2 (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1) (disj (=/= x2 2) (== x2 2))))
+   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint2 (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1) (disj (=/= x2 2) (== x2 2)))
 
+   (tassert "reduce == & proxy succeed" (reduce-constraint2 (proxy x1) x1=1) succeed)
+   (tassert "reduce == & proxy undecidable" (reduce-constraint2 (proxy x2) x1=1) (proxy x2)))
 
   ;; === DISEQUALITY ===
  (tassert "reduce =/= == succeed" (reduce-constraint2 (== x1 1) (=/= x1 1)) fail)
@@ -65,7 +65,7 @@
  (tassert "reduce =/= conj fail" (reduce-constraint2 (conj (== x1 1) (=/= x1 1)) (=/= x1 1)) fail)
  (tassert "reduce =/= match succeed" (reduce-constraint2 (matcho ([(a . d) x1])) (=/= x1 1)) matcho?)
  (tassert "reduce =/= not match succeed" (reduce-constraint2 (noto (matcho ([(a . d) x1])))  (=/= x1 1)) noto?)
-
+ ;(tassert "reduce =/= proxy" (reduce-constraint2 (noto (matcho ([(a . d) x1])))  (=/= x1 1)) noto?)
  (tassert "reduce =/= =/= satisfied|satisfies" (reduce-constraint2 (disj (=/= x1 1) (symbolo x1)) (=/= x1 1)) succeed)
  (tassert "reduce =/= =/= satisfies|satisfies" (reduce-constraint2 (disj (symbolo x1) (symbolo x1)) (=/= x1 1)) (disj (symbolo x1) (symbolo x1)))
  (tassert "reduce =/= =/= satisfies|satisfied|unnormalized" (reduce-constraint2 (disj (=/= x1 1) (disj (symbolo x1) (=/= x2 2))) (=/= x1 1)) succeed)
@@ -98,17 +98,18 @@
  (tassert "reduce pconstraint ?==" (reduce-constraint2 (=/= x2 1) (numbero x1)) (=/= x2 1))
  (tassert "reduce pconstraint ?==!" (reduce-constraint2 (=/= x2 'symbol) (numbero x1)) (=/= x2 'symbol))
 
- (exit)
- (tassert "reduce pconstraint pconstraint" (reduce-constraint2 (numbero x1) (numbero x1)) (list succeed succeed succeed (numbero x1)))
- (tassert "reduce pconstraint noto pconstraint" (reduce-constraint2 (noto (numbero x1)) (numbero x1)) (list fail fail succeed (numbero x1)))
- (tassert "reduce pconstraint pconstraint!" (reduce-constraint2 (symbolo x1) (numbero x1)) (list fail fail succeed (numbero x1)))
- (tassert "reduce pconstraint noto pconstraint!" (reduce-constraint2 (noto (symbolo x1)) (numbero x1)) (list (numbero x1) succeed succeed (numbero x1)))
- (tassert "reduce pconstraint ?pconstraint!" (reduce-constraint2 (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed (numbero x1)))
- (tassert "reduce pconstraint noto ?pconstraint!" (reduce-constraint2 (noto (symbolo x2)) (numbero x1)) (list (numbero x1) (noto (symbolo x2)) succeed (numbero x1)))
+ #;
+(begin
+  (tassert "reduce pconstraint pconstraint" (reduce-constraint2 (numbero x1) (numbero x1)) (list succeed succeed succeed (numbero x1)))
+  (tassert "reduce pconstraint noto pconstraint" (reduce-constraint2 (noto (numbero x1)) (numbero x1)) (list fail fail succeed (numbero x1)))
+  (tassert "reduce pconstraint pconstraint!" (reduce-constraint2 (symbolo x1) (numbero x1)) (list fail fail succeed (numbero x1)))
+  (tassert "reduce pconstraint noto pconstraint!" (reduce-constraint2 (noto (symbolo x1)) (numbero x1)) (list (numbero x1) succeed succeed (numbero x1)))
+  (tassert "reduce pconstraint ?pconstraint!" (reduce-constraint2 (symbolo x2) (numbero x1)) (list (numbero x1) (symbolo x2) succeed (numbero x1)))
+  (tassert "reduce pconstraint noto ?pconstraint!" (reduce-constraint2 (noto (symbolo x2)) (numbero x1)) (list (numbero x1) (noto (symbolo x2)) succeed (numbero x1)))
 
- (tassert "reduce pconstraint =/= & pconstraint" (reduce-constraint2 (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
- (tassert "reduce pconstraint pconstraint & =/=" (reduce-constraint2 (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
- (tassert "reduce pconstraint == & ?==" (reduce-constraint2 (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1)))
+  (tassert "reduce pconstraint =/= & pconstraint" (reduce-constraint2 (conj (=/= x1 1) (numbero x1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
+  (tassert "reduce pconstraint pconstraint & =/=" (reduce-constraint2 (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
+  (tassert "reduce pconstraint == & ?==" (reduce-constraint2 (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1))))
 
  #;
  (begin
