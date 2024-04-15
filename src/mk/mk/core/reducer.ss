@@ -89,7 +89,7 @@
                  [else g]))]
      [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
                  (if (eq? s s^) succeed g))]
-     [(pconstraint? g) g]
+     [(or (matcho? g) (pconstraint? g)) g]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
   
   (define (reduce-==/matcho g s)
