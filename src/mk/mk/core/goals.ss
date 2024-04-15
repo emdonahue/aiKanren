@@ -1,6 +1,6 @@
 (library (mk core goals) ; Definitions for core mk goals
   (export goal?
-          make-== ==? ==-lhs ==-rhs ==
+          make-== ==? ==-lhs ==-rhs == ==->substitution
           succeed fail succeed? fail?
           make-noto noto? noto-goal
           make-conj conj? conj-lhs conj-rhs
@@ -39,6 +39,9 @@
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
 
+  (define (==->substitution g)
+    (cert (==? g))
+    (list (cons (==-lhs g) (==-rhs g))))
   
   ;; === DFS ===
   (define-structure (dfs-goal procedure))

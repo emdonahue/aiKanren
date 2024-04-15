@@ -45,7 +45,7 @@
             [(list? c) (reduce-== g c )])])
     )
 
-  (org-define (reduce-constraint2 g c)
+  (define (reduce-constraint2 g c)
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
     (cert (goal? g) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
     (exclusive-cond
@@ -57,6 +57,7 @@
      [else (exclusive-cond
             [(list? c) (reduce-==2 g c)]
             [(=/=? c) (reduce-=/= g (=/=->substitution c))]
+            [(pconstraint? c) (reduce-pconstraint g c)]
             [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" c)])])
     )
 
@@ -66,7 +67,7 @@
      [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]
      [(=/=? g) (noto (reduce-==2 (noto g) s))]
      [(matcho? g) (reduce-==/matcho2 g s)]
-     [(pconstraint? g) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
+     [(pconstraint? g) (reduce-==/pconstraint2 g s)]
      [(proxy? g) g]
      [else (assertion-violation 'reduce-==2 "Unrecognized constraint type" g)]))
   
@@ -80,7 +81,7 @@
      [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (values succeed g))]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
-  (org-define (reduce-=/= g s)
+  (define (reduce-=/= g s)
     (exclusive-cond
      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
                 (if (eq? s s^) fail g))]
@@ -88,56 +89,24 @@
                  (if (eq? s s^) succeed g))]
      [(or (matcho? g) (pconstraint? g)) g]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
+
+  (define (reduce-pconstraint g c)
+    (cert (pconstraint? c))
+    (exclusive-cond
+     [(==? g) (if (fail? (reduce-==/pconstraint2 c (==->substitution g))) fail g)]
+     [else (assertion-violation 'reduce-pconstraint "Unrecognized constraint type" g)]))
   
   (define (reduce-==/matcho g s)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
           (conj ==s (reduce-constraint g s))
-          (conj ==s g)))
-    #;
-    (case-lambda
-      [(g s)
-       (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
-         (if (failure? s^) (values fail fail) (reduce-==/matcho g s s^ (matcho-substitution) '() #t)))]
-      [(g s s^ sub sub^ normalized?)
-       (if (null? sub)
-           (let ([g (make-matcho sub^ (matcho-ctn g))])
-             (if normalized? (values g succeed) (values succeed g)))
-           (let* ([lhs (caar sub)]
-                  [rhs (cdar sub)])
-             (nyi reducer matcho)
-             #;
-             (let-values ([(rhs-normalized? rhs) (mini-reify-normalized s^ rhs)])
-               (reduce-==/matcho g s (cdr sub) (cons (cons lhs rhs) sub^)
-                                 (and normalized? rhs-normalized
-                                      (or (zero? (var-id lhs))
-             (mini-normalized s lhs)))))))]))
+          (conj ==s g))))
 
   (define (reduce-==/matcho2 g s)
     (let-values ([(expanded? g ==s) (matcho/expand g s)])
       (if expanded?
           (conj ==s (reduce-constraint2 g s))
-          (conj ==s g)))
-    #;
-    (case-lambda
-      [(g s)
-       (let ([s^ (mini-unify-substitution s (matcho-substitution g))])
-         (if (failure? s^) fail
-             (make-matcho (mini-reify-substitution s^ (matcho-substitution g)) (matcho-ctn g))))]
-      #;
-      [(g s s^ sub sub^ normalized?)
-       (if (null? sub)
-           (let ([g (make-matcho sub^ (matcho-ctn g))])
-             (if normalized? (values g succeed) (values succeed g)))
-           (let* ([lhs (caar sub)]
-                  [rhs (cdar sub)])
-             (nyi reducer matcho)
-             #;
-             (let-values ([(rhs-normalized? rhs) (mini-reify-normalized s^ rhs)])
-               (reduce-==/matcho2 g s (cdr sub) (cons (cons lhs rhs) sub^)
-                                 (and normalized? rhs-normalized
-                                      (or (zero? (var-id lhs))
-                                          (mini-normalized s lhs)))))))]))
+          (conj ==s g))))
   
   (define (reduce-==/pconstraint g s vars normalized?)
     ;; Walk all variables of the pconstraint and ensure they are normalized.
@@ -148,12 +117,17 @@
               (reduce-==/pconstraint g s (cdr vars) (and normalized? var-normalized?))
               (reduce-constraint ((pconstraint-procedure g) (car vars) walked g succeed g) s)))))
 
-  (define (reduce-==/pconstraint2 g s vars) ;TODO extract an expander for pconstraints analagous to matcho/expand
+  (define reduce-==/pconstraint2 ;TODO extract an expander for pconstraints analagous to matcho/expand
     ;; Walk all variables of the pconstraint and ensure they are normalized.
-    (if (null? vars) g 
-        (let ([v (mini-reify s (car vars))])
-          (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
-              (reduce-==/pconstraint2 g s (cdr vars))
-              (reduce-constraint2 ((pconstraint-procedure g) (car vars) v g succeed g) s)))))
+    (case-lambda
+      [(g s) (reduce-==/pconstraint2 g s (pconstraint-vars g))]
+      [(g s vars)
+       (if (null? vars) g 
+           (let ([v (mini-reify s (car vars))])
+             (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
+                 (reduce-==/pconstraint2 g s (cdr vars))
+                 (reduce-constraint2 ((pconstraint-procedure g) (car vars) v g succeed g) s))))]))
+
+  
 
   )
