@@ -86,6 +86,8 @@
  (tassert "reduce =/= =/= ==^|==^|==|==^" (reduce-constraint2 (disj (disj (disj (== x1 2) (== x1 3)) (== x1 1)) (== x1 4)) (=/= x1 1)) (disj (disj (== x1 2) (== x1 3)) (== x1 4)))
  (tassert "reduce =/= =/= (recheck&recheck)|undecidable" (reduce-constraint2 (disj (conj (disj (== x1 1) (=/= x2 3)) (disj (== x1 1) (=/= x2 3))) (=/= x1 3)) (=/= x1 1)) (disj (conj (=/= x2 3) (=/= x2 3)) (=/= x1 3)))
  (tassert "reduce =/= =/= (satisfies|undecidable)|(satisfied|undecidable)" (reduce-constraint2 (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) (=/= x1 1)) (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))))
+ (tassert "reduce =/= & proxy succeed" (reduce-constraint2 (proxy x1) (=/= x1 1)) succeed)
+ (tassert "reduce =/= & proxy undecidable" (reduce-constraint2 (proxy x2) (=/= x1 1)) (proxy x2))
  
 
  ;; === PCONSTRAINT ===

@@ -88,6 +88,7 @@
      [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
                  (if (eq? s s^) succeed g))]
      [(or (matcho? g) (pconstraint? g)) g]
+     [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
 
   (define (reduce-pconstraint g c)
