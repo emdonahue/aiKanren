@@ -156,6 +156,8 @@
 
  (tassert "reduce matcho ==" (reduce-constraint2 (== x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (== x1 (cons x2 x3)))
  (tassert "reduce matcho ==!" (reduce-constraint2 (== x1 1) (matcho ([(a . d) x1]))) fail)
+ (tassert "reduce matcho =/=" (reduce-constraint2 (=/= x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (=/= x1 (cons x2 x3)))
+ (tassert "reduce matcho =/=!" (reduce-constraint2 (=/= x1 1) (matcho ([(a . d) x1]))) succeed)
   #;
  (begin
    (tassert "reduce pconstraint match!" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))
