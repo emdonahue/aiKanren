@@ -14,7 +14,7 @@
   (define (reduce-constraint g c)
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
     (cert (goal? g) (not (fail? c)) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
-    (if (succeed? c) g
+    (if (succeed? c) (values g succeed)
         (exclusive-cond
          [(or (fail? g) (succeed? g)) (values g g)]
          [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c)])
