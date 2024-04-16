@@ -42,9 +42,10 @@
                                     [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c))])
                         (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))
                         )]
-           [(disj? c) (let ([g-lhs (reduce-constraint g (disj-lhs c))]
-                            [g-rhs (reduce-constraint g (disj-rhs c))])
-                        (if (equal? g-lhs g-rhs) g-lhs g))]
+           [(disj? c) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c))]
+                                   [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c))])
+                        (if (and (equal? simplified-lhs simplified-rhs) (equal? recheck-lhs recheck-rhs))
+                            (values simplified-lhs recheck-rhs) (values g succeed)))]
            [(noto? c) (reduce-noto g (noto-goal c))]
            [(matcho? c) (reduce-matcho g c)]
            [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) succeed g)]
@@ -78,8 +79,10 @@
   (define (reduce-pconstraint g c)
     (cert (pconstraint? c))
     (exclusive-cond
-     [(==? g) (if (fail? (reduce-==/pconstraint c (==->substitution g))) fail g)]
-     [(=/=? g) (if (fail? (reduce-==/pconstraint c (=/=->substitution g))) succeed g)]
+     [(==? g) (let-values ([(simplified recheck) (reduce-==/pconstraint c (==->substitution g))])
+                (if (or (fail? simplified) (fail? recheck)) (values fail fail) (values g succeed)))]
+     [(=/=? g) (let-values ([(simplified recheck) (reduce-==/pconstraint c (=/=->substitution g))])
+                 (if (or (fail? simplified) (fail? recheck)) (values succeed succeed) (values g succeed)))]
      [else (assertion-violation 'reduce-pconstraint "Unrecognized constraint type" g)]))
 
   (define (reduce-=/= g s)
