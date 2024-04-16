@@ -251,8 +251,7 @@
  (tassert "reduce == =/= fail" (run1 (x1 x2) (constraint (== x1 x2) (=/= x1 x2))) (void))
  (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
  (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
- (org-trace
-  (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2))))
+ (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
  (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
  
  ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==

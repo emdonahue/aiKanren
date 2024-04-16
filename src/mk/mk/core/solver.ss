@@ -103,7 +103,8 @@
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y, c is constraints on x&y that need to be rechecked
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
           (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO can we just store this? no need to keep solving in current impl, but may need to recheck some constraints?
-              (solve-constraint succeed (store-constraint s g) ctn resolve (conj delta g))
+              (let-values ([(simplified recheck) (reduce-constraint c g)])
+               (solve-constraint recheck (store-constraint (extend s (=/=-lhs g) simplified) g) ctn resolve (conj delta g)))
               #;
               (let ([g (reduce-constraint g c)])
                 (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta)
