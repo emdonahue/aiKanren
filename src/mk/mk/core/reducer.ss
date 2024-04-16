@@ -62,11 +62,11 @@
     (exclusive-cond
      [(==? g) (values (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))) succeed)]
      [(=/=? g) (reduce-constraint/noto g s)]
-     [(matcho? g) (values
-                   (let-values ([(expanded? g ==s) (matcho/expand g s)])
-                     (if expanded?
-                         (conj ==s (reduce-constraint g s))
-                         (conj ==s g))) succeed)]
+     [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
+                    (if expanded? ;TODO should matcho's ==s/contents be recheck or satisfied?
+                        (let-values ([(simplified recheck) (reduce-constraint g s)])
+                          (values (conj ==s simplified) recheck))
+                        (values (conj ==s g) succeed)))]
      [(pconstraint? g) (reduce-==/pconstraint g s)]
      [(proxy? g) (values (if (mini-normalized? s (proxy-var g)) succeed g) succeed)]
      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
