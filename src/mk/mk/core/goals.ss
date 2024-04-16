@@ -1,13 +1,13 @@
 (library (mk core goals) ; Definitions for core mk goals
   (export goal?
-          make-== ==? ==-lhs ==-rhs == ==->substitution
+          make-== ==? ==-lhs ==-rhs ==
           succeed fail succeed? fail?
           make-noto noto? noto-goal
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
           suspend suspend? suspend-goal
           make-matcho matcho? matcho-ctn matcho-substitution
-          proxy proxy? proxy-var proxy
+          proxy proxy? proxy-var proxy proxy-id
           conde conde? conde-lhs conde-rhs conde-car conde-cdr conde-disj conde->disj
           pconstraint pconstraint? pconstraint-vars pconstraint-data pconstraint-procedure pconstraint-rebind-var pconstraint-check pconstraint-attributed?
           constraint constraint? constraint-goal
@@ -38,10 +38,6 @@
      [(var? y) (make-== y x)]
      [(and (pair? x) (pair? y)) (make-== x y)]
      [else fail]))
-
-  (define (==->substitution g)
-    (cert (==? g))
-    (list (cons (==-lhs g) (==-rhs g))))
   
   ;; === DFS ===
   (define-structure (dfs-goal procedure))
@@ -56,6 +52,7 @@
     (cert (var? v))
     (make-proxy v))
 
+  (define (proxy-id p) (var-id (proxy-var p)))
 
   ;; === CONDE ===
   (define-structure (conde lhs rhs))

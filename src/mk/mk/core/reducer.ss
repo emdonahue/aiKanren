@@ -4,6 +4,10 @@
   (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams) (mk core matcho) (mk core goals))
   ;;TODO simplify with negated pconstraints as well
 
+
+  (define (==->substitution g)
+    (cert (==? g))
+    (mini-unify '() (==-lhs g) (==-rhs g)))
   
   (define (reduce-const2 g s)
 
@@ -67,6 +71,8 @@
                      (if (and (succeed? g-lhs) (succeed? g-rhs)) succeed g))]
         [(pconstraint? c) (reduce-pconstraint2 g c)]
         [(noto? c) (reduce-noto g (noto-goal c))]
+        [(matcho? c) (reduce-matcho g c)]
+        [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) succeed g)]
         [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" (cons g c))])]))
     )
 
@@ -150,6 +156,10 @@
                  (reduce-==/pconstraint2 g s (cdr vars))
                  (reduce-constraint2 ((pconstraint-procedure g) (car vars) v g succeed g) s))))]))
 
-  
+  (define (reduce-matcho g c)
+    (exclusive-cond
+     [(==? g) (if (fail? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) fail g)]
+     [(=/=? g) (if (fail? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g))) succeed g)]
+     [else (assertion-violation 'reduce-matcho "Unrecognized constraint type" g)]))
 
   )

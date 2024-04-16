@@ -132,14 +132,7 @@
   (tassert "reduce pconstraint pconstraint & =/=" (reduce-constraint2 (conj (numbero x1) (=/= x1 1)) (numbero x1)) (list succeed (=/= x1 1) succeed (numbero x1)))
   (tassert "reduce pconstraint == & ?==" (reduce-constraint2 (conj (== x1 1) (== x2 2)) (numbero x1)) (list succeed (conj (== x1 1) (== x2 2)) succeed (numbero x1))))
 
- #;
- (begin
-   (tassert "reduce pconstraint match!" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))
-   (tassert "reduce pconstraint match" (simplify-pconstraint (matcho ([x1 (a . d)])) (pairo x1)) (lambda (a) (and (succeed? (car a)) (matcho? (cadr a)))))
-   (tassert "reduce pconstraint match?" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (matcho? (cadr a)))))
-   (tassert "reduce pconstraint not match!" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x1)) (lambda (a) (and (equal? (car a) (numbero x1)) (succeed? (cadr a)))))
-   (tassert "reduce pconstraint not match" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (pairo x1)) (lambda (a) (and (equal? (car a) (pairo x1)) (noto? (cadr a)))))
-   (tassert "reduce pconstraint not match?" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (noto? (cadr a))))))
+
 
  (tassert "reduce pconstraint satisfies|satisfied" (simplify-pconstraint (disj (numbero x1) (== x1 1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))
  (tassert "reduce pconstraint satisfied|satisfies" (simplify-pconstraint (disj (== x1 1) (numbero x1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))
@@ -152,5 +145,21 @@
  ;(tassert "reduce pconstraint simplifies|entailed" (simplify-pconstraint (disj (== x1 1) (matcho ([x1 (a d)]))) (pairo x1)) (lambda (g) (and (equal? (car g) (pairo x1)) (succeed? (cadr g)) (succeed? (cadddr g)) (matcho-test-eq? (caddr g) (list x1) '()))))
 
  ;;TODO test proxies
+
+ ;; === MATCHO ===
+
+ (tassert "reduce matcho ==" (reduce-constraint2 (== x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (== x1 (cons x2 x3)))
+  #;
+ (begin
+   (tassert "reduce pconstraint match!" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))
+   (tassert "reduce pconstraint match" (simplify-pconstraint (matcho ([x1 (a . d)])) (pairo x1)) (lambda (a) (and (succeed? (car a)) (matcho? (cadr a)))))
+   (tassert "reduce pconstraint match?" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (matcho? (cadr a)))))
+   (tassert "reduce pconstraint not match!" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x1)) (lambda (a) (and (equal? (car a) (numbero x1)) (succeed? (cadr a)))))
+   (tassert "reduce pconstraint not match" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (pairo x1)) (lambda (a) (and (equal? (car a) (pairo x1)) (noto? (cadr a)))))
+ (tassert "reduce pconstraint not match?" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (noto? (cadr a))))))
+
+ ;; === PROXY ===
+ (tassert "reduce proxy ==" (reduce-constraint2 (== x1 1) (proxy x1)) (== x1 1))
+ (tassert "reduce proxy proxy" (reduce-constraint2 (proxy x1) (proxy x1)) succeed)
  
  )
