@@ -58,6 +58,7 @@
       [else
        (exclusive-cond
         [(list? c) (reduce-==2 g c)]
+        [(==? c) (reduce-==2 g (==->substitution c))]
         [(=/=? c) (reduce-=/= g (=/=->substitution c))]
         [(pconstraint? c) (reduce-pconstraint g c)]
         [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
@@ -65,9 +66,15 @@
                          [g-rhs (reduce-constraint2 g (disj-rhs c))])
                      (if (and (succeed? g-lhs) (succeed? g-rhs)) succeed g))]
         [(pconstraint? c) (reduce-pconstraint2 g c)]
+        [(noto? c) (reduce-noto g (noto-goal c))]
         [else (assertion-violation 'reduce-constraint2 "Unrecognized constraint type" (cons g c))])]))
     )
 
+  (define (reduce-noto g c)
+    (if (succeed? (reduce-constraint2 c (if (noto? g) (noto g) g)))
+        (if (noto? g) succeed fail)
+        g))
+  
   (define (reduce-==2 g s)
     (cert (goal? g) (mini-substitution? s))
     (exclusive-cond

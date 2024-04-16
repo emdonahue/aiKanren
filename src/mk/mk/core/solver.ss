@@ -104,7 +104,7 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
           (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO can we just store this? no need to keep solving in current impl, but may need to recheck some constraints?
               (let ([g (reduce-constraint2 g c)])
-                (if (succeed? g) (solve-constraint ctn s succeed resolve delta)
+                (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta)
                  (let ([c (reduce-constraint2 c g)])
                    (if (fail? c) (values fail failure)
                        (let ([sub (=/=->substitution g)])

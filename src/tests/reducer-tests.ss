@@ -111,6 +111,12 @@
  (tassert "reduce pconstraint ?==" (reduce-constraint2 (=/= x2 1) (numbero x1)) (=/= x2 1))
  (tassert "reduce pconstraint ?==!" (reduce-constraint2 (=/= x2 'symbol) (numbero x1)) (=/= x2 'symbol))
 
+ ;; If the noto fails with the values, negate the success with the =/= if available
+ (tassert "reduce !pconstraint ==!" (reduce-constraint2 (== x1 1) (noto (numbero x1))) fail) ; ==, succeed
+ (tassert "reduce !pconstraint ==" (reduce-constraint2 (== x1 1) (noto (symbolo x1))) (== x1 1)) ; fail, fail
+ (tassert "reduce !pconstraint =/=!" (reduce-constraint2 (=/= x1 1) (noto (numbero x1))) succeed) ; =/=, numbero
+ (tassert "reduce !pconstraint =/=" (reduce-constraint2 (=/= x1 1) (noto (symbolo x1))) (=/= x1 1)) ; succeed, symbolo
+
  #;
 (begin
   (tassert "reduce pconstraint pconstraint" (reduce-constraint2 (numbero x1) (numbero x1)) (list succeed succeed succeed (numbero x1)))
