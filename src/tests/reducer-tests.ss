@@ -161,7 +161,7 @@
  ;; === MATCHO ===
 
  (tassert "reduce matcho ==" (reduce-constraint (== x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (list (== x1 (cons x2 x3)) succeed))
- (tassert "reduce matcho ==!" (reduce-constraint (== x1 1) (matcho ([(a . d) x1]))) (list fail succeed))
+ (tassert "reduce matcho ==!" (reduce-constraint (== x1 1) (matcho ([(a . d) x1]))) (list fail fail))
  (tassert "reduce matcho =/=" (reduce-constraint (=/= x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (list (=/= x1 (cons x2 x3)) succeed))
  (tassert "reduce matcho =/=!" (reduce-constraint (=/= x1 1) (matcho ([(a . d) x1]))) (list succeed succeed))
   #;

@@ -48,7 +48,7 @@
                             (values simplified-lhs recheck-rhs) (values g succeed)))]
            [(noto? c) (reduce-noto g (noto-goal c))]
            [(matcho? c) (reduce-matcho g c)]
-           [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) succeed g)]
+           [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (values g succeed))]
            [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))
     )
 
@@ -110,8 +110,8 @@
 
   (define (reduce-matcho g c)
     (exclusive-cond
-     [(==? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) fail g)]
-     [(=/=? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g))) succeed g)]
+     [(==? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) (values fail fail) (values g succeed))]
+     [(=/=? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g))) (values succeed succeed) (values g succeed))]
      [else (assertion-violation 'reduce-matcho "Unrecognized constraint type" g)]))
 
   )
