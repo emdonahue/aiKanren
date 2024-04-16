@@ -37,7 +37,11 @@
            [(==? c) (reduce-== g (==->substitution c))]
            [(=/=? c) (reduce-=/= g (=/=->substitution c))]
            [(pconstraint? c) (reduce-pconstraint g c)]
-           [(conj? c) (reduce-constraint (reduce-constraint g (conj-lhs c)) (conj-rhs c))]
+           [(conj? c) (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c))]
+                                    [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c))]
+                                    [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c))])
+                        (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))
+                        )]
            [(disj? c) (let ([g-lhs (reduce-constraint g (disj-lhs c))]
                             [g-rhs (reduce-constraint g (disj-rhs c))])
                         (if (equal? g-lhs g-rhs) g-lhs g))]
