@@ -107,8 +107,11 @@
                 (cert (succeed? g/recheck))
                 (if (or (succeed? g/simplified) (fail? g/simplified))
                     (solve-constraint g/simplified s ctn resolve delta)
-                    (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var
-                      (solve-constraint recheck (store-constraint (extend s (=/=-lhs g) simplified) g) ctn resolve (conj delta g)))))
+                    (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
+                      (solve-constraint recheck
+                                        (store-constraint (extend s (=/=-lhs g) (conj simplified g))
+                                                          (if (var? (=/=-rhs g)) (proxy (=/=-rhs g)) succeed))
+                                        ctn resolve (conj delta g)))))
               #;
               (let ([g (reduce-constraint g c)])
                 (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta)
@@ -256,4 +259,5 @@
         [(matcho? g) (matcho-attributed-vars g)]
         [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
         [(constraint? g) (attributed-vars (constraint-goal g) vs)]
+        [(proxy? g) (cons (proxy-var g) vs)]
         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
