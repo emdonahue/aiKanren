@@ -13,7 +13,7 @@
           constraint constraint? constraint-goal
           dfs-goal dfs-goal? dfs-goal-procedure
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition
-          noto =/= =/=-lhs =/=-rhs =/=->substitution =/=?
+          noto =/= =/=-lhs =/=-rhs =/=?
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           fresh-vars fresh exist)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
@@ -303,8 +303,6 @@
      [(and (pair? x) (pair? y)) (make-=/= x y)]
      [else succeed]))
 
-  
-  (define (=/=->substitution g) (list (cons (=/=-lhs g) (=/=-rhs g))))
 
   (define (noto g) ; Logical negation of constraints.
     ;; Goals wrapped with noto will be interpreted as negated constraints. Negation in this context should be understood in terms of a few simple operations:

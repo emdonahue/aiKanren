@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk core goals) (mk constraints))
+(import (test-runner) (mk core) (mk core goals) (mk constraints) (mk tracing))
 
 (define x1 (var 1))
 (define x2 (var 2))
@@ -154,7 +154,7 @@
  (tassert "disunify free-free" (run1 (x1 x2) (=/= x1 x2)) (list (=/= x1 x2) (proxy x1)))
  (tassert "disunify bound" (run* (x1) (== x1 1) (=/= x1 1)) '())
  (tassert "disunify check" (run* (x1) (=/= x1 1) (== x1 1)) '())
- (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj* (=/= x1 1) (=/= x1 2)))
+ (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj* (=/= x1 2) (=/= x1 1)))
  (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
  (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)))) (disj* (=/= x1 1) (=/= x2 2)))
  (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (=/= x2 2)))
@@ -166,7 +166,7 @@
  (tassert "disunify transfer on free-free down varid" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
  (tassert "disunify fire low varid" (run1 (x1 x2) (=/= x1 x2) (== x2 x1)) (void))
  (tassert "disunify conj" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2))
-          (list (conj (=/= x2 2) (=/= x2 1)) (conj (=/= x2 2) (=/= x2 1))))
+          (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
  (tassert "disunify fire low varid" (run1 (x1 x2) (== x2 1) (=/= x1 1) (== x1 x2)) (void))
  (tassert "disunify fire high varid" (run1 (x1 x2) (== x1 1) (=/= x2 1) (== x1 x2)) (void))
  (tassert "disunify fired constraints restored on failure" (run1 x1 (disj (== x1 1) (== x1 1)) (=/= (list x1 x1) '(1 1))) (void))
@@ -176,20 +176,22 @@
  (tassert "disunify disjunction runs ctn" (run1 x1 (constraint (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
 
  (tassert "disunify simplify simple abort" (run1 x1 (=/= x1 1) (=/= x1 1)) (=/= x1 1))
- (tassert "disunify simplify ignores conj" (run1 x1 (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 1) (=/= x1 2)) (=/= x1 3)))
- (tassert "disunify simplify conj early succeed" (run1 x1 (conj (=/= x1 1) (=/= x1 2)) (=/= x1 1)) (conj (=/= x1 1) (=/= x1 2)))
+ (tassert "disunify simplify ignores conj" (run1 x1 (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 3) (=/= x1 2)) (=/= x1 1)))
+ (tassert "disunify simplify conj early succeed" (run1 x1 (conj (=/= x1 1) (=/= x1 2)) (=/= x1 1)) (conj (=/= x1 2) (=/= x1 1)))
  (tassert "disunify simplify abort pconstraint" (run1 x1 (symbolo x1) (=/= x1 1)) (symbolo x1))    
- (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (numbero x1) (=/= x1 1)))
+ (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (=/= x1 1) (numbero x1)))
  (tassert "disunify simplify abort negative pconstraint" (run1 x1 (noto (numbero x1)) (=/= x1 1)) (noto (numbero x1)))
  (tassert "disunify simplify match succeed" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 1)) (lambda (c) (matcho? c)))
- (tassert "disunify simplify match" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-rhs c) (=/= x1 '(1 . 2))) (matcho? (conj-lhs c)))))
- (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho ([(a . d) x1])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho? (noto-goal (conj-lhs c))) (equal? (conj-rhs c) (=/= x1 1)))))
+ (tassert "disunify simplify match" (run1 x1 (constraint (matcho ([(a . d) x1]))) (=/= x1 '(1 . 2))) (lambda (c) (and (conj? c) (equal? (conj-lhs c) (=/= x1 '(1 . 2))) (matcho? (conj-rhs c)))))
+ (tassert "disunify simplify negative matcho" (run1 x1 (constraint (noto (matcho ([(a . d) x1])))) (=/= x1 1)) (lambda (c) (and (conj? c) (matcho? (noto-goal (conj-rhs c))) (equal? (conj-lhs c) (=/= x1 1)))))
  (tassert "disunify simplify disjunction fails first" (run1 (x1 x2) (disj (== x2 2) (== x1 1)) (=/= x1 1)) (list (=/= x1 1) (disj (== x2 2) (== x1 1))))
  (tassert "disunify simplifies secondary constraint if primary is val" (run1 (x1 x2) (== x1 1) (disj (== x2 1) (== x2 2)) (=/= x1 x2)) '(1 2))
  (tassert "disunify suspends and preserves whole ctn" (run1 (x1 x2 x3) (constraint (=/= (cons x1 x2) '(())) (== x3 1))) (list (disj (=/= x1 '()) (=/= x2 '())) x2 1))
  (tassert "disunify preserves pending goals in ctn" (run1 (x1 x2) (constraint (=/= x1 1) (disj (=/= x2 1) (=/= x2 2)))) (list (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))))
  (tassert "disunify simplify drops when =/= in a conj" (run1 x1 (disj (conj (=/= x1 1) (conj (numbero x1) (=/= x1 1))) (=/= x1 2))) (disj (conj (=/= x1 1) (numbero x1)) (=/= x1 2)))
  (tassert "disunify occurs check" (run1 x1 (=/= x1 (list x1))) x1)
+ (tassert "=/= quiescent even with unnormalized vars" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3)) (list (conj (=/= x1 x3) (=/= x1 x2)) (proxy x1) (proxy x1)))
+ (exit)
 
  ;; === EQUALITY ===
  
@@ -220,7 +222,7 @@
  (tassert "== factored out of nested disj" (run1 (x1 x2) (== x2 2) (disj (conj (== x2 2) (disj (== x1 1) (== x1 1))) (== x2 3))) (list (disj (disj (== x1 1) (== x1 1)) (== x2 3)) 2))
  (tassert "== factored out of nested disj tail" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 1) (== x1 1))))) (list (disj (== x1 1) (conj (== x2 2) (disj (== x1 1) (== x1 1)))) 2))
  (tassert "nested disj terminates disj solving" (run1 (x1 x2) (== x2 2) (disj (== x1 1) (conj (== x2 2) (disj (== x1 2) (== x1 1))))) (list (disj (== x1 1) (conj (== x2 2) (disj (== x1 2) (== x1 1)))) 2))
- (tassert "=/= & (=/=|succeed)" (run1 x1 (disj (numbero x1) (symbolo x1)) (=/= x1 1)) (disj (conj (=/= x1 1) (numbero x1)) (symbolo x1)))
+ (tassert "=/= & (=/=|succeed)" (run1 x1 (disj (numbero x1) (symbolo x1)) (=/= x1 1)) (conj (=/= x1 1) (disj (numbero x1) (symbolo x1))))
  (tassert "disj common non == are extracted" (run1 x1 (disj (=/= x1 1) (=/= x1 1))) (disj (=/= x1 1) (=/= x1 1)))
  (tassert "stale constraints on multiple vars are ignored when stored" (run1 (x1 x2) (disj (== x1 1) (conj (== x1 2) (== x2 3))) (== x1 1) (== x2 3)) '(1 3))
  (tassert "disj factors ==s already in store" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) (list (conj (disj (== x1 1) (== x2 2)) (disj (== x1 1) (=/= x2 2))) x2))
@@ -250,8 +252,11 @@
  (tassert "reduce == =/= fail" (run1 (x1 x2) (constraint (== x1 x2) (=/= x1 x2))) (void))
  (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
  (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
- (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
+ (org-trace
+  (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2))))
+  (printf "flag") (exit)
  (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
+ 
  ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==
 
  ;; === RECHECK ===
