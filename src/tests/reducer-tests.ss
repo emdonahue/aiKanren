@@ -46,14 +46,15 @@
    (tassert "reduce == & not match succeed" (reduce-constraint (noto (matcho ([(a . d) x1]))) x1=1) (list succeed succeed))
    (tassert "reduce == & not match simplified" (reduce-constraint (noto (matcho ([(a . d) x1]))) x1=x2) (lambda (g) (and (noto? (car g)) (matcho? (noto-goal (car g))) (equal? x2 (car (matcho-attributed-vars (noto-goal (car g))))))))
    (tassert "reduce == & not match recheck" (reduce-constraint (noto (matcho ([(a . d) x1] [(b . c) x2]))) x1=x2x3) (lambda (g) (and (noto? (car g)) (matcho? (noto-goal (car g))) (equal? (matcho-attributed-vars (noto-goal (car g))) (list x2)))))
-   (exit)
-   (tassert "reduce == & ==!&==?" (reduce-constraint (disj (== x1 2) (== x2 3)) x1=1) (== x2 3))
-   (tassert "reduce == & ==?&==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1) (disj (== x2 2) (== x2 3)))   
-   (tassert "reduce == & match|unsatisfiable" (reduce-constraint (disj (matcho ([(a . d) x1]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) x1=x2x3) (conj (== x2 1) (== x3 2)))
-   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1) (disj (=/= x2 2) (== x2 2)))
 
-   (tassert "reduce == & proxy succeed" (reduce-constraint (proxy x1) x1=1) succeed)
-   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1) (proxy x2)))
+   (tassert "reduce == & ==!|==?" (reduce-constraint (disj (== x1 2) (== x2 3)) x1=1) (list succeed (== x2 3)))
+   (tassert "reduce == & ==?|==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1) (list (disj (== x2 2) (== x2 3)) succeed))   
+   (tassert "reduce == & match|unsatisfiable" (reduce-constraint (disj (matcho ([(a . d) x1]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) x1=x2x3) (list (conj (== x2 1) (== x3 2)) succeed))
+   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1) (list (disj (=/= x2 2) (== x2 2)) succeed))
+
+   (tassert "reduce == & proxy succeed" (reduce-constraint (proxy x1) x1=1) (list succeed succeed))
+   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1) (list (proxy x2) succeed)))
+    (exit)
 
   ;; === DISEQUALITY ===
  (tassert "reduce =/= == succeed" (reduce-constraint (== x1 1) (=/= x1 1)) fail)

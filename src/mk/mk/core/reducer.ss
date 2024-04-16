@@ -22,7 +22,7 @@
                           (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c)])
                             (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
          [(disj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c)])
-                      (if (or (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
+                      (if (and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
                           (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c)])
                             (let ([d (disj (conj simplified-lhs recheck-lhs)
                                            (conj simplified-rhs recheck-rhs))])
