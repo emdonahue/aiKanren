@@ -29,10 +29,7 @@
                               (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)))
                                   (values succeed d)
                                   (values d succeed))))))]
-         [(and (noto? g) (not (=/=? g)))
-          (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c)])
-            (let ([d (disj (noto simplified) (noto recheck))])
-              (if (not (succeed? recheck)) (values succeed d) (values d succeed))))] ;TODO remove =/= check
+         [(and (noto? g) (not (=/=? g))) (reduce-constraint/noto g c)] ;TODO remove =/= check
          [(constraint? g) (reduce-constraint (constraint-goal g) c)]
          [else
           (exclusive-cond
@@ -50,26 +47,29 @@
            [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))
     )
 
+  (define (reduce-constraint/noto g c)
+    (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c)])
+      (let ([d (disj (noto simplified) (noto recheck))])
+        (if (not (succeed? recheck)) (values succeed d) (values d succeed)))))
+
   (define (reduce-noto g c)
     (if (succeed? (reduce-constraint c (if (noto? g) (noto g) g)))
         (if (noto? g) succeed fail)
         g))
-  
+
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
-    (values
-     (exclusive-cond
-      [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]
-      [(=/=? g) (let-values ([(simplified recheck) (reduce-== (noto g) s)])
-                  (cert (succeed? recheck))
-                  (noto simplified))]
-      [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
+    (exclusive-cond
+     [(==? g) (values (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))) succeed)]
+     [(=/=? g) (reduce-constraint/noto g s)]
+     [(matcho? g) (values
+                   (let-values ([(expanded? g ==s) (matcho/expand g s)])
                      (if expanded?
                          (conj ==s (reduce-constraint g s))
-                         (conj ==s g)))]
-      [(pconstraint? g) (reduce-==/pconstraint g s)]
-      [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
-      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]) succeed))
+                         (conj ==s g))) succeed)]
+     [(pconstraint? g) (reduce-==/pconstraint g s)]
+     [(proxy? g) (values (if (mini-normalized? s (proxy-var g)) succeed g) succeed)]
+     [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
 
   (define (reduce-pconstraint g c)
     (cert (pconstraint? c))
@@ -93,7 +93,7 @@
     (case-lambda ;TODO can we reuse this like matcho/expand in solver?
       [(g s) (reduce-==/pconstraint g s (pconstraint-vars g))]
       [(g s vars)
-       (if (null? vars) g 
+       (if (null? vars) (values g succeed)
            (let ([v (mini-reify s (car vars))])
              (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
                  (reduce-==/pconstraint g s (cdr vars))
