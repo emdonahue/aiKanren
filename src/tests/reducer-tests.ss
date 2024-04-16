@@ -96,10 +96,16 @@
  (tassert "reduce conj =/= both simplify" (reduce-constraint2 (=/= x1 1) (conj (=/= x1 1) (=/= x1 1))) succeed)
 
  ;; === DISJUNCTION ===
- (tassert "reduce disj =/= first simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x2 2))) (=/= x1 1))
- (tassert "reduce disj =/= second simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 2) (=/= x1 1))) (=/= x1 1))
- (tassert "reduce disj =/= neither simplifies" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))) (=/= x1 1))
- (tassert "reduce disj =/= both simplify" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x1 1))) succeed)
+ (tassert "reduce disj =/= lhs succeeds" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce disj =/= rhs succeeds" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 2) (=/= x1 1))) (=/= x1 1))
+ (tassert "reduce disj =/= neither succeeds" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce disj =/= both succeed" (reduce-constraint2 (=/= x1 1) (disj (=/= x1 1) (=/= x1 1))) succeed)
+ (tassert "reduce disj =/= lhs fails" (reduce-constraint2 (=/= x1 1) (disj (== x1 1) (=/= x2 2))) (=/= x1 1))
+ (tassert "reduce disj =/= rhs fails" (reduce-constraint2 (=/= x1 1) (disj (=/= x2 2) (== x1 1))) (=/= x1 1))
+ (tassert "reduce disj =/= both fail" (reduce-constraint2 (=/= x1 1) (disj (== x1 1) (== x1 1))) fail)
+ (tassert "reduce disj =/= lhs reduces" (reduce-constraint2 (=/= x1 1) (disj (== x1 x2) (== x1 1))) (=/= x1 1))
+ (tassert "reduce disj =/= rhs reduces" (reduce-constraint2 (=/= x1 1) (disj (== x1 1) (== x1 x2))) (=/= x1 1))
+ (tassert "reduce disj =/= both reduce" (reduce-constraint2 (=/= x1 1) (disj (== x1 x2) (== x1 x2))) (=/= x2 1))
 
  ;; === PCONSTRAINT ===
  (tassert "reduce pconstraint ==" (reduce-constraint2 (== x1 1) (numbero x1)) (== x1 1))
@@ -149,6 +155,7 @@
  ;; === MATCHO ===
 
  (tassert "reduce matcho ==" (reduce-constraint2 (== x1 (cons x2 x3)) (matcho ([(a . d) x1]))) (== x1 (cons x2 x3)))
+ (tassert "reduce matcho ==!" (reduce-constraint2 (== x1 1) (matcho ([(a . d) x1]))) fail)
   #;
  (begin
    (tassert "reduce pconstraint match!" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))

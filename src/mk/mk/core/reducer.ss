@@ -68,7 +68,7 @@
         [(conj? c) (reduce-constraint2 (reduce-constraint2 g (conj-lhs c)) (conj-rhs c))]
         [(disj? c) (let ([g-lhs (reduce-constraint2 g (disj-lhs c))]
                          [g-rhs (reduce-constraint2 g (disj-rhs c))])
-                     (if (and (succeed? g-lhs) (succeed? g-rhs)) succeed g))]
+                     (if (equal? g-lhs g-rhs) g-lhs g))]
         [(pconstraint? c) (reduce-pconstraint2 g c)]
         [(noto? c) (reduce-noto g (noto-goal c))]
         [(matcho? c) (reduce-matcho g c)]
