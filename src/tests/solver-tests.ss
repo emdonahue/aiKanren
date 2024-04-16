@@ -154,7 +154,7 @@
  (tassert "disunify free-free" (run1 (x1 x2) (=/= x1 x2)) (list (=/= x1 x2) (proxy x1)))
  (tassert "disunify bound" (run* (x1) (== x1 1) (=/= x1 1)) '())
  (tassert "disunify check" (run* (x1) (=/= x1 1) (== x1 1)) '())
- (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj* (=/= x1 2) (=/= x1 1)))
+ (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
  (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
  (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)))) (disj* (=/= x1 1) (=/= x2 2)))
  (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (=/= x2 2)))
