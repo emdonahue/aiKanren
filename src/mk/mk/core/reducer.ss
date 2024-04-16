@@ -58,9 +58,10 @@
         (if (not (succeed? recheck)) (values succeed d) (values d succeed)))))
 
   (define (reduce-noto g c)
-    (if (succeed? (reduce-constraint c (if (noto? g) (noto g) g)))
-        (if (noto? g) succeed fail)
-        g))
+    (let-values ([(simplified recheck) (reduce-constraint c (if (noto? g) (noto g) g))])
+     (if (and (succeed? simplified) (succeed? recheck))
+         (if (noto? g) (values succeed succeed) (values fail fail))
+         (values g succeed))))
 
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
