@@ -81,7 +81,7 @@
     (tassert "evalo quine" (evalo q) q))
   
    (tassert "evalo quine" (run1 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
-   (tassert "evalo 10 quine" (run 10 x1 (evalo x1 (list (assq 'list initial-env)) x1)) list?)
+   (tassert "evalo 10 quine" (length (run 10 x1 (evalo x1 (list (assq 'list initial-env)) x1))) 10)
    (tassert "quine synthesis structure test" (run1 (q x) (evalo q q) (== q (list (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))) (list 'quote (list 'lambda (list x) (list 'list x (list 'list (list 'quote 'quote) x))))))) list?)
 
    (tassert "evalo twine" (run1 (x1 x2) (=/= x1 x2)

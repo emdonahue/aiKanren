@@ -79,14 +79,15 @@
      [else (assertion-violation 'reduce-pconstraint "Unrecognized constraint type" g)]))
 
   (define (reduce-=/= g s)
-    (exclusive-cond
-     [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
-                (if (eq? s s^) fail g))]
-     [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
-                 (if (eq? s s^) succeed g))]
-     [(or (matcho? g) (pconstraint? g)) g]
-     [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
-     [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
+    (values 
+     (exclusive-cond
+      [(==? g) (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+                 (if (eq? s s^) fail g))]
+      [(=/=? g) (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
+                  (if (eq? s s^) succeed g))]
+      [(or (matcho? g) (pconstraint? g)) g]
+      [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
+      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]) succeed))
 
   (define reduce-==/pconstraint ;TODO extract an expander for pconstraints analagous to matcho/expand
     ;; Walk all variables of the pconstraint and ensure they are normalized.
