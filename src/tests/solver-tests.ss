@@ -35,10 +35,10 @@
  (tassert "substitution free-constraint" (run1 (x1 x2) (=/= x1 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
  (tassert "substitution free-constraint high var" (run1 (x1 x2) (=/= x2 1) (== x2 x1)) (list (=/= x2 1) (=/= x2 1)))
 
- (tassert "substitution constraint-constraint" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
- (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 2) (=/= x2 1)) (conj (=/= x2 2) (=/= x2 1))))
- (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 2) (=/= x2 1)) (conj (=/= x2 2) (=/= x2 1))))
- (tassert "substitution constraint disunify free" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) (list (conj (=/= x1 1) (=/= x1 x2)) (proxy x1)))
+ (tassert "substitution constraint-constraint" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 2) (=/= x1 1)))
+ (tassert "substitution constraint-constraint-free" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x1 x2)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
+ (tassert "substitution constraint-constraint-free2" (run1 (x1 x2) (=/= x1 1) (=/= x2 2) (== x2 x1)) (list (conj (=/= x2 1) (=/= x2 2)) (conj (=/= x2 1) (=/= x2 2))))
+ (tassert "substitution constraint disunify free" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) (list (conj (=/= x1 x2) (=/= x1 1)) (proxy x1)))
  (tassert "substitution constraint disunify free2" (run1 (x1 x2) (=/= x2 1) (=/= x1 x2)) (list (=/= x1 x2) (conj (=/= x2 1) (proxy x1))))
 
  (tassert "substitution pconstraint-ground fail" (run1 x1 (symbolo x1) (== x1 1)) (void))
@@ -154,7 +154,7 @@
  (tassert "disunify free-free" (run1 (x1 x2) (=/= x1 x2)) (list (=/= x1 x2) (proxy x1)))
  (tassert "disunify bound" (run* (x1) (== x1 1) (=/= x1 1)) '())
  (tassert "disunify check" (run* (x1) (=/= x1 1) (== x1 1)) '())
- (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 1) (=/= x1 2)))
+ (tassert "disunify free-ground x2" (run1 x1 (=/= x1 1) (=/= x1 2)) (conj (=/= x1 2) (=/= x1 1)))
  (tassert "disunify transfer to free then check" (run* (x1 x2) (=/= x1 2) (== x1 x2) (== x2 2)) '())
  (tassert "disunify lists" (car (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)))) (disj* (=/= x1 1) (=/= x2 2)))
  (tassert "disunify fire lists" (run1 (x1 x2) (=/= (cons x1 x2) (cons 1 2)) (== x1 1)) (list 1 (=/= x2 2)))
@@ -176,7 +176,7 @@
  (tassert "disunify disjunction runs ctn" (run1 x1 (constraint (=/= (list x1 x1) '(1 1)) (== x1 1))) (void))
 
  (tassert "disunify simplify simple abort" (run1 x1 (=/= x1 1) (=/= x1 1)) (=/= x1 1))
- (tassert "disunify simplify ignores conj" (run1 x1 (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (conj (=/= x1 3) (=/= x1 2)) (=/= x1 1)))
+ (tassert "disunify simplify ignores conj" (run1 x1 (=/= x1 1) (=/= x1 2) (=/= x1 3)) (conj (=/= x1 3) (conj (=/= x1 2) (=/= x1 1))))
  (tassert "disunify simplify conj early succeed" (run1 x1 (conj (=/= x1 1) (=/= x1 2)) (=/= x1 1)) (conj (=/= x1 2) (=/= x1 1)))
  (tassert "disunify simplify abort pconstraint" (run1 x1 (symbolo x1) (=/= x1 1)) (symbolo x1))    
  (tassert "disunify simplify ignore pconstraint" (run1 x1 (numbero x1) (=/= x1 1)) (conj (=/= x1 1) (numbero x1)))
@@ -251,7 +251,7 @@
  (tassert "reduce == =/= fail" (run1 (x1 x2) (constraint (== x1 x2) (=/= x1 x2))) (void))
  (tassert "reduce == rechecks =/=" (run1 (x1 x2) (=/= x2 2) (== x1 1)) (list 1 (=/= x2 2)))
  (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
- (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2)))
+ (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x3) (=/= x2 x4)) 3) (conj (=/= x2 x3) (=/= x2 x4)) (proxy x2) (proxy x2)))
  (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
  
  ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==
