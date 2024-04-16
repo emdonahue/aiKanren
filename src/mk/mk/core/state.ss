@@ -1,6 +1,6 @@
 (library (mk core state) ; Main state object that holds substitution & constraints
   (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid
-          instantiate-var state-add-constraint unify disunify extend remove-constraint) 
+          instantiate-var add-constraint add-proxy unify disunify extend remove-constraint) 
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core reifier))
   
   ;; === UNIFICATION ===
@@ -132,15 +132,18 @@
   ;; === CONSTRAINTS ===
 
   
-  (define (state-add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
+  (define (add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
     (cert (state? s) (goal? c) (list? vs))
     ;; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
     (let ([stored-constraint (substitution-ref (state-substitution s) (car vs))])
       (cert (goal? stored-constraint))
-      (fold-left (lambda (s v)
-                   (let ([stored-constraint (substitution-ref (state-substitution s) v)])
-                     (cert (goal? stored-constraint))
-                     (extend s v (conj stored-constraint (proxy (car vs)))))) (extend s (car vs) (conj stored-constraint c)) (cdr vs))))
+      (fold-left (lambda (s v) (add-proxy s v (car vs))) (extend s (car vs) (conj stored-constraint c)) (cdr vs))))
+
+  (define (add-proxy s v c)
+    (cert (state? s) (var? v) (var? c))
+    (let ([stored-constraint (substitution-ref (state-substitution s) v)])
+      (cert (goal? stored-constraint))
+      (extend s v (conj stored-constraint (proxy c)))))
 
   (define (remove-constraint s v)
     (extend s v succeed)))

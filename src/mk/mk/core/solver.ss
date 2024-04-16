@@ -108,10 +108,11 @@
                 (if (or (succeed? g/simplified) (fail? g/simplified))
                     (solve-constraint g/simplified s ctn resolve delta)
                     (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
-                      (solve-constraint recheck (extend
-                                                 (if (var? (=/=-rhs g))
-                                                     (state-add-constraint s (proxy (=/=-lhs g)) (list (=/=-rhs g))) s)
-                                                 (=/=-lhs g) (conj simplified g)) ctn resolve (conj delta g)))))
+                      (solve-constraint
+                       recheck (extend
+                                (if (var? (=/=-rhs g))
+                                    (add-proxy s (=/=-rhs g) (=/=-lhs g)) s)
+                                (=/=-lhs g) (conj g simplified)) ctn resolve (conj delta g)))))
               #;
               (let ([g (reduce-constraint g c)])
                 (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta)
@@ -234,7 +235,7 @@
      [(conj? g) (store-constraint (store-constraint s (conj-lhs g)) (conj-rhs g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
      [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
-      (state-add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
+      (add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
 
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
