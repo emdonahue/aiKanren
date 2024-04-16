@@ -158,8 +158,8 @@
 
   (define (reduce-matcho g c)
     (exclusive-cond
-     [(==? g) (if (fail? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) fail g)]
-     [(=/=? g) (if (fail? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g))) succeed g)]
+     [(==? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) fail g)]
+     [(=/=? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g))) succeed g)]
      [else (assertion-violation 'reduce-matcho "Unrecognized constraint type" g)]))
 
   )
