@@ -15,26 +15,39 @@
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
     (cert (goal? g) (not (fail? c)) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
     (if (succeed? c) g
-     (exclusive-cond
-      [(or (fail? g) (succeed? g)) g]
-      [(conj? g) (conj (reduce-constraint (conj-lhs g) c) (reduce-constraint (conj-rhs g) c))]
-      [(disj? g) (disj (reduce-constraint (disj-lhs g) c) (reduce-constraint (disj-rhs g) c))]
-      [(and (noto? g) (not (=/=? g))) (noto (reduce-constraint (noto-goal g) c))] ;TODO remove =/= check
-      [(constraint? g) (reduce-constraint (constraint-goal g) c)]
-      [else
-       (exclusive-cond
-        [(list? c) (reduce-== g c)]
-        [(==? c) (reduce-== g (==->substitution c))]
-        [(=/=? c) (reduce-=/= g (=/=->substitution c))]
-        [(pconstraint? c) (reduce-pconstraint g c)]
-        [(conj? c) (reduce-constraint (reduce-constraint g (conj-lhs c)) (conj-rhs c))]
-        [(disj? c) (let ([g-lhs (reduce-constraint g (disj-lhs c))]
-                         [g-rhs (reduce-constraint g (disj-rhs c))])
-                     (if (equal? g-lhs g-rhs) g-lhs g))]
-        [(noto? c) (reduce-noto g (noto-goal c))]
-        [(matcho? c) (reduce-matcho g c)]
-        [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) succeed g)]
-        [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))
+        (exclusive-cond
+         [(or (fail? g) (succeed? g)) (values g g)]
+         [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c)])
+                      (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
+                          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c)])
+                            (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
+         [(disj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c)])
+                      (if (or (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
+                          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c)])
+                            (let ([d (disj (conj simplified-lhs recheck-lhs)
+                                           (conj simplified-rhs recheck-rhs))])
+                              (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)))
+                                  (values succeed d)
+                                  (values d succeed))))))]
+         [(and (noto? g) (not (=/=? g)))
+          (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c)])
+            (let ([d (disj (noto simplified) (noto recheck))])
+              (if (not (succeed? recheck)) (values succeed d) (values d succeed))))] ;TODO remove =/= check
+         [(constraint? g) (reduce-constraint (constraint-goal g) c)]
+         [else
+          (exclusive-cond
+           [(list? c) (reduce-== g c)]
+           [(==? c) (reduce-== g (==->substitution c))]
+           [(=/=? c) (reduce-=/= g (=/=->substitution c))]
+           [(pconstraint? c) (reduce-pconstraint g c)]
+           [(conj? c) (reduce-constraint (reduce-constraint g (conj-lhs c)) (conj-rhs c))]
+           [(disj? c) (let ([g-lhs (reduce-constraint g (disj-lhs c))]
+                            [g-rhs (reduce-constraint g (disj-rhs c))])
+                        (if (equal? g-lhs g-rhs) g-lhs g))]
+           [(noto? c) (reduce-noto g (noto-goal c))]
+           [(matcho? c) (reduce-matcho g c)]
+           [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) succeed g)]
+           [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))
     )
 
   (define (reduce-noto g c)
@@ -44,16 +57,19 @@
   
   (define (reduce-== g s)
     (cert (goal? g) (mini-substitution? s))
-    (exclusive-cond
-     [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]
-     [(=/=? g) (noto (reduce-== (noto g) s))]
-     [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
-                    (if expanded?
-                        (conj ==s (reduce-constraint g s))
-                        (conj ==s g)))]
-     [(pconstraint? g) (reduce-==/pconstraint g s)]
-     [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
-     [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]))
+    (values
+     (exclusive-cond
+      [(==? g) (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g)))]
+      [(=/=? g) (let-values ([(simplified recheck) (reduce-== (noto g) s)])
+                  (cert (succeed? recheck))
+                  (noto simplified))]
+      [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
+                     (if expanded?
+                         (conj ==s (reduce-constraint g s))
+                         (conj ==s g)))]
+      [(pconstraint? g) (reduce-==/pconstraint g s)]
+      [(proxy? g) (if (mini-normalized? s (proxy-var g)) succeed g)]
+      [else (assertion-violation 'reduce-== "Unrecognized constraint type" g)]) succeed))
 
   (define (reduce-pconstraint g c)
     (cert (pconstraint? c))
