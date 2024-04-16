@@ -1,6 +1,6 @@
 (library (mk core state) ; Main state object that holds substitution & constraints
   (export state-substitution state-varid empty-state set-state-substitution increment-varid set-state-varid
-          instantiate-var state-add-constraint unify disunify extend simplify-unification remove-constraint) 
+          instantiate-var state-add-constraint unify disunify extend remove-constraint) 
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core goals) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core reifier))
   
   ;; === UNIFICATION ===
@@ -54,9 +54,9 @@
     (cert (var? x) (or (not (var? y)) (fx< (var-id x) (var-id y))))
     (if (occurs-check/binding s x y)
         (values fail fail fail fail fail failure)
-        (let* ([bindings (cons (cons x y) bindings)]
-               [x-c (reduce-constraint x-c bindings)]) ;TODO is there ever a reason to simplify y-c? 
-          (values bindings succeed x-c y-c (conj d (== x y)) (extend s x y)))
+        (let ([bindings (cons (cons x y) bindings)])
+          (let-values ([(x-c/simplified x-c/recheck) (reduce-constraint x-c bindings)]) ;TODO handle simplified during ==
+           (values bindings succeed (conj x-c/simplified x-c/recheck) y-c (conj d (== x y)) (extend s x y))))
         #;
      (let-values ([(pending committed)
                   
@@ -93,61 +93,6 @@
       (or (eq? v (car term)) (eq? v (cdr term)) ; can't just walk a term bc it is already in the substitution
           (occurs-check/binding s v (walk-var s (car term))) (occurs-check/binding s v (walk-var s (cdr term))))]
      [else #f]))
-
-  (define (simplify-unification g s)
-    (cert (goal? g))
-    (exclusive-cond
-     #;
-     [(conj? g) (reduce g (== (make-var 0) 1) s)]
-     #;
-     [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (simplify-unification (conj-lhs g) s)])
-                  (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
-                      (let-values ([(simplified-rhs recheck-rhs) (simplify-unification (conj-rhs g) s)])
-     (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
-     #;
-     [(disj? g) (let*-values ([(simplified-lhs recheck-lhs) (simplify-unification (disj-lhs g) s)]
-                              [(lhs) (conj simplified-lhs recheck-lhs)])
-                  (if (succeed? lhs) (values succeed succeed)
-                      (let*-values ([(simplified-rhs recheck-rhs) (simplify-unification (disj-rhs g) s)]
-                                    [(rhs) (conj simplified-rhs recheck-rhs)])
-                        
-                        (if (or (fail? simplified-lhs) (not (succeed? recheck-lhs)) ;TODO if == simplifier can confirm disj-rhs wont fail, do we need to recheck it? maybe it already contains two disjuncts with == that wont need to be rechecked
-                                (and (or (fail? simplified-rhs) (not (succeed? recheck-rhs)))
-                                     (conj-memp simplified-lhs (lambda (g) (or (==? g) (and (matcho? g) (null? (matcho-out-vars g))))))))
-                            (values succeed (disj-factorized lhs rhs))
-                            (values (disj-factorized lhs rhs) succeed)))))]
-     
-     #;
-     [(noto? g) (let-values ([(simplified recheck) (simplify-unification (noto-goal g) s)])
-                  (if (succeed? recheck) (values (noto simplified) succeed)
-                      (values succeed (noto (conj simplified recheck)))))]
-     ;;     [(pconstraint? g) (simplify-unification/pconstraint g s (pconstraint-vars g) #t)]
-;;     [(constraint? g) (simplify-unification (constraint-goal g) s)]
-;;     [(conde? g) (simplify-unification (conde->disj g) s)]
-     #;
-     [(matcho? g)
-     (let-values ([(normalized out-vars) (mini-reify-normalized s (matcho-out-vars g))]
-     [(_ in-vars) (mini-reify-normalized s (matcho-in-vars g))])
-     (let ([g (normalize-matcho out-vars in-vars (matcho-goal g))])
-     (cond
-     [(fail? g) (values fail fail)] ; TODO in simplify matcho, can i just return the g case and let one fail be enough?
-     
-     [(null? (matcho-out-vars g)) (let-values ([(_ g s^ p) (expand-matcho g empty-state empty-package)])
-     (simplify-unification g s))] ; TODO should we thread the real state when expanding matcho while simplifying ==?
-     [normalized (values g succeed)]
-     [else (values succeed g)])))]
-     [else (reduce-constraint g s)]))
-
-  #;
-  (define (simplify-unification/pconstraint g s vars normalized) ;TODO refactor pconstraint solving/simplifying to share var iteration code among impls
-    (if (null? vars)
-        (if normalized (values g succeed) (values succeed g)) 
-        (let-values ([(normalized-var walked) (mini-walk-normalized s (car vars))])
-          (if (eq? (car vars) walked)
-              (simplify-unification/pconstraint g s (cdr vars) (and normalized normalized-var)) ;TODO make == simplifier for pconstraints check for new vars
-              (simplify-unification ((pconstraint-procedure g) (car vars) walked g succeed (pconstraint-data g)) s))))
-#;
-    (values succeed (if (memq v (pconstraint-vars g)) ((pconstraint-procedure g) v x (pconstraint-data g)) g)))
 
   ;; === DISUNIFICATION ===
   
