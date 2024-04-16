@@ -191,7 +191,6 @@
  (tassert "disunify simplify drops when =/= in a conj" (run1 x1 (disj (conj (=/= x1 1) (conj (numbero x1) (=/= x1 1))) (=/= x1 2))) (disj (conj (=/= x1 1) (numbero x1)) (=/= x1 2)))
  (tassert "disunify occurs check" (run1 x1 (=/= x1 (list x1))) x1)
  (tassert "=/= quiescent even with unnormalized vars" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3)) (list (conj (=/= x1 x3) (=/= x1 x2)) (proxy x1) (proxy x1)))
- (exit)
 
  ;; === EQUALITY ===
  
@@ -254,7 +253,6 @@
  (tassert "reduce == rechecks =/= ctn" (run1 (x1 x2) (constraint (== x1 1) (=/= x2 2))) (list 1 (=/= x2 2)))
  (org-trace
   (tassert "reduce == partitions ctn and recheck" (run1 (x1 x2 x3 x4) (== x1 (cons x2 3)) (=/= x2 x4) (constraint (noto (matcho ([(a . b) x1]) (== a x3))))) (list (cons (conj (=/= x2 x4) (=/= x2 x3)) 3) (conj (=/= x2 x4) (=/= x2 x3)) (proxy x2) (proxy x2))))
-  (printf "flag") (exit)
  (tassert "reduce == stores pending rechecks in state" (run1 (x1 x2) (disj (disj (== x1 1) (== x2 2)) (== x2 3)) (== x1 4)) (list 4 (disj (== x2 2) (== x2 3))))
  
  ;;(tassert "reduce == simplifies proxy" (run1 (x1 x2) (disj (== x1 1) (== x2 2)) (== x1 x2)) (list (disj (== x2 1) (== x2 2)) (disj (== x2 1) (== x2 2)))) ;TODO remove proxies from secondary vars in ==
