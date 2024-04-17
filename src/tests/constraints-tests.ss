@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals) (mk tracing))
+(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals) (mk tracing) (mk core reifier))
 
 (define (forever x)
   (fresh (y) (forever x)))
@@ -97,14 +97,14 @@
                 (booleano x)
                 (booleano y)
                 (booleano z)) (void))
- #;
-(org-trace
+
+
  (tassert "all different-booleans fail"
           (run1 (x y z)
                 (booleano x)
                 (booleano y)
                 (booleano z)
-                (all-different (list x y z))) (void)))
+                (all-different (list x y z))) (void))
  
  ;; === IMPLIES ===
  (tassert "implies consequent true" (run1 (x1 x2) (==> (== x1 1) (== x2 2)) (== x2 2)) (list (disj (=/= x1 1) (== x2 2)) 2))

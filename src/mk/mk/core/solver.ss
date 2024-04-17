@@ -104,9 +104,11 @@
       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
           (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO can we just store this? no need to keep solving in current impl, but may need to recheck some constraints?
               (let-values ([(g/simplified g/recheck) (reduce-constraint g c)])
-                (cert (succeed? g/recheck))
-                (if (or (succeed? g/simplified) (fail? g/simplified))
-                    (solve-constraint g/simplified s ctn resolve delta)
+                ;(printf "g ~s g/recheck ~s simplified ~s~%" g g/recheck g/simplified)
+                (cert (or (succeed? g/recheck) (fail? g/recheck)))
+                (if (and (or (succeed? g/simplified) (fail? g/simplified)) ;TODO are all 4 cases possible?
+                         (or (succeed? g/recheck) (fail? g/recheck)))
+                    (solve-constraint (conj g/simplified g/recheck) s ctn resolve delta)
                     (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
                       (solve-constraint
                        recheck (extend
