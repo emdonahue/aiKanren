@@ -22,7 +22,7 @@
         (exclusive-cond
          [(or (fail? g) (succeed? g)) (values g g)]
          [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c)])
-                      (if (or (fail? simplified-lhs) (fail? recheck-lhs)) (values fail fail)
+                      (if (fail? simplified-lhs) (values fail fail)
                           (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c)])
                             (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
          [(disj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c)])
