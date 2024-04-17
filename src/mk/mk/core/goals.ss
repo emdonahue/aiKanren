@@ -1,7 +1,7 @@
 (library (mk core goals) ; Definitions for core mk goals
   (export goal?
           make-== ==? ==-lhs ==-rhs ==
-          succeed fail succeed? fail?
+          succeed fail succeed? fail? trivial?
           make-noto noto? noto-goal
           make-conj conj? conj-lhs conj-rhs
           make-disj disj? disj-lhs disj-rhs
@@ -26,7 +26,7 @@
     (vector 'fail))
   (define (succeed? g) (eq? g succeed))
   (define (fail? g) (eq? g fail))
-
+  (define (trivial? g) (or (succeed? g) (fail? g)))
 
   ;; === == ===
   (define-structure (== lhs rhs)) ;TODO ensure that if two vars are unified, there is a definite order even in the goal so that we can read the rhs as always the 'value' when running constraints. also break two pairs into a conj of ==. then we can simplify the order checking inside the unifier
