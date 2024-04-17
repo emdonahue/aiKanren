@@ -54,8 +54,8 @@
           (solve-constraint ==s s (conj g ctn) resolve delta)
           (solve-constraint ==s (store-constraint s g) ctn resolve (conj delta g)))))
 
-  
-  
+
+
   (define (solve-proxy g s ctn resolve delta) ; Solves the constraint on the proxied varid.
     (let-values ([(v c) (walk-var-val s (proxy-var g))])
       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
@@ -97,21 +97,21 @@
 
 
 
-  (org-define (solve-=/= g s ctn resolve delta)
+  (define (solve-=/= g s ctn resolve delta)
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
-      (let-values ([(g g/recheck) (reduce-constraint g c)])
-        (if (trivial? g) ; If he stored constraints completely eliminate g, 
+      (let-values ([(g g/recheck) (reduce-constraint g c)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.
+        (if (trivial? g) ; If he stored constraints completely eliminate g,
             (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
-            (let-values ([(c/simplified c/recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
-              (let ([attr-vars (attributed-vars g)])
-                (solve-constraint
-                 c/recheck (extend
+            (let-values ([(c c/recheck) (reduce-constraint c g)]) ; Determine which stored constraints need to be rechecked.
+              (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
+                (solve-constraint ; Run the constraints that need to be rerun,
+                 c/recheck (extend ; and replace the store constraints in the store along with the new g.
                             (if (not (null? (cdr attr-vars)))
-                                (add-proxy s (cadr attr-vars) (car attr-vars)) s)
-                            (car attr-vars) (conj g c/simplified)) ctn resolve (conj delta g))))))))
-
+                                (add-proxy s (cadr attr-vars) (car attr-vars)) s) ; Add a proxy to g's second var if needed.
+                            (car attr-vars) (conj g c)) ctn resolve (conj delta g))))))))
+  
   (define (normalized? g s)
     (exclusive-cond
      [(conj? g) (and (normalized? (conj-lhs g) s) (normalized? (conj-rhs g) s))]

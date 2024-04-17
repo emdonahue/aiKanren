@@ -6,10 +6,12 @@
 
 
   (define (==->substitution g)
-    (cert (==? g))
-    (mini-unify '() (==-lhs g) (==-rhs g)))
+    (cert (==? g) (var? (==-lhs g)))
+    (list (cons (==-lhs g) (==-rhs g))))
 
-  (define (=/=->substitution g) (==->substitution (noto g)))
+  (define (=/=->substitution g) ; To fully reduce =/=, we must unroll possibly list disequalities the disunifier lazily ignored.
+    (cert (=/=? g))
+    (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
 
   (define (simplify g) (if (fail? g) (values fail fail) (values g succeed)))
 
@@ -39,7 +41,7 @@
           (exclusive-cond
            [(list? c) (reduce-== g c)]
            [(==? c) (reduce-== g (==->substitution c))]
-           [(=/=? c) (reduce-=/= g (=/=->substitution c))]
+           [(=/=? c) (reduce-=/= g c)]
            [(pconstraint? c) (reduce-pconstraint g c)]
            [(conj? c) (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c))]
                                     [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c))]
@@ -89,14 +91,16 @@
                  (if (fail? simplified) (values succeed succeed) (simplify g)))]
      [else (assertion-violation 'reduce-pconstraint "Unrecognized constraint type" g)]))
 
-  (define (reduce-=/= g s)
+  (define (reduce-=/= g c)
     (exclusive-cond
-     [(==? g) (simplify (let ([s^ (mini-unify s (==-lhs g) (==-rhs g))])
+     [(==? g) (simplify (let* ([s (=/=->substitution c)]
+                               [s^ (mini-unify s (==-lhs g) (==-rhs g))])
                             (if (eq? s s^) fail g)))]
-     [(=/=? g) (simplify (let ([s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
+     [(=/=? g) (simplify (let* ([s (=/=->substitution c)]
+                                [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
                              (if (eq? s s^) succeed g)))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
-     [(proxy? g) (if (mini-normalized? s (proxy-var g)) (values succeed succeed) (check g))]
+     [(proxy? g) (if (mini-normalized? (=/=->substitution c) (proxy-var g)) (values succeed succeed) (check g))]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
 
   (define reduce-==/pconstraint ;TODO extract an expander for pconstraints analagous to matcho/expand
