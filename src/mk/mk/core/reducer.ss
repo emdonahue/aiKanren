@@ -43,20 +43,29 @@
            [(==? c) (reduce-== g (==->substitution c))]
            [(=/=? c) (reduce-=/= g c)]
            [(pconstraint? c) (reduce-pconstraint g c)]
-           [(conj? c) (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c))]
-                                    [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c))]
-                                    [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c))])
-                        (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck))))]
-           [(disj? c) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c))]
-                                   [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c))])
-                        (if (and (equal? simplified-lhs simplified-rhs) (equal? recheck-lhs recheck-rhs))
-                            (values simplified-lhs recheck-rhs) (simplify g)))]
+           [(conj? c) (reduce-conj g c)]
+           [(disj? c) (reduce-disj g c)]
            [(noto? c) (reduce-noto g (noto-goal c))]
            [(matcho? c) (reduce-matcho g c)]
            [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
-           [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))
-    )
+           [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])])))
 
+  (define (reduce-conj g c)
+    (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c))]
+                  [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c))]
+                  [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c))])
+      (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
+  
+  (define (reduce-disj g c)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c))]
+                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c))])
+      (cond
+       [(and (equal? simplified-lhs simplified-rhs)
+             (equal? recheck-lhs recheck-rhs))
+        (values simplified-lhs recheck-rhs)]
+       [(and (trivial? simplified-lhs) (trivial? simplified-rhs)) (simplify (disj simplified-lhs simplified-rhs) )]
+       [else (simplify g)])))
+  
   (define (reduce-constraint/noto g c)
     (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c)])
       (let ([d (disj (noto simplified) (noto recheck))])

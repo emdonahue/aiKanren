@@ -98,7 +98,6 @@
  (tassert "reduce conj =/= both simplify" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x1 1))) (list succeed succeed))
 
  ;; === DISJUNCTION ===
- ;;TODO test disj simplifying disj and needing recheck
  (tassert "reduce disj =/= lhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x2 2))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= rhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (=/= x1 1))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= neither succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 1) (=/= x2 2))) (list (=/= x1 1) succeed))
@@ -106,6 +105,8 @@
  (tassert "reduce disj =/= lhs fails" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x2 2))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= rhs fails" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (== x1 1))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= both fail" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 1))) (list fail fail))
+ (tassert "reduce disj =/= both trivial" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (== x1 1))) (list succeed succeed))
+ (tassert "reduce disj =/= both trivial reverse" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x1 1))) (list succeed succeed))
  (tassert "reduce disj =/= lhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 1))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= rhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 x2))) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= both reduce" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 x2))) (list (=/= x2 1) succeed))
