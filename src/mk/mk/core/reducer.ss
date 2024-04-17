@@ -17,7 +17,7 @@
 
   (define (reduce-constraint g c) ; TODO ensure that succeed/fail constraints always match
     ;; Reduce existing constraint g using new constraint c, possibly with bindings s.
-    (cert (goal? g) (not (fail? c)) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
+    (cert (goal? g) (or (fail? g) (not (fail? c))) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
     (if (succeed? c) (simplify g)
         (exclusive-cond
          [(or (fail? g) (succeed? g)) (values g g)]
