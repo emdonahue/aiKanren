@@ -102,40 +102,41 @@
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
       (let-values ([(g/simplified g/recheck) (reduce-constraint g c)])
-        
-       (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
-           (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO can we just store this? no need to keep solving in current impl, but may need to recheck some constraints?
-               (let-values ([(g/simplified g/recheck) (reduce-constraint g c)])
+        (if (or (succeed? g/simplified) (fail? g/simplified)) ; If he stored constraints completely eliminate g, 
+            (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
+            (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; If g is trivially satisfied or unsatisfiable, skip the rest and continue with ctn.
+                (if (disj? g) (solve-constraint g s ctn resolve delta) ; TODO can we just store this? no need to keep solving in current impl, but may need to recheck some constraints?
+                    (let-values ([(g/simplified g/recheck) (reduce-constraint g c)])
                                         ;(printf "g ~s g/recheck ~s simplified ~s~%" g g/recheck g/simplified)
-                 (cert (or (succeed? g/recheck) (fail? g/recheck)))
-                 (if (and (or (succeed? g/simplified) (fail? g/simplified)) ;TODO are all 4 cases possible?
-                          (or (succeed? g/recheck) (fail? g/recheck)))
-                     (solve-constraint (conj g/simplified g/recheck) s ctn resolve delta)
-                     (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
-                       (solve-constraint
-                        recheck (extend
-                                 (if (var? (=/=-rhs g))
-                                     (add-proxy s (=/=-rhs g) (=/=-lhs g)) s)
-                                 (=/=-lhs g) (conj g simplified)) ctn resolve (conj delta g)))))
-               #;
-               (let ([g (reduce-constraint g c)]) ;
-               (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ;
-               (let ([c (reduce-constraint c g)]) ;
-               (if (fail? c) (values fail failure) ;
-               (let ([sub (mini-unify '() (=/=-lhs g) (=/=-rhs g))]) ;
-               (let-values ([(simplified recheck) (conj-partition (lambda (g) (normalized? g sub)) c)]) ;TODO partition simplified into only depending on the same vars as g and set directly ;
-               (solve-constraint        ;
-               succeed                  ;
-               (store-constraint        ;
-               (remove-constraint       ;
-               (if (var? (=/=-rhs g)) (remove-constraint s (=/=-rhs g)) s) ;
-               (=/=-lhs g))             ;
-               (conj g simplified)) ctn (conj recheck resolve) (conj delta g))))))))
-               #;
-               (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs g) (=/=-rhs g) g)]) ; Simplify the constraints with the first disjoined =/=. ;
-               (org-display unified disunified recheck diseq) ;
-               (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn. ;
-               (solve-constraint ctn (store-constraint (extend s (=/=-lhs g) disunified) diseq) succeed (conj recheck resolve) (conj delta g)))))))))
+                      (cert (or (succeed? g/recheck) (fail? g/recheck)))
+                      (if (and (or (succeed? g/simplified) (fail? g/simplified)) ;TODO are all 4 cases possible?
+                               (or (succeed? g/recheck) (fail? g/recheck)))
+                          (solve-constraint (conj g/simplified g/recheck) s ctn resolve delta)
+                          (let-values ([(simplified recheck) (reduce-constraint c g)]) ; TODO we can package g with simplified and then manually add a proxy if it has a rhs var. just store a proxy or succeed
+                            (solve-constraint
+                             recheck (extend
+                                      (if (var? (=/=-rhs g))
+                                          (add-proxy s (=/=-rhs g) (=/=-lhs g)) s)
+                                      (=/=-lhs g) (conj g simplified)) ctn resolve (conj delta g)))))
+                    #;
+                    (let ([g (reduce-constraint g c)]) ; ;
+                    (if (or (succeed? g) (fail? g)) (solve-constraint g s ctn resolve delta) ; ;
+                    (let ([c (reduce-constraint c g)]) ; ;
+                    (if (fail? c) (values fail failure) ; ;
+                    (let ([sub (mini-unify '() (=/=-lhs g) (=/=-rhs g))]) ; ;
+                    (let-values ([(simplified recheck) (conj-partition (lambda (g) (normalized? g sub)) c)]) ;TODO partition simplified into only depending on the same vars as g and set directly ; ;
+                    (solve-constraint        ; ;
+                    succeed                  ; ;
+                    (store-constraint        ; ;
+                    (remove-constraint       ; ;
+                    (if (var? (=/=-rhs g)) (remove-constraint s (=/=-rhs g)) s) ; ;
+                    (=/=-lhs g))             ; ;
+                    (conj g simplified)) ctn (conj recheck resolve) (conj delta g))))))))
+                    #;
+                    (let-values ([(unified disunified recheck diseq) (simplify-=/= c (=/=-lhs g) (=/=-rhs g) g)]) ; Simplify the constraints with the first disjoined =/=. ; ;
+                    (org-display unified disunified recheck diseq) ; ;
+                    (if (succeed? unified) (solve-constraint ctn s succeed resolve delta) ; If the constraints entail =/=, skip the rest and continue with ctn. ; ;
+                    (solve-constraint ctn (store-constraint (extend s (=/=-lhs g) disunified) diseq) succeed (conj recheck resolve) (conj delta g))))))))))
 
   (define (normalized? g s)
     (exclusive-cond
