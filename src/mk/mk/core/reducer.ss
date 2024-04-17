@@ -100,7 +100,7 @@
                                 [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
                              (if (eq? s s^) succeed g)))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
-     [(proxy? g) (if (mini-normalized? (=/=->substitution c) (proxy-var g)) (values succeed succeed) (check g))]
+     [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))
 
   (define reduce-==/pconstraint ;TODO extract an expander for pconstraints analagous to matcho/expand
