@@ -104,10 +104,10 @@
       (let-values ([(g g/recheck) (reduce-constraint g c)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.
         (if (trivial? g) ; If he stored constraints completely eliminate g,
             (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
-            (begin (printf "c ~s " c)
+            (begin ;(printf "c ~s " c)
                    (let-values ([(c c/recheck) (reduce-constraint c g)]) ; Determine which stored constraints need to be rechecked.
                      (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
-                       (printf "g/simplified ~s c/simplified ~s c/recheck ~s~%" g c c/recheck)
+                    ;   (printf "g/simplified ~s c/simplified ~s c/recheck ~s~%" g c c/recheck)
                        (cert (or (succeed? c/recheck) (not (normalized? c/recheck attr-vars))))
                        (solve-constraint ; Run the constraints that need to be rerun,
                         c/recheck (extend ; and replace the store constraints in the store along with the new g.

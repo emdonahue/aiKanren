@@ -60,10 +60,11 @@
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c))]
                  [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c))])
       (cond
+       [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
+       [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
        [(and (equal? simplified-lhs simplified-rhs)
              (equal? recheck-lhs recheck-rhs))
         (values simplified-lhs recheck-rhs)]
-       [(and (trivial? simplified-lhs) (trivial? simplified-rhs)) (simplify (disj simplified-lhs simplified-rhs) )]
        [else (simplify g)])))
   
   (define (reduce-constraint/noto g c)
