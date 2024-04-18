@@ -4,27 +4,39 @@
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core utils) (mk core goals) (mk core mini-substitution))
 
   (define reifier/query 'query)
+  (define reifier/constraints 'constraints)
   (define reifier/pretty-print 'pretty-print)
   (define reifier/state 'state)
-  (define reifier (make-parameter reifier/query)) ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation. Defaults to query
+  (define reifier (make-parameter reifier/constraints)) ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation. Defaults to query
 
-  (define (reify-answer q s) ; Determine the return type based on parameters.
-    (cert (state? s))
-    (exclusive-cond
-     [(eq? (reifier) reifier/query) (reify s q)]
-     [(eq? (reifier) reifier/state) s]
-     [(eq? (reifier) reifier/pretty-print) (reify/pretty-print (reify s q))]
-     [else (assertion-violation 'reifier "Unrecognized reifier" (reifier))]))
-
-  (define reify/pretty-print
+  (define reify-answer
     (case-lambda
-      [(r) (reify/pretty-print r (extract-vars '() r))]
-      [(r vs)
-       (cond
-        [(var? r) (cdr (assq r vs))]
-        [(list? r) (map (lambda (x) (reify/pretty-print x vs)) r)]
-        [(vector? r) (reify/pretty-print (vector->list r) vs)]
-        [else r])]))
+      [(q s) (reify-answer q s (reifier))]
+      [(q s r)
+       (cert (state? s))
+       (exclusive-cond
+        [(eq? r reifier/constraints) (reify s q)]
+        [(eq? r reifier/query) (reify-var s q)]
+        [(eq? r reifier/state) s]
+        [(eq? r reifier/pretty-print) (reify/pretty-print (reify-var s q) s)]
+        [(pair? r) (cons (reify-answer q s (car r)) (reify-answer q s (cdr r)))]
+        [else (assertion-violation 'reifier "Unrecognized reifier" r)])]))
+
+  (define (reify/pretty-print q s)
+    (let ([vs (extract-vars '() q)])
+      (cons
+       (reify/pretty-print/query q (extract-vars '() q))
+       (reify/pretty-print/constraints q s vs))))
+
+  (define (reify/pretty-print/query q vs)
+    (cond
+     [(var? q) (cdr (assq q vs))]
+     [(list? q) (map (lambda (x) (reify/pretty-print/query x vs)) q)]
+     [else q]))
+
+  (define (reify/pretty-print/constraints q s vs)
+    '())
+
 
   (define (extract-vars vs r)
     (cond
