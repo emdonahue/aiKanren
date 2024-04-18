@@ -34,7 +34,12 @@
                       (reify/pretty-print/vars (cdr q) vs))]
      [(matcho? q)
       (reify/pretty-print/vars
-       (list 'matcho (matcho-attributed-vars q) (matcho-ctn q)) vs)]
+       (list (matcho-ctn q) (matcho-attributed-vars q)) vs)]
+     [(pconstraint? q)
+      (reify/pretty-print/vars
+       (list (pconstraint-procedure q) (pconstraint-data q) (pconstraint-vars q)) vs)]
+     [(=/=? q) (list '=/= (reify/pretty-print/vars (=/=-lhs q) vs)
+                     (reify/pretty-print/vars (=/=-rhs q) vs))]
      [(vector? q) (reify/pretty-print/vars (vector->list q) vs)]
      [else q]))
 
@@ -68,6 +73,7 @@
      [(var? q)
       (if (assq q vs) vs
           (cons (cons q (string->symbol (string-append "_." (number->string (length vs))))) vs))]
+     [(matcho? q) (extract-vars vs (matcho-attributed-vars q))]
      [(vector? q) (extract-vars vs (vector->list q))]
      [else vs]))
   

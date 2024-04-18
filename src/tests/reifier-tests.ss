@@ -18,8 +18,5 @@
    (tassert "reifier syms" (run1 (x1 x2) (symbolo x1) (symbolo x2)) '((_.0 _.1) (sym _.0 _.1)))
    (tassert "reifier num" (run1 x1 (numbero x1)) '(_.0 (num _.0)))
    (tassert "reifier nums" (run1 (x1 x2) (numbero x1) (numbero x2)) '((_.0 _.1) (num _.0 _.1)))
-   (tassert "reifier ad hoc" (run1 x1 (disj (=/= x1 1) (disj (symbolo x1) (matcho ([(a . d) x1])))))
-            '(_.0 (num _.0)))
-   )
-
- )
+   (tassert "reifier ad hoc" (with-output-to-string (lambda () (display (run1 x1 (disj (=/= x1 1) (disj (symbolo x1) (matcho absento ([(a . d) x1]))))))))
+            "(_.0 ((disj (=/= _.0 1) (disj (#<procedure type at constraints.ss:1478> #<procedure symbol?> (_.0)) (#<procedure absento> (_.0))))))")))
