@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk core state) (mk core solver) (mk constraints) (mk core reducer) (mk core goals) (mk core matcho) (mk tracing))
+(import (test-runner) (mk core) (mk core unifier) (mk core solver) (mk constraints) (mk core reducer) (mk core goals) (mk core matcho) (mk tracing))
 
 (define x1 (var 1))
 (define x2 (var 2))

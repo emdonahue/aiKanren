@@ -1,4 +1,4 @@
-(import (test-runner) (mk core) (mk constraints) (mk core state) (mk lists) (mk core goals) (mk tracing) (mk core reifier))
+(import (test-runner) (mk core) (mk constraints) (mk core unifier) (mk lists) (mk core goals) (mk tracing) (mk core reifier))
 
 (define (forever x)
   (fresh (y) (forever x)))

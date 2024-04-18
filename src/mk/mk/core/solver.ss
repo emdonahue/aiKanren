@@ -1,6 +1,6 @@
 (library (mk core solver) ; Central logic of the constraint solver
   (export run-constraint simplify-pconstraint)
-  (import (chezscheme) (mk core state) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core matcho) (mk core walk))
+  (import (chezscheme) (mk core unifier) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core matcho) (mk core walk))
 
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
@@ -78,11 +78,6 @@
 
 
 
-
-
-
-
-
   (define (solve-== g s ctn resolve delta)
               ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
               ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
@@ -95,10 +90,8 @@
                     (solve-constraint ctn (store-constraint s simplified) succeed (conj pending (conj resolve committed))
                                       delta))))
 
-  ;; x=/=1
-  ;; x==1 | x==2 -> succeed, fail | x==2 -> succeed, x==2
-  ;; x=/=1 | x==2 -> x=/=1, succeed|x==2 -> x=/=1, succeed
-  (org-define (solve-=/= g s ctn resolve delta)
+  
+  (org-define (solve-=/= g s ctn resolve delta) ; TODO simplify ctn
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked

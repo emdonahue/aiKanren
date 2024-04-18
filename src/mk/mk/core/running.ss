@@ -4,7 +4,7 @@
           query
           search-strategy search-strategy/interleaving search-strategy/dfs search-strategy/priority          
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
-  (import (chezscheme) (mk core search) (mk core state) (mk core streams) (mk core utils) (mk core goals) (mk core variables) (mk core reifier))
+  (import (chezscheme) (mk core search) (mk core unifier) (mk core streams) (mk core utils) (mk core goals) (mk core variables) (mk core reifier))
 
   ;; === RUNTIME PARAMETERS ===
   
