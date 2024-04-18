@@ -4,7 +4,7 @@
           succeed fail succeed? fail? trivial?
           make-noto noto? noto-goal
           make-conj conj? conj-lhs conj-rhs
-          make-disj disj? disj-lhs disj-rhs
+          make-disj disj? disj-lhs disj-rhs disj->list
           suspend suspend? suspend-goal
           make-matcho matcho? matcho-ctn matcho-substitution
           proxy proxy? proxy-var proxy proxy-id
@@ -244,6 +244,13 @@
     (let-values ([(cs ds lhs rhs) (disj-factorize lhs rhs)])
       (conj cs (conj (if (or (not (conj-memp lhs ==?)) (conj-memp rhs ==?)) (disj lhs rhs) (disj rhs lhs)) ds))))
 
+  (define disj->list
+    (case-lambda
+      [(d) (disj->list d '())]
+      [(d ds)
+       (if (disj? d)
+           (disj->list (disj-lhs d) (disj->list (disj-rhs d) ds))
+           (cons d ds))]))
   
   ;; === SUSPEND ===
   (define-structure (suspend goal))

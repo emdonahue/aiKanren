@@ -5,7 +5,7 @@
    lazy-run lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-cdr* ; Lazy
    succeed fail == conde fresh exist matcho constraint conj disj noto =/= ; Goals
    __ ; Quantification
-   reifier reifier/state reifier/query reifier/pretty-print ; Reification
+   reifier reifier/state reifier/query reifier/pretty-print reifier/constraints ; Reification
    max-depth search-strategy ; Search Parameters
    var var? var-id ; Variables
    state state? state-substitution state-varid state-attributes ; Streams
