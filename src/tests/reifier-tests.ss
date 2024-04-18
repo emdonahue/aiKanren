@@ -12,7 +12,8 @@
  (parameterize ([reifier reifier/pretty-print])
    (tassert "reifier var" (run1 (x1 x2) (== x1 x2)) '((_.0 _.0)))
    (tassert "reifier vars" (run1 x1 (fresh (x2 x3) (== x1 (cons x2 x3)))) '((_.0 . _.1)))
-   (tassert "reifier var" (run1 x1 (=/= x1 1)) '(_.0 (=/= (_.0 . 1))))
+   (tassert "reifier =/=" (run1 x1 (=/= x1 1)) '(_.0 (=/= (_.0 . 1))))
+   (tassert "reifier =/=s" (run1 (x1 x2) (=/= x1 1) (=/= x1 x2)) '((_.0 _.1) (=/= (_.0 . 1) (_.0 . _.1))))
 
 
    )
