@@ -26,25 +26,26 @@
     (let ([vs (extract-vars '() q)])
       (cons
        (reify/pretty-print/query q (extract-vars '() q))
-       (reify/pretty-print/constraints q s vs))))
+       (reify/pretty-print/constraints vs s))))
 
   (define (reify/pretty-print/query q vs)
     (cond
      [(var? q) (cdr (assq q vs))]
-     [(list? q) (map (lambda (x) (reify/pretty-print/query x vs)) q)]
+     [(pair? q) (cons (reify/pretty-print/query (car q) vs)
+                      (reify/pretty-print/query (cdr q) vs))]
      [else q]))
 
-  (define (reify/pretty-print/constraints q s vs)
+  (define (reify/pretty-print/constraints vs s)
     '())
 
 
-  (define (extract-vars vs r)
+  (define (extract-vars vs q)
     (cond
-     [(list? r) (fold-left extract-vars vs r)]
-     [(var? r)
-      (if (assq r vs) vs
-          (cons (cons r (string->symbol (string-append "_." (number->string (length vs))))) vs))]
-     [(vector? r) (extract-vars vs (vector->list r))]
+     [(pair? q) (extract-vars (extract-vars vs (car q)) (cdr q))]
+     [(var? q)
+      (if (assq q vs) vs
+          (cons (cons q (string->symbol (string-append "_." (number->string (length vs))))) vs))]
+     [(vector? q) (extract-vars vs (vector->list q))]
      [else vs]))
   
   (define reify ;TODO reify vars inside constraints
