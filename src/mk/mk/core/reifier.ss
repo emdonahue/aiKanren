@@ -39,14 +39,17 @@
            [vs (extract-vars vs cs)])
       (let*-values ([(ds cs) (conj-partition =/=? cs)]
                     [(syms cs) (conj-partition symbolo? cs)]
-                    [(nums cs) (conj-partition numbero? cs)])
+                    [(nums cs) (conj-partition numbero? cs)]
+                    [(cs) (conj-filter (lambda (c) (not (proxy? c))) cs)])
         (append
          (if (succeed? ds) '()
              (list (cons '=/= (conj-fold (lambda (ds d) (cons (cons (=/=-lhs d) (=/=-rhs d)) ds)) '() ds))))
          (if (succeed? syms) '()
              (list (cons 'sym (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() syms))))
          (if (succeed? nums) '()
-             (list (cons 'num (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() nums))))))))
+             (list (cons 'num (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() nums))))
+         (if (succeed? cs) '()
+             (list (conj-fold (lambda (cs c) (cons c cs)) '() cs)))))))
 
 
   (define (symbolo? c) ; TODO make pconstraint checks in reifier more precise by factoring out internals to be shared 

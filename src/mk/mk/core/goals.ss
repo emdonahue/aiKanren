@@ -152,11 +152,11 @@
                 [(succeed? r) l]
                 [else (make-conj l r)]))))]))
 
-  (define (conj-filter c p)
+  (define (conj-filter p c)
     (if (conj? c)
         (conj
-         (conj-filter (conj-lhs c) p)
-         (conj-filter (conj-rhs c) p))
+         (conj-filter p (conj-lhs c))
+         (conj-filter p (conj-rhs c)))
         (if (p c) c succeed)))
 
   (define (conj-diff c d)
@@ -234,8 +234,8 @@
 
   (define (disj-factorize lhs rhs)
     (let ([intersection (conj-intersect lhs rhs)])
-      (values (conj-filter intersection (lambda (c) (not (disj? c))))
-              (conj-filter intersection disj?)
+      (values (conj-filter (lambda (c) (not (disj? c))) intersection)
+              (conj-filter disj? intersection)
               (conj-diff lhs intersection)
               (conj-diff rhs intersection))))
 
