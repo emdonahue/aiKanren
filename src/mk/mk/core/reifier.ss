@@ -49,6 +49,7 @@
       (let*-values ([(ds cs) (conj-partition =/=? cs)]
                     [(syms cs) (conj-partition symbolo? cs)]
                     [(nums cs) (conj-partition numbero? cs)]
+                    [(bools cs) (conj-partition booleano? cs)]
                     [(cs) (conj-filter (lambda (c) (not (proxy? c))) cs)])
         (append
          (if (succeed? ds) '()
@@ -57,6 +58,8 @@
              (list (cons 'sym (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() syms))))
          (if (succeed? nums) '()
              (list (cons 'num (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() nums))))
+         (if (succeed? bools) '()
+             (list (cons 'bool (conj-fold (lambda (cs c) (cons (==-lhs (disj-lhs c)) cs)) '() bools))))
          (if (succeed? cs) '()
              (list (conj-fold (lambda (cs c) (cons c cs)) '() cs)))))))
 
@@ -66,6 +69,17 @@
 
   (define (numbero? c) ; TODO make pconstraint checks in reifier more precise by factoring out internals to be shared 
     (and (pconstraint? c) (eq? (pconstraint-data c) number?)))
+
+  (define (booleano? c)
+    (and (disj? c)
+         (let ([lhs (disj-lhs c)]
+               [rhs (disj-rhs c)])
+           (and 
+            (==? lhs)
+            (==? rhs)
+            (equal? (==-lhs lhs) (==-lhs rhs))
+            (or (and (eq? (==-rhs lhs) #t) (eq? (==-rhs rhs) #f))
+                (and (eq? (==-rhs lhs) #f) (eq? (==-rhs rhs) #t)))))))
   
   (define (extract-vars vs q)
     (cond
