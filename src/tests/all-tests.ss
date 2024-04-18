@@ -8,6 +8,7 @@
 (load "src/tests/mini-substitution-tests.ss")
 (load "src/tests/state-tests.ss")
 (load "src/tests/goal-tests.ss")
+(load "src/tests/reifier-tests.ss")
 (load "src/tests/reducer-tests.ss")
 (load "src/tests/solver-tests.ss")
 (load "src/tests/matcho-tests.ss")

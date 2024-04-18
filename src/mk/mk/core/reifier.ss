@@ -1,8 +1,39 @@
 (library (mk core reifier) ; Responsible for walking and reifying vars
-  (export reify reify-var walk walk-var walk-var-val substitution-ref walk-var*)
+  (export reify reify-var walk walk-var walk-var-val substitution-ref walk-var* reify-answer
+          reifier reifier/query reifier/state reifier/pretty-print)
   (import (chezscheme) (mk core sbral) (mk core variables) (mk core streams) (mk core utils) (mk core goals) (mk core mini-substitution))
-  
-  ;; === WALK & REIFY ===
+
+  (define reifier/query 'query)
+  (define reifier/pretty-print 'pretty-print)
+  (define reifier/state 'state)
+  (define reifier (make-parameter reifier/query)) ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation. Defaults to query
+
+  (define (reify-answer q s) ; Determine the return type based on parameters.
+    (cert (state? s))
+    (exclusive-cond
+     [(eq? (reifier) reifier/query) (reify s q)]
+     [(eq? (reifier) reifier/state) s]
+     [(eq? (reifier) reifier/pretty-print) (reify/pretty-print (reify s q))]
+     [else (assertion-violation 'reifier "Unrecognized reifier" (reifier))]))
+
+  (define reify/pretty-print
+    (case-lambda
+      [(r) (reify/pretty-print r (extract-vars '() r))]
+      [(r vs)
+       (cond
+        [(var? r) (cdr (assq r vs))]
+        [(list? r) (map (lambda (x) (reify/pretty-print x vs)) r)]
+        [(vector? r) (reify/pretty-print (vector->list r) vs)]
+        [else r])]))
+
+  (define (extract-vars vs r)
+    (cond
+     [(list? r) (fold-left extract-vars vs r)]
+     [(var? r)
+      (if (assq r vs) vs
+          (cons (cons r (string->symbol (string-append "_." (number->string (length vs))))) vs))]
+     [(vector? r) (extract-vars vs (vector->list r))]
+     [else vs]))
   
   (define reify ;TODO reify vars inside constraints
     (case-lambda

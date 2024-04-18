@@ -56,7 +56,16 @@
    (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1 #f) (list (proxy x2) succeed)))
 
 
-  ;; === DISEQUALITY ===
+ ;; === DISEQUALITY ===
+ ;; =/= can only simplify ==->fail (with different ground) and =/=->succeed (with identical everything). It can be simplified by ==->fail (different ground) and anything else->succeed.
+ ;; g contains no information when c is conjoined with a non-disj that reduces it -> succeed.
+ ;; a disj simplifies g->trivial when each branch either succeeds or fails, so each branch either fails with == or succeeds with anything
+ ;; g simplifies a disj when any branch either fails with ==, or succeeds with an identical =/=.
+ ;; if all disj branches fail, we can fail and continue
+ ;; problems arise when all disj branches simplify g, and g simplifies any disj branch
+ ;; theres also a problem if we have x=/=1 and a disj with a branch x1==x2 & x2==2, although can that happen if the constraint is normalized? we may not need to solve disj branches beyond the first bc they wont be normalized
+ ;; we need to add an asymmetric flag where asymmetric successes (=/= and maybe pconstraint and matcho) dont fire inside disj. that way we can use the asymmetry to simplify stored disj without skipping fresh constraints
+ ;; can we just skip disj in one direction since failure is symmetric always? no because two symbolos in a disj might cancel a new diseq
  (tassert "reduce =/= == succeed" (reduce-constraint (== x1 1) (=/= x1 1) #f) (list fail fail))
  (tassert "reduce =/= == undecidable" (reduce-constraint (== x1 (cons x2 x3)) (=/= x1 1) #f) (list (== x1 (cons x2 x3)) succeed))
  (tassert "reduce =/= =/= fail" (reduce-constraint (=/= x1 1) (=/= x1 1) #f) (list succeed succeed))

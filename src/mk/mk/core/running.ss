@@ -2,8 +2,7 @@
   (export run run* run1
           lazy-run
           query
-          search-strategy search-strategy/interleaving search-strategy/dfs search-strategy/priority
-          answer-type answer-type/reified answer-type/state
+          search-strategy search-strategy/interleaving search-strategy/dfs search-strategy/priority          
           lazy-run-cdr* lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-take)
   (import (chezscheme) (mk core search) (mk core state) (mk core streams) (mk core utils) (mk core goals) (mk core variables) (mk core reifier))
 
@@ -17,18 +16,8 @@
     (make-parameter search-strategy/interleaving
                     (lambda (s)
                       (unless (or (eq? s search-strategy/interleaving) (eq? s search-strategy/dfs) (eq? s search-strategy/priority))
-                        (assertion-violation 'answer-type "Unrecognized search-strategy" s))
+                        (assertion-violation 'reifier "Unrecognized search-strategy" s))
                       s)))
-
-  (define answer-type/reified 'reified)
-  (define answer-type/state 'state)
-  (define answer-type ; Defines the type of answers returned by run. May be 'reified for reified query variables or 'state for the entire internal state representation.
-    ; Default: 'reified
-    (make-parameter answer-type/reified
-                    (lambda (t)
-                      (unless (or (eq? t answer-type/reified) (eq? t answer-type/state))
-                        (assertion-violation 'answer-type "Unrecognized answer-type" t))
-                      t)))
   
   ;; === INTERNAL PARAMETERS
   
@@ -108,9 +97,4 @@
         (let ([r (lazy-run-cdr* r)])
           (if (lazy-run-null? r) '()
               (cons (reify-answer (lazy-run-query r) (lazy-run-car r))
-                    (lazy-run-take (fx1- n) (lazy-run-cdr r)))))))
-
-  (define (reify-answer q s) ; Determine the return type based on parameters.
-    (cert (state? s))
-    (if (eq? (answer-type) answer-type/reified)
-        (reify s q) s)))
+                    (lazy-run-take (fx1- n) (lazy-run-cdr r))))))))

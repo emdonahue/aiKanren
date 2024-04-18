@@ -99,5 +99,5 @@
  (tassert "run* occurs check deep rhs" (run* (x1 x2) (== x2 (list x1)) (== x1 (cons 1 x2))) '())
  ;;(tassert "reify cyclic" (run1 x1 (== x1 (cons x1 x1))) (cons x1 x1)) ;TODO test reify cyclic once unsound unification implemented
 
- (parameterize ([answer-type 'state])
+ (parameterize ([reifier 'state])
    (tassert "trivial fresh does not extend substitution" (state-varid (run1 x1 (fresh (x2) succeed))) 1)))

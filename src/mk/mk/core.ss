@@ -5,10 +5,11 @@
    lazy-run lazy-run-null? lazy-run-car? lazy-run-car lazy-run-cdr lazy-run-cdr* ; Lazy
    succeed fail == conde fresh exist matcho constraint conj disj noto =/= ; Goals
    __ ; Quantification
-   answer-type max-depth search-strategy ; Parameters
+   reifier reifier/state reifier/query reifier/pretty-print ; Reification
+   max-depth search-strategy ; Search Parameters
    var var? var-id ; Variables
    state state? state-substitution state-varid state-attributes ; Streams
    state-priority priority-< beam-size ; Priority
    )
   
-  (import (chezscheme) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams)))
+  (import (chezscheme) (mk core matcho) (mk core search) (mk core running) (mk core variables) (mk core goals) (mk core streams) (mk core reifier)))

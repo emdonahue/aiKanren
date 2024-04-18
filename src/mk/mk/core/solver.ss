@@ -100,33 +100,18 @@
   ;; x=/=1 | x==2 -> x=/=1, succeed|x==2 -> x=/=1, succeed
   (org-define (solve-=/= g s ctn resolve delta)
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
-    ;; =/= can only simplify ==->fail (with different ground) and =/=->succeed (with identical everything). It can be simplified by ==->fail (different ground) and anything else->succeed.
-    ;; g contains no information when c is conjoined with a non-disj that reduces it -> succeed.
-    ;; a disj simplifies g->trivial when each branch either succeeds or fails, so each branch either fails with == or succeeds with anything
-    ;; g simplifies a disj when any branch either fails with ==, or succeeds with an identical =/=.
-    ;; if all disj branches fail, we can fail and continue
-    ;; problems arise when all disj branches simplify g, and g simplifies any disj branch
-    ;; theres also a problem if we have x=/=1 and a disj with a branch x1==x2 & x2==2, although can that happen if the constraint is normalized? we may not need to solve disj branches beyond the first bc they wont be normalized
-    ;; we need to add an asymmetric flag where asymmetric successes (=/= and maybe pconstraint and matcho) dont fire inside disj. that way we can use the asymmetry to simplify stored disj without skipping fresh constraints
-    ;; can we just skip disj in one direction since failure is symmetric always? no because two symbolos in a disj might cancel a new diseq
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
-      (let-values ([(g g/recheck) (reduce-constraint g c #t)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.
-        (if (trivial? g) ; If he stored constraints completely eliminate g,
+      (let-values ([(g g/recheck) (reduce-constraint g c #t)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store. This is an asymmetric check, bc even if g is logically satisfied eg by a disjunction, it still may be able to simplify the store.
+        (if (trivial? g) ; If the stored constraints completely eliminate g,
             (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
-            (begin ;(printf "c ~s " c)
-                   (let-values ([(c c/recheck) (reduce-constraint c g #f)]) ; Determine which stored constraints need to be rechecked.
-                     (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
-                    ;   (printf "g/simplified ~s c/simplified ~s c/recheck ~s~%" g c c/recheck)
-       ;                (cert (or (succeed? c/recheck) (not (normalized? c/recheck attr-vars))))
-                       (solve-constraint ; Run the constraints that need to be rerun,
-                        c/recheck (extend ; and replace the store constraints in the store along with the new g.
-                                   (if (not (null? (cdr attr-vars)))
-                                       (add-proxy s (cadr attr-vars) (car attr-vars)) s) ; Add a proxy to g's second var if needed.
-                                   (car attr-vars) (conj g c)) ctn resolve (conj delta g)))))))))
-  
-  (define (normalized? g s)
-                (for-all (lambda (v) (memq v s)) (attributed-vars g)))
+            (let*-values ([(c c/recheck) (reduce-constraint c g #f)]) ; Determine which stored constraints need to be rechecked. 
+              (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
+                (solve-constraint ; Run the constraints that need to be rerun,
+                 c/recheck (extend ; and replace the store constraints in the store along with the new g.
+                            (if (not (null? (cdr attr-vars)))
+                                (add-proxy s (cadr attr-vars) (car attr-vars)) s) ; Add a proxy to g's second var if needed.
+                            (car attr-vars) (conj g c)) ctn resolve (conj delta g))))))))
 
   (define solve-pconstraint
     (case-lambda
@@ -231,7 +216,7 @@
     (org-case-lambda attributed-vars
       [(g) (attributed-vars g '())]
       [(g vs)
-       (cert (goal? g))
+       (cert (goal? g) (not (proxy? g)))
        (exclusive-cond
         [(succeed? g) vs]
         [(disj? g) (attributed-vars (disj-car g) vs)]

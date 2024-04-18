@@ -13,7 +13,7 @@
 (test-suite
  constraints
  ;; === VARID ===
- (parameterize ([answer-type 'state])
+ (parameterize ([reifier 'state])
    (let ([s (run1 (x1) (constraint (== x1 1)))])
      (tassert "constraint == store" (reify s x1) 1)
      (tassert "constraint == vid" (state-varid s) 1))

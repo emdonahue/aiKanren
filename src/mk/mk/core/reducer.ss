@@ -12,6 +12,7 @@
   (define (=/=->substitution g) ; To fully reduce =/=, we must unroll possibly list disequalities the disunifier lazily ignored.
     (cert (=/=? g)) ; TODO call =/= sub once per reduction. maybe thread thru a separate substitution after all?
     ;; TODO try only extracting the already bound variables from =/= substitution without unifying each time
+    ;; TODO we may need to worry about failure if we do something less than full unification, so maybe we need a mini-disunify
     (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
 
   (define (simplify g) (if (fail? g) (values fail fail) (values g succeed)))
