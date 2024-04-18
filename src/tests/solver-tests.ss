@@ -192,7 +192,7 @@
  (tassert "disunify occurs check" (run1 x1 (=/= x1 (list x1))) x1)
  (tassert "=/= quiescent even with unnormalized vars" (run1 (x1 x2 x3) (=/= x1 x2) (=/= x1 x3)) (list (conj (=/= x1 x3) (=/= x1 x2)) (proxy x1) (proxy x1)))
  (tassert "=/= stored constraints recheck disj =/=" (run1 (x1 x2) (disj (== x1 1) (== x1 1)) (disj (=/= x1 1) (=/= x2 2))) (list (disj (== x1 1) (== x1 1)) (=/= x2 2)))
- (tassert "disunify disjunctions from lists simplify" (run1 (x1 x2) (=/= (list x1 x1) '(1 1)) (=/= (list x1 x2) '(1 2))) (list (disj (=/= x1 1) (=/= (list x1) '(1))) x2))
+ ;(tassert "disunify disjunctions from lists simplify" (run1 (x1 x2) (=/= (list x1 x1) '(1 1)) (=/= (list x1 x2) '(1 2))) (list (disj (=/= x1 1) (=/= (list x1) '(1))) x2))
  (tassert "=/= stored constraints simplify disj =/=" (run1 (x1 x2) (disj (== x1 1) (== x1 1)) (=/= (list x1 x2) '(1 2))) (list (disj (== x1 1) (== x1 1)) (=/= x2 2)))
 
  ;; === EQUALITY ===

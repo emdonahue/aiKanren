@@ -133,7 +133,7 @@
 
   
   (define (add-constraint s c vs) ;TODO consider sorting ids of variables before adding constraints to optimize adding to sbral. or possibly writing an sbral multi-add that does one pass and adds everything. would work well with sorted lists of attr vars to compare which constraints we can combine while adding
-    (cert (state? s) (goal? c) (list? vs))
+    (cert (state? s) (goal? c) (list? vs) (not (conj-memp c ==?)))
     ;; Proxy constraints with multiple attributed variables so that they only need to be solved once by whichever variable is checked first and can be removed from the global store so subsequent checks will simply succeed.
     (let ([stored-constraint (substitution-ref (state-substitution s) (car vs))])
       (cert (goal? stored-constraint))

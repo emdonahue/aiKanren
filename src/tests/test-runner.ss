@@ -8,7 +8,7 @@
   (define print-tests? (make-parameter #t))
 
   (define (tmessage)
-    (if (= 0 (failed)) (printf "~%Pass (~s)~%" (total))
+    (if (= 0 (failed)) (printf "Pass (~s)~%" (total))
         (printf "~%Failed: ~s/~s~%" (failed) (total))))
 
   (define-syntax test-suite
