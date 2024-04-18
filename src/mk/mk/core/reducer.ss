@@ -64,9 +64,12 @@
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric #t)]
                  [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t)])
       (cond
-       [asymmetric (if (and (fail? simplified-lhs) (fail? simplified-rhs)) (values fail fail) (simplify g))]
+       [asymmetric (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
+                       (simplify simplified-lhs) (simplify g))]
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
+       [(and (succeed? simplified-lhs) (succeed? simplified-rhs)) (values simplified-lhs simplified-lhs)]
+       #;
        [(and (equal? simplified-lhs simplified-rhs) ;TODO how necessary is this equal check in disj reducer?
              (equal? recheck-lhs recheck-rhs))
         (values simplified-lhs recheck-rhs)]

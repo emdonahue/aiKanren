@@ -8,8 +8,8 @@
   (define print-tests? (make-parameter #t))
 
   (define (tmessage)
-    (if (= 0 (failed)) (printf "Pass (~s)~%" (total))
-        (printf "Failed: ~s/~s~%" (failed) (total))))
+    (if (= 0 (failed)) (printf "~%Pass (~s)~%" (total))
+        (printf "~%Failed: ~s/~s~%" (failed) (total))))
 
   (define-syntax test-suite
     (syntax-rules ()
@@ -49,12 +49,11 @@
               (failed (fx1+ (failed)))
               (parameterize ([pretty-initial-indent 10]
                              [pretty-standard-indent 0])
-                (printf "Failed: ~s~%" title)
+                (printf "~%Failed: ~s~%" title)
                 (unless (eq? noop-handler handler)
                   (printf "Generated: ")
                   (pretty-print received-values))
                 (printf "Expected: ")
                 (pretty-print (if (procedure? expected) 'expected! expected))
                 (printf "Received: ")
-                (pretty-print received)
-                (printf "~%"))))))])))
+                (pretty-print received))))))])))
