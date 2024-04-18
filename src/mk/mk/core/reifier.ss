@@ -20,6 +20,7 @@
         [(eq? r reifier/state) s]
         [(eq? r reifier/pretty-print) (reify/pretty-print (reify-var s q) s)]
         [(pair? r) (cons (reify-answer q s (car r)) (reify-answer q s (cdr r)))]
+        [(null? r) '()]
         [else (assertion-violation 'reifier "Unrecognized reifier" r)])]))
 
   (define (reify/pretty-print q s)

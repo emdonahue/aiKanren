@@ -88,10 +88,13 @@ A function that disjoins two constraints. If applied to goals, they will be inte
 Negates a single goal or constraint, turning it into a negative constraint. Negated goals will be interpreted as constraints. A negated constraint operates like a generalized disequality. Negated conjunctions yield disjunctions of negated constraints. Negated disjunctions yield conjunctions of negated constraints. If the inner goal succeeds completely, the negated version will fail. If it fail, the negated version will succeed. If it is indeterminate, the negated version will suspend and wait until more variables are bound. Any goal that can be interpreted as a constraint can be negated.
 
 ### Run Interface
-#### answer-type
+#### reifier
 A parameter that controls the answers returned by the run interface. It may take several values:
-- 'reified (Default): Returns reified query variables, including reified versions of any constraints on those variables. These reified constraints will be the first order representations used internally.
-- 'state : Returns the state objects corresponding to each answer. The state contains the substitution and constraint store as well as any other data specific to a single path through the search tree.
+- `reifier/constraints` (Default): Returns reified query variables, including the first-order internal representations of constraints on the given variable if there is no bound value. This output is oriented towards computational reuse of outputs and debugging.
+- `reifier/state`: Returns the state objects corresponding to each answer. The state contains the substitution and constraint store as well as any other data specific to a single path through the search tree.
+- `reifier/query`: The reified query variables with no constraints. Constraints are simply ignored.
+- `reifier/pretty-print`: A human-readable pretty-printed version of both query variables and constraints.
+- Any pair, list, or tree of the above values: This will return a homomorphic answer with each of the above reifier types replaced with his output. This allows the user to specify multiple return types in the same run, such as query variables and the state.
 #### search-strategy
 A parameter specifying the strategy to be used for the search.
 - 'interleaving (Default): The standard miniKanren search
@@ -104,7 +107,7 @@ A parameter controlling the max search depth before forced failure. Depth is cal
 (run n x ...)
 (run n () ...)
 ```
-Runs the search and returns the first n answers. If the `answer-type` returns the query variables, they will be contained in a list in the order specified in the binding form. If the binding form is a single variable, then each answer will be a single value, not a list. `run` with an empty variable list will simply return as many empty lists as there are answers to be returned.
+Runs the search and returns the first n answers. If the `reifier` returns the query variables, they will be contained in a list in the order specified in the binding form. If the binding form is a single variable, then each answer will be a single value, not a list. `run` with an empty variable list will simply return as many empty lists as there are answers to be returned.
 #### run*
 ```scheme
 (run* (x y z) ...)
@@ -316,7 +319,7 @@ By default, as the traced program runs, it will print out a nested outline descr
 
 Logging goals exported by this package can be included during tracing to print arbitrary text at the relevant depth in the outline.
 
-In addition to a trace of the entire program, it is possible to use proof goals to narrow down which parts of the space will be searched without affecting the contents of the substitution. A proof goal accepts a trace and ensures that all answers returned by its child goals conform to that trace. For example, to examine the behavior of a particular program synthesized by a relational interpreter, a common workflow is to run the trace interpreter with the ground program and collect the trace either directly from the state (using the `answer-type` parameter, or else from the trace output. The interpreter can then be re-run with a fresh program variable but with a proof goal that constrains it to follow only the path that synthesizes that particular program. This makes it possible to explore parts of the search space without corrupting the search behavior itself.
+In addition to a trace of the entire program, it is possible to use proof goals to narrow down which parts of the space will be searched without affecting the contents of the substitution. A proof goal accepts a trace and ensures that all answers returned by its child goals conform to that trace. For example, to examine the behavior of a particular program synthesized by a relational interpreter, a common workflow is to run the trace interpreter with the ground program and collect the trace either directly from the state (using the `reifier` parameter, or else from the trace output. The interpreter can then be re-run with a fresh program variable but with a proof goal that constrains it to follow only the path that synthesizes that particular program. This makes it possible to explore parts of the search space without corrupting the search behavior itself.
 
 For developers working with the actual library source, the library supports a function similar to Chez Scheme's trace-* functions where define, lambda, cond, and a number of other forms support an org-* prefixed version. This causes them to print debugging information when tracing is enabled. Tracing can be forcibly enabled using the `org-trace` form, and internal functions will then print their arguments and return values at the appropriate level of the outline.
 
