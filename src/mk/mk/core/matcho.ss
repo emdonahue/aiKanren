@@ -2,7 +2,7 @@
 
   (export matcho/expand matcho-attributed-vars matcho/run
           matcho pattern->term)
-  (import (chezscheme) (mk core streams) (mk core variables) (mk core goals) (mk core mini-substitution) (mk core reifier) (mk core utils))
+  (import (chezscheme) (mk core streams) (mk core variables) (mk core goals) (mk core mini-substitution) (mk core walk) (mk core utils))
 
   ;; TODO make matcho work for pure values outside of mk. a la carte unification/pattern matching
   ;; TODO make a special pre-sequence to bind the pure single var renames with no pair patterns
