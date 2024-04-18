@@ -180,14 +180,11 @@
         (or (conj-memp (conj-lhs c) p) (conj-memp (conj-rhs c) p))
         (if (p c) c #f)))
   
-  (define (conj-fold p s cs) ;TODO is conj-fold ever used?
-    (cert (procedure? p) (conj? cs))
-    (let ([lhs (if (conj? (conj-lhs cs))
-                   (conj-fold p s (conj-lhs cs))
-                   (p s (conj-lhs cs)))])
-      (if (conj? (conj-rhs cs))
-          (conj-fold p lhs (conj-rhs cs))
-          (p lhs (conj-rhs cs)))))
+  (define (conj-fold p s cs)
+    (cert (procedure? p))
+    (if (not (conj? cs))
+        (p s cs)
+        (conj-fold p (conj-fold p s (conj-lhs cs)) (conj-rhs cs))))
 
   (define (conj-partition p cs)
     (if (conj? cs) (let-values ([(lhs-t lhs-f) (conj-partition p (conj-lhs cs))]

@@ -26,7 +26,8 @@
     (let ([vs (extract-vars '() q)])
       (cons
        (reify/pretty-print/query q (extract-vars '() q))
-       (reify/pretty-print/constraints vs s))))
+       (reify/pretty-print/query
+        (reify/pretty-print/constraints vs s) vs))))
 
   (define (reify/pretty-print/query q vs)
     (cond
@@ -36,7 +37,10 @@
      [else q]))
 
   (define (reify/pretty-print/constraints vs s)
-    '())
+    (let ([cs (fold-left conj succeed (filter goal? (map (lambda (v) (reify s (car v))) vs)))])
+      (let-values ([(ds cs) (conj-partition =/=? cs)])
+        (if (succeed? ds) '()
+            (list (cons '=/= (conj-fold (lambda (ds d) (cons (cons (=/=-lhs d) (=/=-rhs d)) ds)) '() ds)))))))
 
 
   (define (extract-vars vs q)

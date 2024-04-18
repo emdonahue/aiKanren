@@ -143,7 +143,7 @@
      [(==? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) (values fail fail) (simplify g))]
      [(=/=? g) ; -> succeed, =/=
       (if (failure? (mini-unify-substitution (matcho-substitution c) (=/=->substitution g)))
-          (values succeed succeed) (simplify g))]
+          (values succeed succeed) (simplify g))] ;TODO could a =/= of lists simultaneously fail?
      ;;TODO matchos with eq? lambda can cancel
      [else (assertion-violation 'reduce-matcho "Unrecognized constraint type" g)]))
 
