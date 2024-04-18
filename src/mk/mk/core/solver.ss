@@ -95,10 +95,20 @@
                     (solve-constraint ctn (store-constraint s simplified) succeed (conj pending (conj resolve committed))
                                       delta))))
 
-
-
+  ;; x=/=1
+  ;; x==1 | x==2 -> succeed, fail | x==2 -> succeed, x==2
+  ;; x=/=1 | x==2 -> x=/=1, succeed|x==2 -> x=/=1, succeed
   (define (solve-=/= g s ctn resolve delta)
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
+    ;; =/= can only simplify ==->fail (with different ground) and =/=->succeed (with identical everything). It can be simplified by ==->fail (different ground) and anything else->succeed.
+    ;; g contains no information when c is conjoined with a non-disj that reduces it -> succeed.
+    ;; a disj simplifies g->trivial when each branch either succeeds or fails, so each branch either fails with == or succeeds with anything
+    ;; g simplifies a disj when any branch either fails with ==, or succeeds with an identical =/=.
+    ;; if all disj branches fail, we can fail and continue
+    ;; problems arise when all disj branches simplify g, and g simplifies any disj branch
+    ;; theres also a problem if we have x=/=1 and a disj with a branch x1==x2 & x2==2, although can that happen if the constraint is normalized? we may not need to solve disj branches beyond the first bc they wont be normalized
+    ;; we need to add an asymmetric flag where asymmetric successes (=/= and maybe pconstraint and matcho) dont fire inside disj. that way we can use the asymmetry to simplify stored disj without skipping fresh constraints
+    ;; can we just skip disj in one direction since failure is symmetric always? no because two symbolos in a disj might cancel a new diseq
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
       (let-values ([(g g/recheck) (reduce-constraint g c)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.

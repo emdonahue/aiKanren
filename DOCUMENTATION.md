@@ -238,6 +238,11 @@ The inverse of `absento`. Ensures that `present` appears at least once in `term`
 (finite-domain x domain)
 ```
 Ensures that `x` is one of the elements in `domain`. Both can be arbitrary miniKanren values.
+#### all-different
+```scheme
+(all-different terms)
+```
+Ensures that all terms in the list `terms` are not equal to one another.
 #### ==> 
 ```scheme
 (==> P Q)
