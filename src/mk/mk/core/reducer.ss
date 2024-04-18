@@ -47,7 +47,7 @@
               [(=/=? c) (reduce-=/= g c asymmetric disjunction)]
               [(pconstraint? c) (reduce-pconstraint g c asymmetric disjunction)]
               [(conj? c) (reduce-conj g c asymmetric disjunction)]
-              [(disj? c) (reduce-disj g c asymmetric disjunction)]
+              [(disj? c) (reduce-disj g c asymmetric)]
               [(noto? c) (reduce-noto g (noto-goal c) asymmetric disjunction)]
               [(matcho? c) (reduce-matcho g c asymmetric disjunction)]
               [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
@@ -59,9 +59,9 @@
                   [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) asymmetric disjunction)])
       (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
   
-  (define (reduce-disj g c asymmetric disjunction)
-    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric disjunction)]
-                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric disjunction)])
+  (define (reduce-disj g c asymmetric)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric #t)]
+                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t)])
       (cond
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
@@ -113,9 +113,10 @@
                        [s^ (mini-unify s (==-lhs g) (==-rhs g))])
                   (if (eq? s s^) fail g)))]
      [(=/=? g) ; -> succeed, =/=
-      (simplify (let* ([s (=/=->substitution c)]
-                       [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
-                  (if (eq? s s^) succeed g)))]
+      (simplify (if (and asymmetric disjunction) g
+                 (let* ([s (=/=->substitution c)]
+                        [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
+                   (if (eq? s s^) succeed g))))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation 'reduce-=/= "Unrecognized constraint type" g)]))

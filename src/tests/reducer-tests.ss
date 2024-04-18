@@ -90,6 +90,7 @@
  (tassert "reduce =/= =/= (satisfies|undecidable)|(satisfied|undecidable)" (reduce-constraint (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) (=/= x1 1) #f) (list (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) succeed))
  (tassert "reduce =/= & proxy succeed" (reduce-constraint (proxy x1) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce =/= & proxy undecidable" (reduce-constraint (proxy x2) (=/= x1 1) #f) (list succeed (proxy x2)))
+ 
 
  ;; === CONJUNCTION ===
  (tassert "reduce conj =/= first simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x2 2)) #f) (list succeed succeed))
@@ -102,6 +103,7 @@
  (tassert "reduce disj =/= rhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (=/= x1 1)) #f) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= neither succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= both succeed" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x1 1)) #f) (list succeed succeed))
+ (tassert "reduce disj =/= both succeed asymmetric" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x1 1)) #t) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= lhs fails" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= rhs fails" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (== x1 1)) #f) (list (=/= x1 1) succeed))
  (tassert "reduce disj =/= both fail" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 1)) #f) (list fail fail))
