@@ -11,6 +11,7 @@
 
   (define (=/=->substitution g) ; To fully reduce =/=, we must unroll possibly list disequalities the disunifier lazily ignored.
     (cert (=/=? g)) ; TODO call =/= sub once per reduction. maybe thread thru a separate substitution after all?
+    ;; TODO try only extracting the already bound variables from =/= substitution without unifying each time
     (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
 
   (define (simplify g) (if (fail? g) (values fail fail) (values g succeed)))
@@ -19,7 +20,7 @@
 
   (define reduce-constraint
     ;; Reduce existing constraint g using new constraint c
-    (case-lambda
+    (org-case-lambda reduce-constraint
       [(g c asymmetric) (reduce-constraint g c asymmetric #f)]
       [(g c asymmetric disjunction)
        (cert (goal? g) (or (fail? g) (not (fail? c))) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
@@ -59,13 +60,14 @@
                   [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) asymmetric disjunction)])
       (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
   
-  (define (reduce-disj g c asymmetric)
+  (org-define (reduce-disj g c asymmetric)
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric #t)]
                  [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t)])
       (cond
+       [asymmetric (if (and (fail? simplified-lhs) (fail? simplified-rhs)) (values fail fail) (simplify g))]
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
-       [(and (equal? simplified-lhs simplified-rhs)
+       [(and (equal? simplified-lhs simplified-rhs) ;TODO how necessary is this equal check in disj reducer?
              (equal? recheck-lhs recheck-rhs))
         (values simplified-lhs recheck-rhs)]
        [else (simplify g)])))

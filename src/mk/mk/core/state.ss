@@ -55,7 +55,7 @@
     (if (occurs-check/binding s x y)
         (values fail fail fail fail fail failure)
         (let ([bindings (cons (cons x y) bindings)])
-          (let-values ([(x-c/simplified x-c/recheck) (reduce-constraint x-c bindings)]) ;TODO handle simplified during ==
+          (let-values ([(x-c/simplified x-c/recheck) (reduce-constraint x-c bindings #f)]) ;TODO handle simplified during ==
            (values bindings succeed (conj x-c/simplified x-c/recheck) y-c (conj d (== x y)) (extend s x y))))
         #;
      (let-values ([(pending committed)

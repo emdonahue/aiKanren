@@ -98,7 +98,7 @@
   ;; x=/=1
   ;; x==1 | x==2 -> succeed, fail | x==2 -> succeed, x==2
   ;; x=/=1 | x==2 -> x=/=1, succeed|x==2 -> x=/=1, succeed
-  (define (solve-=/= g s ctn resolve delta)
+  (org-define (solve-=/= g s ctn resolve delta)
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     ;; =/= can only simplify ==->fail (with different ground) and =/=->succeed (with identical everything). It can be simplified by ==->fail (different ground) and anything else->succeed.
     ;; g contains no information when c is conjoined with a non-disj that reduces it -> succeed.
@@ -111,11 +111,11 @@
     ;; can we just skip disj in one direction since failure is symmetric always? no because two symbolos in a disj might cancel a new diseq
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
-      (let-values ([(g g/recheck) (reduce-constraint g c)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.
+      (let-values ([(g g/recheck) (reduce-constraint g c #t)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store.
         (if (trivial? g) ; If he stored constraints completely eliminate g,
             (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
             (begin ;(printf "c ~s " c)
-                   (let-values ([(c c/recheck) (reduce-constraint c g)]) ; Determine which stored constraints need to be rechecked.
+                   (let-values ([(c c/recheck) (reduce-constraint c g #f)]) ; Determine which stored constraints need to be rechecked.
                      (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
                     ;   (printf "g/simplified ~s c/simplified ~s c/recheck ~s~%" g c c/recheck)
                        (cert (or (succeed? c/recheck) (not (normalized? c/recheck attr-vars))))
