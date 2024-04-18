@@ -24,25 +24,37 @@
 
   (define (reify/pretty-print q s)
     (let ([vs (extract-vars '() q)])
-      (cons
-       (reify/pretty-print/query q (extract-vars '() q))
-       (reify/pretty-print/query
-        (reify/pretty-print/constraints vs s) vs))))
+      (reify/pretty-print/vars
+       (cons q (reify/pretty-print/constraints vs s)) vs)))
 
-  (define (reify/pretty-print/query q vs)
+  (define (reify/pretty-print/vars q vs)
     (cond
      [(var? q) (cdr (assq q vs))]
-     [(pair? q) (cons (reify/pretty-print/query (car q) vs)
-                      (reify/pretty-print/query (cdr q) vs))]
+     [(pair? q) (cons (reify/pretty-print/vars (car q) vs)
+                      (reify/pretty-print/vars (cdr q) vs))]
      [else q]))
 
   (define (reify/pretty-print/constraints vs s)
-    (let ([cs (fold-left conj succeed (filter goal? (map (lambda (v) (reify s (car v))) vs)))])
-      (let-values ([(ds cs) (conj-partition =/=? cs)])
-        (if (succeed? ds) '()
-            (list (cons '=/= (conj-fold (lambda (ds d) (cons (cons (=/=-lhs d) (=/=-rhs d)) ds)) '() ds)))))))
+    (let* ([cs (fold-left conj succeed (filter goal? (map (lambda (v) (reify s (car v))) vs)))]
+           [vs (extract-vars vs cs)])
+      (let*-values ([(ds cs) (conj-partition =/=? cs)]
+                    [(syms cs) (conj-partition symbolo? cs)]
+                    [(nums cs) (conj-partition numbero? cs)])
+        (append
+         (if (succeed? ds) '()
+             (list (cons '=/= (conj-fold (lambda (ds d) (cons (cons (=/=-lhs d) (=/=-rhs d)) ds)) '() ds))))
+         (if (succeed? syms) '()
+             (list (cons 'sym (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() syms))))
+         (if (succeed? nums) '()
+             (list (cons 'num (conj-fold (lambda (cs c) (cons (car (pconstraint-vars c)) cs)) '() nums))))))))
 
 
+  (define (symbolo? c) ; TODO make pconstraint checks in reifier more precise by factoring out internals to be shared 
+    (and (pconstraint? c) (eq? (pconstraint-data c) symbol?)))
+
+  (define (numbero? c) ; TODO make pconstraint checks in reifier more precise by factoring out internals to be shared 
+    (and (pconstraint? c) (eq? (pconstraint-data c) number?)))
+  
   (define (extract-vars vs q)
     (cond
      [(pair? q) (extract-vars (extract-vars vs (car q)) (cdr q))]
