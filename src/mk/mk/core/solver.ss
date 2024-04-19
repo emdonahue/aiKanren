@@ -79,25 +79,26 @@
 
 
   (define (solve-== g s ctn resolve delta)
-              ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
-              ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
-              ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
-              ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
+    ;; Runs a unification, collects constraints that need to be rechecked as a result of unification, and solves those constraints.
+    ;;TODO consider making occurs check a goal that we can append in between constraints we find and the rest of the ctn, so it only walks if constraints dont fail
+    ;; TODO if we only get 1 binding in solve-==, it has already been simplified inside unify and we can skip it
+    ;; TODO can we simplify delta/pending as well and simplify already delta constraints from lower in the computation?
+    ;; TODO when we store simplified constraints, we should remove all proxies to bound variables using the mini sub as we store the simplified constraints
     (let-values ([(bindings simplified committed pending delta s) (unify s delta (==-lhs g) (==-rhs g))]) ; bindings is a mini-substitution of normalized ==s added to s. simplified is a constraint that does not need further solving, recheck is a constraint that does need further solving, s is the state
       ;;TODO do we need all these returns?
       ;;TODO merge constraints together so they simplify each other not just conjoin
-                (if (fail? bindings) (values fail failure)
-                    (solve-constraint ctn (store-constraint s simplified) succeed (conj pending (conj resolve committed))
-                                      delta))))
+      (if (fail? bindings) (values fail failure)
+          (solve-constraint ctn (store-constraint s simplified) succeed (conj pending (conj resolve committed)) delta))))
 
   
-  (org-define (solve-=/= g s ctn resolve delta) ; TODO simplify ctn
+  (define (solve-=/= g s ctn resolve delta) ; TODO simplify ctn
     ;; Solves a =/= constraint lazily by finding the first unsatisfied unification and suspending the rest of the unifications as disjunction with a list =/=.
     (cert (==? g)) ; -> delta state?
     (let-values ([(g c) (disunify s (==-lhs g) (==-rhs g))]) ; g is normalized x=/=y or disjunction of =/=, c is constraints on x&y that may need to be rechecked
       (let-values ([(g g/recheck) (reduce-constraint g c #t)]) ; Check if the new constraint is unsatisfiable or satisfied wrt the store. This is an asymmetric check, bc even if g is logically satisfied eg by a disjunction, it still may be able to simplify the store.
+                                        ;(cert (trivial? g/recheck)) ; TODO should disj get re-run?
         (if (trivial? g) ; If the stored constraints completely eliminate g,
-            (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state.
+            (solve-constraint g/recheck s ctn resolve delta) ; just keep solving with same state. g/recheck may be trivial or a disj with a failed lhs that may need to be re-disunified
             (let*-values ([(c c/recheck) (reduce-constraint c g #f)]) ; Determine which stored constraints need to be rechecked. 
               (let ([attr-vars (attributed-vars g)]) ; Get the variables on which to store the new g.
                 (solve-constraint ; Run the constraints that need to be rerun,

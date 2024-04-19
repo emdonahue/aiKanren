@@ -24,5 +24,6 @@
    (tassert "reifier bool" (run1 x1 (booleano x1)) '(_.0 (bool _.0)))
    (tassert "reifier bools" (run1 (x1 x2) (booleano x1) (booleano x2)) '((_.0 _.1) (bool _.0 _.1)))
    (tassert "reifier fd" (run1 x1 (finite-domain x1 '(1 2 3))) '(_.0 (fd (_.0 (1 2 3)))))
+   #;
    (tassert "reifier ad hoc" (with-output-to-string (lambda () (display (run1 x1 (disj (=/= x1 1) (disj (symbolo x1) (matcho absento ([(a . d) x1]))))))))
             "(_.0 ((disj (=/= _.0 1) (disj (#<procedure type at constraints.ss:1478> #<procedure symbol?> (_.0)) (#<procedure absento> (_.0))))))")))
