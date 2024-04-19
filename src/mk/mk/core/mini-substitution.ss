@@ -1,5 +1,5 @@
 (library (mk core mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution?)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution? mini-disunify)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
   
   (define (->mini-substitution g)
@@ -41,14 +41,16 @@
         (values (cons (cons x y) s) simplified (conj (== x y) recheck))))
   
   (define mini-walk-normalized
+    ;; A variable is normalized wrt a mini substitution when it is alone on either lhs or rhs. This means that it is either free (rhs) or bound to whatever it is bound to here in the full substitution (lhs) and we can reason about it without walking it in the state.
     (case-lambda ; -> normalized? walked
       [(s v) (mini-walk-normalized s v s #f)]
       [(s v tail normalized)
        (cond
-        [(not (var? v)) (values #t v)]
-        [(null? tail) (values normalized v)]
-        [(eq? v (caar tail)) (mini-walk-normalized s (cdar tail) s #t)]
-        [else (mini-walk-normalized s v (cdr tail) (or normalized (eq? v (cdar tail))))])]))
+        [(not (var? v)) (values #t v)] ; Non vars are always normalized
+        [(null? tail) (values normalized v)] ; if v not in sub, normalization is whatever we've computed
+        [(eq? v (caar tail)) (mini-walk-normalized s (cdar tail) s #t)] ; if we find the value in the mini sub, we know it is bound to whatever it is bound to in the full substitution, hence normalized
+        [else (mini-walk-normalized s v (cdr tail) ; v is also normalized if it appears explicitly free in the substitution
+                                    (or normalized (eq? v (cdar tail))))])]))
   
   (define (mini-normalized? s v)
     ;; A variable is normalized when it is guaranteed not to be bound to something unknown in the substitution. This happens when it is on the lhs, so we know exactly what it is bound to, or it is the sole rhs, so we know that it has been looked up and found to be free.
@@ -88,6 +90,20 @@
         (let ([s (mini-unify s (car x) (car y))])
           (if (failure? s) s (mini-unify s (cdr x) (cdr y))))]
        [else failure])))
+
+  (define (mini-disunify s x y)
+    (let-values ([(x-normalized? x) (mini-walk-normalized s x)]
+                 [(y-normalized? y) (mini-walk-normalized s y)])
+      (cond
+       [(eq? x y) fail]
+       [(var? x) (=/= x y)]
+       [(var? y) (=/= y x)]
+       [(and (pair? x) (pair? y))
+        (let ([d (mini-disunify s (car x) (car y))])
+          (if (fail? d)
+              (mini-disunify s (cdr x) (cdr y))
+              (disj d (=/= (cdr x) (cdr y)))))]
+       [else succeed])))
 
   (define (mini-diff s^ s)
     ;; Returns a conjunction of == representing the bindings in s^ that are not in s

@@ -36,6 +36,8 @@
             [(disj? g) (reduce-disj g c asymmetric disjunction normalized)]
             [(and (noto? g) (not (=/=? g))) (reduce-noto g c asymmetric disjunction normalized)] ;TODO remove =/= check
             [(constraint? g) (reduce-constraint (constraint-goal g) c asymmetric disjunction normalized)]
+            [(and (=/=? g) (pair? (=/=-lhs g)))
+             (reduce-constraint (mini-disunify '() (=/=-lhs g) (=/=-rhs g)) c asymmetric disjunction normalized)]
             [else (constraint-reduce g c asymmetric disjunction normalized)]))]))
   
   (define (reduce-conj g c asymmetric disjunction normalized)
@@ -101,7 +103,8 @@
     (cert (goal? g) (mini-substitution? s)) ;TODO make == rechecks as needed. non trivial probably => recheck
     (exclusive-cond
      [(==? g) (simplify (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))))]
-     [(=/=? g) (reduce-noto g s asymmetric disjunction normalized)]
+     [(=/=? g) (simplify (mini-disunify s (=/=-lhs g) (=/=-rhs g)))]
+     ;(reduce-noto g s asymmetric disjunction normalized)
      [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
                     (if expanded? ;TODO should matcho's ==s/contents be recheck or satisfied?
                         (let-values ([(simplified recheck) (reduce-constraint g s asymmetric disjunction normalized)])
@@ -131,7 +134,12 @@
      [(=/=? g) ; -> succeed, =/=
       (simplify (if (and asymmetric disjunction normalized) g
                  (let* ([s (=/=->substitution c)]
-                        [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))])
+                        [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))]
+                        [g^ (mini-disunify s (=/=-lhs g) (=/=-rhs g))]
+                        [g^^ (if (succeed? g^) g (if (fail? g^) succeed g^))])
+                   ;(printf "~%g ~s~%c ~s~%s^ ~s~%tru ~s~%g^ ~s~%g^^ ~s~%" g c s^ (if (eq? s s^) succeed g) g^ g^^)
+                   ;(cert (or (not (eq? s s^)) (succeed? g^))) ; eq => succeed. eq or not succeed
+                   ;(cert (equal? (if (eq? s s^) succeed g) g^^))
                    (if (eq? s s^) succeed g))))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
