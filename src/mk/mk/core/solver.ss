@@ -57,7 +57,7 @@
 
 
   (define (solve-proxy g s ctn resolve delta) ; Solves the constraint on the proxied varid.
-    (let-values ([(v c) (walk-var-val s (proxy-var g))])
+    (let-values ([(v c) (walk-var-val s (proxy-var g))]) ; TODO have proxies identify which constraints to keep and re-store the rest. can we use object id or will constraints get reconstructed as they move vars? if not, use attributed variables maybe (tho then we have to keep proxy var up to date, but reducer can handle that on var-var switch)
       (if (goal? c) (solve-constraint c (extend s v succeed) ctn resolve delta)
           (solve-constraint ctn s succeed resolve delta))))
 

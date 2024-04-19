@@ -9,6 +9,7 @@
   ;; TODO consider else clause for returning a new goal if matcho fails the pattern match
   ;; TODO consider a cond form that nests matcho else clauses to create a cond like form without lots of negation
   ;;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
+  ;; TODO can we return the contents of matcho on the ==s channel and remove the expanded? channel, or are ==s already normalized in an important way that the contents wouldnt be?
 
   (define (pattern-binding? b)
     (cert (pair? b) (var? (car b)))

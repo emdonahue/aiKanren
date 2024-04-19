@@ -100,26 +100,44 @@
  (tassert "reduce =/= & proxy succeed" (reduce-constraint (proxy x1) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce =/= & proxy undecidable" (reduce-constraint (proxy x2) (=/= x1 1) #f) (list succeed (proxy x2)))
 
+
+
  ;; === DISUNIFIER ===
- ;; All permutations that may arise in the =/= solver
- ;; free constraint (=/= or disj(=/=)) simplifying store constraint (must be headed by attr vars of free)
- (tassert "reduce disunify asym 1" (reduce-constraint (=/= x1 1) (=/= x1 1) #t) (list succeed succeed))
- (tassert "reduce disunify asym 2" (reduce-constraint (=/= x1 2) (=/= x1 1) #t) (list (=/= x1 2) succeed))
- (tassert "reduce disunify asym 3" (reduce-constraint (=/= x1 x2) (=/= x1 1) #t) (list (=/= x1 x2) succeed)) ; The proxy is already on x2 and still points at x1, so just return to the store
- (tassert "reduce disunify asym 4" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
- (tassert "reduce disunify asym 5" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 2) succeed))
- (tassert "reduce disunify asym 6" (reduce-constraint (disj (=/= x1 x2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 x2) succeed))
- (tassert "reduce disunify asym 7" (reduce-constraint (disj (== x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
- (tassert "reduce disunify asym 8" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #t) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
- (tassert "reduce disunify asym 9" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #t) (list succeed (=/= x1 2)))
+ ;; All permutations that may arise in the =/= solver. The solver starts by simplifying the free constraint, but in asymmetric mode (#t), disabling asymmetric satisfaction so that the store can be simplified using the free information
+ ;; = store constraint simplifying free constraint (=/= or disj(=/=)). =
+ (tassert "reduce disunify asym =/= =/=" (reduce-constraint (=/= x1 1) (=/= x1 1) #t) (list succeed succeed)) ; asymmetry only matters inside disj
+ (tassert "reduce disunify asym =/= =/=" (reduce-constraint (=/= x1 x2) (=/= x1 x2) #t) (list succeed succeed))
+ (tassert "reduce disunify asym =/= =/=" (reduce-constraint (=/= x1 2) (=/= x1 1) #t) (list (=/= x1 2) succeed))
+ (tassert "reduce disunify asym =/= =/=" (reduce-constraint (=/= x1 x2) (=/= x1 1) #t) (list (=/= x1 x2) succeed)) ; The proxy will be added to x2 when it is stored   
  
- ;(tassert "reduce =/= ?=/= asym" (reduce-constraint (=/= x2 1) (=/= x1 1) #t) (list (=/= x2 1) succeed)) ; if x1 is in the x2 store, it is a guest in a disj lhs and should not kick out x1
- ;(tassert "reduce =/= ?=/=" (reduce-constraint (=/= x2 1) (=/= x1 1) #f) (list succeed (=/= x2 1))) ; if x2 pulled the x1 store, it must have had a x1 lhs that failed, so it hasnt been walked and this isnt its home. recheck
+ (tassert "reduce disunify asym | =/=" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym | =/=" (reduce-constraint (disj (=/= x1 2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym | =/=" (reduce-constraint (disj (=/= x1 x2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym | =/=" (reduce-constraint (disj (=/= x1 1) (=/= (list x1) '(1))) (disj (== x1 1) (== x1 1)) #t) (list fail fail))
+ 
+ (tassert "reduce disunify asym =/= |" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x1 1)) #t) (list (=/= x1 1) succeed))
+ (tassert "reduce disunify asym =/= |" (reduce-constraint (=/= x1 x2) (disj (=/= x1 1) (=/= x1 1)) #t) (list (=/= x1 x2) succeed))
+ (tassert "reduce disunify asym =/= |" (reduce-constraint (=/= x1 2) (disj (=/= x1 1) (=/= x1 1)) #t) (list (=/= x1 2) succeed))
+ (tassert "reduce disunify asym =/= |" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x1 1)) #t) (list (=/= x1 1) succeed))
 
-
- ;; possibly still good?
- ;(tassert "reduce =/= =/=^ asym" (reduce-constraint (=/= x1 2) (=/= x1 1) #t) (list (=/= x1 2) succeed)) ; x1 never has a reason to kick x1
- ;(tassert "reduce =/= ?=/= asym" (reduce-constraint (disj (== x1 1) (=/= x2 1)) (=/= x1 1) #t) (list (=/= x2 1) succeed)) ; if x1 is in the x2 store, it is a guest in a disj lhs and should not kick out x1
+ (tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1)))
+ ;;(tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list (=/= x2 1) succeed)) ; the store x2 in the head of the disj has been walked so it can vouch for the free x2
+ ;;(tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 x3)) (== x1 1)) #t) (list (=/= x3 1) succeed))
+ (tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (conj (== x1 1) (=/= x2 2))) #t) (list succeed (=/= x2 1))) ; store x2 is now in the non-normalized position, so it cant vouch for the free x2
+ ;(tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x2) '(1))) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1)))
+ ;(tassert "reduce disunify asym | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x2) '(1))) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list (=/= x2 1) succeed)) 
+ 
+ ;; = free constraints simplifying store constraints in symmetric mode. succeed wherever possible =
+ (tassert "reduce disunify =/= =/=" (reduce-constraint (=/= x1 1) (=/= x1 1) #f) (list succeed succeed))
+ (tassert "reduce disunify =/= |" (reduce-constraint (disj (=/= x1 2) (=/= x1 1)) (=/= x1 1) #f) (list succeed succeed))
+ (tassert "reduce disunify =/= |" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #f) (list (=/= x1 2) succeed))
+ ;(tassert "reduce disunify =/= |" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; store x1 can vouch for free x1
+ ;; The interesting disj case is when the lhs fails. When can we still guarantee the rhs is normalized?
+ (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 1)) (=/= x1 1) #f) (list succeed succeed))
+ ;;(tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
+ (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x2 2)) (=/= x1 1) #f) (list succeed (=/= x2 2)))
+ (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 x2)) (=/= x1 1) #f) (list succeed (=/= x1 x2))) ; x2 may never have had a proxy attached, so we need to recheck.
+ 
 
  ;; === CONJUNCTION ===
  (tassert "reduce conj =/= first simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x2 2)) #f) (list succeed succeed))
