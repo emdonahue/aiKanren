@@ -134,14 +134,8 @@
      [(=/=? g) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs g))))
       (simplify (if (and asymmetric disjunction) g
-                 (let* ([s (=/=->substitution c)]
-                        [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))]
-                        [g^ (mini-disunify s (=/=-lhs g) (=/=-rhs g))]
-                        [g^^ (if (succeed? g^) g (if (fail? g^) succeed g^))])
-                   ;(printf "~%g ~s~%c ~s~%s^ ~s~%tru ~s~%g^ ~s~%g^^ ~s~%" g c s^ (if (eq? s s^) succeed g) g^ g^^)
-                   ;(cert (or (not (eq? s s^)) (fail? g^))) ; eq => succeed. eq or not succeed
-                   ;(cert (equal? (if (eq? s s^) succeed g) g^^))
-                   (if (fail? g^) succeed g))))]
+                    (if (fail? (mini-disunify (=/=->substitution c) (=/=-lhs g) (=/=-rhs g)))
+                        succeed g)))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" g)]))
