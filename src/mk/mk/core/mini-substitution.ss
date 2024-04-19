@@ -1,5 +1,5 @@
 (library (mk core mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution? mini-disunify)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution? mini-disunify mini-disunify/normalized)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
   
   (define (->mini-substitution g)
@@ -92,18 +92,22 @@
        [else failure])))
 
   (define (mini-disunify s x y)
+    (let-values ([(d n?) (mini-disunify/normalized s x y)]) d))
+
+  (define (mini-disunify/normalized s x y)
     (let-values ([(x-normalized? x) (mini-walk-normalized s x)]
                  [(y-normalized? y) (mini-walk-normalized s y)])
-      (cond
-       [(eq? x y) fail]
-       [(var? x) (=/= x y)]
-       [(var? y) (=/= y x)]
-       [(and (pair? x) (pair? y))
-        (let ([d (mini-disunify s (car x) (car y))])
-          (if (fail? d)
-              (mini-disunify s (cdr x) (cdr y))
-              (disj d (=/= (cdr x) (cdr y)))))]
-       [else succeed])))
+      (let ([normalized? (and x-normalized? y-normalized?)])
+       (cond
+        [(eq? x y) (values fail normalized?)]
+        [(var? x) (values (=/= x y) normalized?)]
+        [(var? y) (values (=/= y x) normalized?)]
+        [(and (pair? x) (pair? y))
+         (let-values ([(d normalized?) (mini-disunify/normalized s (car x) (car y))])
+           (if (fail? d)
+               (mini-disunify/normalized s (cdr x) (cdr y))
+               (values (disj d (=/= (cdr x) (cdr y))) normalized?)))]
+        [else (values succeed normalized?)]))))
 
   (define (mini-diff s^ s)
     ;; Returns a conjunction of == representing the bindings in s^ that are not in s

@@ -134,8 +134,8 @@
      [(=/=? g) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs g))))
       (simplify (if (and asymmetric disjunction) g
-                    (if (fail? (mini-disunify (=/=->substitution c) (=/=-lhs g) (=/=-rhs g)))
-                        succeed g)))]
+                    (let-values ([(s norm) (mini-disunify/normalized (=/=->substitution c) (=/=-lhs g) (=/=-rhs g))])
+                      (if (fail? s) succeed g))))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" g)]))
