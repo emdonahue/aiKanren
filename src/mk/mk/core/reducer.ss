@@ -47,7 +47,7 @@
             (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs))))))
 
   (define (reduce-disj g c asymmetric disjunction normalized)
-    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c asymmetric disjunction normalized)])
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c asymmetric disjunction #f)])
       (if (and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
           (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c asymmetric disjunction normalized)])
             (let ([d (disj (conj simplified-lhs recheck-lhs)
@@ -83,7 +83,7 @@
   
   (define (disj-reduce g c asymmetric normalized)
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric #t normalized)]
-                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t normalized)])
+                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t #f)])
       (cond
        [asymmetric (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
                        (simplify simplified-lhs) (simplify g))]
@@ -132,15 +132,16 @@
                        [s^ (mini-unify s (==-lhs g) (==-rhs g))])
                   (if (eq? s s^) fail g)))]
      [(=/=? g) ; -> succeed, =/=
-      (simplify (if (and asymmetric disjunction normalized) g
+      (cert (not (pair? (=/=-lhs g))))
+      (simplify (if (and asymmetric disjunction) g
                  (let* ([s (=/=->substitution c)]
                         [s^ (mini-unify s (=/=-lhs g) (=/=-rhs g))]
                         [g^ (mini-disunify s (=/=-lhs g) (=/=-rhs g))]
                         [g^^ (if (succeed? g^) g (if (fail? g^) succeed g^))])
                    ;(printf "~%g ~s~%c ~s~%s^ ~s~%tru ~s~%g^ ~s~%g^^ ~s~%" g c s^ (if (eq? s s^) succeed g) g^ g^^)
-                   ;(cert (or (not (eq? s s^)) (succeed? g^))) ; eq => succeed. eq or not succeed
+                   ;(cert (or (not (eq? s s^)) (fail? g^))) ; eq => succeed. eq or not succeed
                    ;(cert (equal? (if (eq? s s^) succeed g) g^^))
-                   (if (eq? s s^) succeed g))))]
+                   (if (fail? g^) succeed g))))]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" g)]))
