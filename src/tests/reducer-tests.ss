@@ -99,7 +99,24 @@
  (tassert "reduce =/= =/= (satisfies|undecidable)|(satisfied|undecidable)" (reduce-constraint (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) (=/= x1 1) #f) (list (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) succeed))
  (tassert "reduce =/= & proxy succeed" (reduce-constraint (proxy x1) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce =/= & proxy undecidable" (reduce-constraint (proxy x2) (=/= x1 1) #f) (list succeed (proxy x2)))
+
+ ;; === DISUNIFIER ===
+ ;; All permutations that may arise in the =/= solver
+ ;; free constraint (=/= or disj(=/=)) simplifying store constraint (must be headed by attr vars of free)
+ (tassert "reduce disunify asym 1" (reduce-constraint (=/= x1 1) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym 2" (reduce-constraint (=/= x1 2) (=/= x1 1) #t) (list (=/= x1 2) succeed))
+ (tassert "reduce disunify asym 3" (reduce-constraint (=/= x1 x2) (=/= x1 1) #t) (list (=/= x1 x2) succeed)) ; The proxy is already on x2 and still points at x1, so just return to the store
+ (tassert "reduce disunify asym 4" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym 5" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 2) succeed))
+ (tassert "reduce disunify asym 6" (reduce-constraint (disj (=/= x1 x2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 x2) succeed))
  
+ ;(tassert "reduce =/= ?=/= asym" (reduce-constraint (=/= x2 1) (=/= x1 1) #t) (list (=/= x2 1) succeed)) ; if x1 is in the x2 store, it is a guest in a disj lhs and should not kick out x1
+ ;(tassert "reduce =/= ?=/=" (reduce-constraint (=/= x2 1) (=/= x1 1) #f) (list succeed (=/= x2 1))) ; if x2 pulled the x1 store, it must have had a x1 lhs that failed, so it hasnt been walked and this isnt its home. recheck
+
+
+ ;; possibly still good?
+ ;(tassert "reduce =/= =/=^ asym" (reduce-constraint (=/= x1 2) (=/= x1 1) #t) (list (=/= x1 2) succeed)) ; x1 never has a reason to kick x1
+ ;(tassert "reduce =/= ?=/= asym" (reduce-constraint (disj (== x1 1) (=/= x2 1)) (=/= x1 1) #t) (list (=/= x2 1) succeed)) ; if x1 is in the x2 store, it is a guest in a disj lhs and should not kick out x1
 
  ;; === CONJUNCTION ===
  (tassert "reduce conj =/= first simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x2 2)) #f) (list succeed succeed))

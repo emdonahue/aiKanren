@@ -21,42 +21,58 @@
 
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
+
+  ;; === REDUCEE ===
   (define reduce-constraint
     ;; Reduce existing constraint g using new constraint c
-    (org-case-lambda reduce-constraint
+    (case-lambda
       [(g c asymmetric) (reduce-constraint g c asymmetric #f)]
       [(g c asymmetric disjunction)
        (cert (goal? g) (or (fail? g) (not (fail? c))) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
        (if (succeed? c) (simplify g)
            (exclusive-cond
             [(or (fail? g) (succeed? g)) (values g g)]
-            [(conj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c asymmetric disjunction)])
-                         (if (fail? simplified-lhs) (values fail fail)
-                             (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c asymmetric disjunction)])
-                               (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs)))))]
-            [(disj? g) (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c asymmetric disjunction)])
-                         (if (and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
-                             (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c asymmetric disjunction)])
-                               (let ([d (disj (conj simplified-lhs recheck-lhs)
-                                              (conj simplified-rhs recheck-rhs))])
-                                 (if (not (succeed? recheck-lhs))
-                                     (check d)
-                                     (simplify d))))))]
+            [(conj? g) (reduce-conj g c asymmetric disjunction)]
+            [(disj? g) (reduce-disj g c asymmetric disjunction)]
             [(and (noto? g) (not (=/=? g))) (reduce-noto g c asymmetric disjunction)] ;TODO remove =/= check
             [(constraint? g) (reduce-constraint (constraint-goal g) c asymmetric disjunction)]
-            [else
-             (exclusive-cond
-              [(list? c) (==-reduce g c asymmetric disjunction)]
-              [(==? c) (==-reduce g (==->substitution c) asymmetric disjunction)]
-              [(=/=? c) (=/=-reduce g c asymmetric disjunction)]
-              [(pconstraint? c) (pconstraint-reduce g c asymmetric disjunction)]
-              [(conj? c) (conj-reduce g c asymmetric disjunction)]
-              [(disj? c) (disj-reduce g c asymmetric)]
-              [(noto? c) (noto-reduce g (noto-goal c) asymmetric disjunction)]
-              [(matcho? c) (matcho-reduce g c asymmetric disjunction)]
-              [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
-              [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))])]))]))
+            [else (constraint-reduce g c asymmetric disjunction)]))]))
+  
+  (define (reduce-conj g c asymmetric disjunction)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c asymmetric disjunction)])
+      (if (fail? simplified-lhs) (values fail fail)
+          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c asymmetric disjunction)])
+            (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs))))))
 
+  (define (reduce-disj g c asymmetric disjunction)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c asymmetric disjunction)])
+      (if (and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
+          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c asymmetric disjunction)])
+            (let ([d (disj (conj simplified-lhs recheck-lhs)
+                           (conj simplified-rhs recheck-rhs))])
+              (if (not (succeed? recheck-lhs))
+                  (check d)
+                  (simplify d)))))))
+  
+  (define (reduce-noto g c asymmetric disjunction)
+    (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c asymmetric disjunction)])
+      (let ([d (disj (noto simplified) (noto recheck))])
+        (if (not (succeed? recheck)) (check d) (simplify d)))))
+
+  ;; === REDUCER ===
+  (define (constraint-reduce g c asymmetric disjunction)
+    (exclusive-cond
+     [(list? c) (==-reduce g c asymmetric disjunction)]
+     [(==? c) (==-reduce g (==->substitution c) asymmetric disjunction)]
+     [(=/=? c) (=/=-reduce g c asymmetric disjunction)]
+     [(pconstraint? c) (pconstraint-reduce g c asymmetric disjunction)]
+     [(conj? c) (conj-reduce g c asymmetric disjunction)]
+     [(disj? c) (disj-reduce g c asymmetric)]
+     [(noto? c) (noto-reduce g (noto-goal c) asymmetric disjunction)]
+     [(matcho? c) (matcho-reduce g c asymmetric disjunction)]
+     [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
+     [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))]))
+  
   (define (conj-reduce g c asymmetric disjunction)
     (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c) asymmetric disjunction)]
                   [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c) asymmetric disjunction)]
@@ -72,16 +88,8 @@
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
        [(and (succeed? simplified-lhs) (succeed? simplified-rhs)) (values simplified-lhs simplified-lhs)]
-       #;
-       [(and (equal? simplified-lhs simplified-rhs) ;TODO how necessary is this equal check in disj reducer?
-             (equal? recheck-lhs recheck-rhs))
-        (values simplified-lhs recheck-rhs)]
        [else (simplify g)])))
   
-  (define (reduce-noto g c asymmetric disjunction)
-    (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c asymmetric disjunction)])
-      (let ([d (disj (noto simplified) (noto recheck))])
-        (if (not (succeed? recheck)) (check d) (simplify d)))))
 
   (define (noto-reduce g c asymmetric disjunction)
     (let-values ([(simplified recheck) (reduce-constraint c (if (noto? g) (noto g) g) asymmetric disjunction)])
