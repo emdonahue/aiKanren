@@ -109,6 +109,9 @@
  (tassert "reduce disunify asym 4" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify asym 5" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 2) succeed))
  (tassert "reduce disunify asym 6" (reduce-constraint (disj (=/= x1 x2) (== x1 1)) (=/= x1 1) #t) (list (=/= x1 x2) succeed))
+ (tassert "reduce disunify asym 7" (reduce-constraint (disj (== x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
+ (tassert "reduce disunify asym 8" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #t) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
+ (tassert "reduce disunify asym 9" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #t) (list succeed (=/= x1 2)))
  
  ;(tassert "reduce =/= ?=/= asym" (reduce-constraint (=/= x2 1) (=/= x1 1) #t) (list (=/= x2 1) succeed)) ; if x1 is in the x2 store, it is a guest in a disj lhs and should not kick out x1
  ;(tassert "reduce =/= ?=/=" (reduce-constraint (=/= x2 1) (=/= x1 1) #f) (list succeed (=/= x2 1))) ; if x2 pulled the x1 store, it must have had a x1 lhs that failed, so it hasnt been walked and this isnt its home. recheck
