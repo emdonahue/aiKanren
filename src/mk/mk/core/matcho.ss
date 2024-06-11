@@ -10,6 +10,8 @@
   ;; TODO consider a cond form that nests matcho else clauses to create a cond like form without lots of negation
   ;;TODO first order matcho that can be unified with a variable to destructure it. Useful for passing to functions where we dont have a reference to the variable
   ;; TODO can we return the contents of matcho on the ==s channel and remove the expanded? channel, or are ==s already normalized in an important way that the contents wouldnt be?
+  ;; TODO syntax analysis on the body to identify out of scope identifiers and insert a fresh to avoid divergence (make sure to strip single renames that dont destructure first)
+  ;; TODO syntax analysis to skip occurs check (add to exist too)
 
   (define (pattern-binding? b)
     (cert (pair? b) (var? (car b)))

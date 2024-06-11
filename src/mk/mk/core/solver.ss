@@ -2,6 +2,8 @@
   (export run-constraint simplify-pconstraint)
   (import (chezscheme) (mk core unifier) (mk core goals) (mk core streams) (mk core variables) (mk core utils) (mk core mini-substitution) (mk core reducer) (mk core matcho) (mk core walk))
 
+  ;; TODO define a (goal) form, dual to (consraint) that pushes constraints back up into the search. especially good inside matcho. similar functionality to original delayed goals paper
+  
   (define (run-constraint g s)
     ;; Simplifies g as much as possible, and stores it in s. Primary interface for evaluating a constraint.
               (cert (goal? g) (maybe-state? s)) ; -> maybe-state?
@@ -38,7 +40,7 @@
               (values (if (fail? resolved) fail delta) s))) ; If our recheck constraints fail, fail. Otherwise return the delta of the original simplified constraint (not the rechecks, since we don't want noto to negate the rechecked values that were removed from the constraint store but that were not children of noto). We want to make sure all constraints succeed, but we only want to save the simplified form of our original constraint. Not others that must be rechecked as a result of checking it (eg because it is a unification that fires subsequent constraints).
         (solve-constraint ctn s succeed resolve delta)))
 
-  (define (solve-disj g s ctn resolve delta)
+  (define (solve-disj g s ctn resolve delta) ; TODO use ==s in delta to simplify rhs disjuncts
     (let-values ([(d-lhs s-lhs) (solve-constraint (disj-lhs g) s succeed succeed succeed)]) ; Solve the lhs in a new hypothetical environment with no continuation. Just simplify the current disj goals in the context of the current state. Passing the continuation through creates many copies of the same constraints, which destroys performance.
       (exclusive-cond ; Solve the lhs disjunct.
        [(fail? d-lhs) (solve-constraint (disj-rhs g) s ctn resolve delta)] ; If it fails, continue solving disjuncts.

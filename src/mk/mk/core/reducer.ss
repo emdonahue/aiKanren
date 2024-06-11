@@ -2,9 +2,10 @@
 (library (mk core reducer)
   (export reduce-constraint)
   (import (chezscheme) (mk core goals) (mk core mini-substitution) (mk core utils) (mk core variables) (mk core streams) (mk core matcho) (mk core goals))
-  ;;TODO simplify with negated pconstraints as well
+  ;; TODO simplify with negated pconstraints as well
   ;; TODO mini-normalized (free?) needs to walk, not just check presence
   ;; TODO can a left-failing disj ever be made simplified by =/= or ==? note that we are always comparing normalized constraints
+  ;; TODO if one element of a conj vouches for satisfaction, should that overrule another saying its recheck?
 
 
   (define (==->substitution g)
@@ -24,134 +25,131 @@
 
   ;; === REDUCEE ===
   (define reduce-constraint
-    ;; Reduce existing constraint g using new constraint c
+    ;; Reduce existing constraint g using new constraint c.
+    ;; free => g is a free constraint (not in the store). for a free =/=, this means that =/= in the store won't simplify it away, so that we can turn around and use it to simplify the =/= already in the story, which may in turn simplify containing disj. free mode preserves some information. #f=store mode goes all out to simplify the store.
     (case-lambda
-      [(g c asymmetric) (reduce-constraint g c asymmetric #f #t)]
-      [(g c asymmetric disjunction normalized)
+      [(g c free) (reduce-constraint g c free #f #t)]
+      [(g c free disjunction normalized) ;TODO split normalized into reducer/reducee
        (cert (goal? g) (or (fail? g) (not (fail? c))) (or (goal? c) (mini-substitution? c))) ; -> simplified recheck
        (if (succeed? c) (simplify g)
            (exclusive-cond
             [(or (fail? g) (succeed? g)) (values g g)]
-            [(conj? g) (reduce-conj g c asymmetric disjunction normalized)]
-            [(disj? g) (reduce-disj g c asymmetric disjunction normalized)]
-            [(and (noto? g) (not (=/=? g))) (reduce-noto g c asymmetric disjunction normalized)] ;TODO remove =/= check
-            [(constraint? g) (reduce-constraint (constraint-goal g) c asymmetric disjunction normalized)]
+            [(conj? g) (reduce-conj g c free disjunction normalized)]
+            [(disj? g) (reduce-disj g c free disjunction normalized)]
+            [(and (noto? g) (not (=/=? g))) (reduce-noto g c free disjunction normalized)] ;TODO remove =/= check
+            [(constraint? g) (reduce-constraint (constraint-goal g) c free disjunction normalized)]
             [(and (=/=? g) (pair? (=/=-lhs g)))
-             (reduce-constraint (mini-disunify '() (=/=-lhs g) (=/=-rhs g)) c asymmetric disjunction normalized)]
-            [else (constraint-reduce g c asymmetric disjunction normalized)]))]))
+             (reduce-constraint (mini-disunify '() (=/=-lhs g) (=/=-rhs g)) c free disjunction normalized)]
+            [else (constraint-reduce g c free disjunction normalized)]))]))
   
-  (define (reduce-conj g c asymmetric disjunction normalized)
-    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c asymmetric disjunction normalized)])
+  (define (reduce-conj g c free disjunction normalized)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c free disjunction normalized)])
       (if (fail? simplified-lhs) (values fail fail)
-          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c asymmetric disjunction normalized)])
+          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c free disjunction normalized)])
             (values (conj simplified-lhs simplified-rhs) (conj recheck-lhs recheck-rhs))))))
 
-  (define (reduce-disj g c asymmetric disjunction normalized)
-    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c asymmetric disjunction #f)])
-      (if (and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)
-          (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c asymmetric disjunction normalized)])
-            (let ([d (disj (conj simplified-lhs recheck-lhs)
-                           (conj simplified-rhs recheck-rhs))])
-              (if (not (succeed? recheck-lhs))
-                  (check d)
-                  (simplify d)))))))
+  (org-define (reduce-disj g c free disjunction normalized)
+              (cert (disj? g))
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (disj-lhs g) c free disjunction #f)])
+      (exclusive-cond
+       [(and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)]
+       [(fail? simplified-lhs) (reduce-constraint (disj-rhs g) c free disjunction normalized)]
+       [else (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs g) c free disjunction normalized)])
+               (let ([d (disj (conj simplified-lhs recheck-lhs)
+                              (conj simplified-rhs recheck-rhs))])
+                 (if (not (succeed? recheck-lhs))
+                     (check d)
+                     (simplify d))))])))
   
-  (define (reduce-noto g c asymmetric disjunction normalized)
-    (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c asymmetric disjunction normalized)])
+  (define (reduce-noto g c free disjunction normalized)
+    (let-values ([(simplified recheck) (reduce-constraint (noto-goal g) c free disjunction normalized)])
       (let ([d (disj (noto simplified) (noto recheck))])
         (if (not (succeed? recheck)) (check d) (simplify d)))))
 
   ;; === REDUCER ===
-  (define (constraint-reduce g c asymmetric disjunction normalized)
+  (define (constraint-reduce g c free disjunction normalized)
     (exclusive-cond
-     [(list? c) (==-reduce g c asymmetric disjunction normalized)]
-     [(==? c) (==-reduce g (==->substitution c) asymmetric disjunction normalized)]
-     [(=/=? c) (=/=-reduce g c asymmetric disjunction normalized)]
-     [(pconstraint? c) (pconstraint-reduce g c asymmetric disjunction normalized)]
-     [(conj? c) (conj-reduce g c asymmetric disjunction normalized)]
-     [(disj? c) (disj-reduce g c asymmetric normalized)]
-     [(noto? c) (noto-reduce g (noto-goal c) asymmetric disjunction normalized)]
-     [(matcho? c) (matcho-reduce g c asymmetric disjunction normalized)]
+     [(list? c) (==-reduce g c free disjunction normalized)]
+     [(==? c) (==-reduce g (==->substitution c) free disjunction normalized)]
+     [(=/=? c) (=/=-reduce g c free disjunction normalized)]
+     [(pconstraint? c) (pconstraint-reduce g c free disjunction normalized)]
+     [(conj? c) (conj-reduce g c free disjunction normalized)]
+     [(disj? c) (disj-reduce g c free normalized)]
+     [(noto? c) (noto-reduce g (noto-goal c) free disjunction normalized)]
+     [(matcho? c) (matcho-reduce g c free disjunction normalized)]
      [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
      [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons g c))]))
   
-  (define (conj-reduce g c asymmetric disjunction normalized)
-    (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c) asymmetric disjunction normalized)]
-                  [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c) asymmetric disjunction normalized)]
-                  [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) asymmetric disjunction normalized)])
+  (define (conj-reduce g c free disjunction normalized)
+    (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c) free disjunction normalized)]
+                  [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c) free disjunction normalized)]
+                  [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) free disjunction normalized)])
       (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
   
-  (define (disj-reduce g c asymmetric normalized)
-    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) asymmetric #t normalized)]
-                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) asymmetric #t #f)])
+  (org-define (disj-reduce g c free normalized)
+    (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) free #t normalized)]
+                 [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) free #t #f)])
       (cond
-       [asymmetric (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
+       [free (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
                        (simplify simplified-lhs) (simplify g))]
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
        [(and (succeed? simplified-lhs) (succeed? simplified-rhs)) (values simplified-lhs simplified-lhs)]
        [else (simplify g)])))
-  
 
-  (define (noto-reduce g c asymmetric disjunction normalized)
-    (let-values ([(simplified recheck) (reduce-constraint c (if (noto? g) (noto g) g) asymmetric disjunction normalized)])
-     (if (and (succeed? simplified) (succeed? recheck))
-         (if (noto? g) (values succeed succeed) (values fail fail))
-         (simplify g))))
-
-  (define (==-reduce g s asymmetric disjunction normalized)
+  (define (==-reduce g s free disjunction normalized)
     (cert (goal? g) (mini-substitution? s)) ;TODO make == rechecks as needed. non trivial probably => recheck
     (exclusive-cond
      [(==? g) (simplify (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))))]
      [(=/=? g) (simplify (mini-disunify s (=/=-lhs g) (=/=-rhs g)))]
-     ;(reduce-noto g s asymmetric disjunction normalized)
+     ;(reduce-noto g s free disjunction normalized)
      [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
                     (if expanded? ;TODO should matcho's ==s/contents be recheck or satisfied?
-                        (let-values ([(simplified recheck) (reduce-constraint g s asymmetric disjunction normalized)])
+                        (let-values ([(simplified recheck) (reduce-constraint g s free disjunction normalized)])
                           (values (conj ==s simplified) recheck))
                         (simplify (conj ==s g))))]
-     [(pconstraint? g) (==/pconstraint-reduce g s asymmetric disjunction normalized)]
+     [(pconstraint? g) (==/pconstraint-reduce g s free disjunction normalized)]
      [(proxy? g) (simplify (if (mini-normalized? s (proxy-var g)) succeed g))] ;TODO does reduce == proxy need to be rechecked?
      [else (assertion-violation '==-reduce "Unrecognized constraint type" g)]))
 
-  (define (pconstraint-reduce g c asymmetric disjunction normalized)
-    (cert (pconstraint? c))
-    (exclusive-cond
-     [(==? g) (let-values ([(simplified recheck) (==/pconstraint-reduce c (==->substitution g) asymmetric disjunction normalized)])
-                (if (fail? simplified) (values fail fail) (simplify g)))]
-     [(=/=? g) ; -> succeed, =/=
-      (let-values ([(simplified recheck) (==/pconstraint-reduce c (=/=->substitution g) asymmetric disjunction normalized)])
-        (if (fail? simplified) (values succeed succeed) (simplify g)))]
-     [else (assertion-violation 'pconstraint-reduce "Unrecognized constraint type" g)]))
-
-  (define (=/=-reduce g c asymmetric disjunction normalized)
+  (org-define (=/=-reduce g c free disjunction normalized)
     ;; =/= can only simplify ==->fail and =/=->succeed
     (exclusive-cond
-     [(==? g) ; -> fail, ==
-      (simplify (let* ([s (=/=->substitution c)]
+     [(==? g) ; -> fail,  ==
+      (simplify (let* ([s (=/=->substitution c)] ; TODO make a pure =/= x =/= system that doesnt have tu fully unify
                        [s^ (mini-unify s (==-lhs g) (==-rhs g))])
                   (if (eq? s s^) fail g)))]
      [(=/=? g) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs g))))
-      (simplify (if (and asymmetric disjunction) g
+      (simplify (if (and free disjunction) g 
                     (let-values ([(s norm) (mini-disunify/normalized (=/=->substitution c) (=/=-lhs g) (=/=-rhs g))])
-                      (if (fail? s) succeed g))))]
+                      (if (equal? g c) succeed g))))] ;TODO simplify diseq compare to equals, normalization test to same lhs and no vars in g rhs
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" g)]))
+  
+  (define (pconstraint-reduce g c free disjunction normalized)
+    (cert (pconstraint? c))
+    (exclusive-cond
+     [(==? g) (let-values ([(simplified recheck) (==/pconstraint-reduce c (==->substitution g) free disjunction normalized)])
+                (if (fail? simplified) (values fail fail) (simplify g)))]
+     [(=/=? g) ; -> succeed, =/=
+      (let-values ([(simplified recheck) (==/pconstraint-reduce c (=/=->substitution g) free disjunction normalized)])
+        (if (fail? simplified) (values succeed succeed) (simplify g)))]
+     [else (assertion-violation 'pconstraint-reduce "Unrecognized constraint type" g)]))
 
   (define ==/pconstraint-reduce ;TODO extract an expander for pconstraints analagous to matcho/expand
     ;; Walk all variables of the pconstraint and ensure they are normalized.
     (case-lambda ;TODO can we reuse this like matcho/expand in solver?
-      [(g s asymmetric disjunction normalized) (==/pconstraint-reduce g s asymmetric disjunction normalized (pconstraint-vars g))]
-      [(g s asymmetric disjunction normalized vars)
+      [(g s free disjunction normalized) (==/pconstraint-reduce g s free disjunction normalized (pconstraint-vars g))]
+      [(g s free disjunction normalized vars)
        (if (null? vars) (simplify g)
            (let ([v (mini-reify s (car vars))])
              (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
-                 (==/pconstraint-reduce g s asymmetric disjunction normalized (cdr vars))
-                 (reduce-constraint ((pconstraint-procedure g) (car vars) v g succeed g) s asymmetric disjunction normalized))))]))
+                 (==/pconstraint-reduce g s free disjunction normalized (cdr vars))
+                 (reduce-constraint ((pconstraint-procedure g) (car vars) v g succeed g) s free disjunction normalized))))]))
 
-  (define (matcho-reduce g c asymmetric disjunction normalized)
+  (define (matcho-reduce g c free disjunction normalized)
     (exclusive-cond
      [(==? g) (if (failure? (mini-unify-substitution (matcho-substitution c) (==->substitution g))) (values fail fail) (simplify g))]
      [(=/=? g) ; -> succeed, =/=
@@ -159,5 +157,11 @@
           (values succeed succeed) (simplify g))] ;TODO could a =/= of lists simultaneously fail?
      ;;TODO matchos with eq? lambda can cancel
      [else (assertion-violation 'matcho-reduce "Unrecognized constraint type" g)]))
+
+  (define (noto-reduce g c free disjunction normalized)
+    (let-values ([(simplified recheck) (reduce-constraint c (if (noto? g) (noto g) g) free disjunction normalized)])
+      (if (and (succeed? simplified) (succeed? recheck))
+          (if (noto? g) (values succeed succeed) (values fail fail))
+          (simplify g))))
 
   )

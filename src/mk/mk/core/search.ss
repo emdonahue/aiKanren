@@ -29,7 +29,7 @@
                          (if (exceeds-max-depth? s) (values failure p)
                           (run-goal g s p ctn)))] ; Any procedure that accepts a state and package and returns a goal, state, and package can be considered a goal. Fresh and exist are implemented in terms of such procedures.
        [(conde? g) (let*-values ; Although states are per branch, package is global and must be threaded through lhs and rhs.
-                       ([(lhs p) (run-goal (conde-lhs g) s p ctn)]
+                       ([(lhs p) (run-goal (conde-lhs g) s p ctn)] ; TODO try backtracking optimization: conde increments a state depth counter, mplus branches and constraints all get assigned that counter, and when a constraint fails, prune up to the first containing mplus. jump to the level of the conflicting constraint, which will fail up to the tops of condes it is. have conde wrap its ctn in a constraint form that saves that conde depth level, then when we solve that constraint we set our effective conde depth in the state and if we fail we jump back to that conde depth, so we need two counters actual conde depth and depth of backjump. increment the state conde detph once when it first hits conde ? or for each sub binary
                         [(rhs p) (run-goal (conde-rhs g) s p ctn)])
                      (values (mplus lhs rhs) p))]
        [(matcho? g) (let-values ([(g s) (run-matcho g s)]) (run-goal g s p ctn))]
