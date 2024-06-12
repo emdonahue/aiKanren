@@ -91,7 +91,7 @@
           (if (failure? s) s (mini-unify s (cdr x) (cdr y))))]
        [else failure])))
 
-  (define (mini-disunify s x y)
+  (define (mini-disunify s x y) ;TODO is mini-disunify used?
     (let-values ([(d n?) (mini-disunify/normalized s x y)]) d))
 
   (define (mini-disunify/normalized s x y)

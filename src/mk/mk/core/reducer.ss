@@ -22,9 +22,10 @@
 
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
-  (define (vouch g vouch?) (if vouch? (simplify g) (check g)))
+  (define (vouch g e-normalized r-normalized r-vouches)
+    (if (or e-normalized (and r-normalized r-vouches)) (simplify g) (check g)))
 
-  (define (vouches r e) ; r vouches for e when all vars in e are also in r
+  (define (vouches r e) ; r vouches for e when all vars in e are also in r, implying no walks/rechecks necessary
     (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
          (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
 
@@ -107,7 +108,8 @@
     (cert (goal? g) (mini-substitution? s)) ;TODO make == rechecks as needed. non trivial probably => recheck
     (exclusive-cond
      [(==? g) (simplify (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))))]
-     [(=/=? g) (simplify (mini-disunify s (=/=-lhs g) (=/=-rhs g)))]
+     [(=/=? g) (let-values ([(g r-vouches) (mini-disunify/normalized s (=/=-lhs g) (=/=-rhs g))])
+                 (vouch g e-normalized r-normalized r-vouches))]
      ;(reduce-noto g s e-free r-disjunction e-normalized r-normalized)
      [(matcho? g) (let-values ([(expanded? g ==s) (matcho/expand g s)])
                     (if expanded? ;TODO should matcho's ==s/contents be recheck or satisfied?
@@ -129,9 +131,11 @@
      [(=/=? g) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs g))))
       (cond
-       [(and e-free r-disjunction) (vouch g e-normalized)]
-       [(equal? g c) (values succeed succeed)]
-       [else (vouch g (or e-normalized (and r-normalized (vouches (noto-goal c) (noto-goal g)))))])]
+       [(and e-free r-disjunction) (vouch g e-normalized #f #f)] ; If reducer is in a disjunction, and reducee is free, we don't want to do any reducing because we want the reducee to later simplify the reducer an take out the disjunction in the store rather than having the disjunction take out the simpler free =/=
+       ;; TODO can unequal =/= cancel? eg can x=/=y and y=/=x both show up in reducer?
+       [(equal? g c) (values succeed succeed)] ; Identical =/= can cancel
+       [else ; We can vouch for reducee when it's already normalized, or when reducer is and has all the same vars.
+        (vouch g e-normalized r-normalized (vouches (noto-goal c) (noto-goal g)))])]
      [(or (matcho? g) (pconstraint? g)) (simplify g)]
      [(proxy? g) (if (or (eq? (=/=-lhs c)  (proxy-var g)) (eq? (=/=-rhs c)  (proxy-var g))) (values succeed succeed) (check g))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" g)]))

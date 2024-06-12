@@ -85,7 +85,7 @@
  (tassert "reduce =/= =/= satisfied|unsatisfiable" (reduce-constraint (disj (symbolo x1) (== x1 1)) (=/= x1 1) #f) (list (symbolo x1) succeed))
  (tassert "reduce =/= =/= satisfied|unsatisfiable|undecidable" (reduce-constraint (disj (symbolo x1) (disj (== x1 1) (=/= x1 2))) (=/= x1 1) #f) (list (disj (symbolo x1) (=/= x1 2)) succeed))
  (tassert "reduce =/= =/= satisfied|undecidable" (reduce-constraint (disj (symbolo x1) (=/= x1 2)) (=/= x1 1) #f) (list (disj (symbolo x1) (=/= x1 2)) succeed))
- (tassert "reduce =/= =/= unsatisfiable|undecidable" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list succeed (=/= x1 2)))
+ (tassert "reduce =/= =/= unsatisfiable|undecidable" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed))
  (tassert "reduce =/= =/= undecidable|unsatisfiable" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #f) (list (=/= x1 2) succeed))
  (tassert "reduce =/= =/= undecidable|undecidable" (reduce-constraint (disj (=/= x1 2) (=/= x1 3)) (=/= x1 1) #f) (list (disj (=/= x1 2) (=/= x1 3)) succeed))
  (tassert "reduce =/= =/= recheck|undecidable" (reduce-constraint (disj (conj (=/= x2 2) (disj (== x1 1) (=/= x2 3))) (=/= x1 3)) (=/= x1 1) #f) (list succeed (disj (conj (=/= x2 2) (=/= x2 3)) (=/= x1 3))))
