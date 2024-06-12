@@ -49,6 +49,7 @@
             [else (constraint-reduce g c e-free r-disjunction e-normalized r-normalized)]))]))
   
   (define (reduce-conj g c e-free r-disjunction e-normalized r-normalized)
+    (cert (conj? g))
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint (conj-lhs g) c e-free r-disjunction e-normalized r-normalized)])
       (if (fail? simplified-lhs) (values fail fail)
           (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (conj-rhs g) c e-free r-disjunction e-normalized r-normalized)])
@@ -90,6 +91,8 @@
     (let*-values ([(simplified recheck) (reduce-constraint g (conj-lhs c) e-free r-disjunction e-normalized r-normalized)]
                   [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs c) e-free r-disjunction e-normalized r-normalized)]
                   [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) e-free r-disjunction e-normalized r-normalized)])
+      (values (conj simplified/simplified (conj simplified/recheck recheck/simplified)) recheck/recheck)
+      #;
       (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
   
   (org-define (disj-r g c e-free e-normalized r-normalized)
