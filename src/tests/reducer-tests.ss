@@ -81,7 +81,7 @@
  (tassert "reduce =/= =/= satisfies|satisfies" (reduce-constraint (disj (symbolo x1) (symbolo x1)) (=/= x1 1) #f) (list (disj (symbolo x1) (symbolo x1)) succeed))
  (tassert "reduce =/= =/= satisfies|satisfied|unnormalized" (reduce-constraint (disj (=/= x1 1) (disj (symbolo x1) (=/= x2 2))) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce =/= =/= satisfied|satisfied|unnormalized" (reduce-constraint (disj (symbolo x1) (disj (symbolo x1) (=/= x2 2))) (=/= x1 1) #f) (list (disj (symbolo x1) (disj (symbolo x1) (=/= x2 2))) succeed))
- (tassert "reduce =/= =/= unsatisfiable|satisfied" (reduce-constraint (disj (== x1 1) (symbolo x1)) (=/= x1 1) #f) (list succeed (symbolo x1)))
+ (tassert "reduce =/= =/= unsatisfiable|satisfied" (reduce-constraint (disj (== x1 1) (symbolo x1)) (=/= x1 1) #f) (list (symbolo x1) succeed))
  (tassert "reduce =/= =/= satisfied|unsatisfiable" (reduce-constraint (disj (symbolo x1) (== x1 1)) (=/= x1 1) #f) (list (symbolo x1) succeed))
  (tassert "reduce =/= =/= satisfied|unsatisfiable|undecidable" (reduce-constraint (disj (symbolo x1) (disj (== x1 1) (=/= x1 2))) (=/= x1 1) #f) (list (disj (symbolo x1) (=/= x1 2)) succeed))
  (tassert "reduce =/= =/= satisfied|undecidable" (reduce-constraint (disj (symbolo x1) (=/= x1 2)) (=/= x1 1) #f) (list (disj (symbolo x1) (=/= x1 2)) succeed))
