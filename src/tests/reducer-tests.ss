@@ -128,7 +128,7 @@
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 1) (=/= x1 2)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 x2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  
- (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1)))
+(org-trace (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1))))
  
 
  ;; TESTING

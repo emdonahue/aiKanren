@@ -80,7 +80,7 @@
      [(=/=? c) (=/=-reduce g c e-free r-disjunction e-normalized r-normalized)]
      [(pconstraint? c) (pconstraint-reduce g c e-free r-disjunction e-normalized r-normalized)]
      [(conj? c) (conj-reduce g c e-free r-disjunction e-normalized r-normalized)]
-     [(disj? c) (disj-reduce g c e-free e-normalized r-normalized)]
+     [(disj? c) (disj-r g c e-free e-normalized r-normalized)]
      [(noto? c) (noto-reduce g (noto-goal c) e-free r-disjunction e-normalized r-normalized)]
      [(matcho? c) (matcho-reduce g c e-free r-disjunction e-normalized r-normalized)]
      [(proxy? c) (if (and (proxy? g) (fx= (proxy-id g) (proxy-id c))) (values succeed succeed) (simplify g))]
@@ -92,19 +92,21 @@
                   [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs c) e-free r-disjunction e-normalized r-normalized)])
       (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
   
-  (org-define (disj-reduce g c e-free e-normalized r-normalized)
-              (cert (disj? c))
+  (org-define (disj-r g c e-free e-normalized r-normalized)
+              (cert (disj? c)) ; TODO can we remove r-disj boolean and handle it inside disj-r fn
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint g (disj-lhs c) e-free #t e-normalized r-normalized)]
                  [(simplified-rhs recheck-rhs) (reduce-constraint g (disj-rhs c) e-free #t e-normalized #f)])
       (cond
+       #;
        [e-free (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
                        (simplify simplified-lhs) (simplify g))]
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
-       [(and (succeed? simplified-lhs) (succeed? simplified-rhs)) (values simplified-lhs simplified-lhs)]
-       [else (simplify g)])))
+       [(and (succeed? simplified-lhs) (succeed? simplified-rhs) (succeed? recheck-lhs) (succeed? recheck-rhs))
+        (values succeed succeed)]
+       [else (vouch g e-normalized r-normalized (and (succeed? recheck-lhs) (succeed? recheck-rhs)))])))
 
-  (define (==-reduce g s e-free r-disjunction e-normalized r-normalized)
+  (org-define (==-reduce g s e-free r-disjunction e-normalized r-normalized)
     (cert (goal? g) (mini-substitution? s)) ;TODO make == rechecks as needed. non trivial probably => recheck
     (exclusive-cond
      [(==? g) (simplify (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))))]
