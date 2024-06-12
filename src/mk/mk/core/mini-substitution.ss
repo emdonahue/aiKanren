@@ -67,7 +67,7 @@
      [else v]))
 
   (define (mini-reify-normalized s v) ;TODO do we need to check sub variables for normalization or just attr vars?
-    (cert (list? s)) ;TODO do we need mini-*-normalized anymore?
+    (cert (list? s))
     (exclusive-cond
      [(pair? v)
       (let-values ([(normalized-lhs reified-lhs) (mini-reify-normalized s (car v))]

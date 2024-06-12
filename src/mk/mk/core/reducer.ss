@@ -103,13 +103,15 @@
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
        [(and (succeed? simplified-lhs) (succeed? simplified-rhs) (succeed? recheck-lhs) (succeed? recheck-rhs))
-        (values succeed succeed)]
+        (values succeed succeed)] ;TODO can just some of the children vouch in a disj?
        [else (vouch g e-normalized r-normalized (and (succeed? recheck-lhs) (succeed? recheck-rhs)))])))
 
   (org-define (==-reduce g s e-free r-disjunction e-normalized r-normalized)
     (cert (goal? g) (mini-substitution? s)) ;TODO make == rechecks as needed. non trivial probably => recheck
     (exclusive-cond
-     [(==? g) (simplify (== (mini-reify s (==-lhs g)) (mini-reify s (==-rhs g))))]
+     [(==? g) (let-values ([(lhs-normalized? lhs) (mini-walk-normalized s (==-lhs g))]
+                           [(rhs-normalized? rhs) (mini-walk-normalized s (==-rhs g))])
+                (vouch (== lhs rhs) e-normalized r-normalized (and lhs-normalized? rhs-normalized?)))]
      [(=/=? g) (let-values ([(g r-vouches) (mini-disunify/normalized s (=/=-lhs g) (=/=-rhs g))])
                  (vouch g e-normalized r-normalized r-vouches))]
      ;(reduce-noto g s e-free r-disjunction e-normalized r-normalized)
