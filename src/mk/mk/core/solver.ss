@@ -133,7 +133,7 @@
                                                                 ctn (conj recheck resolve) delta vs))))]
                       [else (solve-pconstraint (pconstraint-check g var val) s ctn resolve delta vs)]))))))]))
 
-  (define simplify-pconstraint
+  (define simplify-pconstraint ; TODO is simplify pconstraint used? probably should be removed
     (case-lambda
       [(g p) (simplify-pconstraint g p p)]
       [(g p c)

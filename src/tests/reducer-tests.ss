@@ -123,8 +123,14 @@
  (tassert "reduce =/= =/= (satisfies|undecidable)|(satisfied|undecidable)" (reduce-constraint (disj (conj (=/= x1 2) (disj (=/= x1 1) (=/= x1 3))) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) (=/= x1 1) #f) (list (disj (=/= x1 2) (conj (=/= x1 4) (disj (symbolo x1) (=/= x1 5)))) succeed))
  (tassert "reduce =/= & proxy succeed" (reduce-constraint (proxy x1) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce =/= & proxy undecidable" (reduce-constraint (proxy x2) (=/= x1 1) #f) (list succeed (proxy x2)))
+ (tassert "reduce =/= & pconstraint" (reduce-constraint (numbero x1) (=/= x1 1) #f) (list (numbero x1) succeed))
+ (tassert "reduce =/= & pconstraint" (reduce-constraint (disj (== x1 1) (numbero x1)) (=/= x1 1) #f) (list (numbero x1) succeed))
+ (tassert "reduce =/= & pconstraint" (reduce-constraint (disj (== x1 1) (numbero x2)) (=/= x1 1) #f) (list succeed (numbero x2)))
 
-
+ (tassert "reduce == & proxy succeed" (reduce-constraint (proxy x1) (=/= x1 1) #f) (list succeed succeed))
+ (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) (=/= x1 1) #f) (list succeed (proxy x2)))
+ (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x1) (disj (=/= x1 1) (=/= x2 1)) #f) (list succeed (proxy x1)))
+ (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x1) (disj (=/= x2 1) (=/= x1 1)) #f) (list succeed (proxy x1)))
 
  ;; === DISUNIFIER ===
  ;; All permutations that may arise in the =/= solver.
@@ -230,6 +236,7 @@
  (tassert "reduce !pconstraint =/=!" (reduce-constraint (=/= x2 1) (noto (numbero x1)) #f) (list (=/= x2 1) succeed))
 
 
+
  #;
 (begin
   (tassert "reduce pconstraint pconstraint" (reduce-constraint (numbero x1) (numbero x1) #f) (list succeed succeed succeed (numbero x1)))
@@ -245,7 +252,7 @@
 
 
  
-(begin
+(begin ;TODO remove simplify-pconstraint tests
   (tassert "reduce pconstraint satisfies|satisfied" (simplify-pconstraint (disj (numbero x1) (== x1 1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))
   (tassert "reduce pconstraint satisfied|satisfies" (simplify-pconstraint (disj (== x1 1) (numbero x1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))
   (tassert "reduce pconstraint unsatisfiable|satisfies" (simplify-pconstraint (disj (symbolo x1) (numbero x1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))

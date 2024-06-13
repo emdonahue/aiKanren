@@ -151,8 +151,9 @@
                                                       (vouches (noto-goal rdcrr) (noto-goal rdcee)))))]
      [(matcho? rdcee) (vouch rdcee e-normalized r-normalized
                              (for-all (lambda (v) (=/=-member? v rdcrr)) (matcho-attributed-vars rdcee)))]
-     [(or (matcho? rdcee) (pconstraint? rdcee)) (simplify rdcee)]
-     [(proxy? rdcee) (if (or (eq? (=/=-lhs rdcrr)  (proxy-var rdcee)) (eq? (=/=-rhs rdcrr)  (proxy-var rdcee))) (values succeed succeed) (check rdcee))]
+     [(pconstraint? rdcee) (vouch rdcee e-normalized r-normalized (for-all (lambda (v) (=/=-member? v rdcrr)) (pconstraint-vars rdcee)))]
+     [(proxy? rdcee) (if (=/=-member? (proxy-var rdcee) rdcrr)
+                         (values succeed succeed) (values succeed rdcee))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" rdcee)]))
   
   (define (pconstraint-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
