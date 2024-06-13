@@ -72,7 +72,10 @@
    (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1 #f) (list (disj (=/= x2 2) (== x2 2)) succeed))
 
    (tassert "reduce == & proxy succeed" (reduce-constraint (proxy x1) x1=1 #f) (list succeed succeed))
-   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1 #f) (list (proxy x2) succeed)))
+   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1 #f) (list succeed (proxy x2)))
+   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x1) (disj (== x1 1) (== x2 1)) #f) (list succeed (proxy x1)))
+   (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x1) (disj (== x2 1) (== x1 1)) #f) (list succeed (proxy x1))))
+
 
 
  ;; === DISEQUALITY ===

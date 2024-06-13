@@ -26,7 +26,7 @@
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
   (define vouch
-    (case-lambda
+    (org-case-lambda
       [(g e-normalized r-normalized r-vouches)
        (vouch g e-normalized r-normalized r-vouches succeed)]
       [(g e-normalized r-normalized r-vouches recheck)
@@ -59,6 +59,7 @@
             [(constraint? rdcee) (reduce-constraint (constraint-goal rdcee) rdcrr e-free r-disjunction e-normalized r-normalized)]
             [(and (=/=? rdcee) (pair? (=/=-lhs rdcee)))
              (reduce-constraint (mini-disunify '() (=/=-lhs rdcee) (=/=-rhs rdcee)) rdcrr e-free r-disjunction e-normalized r-normalized)]
+            [(proxy? rdcee) (constraint-reduce rdcee rdcrr #f r-disjunction #f r-normalized)] ; Proxies are never normalized bc they can't be stored. They can only be rechecked. They are also never free.
             [else (constraint-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)]))]))
   
   (define (reduce-conj rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
@@ -112,7 +113,7 @@
               (cert (disj? rdcrr)) ; TODO can we remove r-disj boolean and handle it inside disj-r fn
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint rdcee (disj-lhs rdcrr) e-free #t e-normalized r-normalized)]
                  [(simplified-rhs recheck-rhs) (reduce-constraint rdcee (disj-rhs rdcrr) e-free #t e-normalized #f)])
-      (cond
+      (org-cond
        #;
        [e-free (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
                        (simplify simplified-lhs) (simplify g))]
@@ -136,7 +137,10 @@
                             (let-values ([(==s/simplified ==s/recheck) (reduce-constraint ==s s e-free r-disjunction #f r-normalized)])
                               (vouch rdcee e-normalized r-normalized (matcho-normalized? rdcee s)  ==s/simplified ==s/recheck))))]
      [(pconstraint? rdcee) (==/pconstraint-reduce rdcee s e-free r-disjunction e-normalized r-normalized)]
-     [(proxy? rdcee) (simplify (if (mini-normalized? s (proxy-var rdcee)) succeed rdcee))] ;TODO does reduce == proxy need to be rechecked?
+     [(proxy? rdcee) ; Proxies only come out of the store. 
+      (if (and r-normalized (mini-normalized? s (proxy-var rdcee))) ; If we can vouch that they have already been walked,
+          (values succeed succeed) ; discard. 
+          (values succeed rdcee))] ; Otherwise, we will have to walk them, 
      [else (assertion-violation '==-reduce "Unrecognized constraint type" rdcee)]))
 
   (org-define (=/=-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
@@ -174,7 +178,7 @@
     (case-lambda ;TODO can we reuse this like matcho/expand in solver?
       [(rdcee s e-free r-disjunction e-normalized r-normalized) (==/pconstraint-reduce rdcee s e-free r-disjunction e-normalized r-normalized (pconstraint-vars rdcee))]
       [(rdcee s e-free r-disjunction e-normalized r-normalized vars)
-       (if (null? vars) (simplify rdcee)
+       (if (null? vars) (vouch rdcee e-normalized r-normalized #t)
            (let ([v (mini-reify s (car vars))])
              (if (eq? (car vars) v) ; If any have been updated, run the pconstraint.
                  (==/pconstraint-reduce rdcee s e-free r-disjunction e-normalized r-normalized (cdr vars))
