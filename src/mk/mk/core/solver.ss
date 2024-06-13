@@ -205,29 +205,4 @@
      [(conj? g) (store-constraint (store-constraint s (conj-lhs g)) (conj-rhs g))] ;TODO storing conj whole if lhs and rhs have same attributed vars. check attr vars of lhs and rhs. if same, pass to parent. when differ, store children independently
      [(==? g) (extend s (==-lhs g) (==-rhs g))]
      [else ; All other constraints get assigned to their attributed variables.
-      (add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))]))
-
-  (define attributed-vars
-    ;; Extracts the free variables in the constraint to which it should be attributed.
-    (org-case-lambda attributed-vars
-      [(g) (attributed-vars g '())]
-      [(g vs)
-       (cert (goal? g) (not (proxy? g)))
-       (exclusive-cond
-        [(succeed? g) vs]
-        [(disj? g) (attributed-vars (disj-car g) vs)]
-        [(conj? g) (attributed-vars (conj-lhs g) (attributed-vars (conj-rhs g) vs))]
-        [(noto? g)
-         (if (==? (noto-goal g))
-             (attributed-vars
-              (noto-goal g)
-              (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs)))
-                  (cons (==-rhs (noto-goal g)) vs) vs))
-             (attributed-vars (noto-goal g) vs))]
-        [(==? g) ;TODO test whether == must attribute to both vars like =/=
-         (cert (var? (==-lhs g)))
-         (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
-        [(matcho? g) (matcho-attributed-vars g)]
-        [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
-        [(constraint? g) (attributed-vars (constraint-goal g) vs)]
-        [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])])))
+      (add-constraint s g (list-sort (lambda (v1 v2) (fx< (var-id v1) (var-id v2))) (attributed-vars g)))])))

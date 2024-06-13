@@ -31,8 +31,14 @@
 
   (define (vouches r e) ; r (==) vouches for e (==) when all vars in e are also in r, implying no walks/rechecks necessary
     (cert (==? r) (==? e))
+    ;(avouches r e)
+
     (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
          (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
+
+  (define (avouches r e)
+    (let ([normalized-vars (attributed-vars r)])
+     (for-all (lambda (v) (member v normalized-vars)) (attributed-vars e))))
 
   (define (matcho-normalized? m s)
     (for-all (lambda (v) (mini-normalized? s v)) (matcho-attributed-vars m)))
@@ -152,8 +158,7 @@
      [(matcho? rdcee) (vouch rdcee e-normalized r-normalized
                              (for-all (lambda (v) (=/=-member? v rdcrr)) (matcho-attributed-vars rdcee)))]
      [(pconstraint? rdcee) (vouch rdcee e-normalized r-normalized (for-all (lambda (v) (=/=-member? v rdcrr)) (pconstraint-vars rdcee)))]
-     [(proxy? rdcee) (if (=/=-member? (proxy-var rdcee) rdcrr)
-                         (values succeed succeed) (values succeed rdcee))]
+     [(proxy? rdcee) (if (=/=-member? (proxy-var rdcee) rdcrr) (values succeed succeed) (values succeed rdcee))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" rdcee)]))
   
   (define (pconstraint-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)

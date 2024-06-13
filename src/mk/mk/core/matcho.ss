@@ -13,20 +13,6 @@
   ;; TODO syntax analysis on the body to identify out of scope identifiers and insert a fresh to avoid divergence (make sure to strip single renames that dont destructure first)
   ;; TODO syntax analysis to skip occurs check (add to exist too)
 
-  (define (pattern-binding? b)
-    (cert (pair? b) (var? (car b)))
-    (pattern-var? (car b)))
-
-  (define (pattern-vars? x)
-    (if (pair? x)
-        (or (pattern-vars? (car x)) (pattern-vars? (cdr x)))
-        (and (var? x) (zero? (var-id x)))))
-
-  (define (matcho-attributed-vars g)
-    ;; The matcho attributed vars are the non pattern vars still in the substitution because they have not been fully grounded.
-    (cert (matcho? g))
-    (map car (remp pattern-binding? (matcho-substitution g))))
-
   (define (matcho/run g s)
     (let*-values ([(sub vid) (fresh-substitution (matcho-substitution g) (state-varid s))] ; Replace pattern vars with fresh vars
                   [(sub ==s^ fully-ground?) (reify-substitution sub)]) ; Remove now ground attributed vars and unify them

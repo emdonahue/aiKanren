@@ -15,7 +15,8 @@
           make-conj conj conj? conj-lhs conj-rhs conj* conj-memp conj-fold conj-filter conj-diff conj-member conj-memq conj-intersect conj-partition
           noto =/= =/=-lhs =/=-rhs =/=? =/=-member?
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
-          fresh-vars fresh exist)
+          fresh-vars fresh exist
+          attributed-vars matcho-attributed-vars pattern-binding? pattern-vars?)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
 
   
@@ -341,8 +342,47 @@
   ;; === MATCHO ===
   
   (define-structure (matcho substitution ctn))
+
+  (define (pattern-binding? b)
+    (cert (pair? b) (var? (car b)))
+    (pattern-var? (car b)))
+
+  (define (pattern-vars? x)
+    (if (pair? x)
+        (or (pattern-vars? (car x)) (pattern-vars? (cdr x)))
+        (and (var? x) (zero? (var-id x)))))
   
+  (define (matcho-attributed-vars g)
+    ;; The matcho attributed vars are the non pattern vars still in the substitution because they have not been fully grounded.
+    (cert (matcho? g))
+    (map car (remp pattern-binding? (matcho-substitution g))))
   
+  ;; === ATTR VARS ===
+
+  (define attributed-vars
+    ;; Extracts the free variables in the constraint to which it should be attributed.
+    (org-case-lambda attributed-vars
+      [(g) (attributed-vars g '())]
+      [(g vs)
+       (cert (goal? g) (not (proxy? g)))
+       (exclusive-cond
+        [(succeed? g) vs]
+        [(disj? g) (attributed-vars (disj-car g) vs)]
+        [(conj? g) (attributed-vars (conj-lhs g) (attributed-vars (conj-rhs g) vs))]
+        [(noto? g)
+         (if (==? (noto-goal g))
+             (attributed-vars
+              (noto-goal g)
+              (if (and (var? (==-rhs (noto-goal g))) (not (memq (==-rhs (noto-goal g)) vs)))
+                  (cons (==-rhs (noto-goal g)) vs) vs))
+             (attributed-vars (noto-goal g) vs))]
+        [(==? g) ;TODO test whether == must attribute to both vars like =/=
+         (cert (var? (==-lhs g)))
+         (if (memq (==-lhs g) vs) vs (cons (==-lhs g) vs))]
+        [(matcho? g) (matcho-attributed-vars g)]
+        [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
+        [(constraint? g) (attributed-vars (constraint-goal g) vs)]
+        [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
   
   ;; === CONTRACTS ===  
   (define (goal? g)
