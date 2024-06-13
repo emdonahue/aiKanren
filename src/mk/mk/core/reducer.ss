@@ -17,7 +17,7 @@
     ;; TODO try only extracting the already bound variables from =/= substitution without unifying each time
     ;; TODO we may need to worry about failure if we do something less than full unification, so maybe we need a mini-disunify
     (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
-
+  
   (define simplify
     (case-lambda
       [(g) (simplify g succeed)] ; TODO 2 arg simplify should probably be its own fn
@@ -149,6 +149,8 @@
           (values succeed succeed) ; Identical =/= can cancel
           (vouch rdcee e-normalized r-normalized (and (not (and e-free r-disjunction))
                                                       (vouches (noto-goal rdcrr) (noto-goal rdcee)))))]
+     [(matcho? rdcee) (vouch rdcee e-normalized r-normalized
+                             (for-all (lambda (v) (=/=-member? v rdcrr)) (matcho-attributed-vars rdcee)))]
      [(or (matcho? rdcee) (pconstraint? rdcee)) (simplify rdcee)]
      [(proxy? rdcee) (if (or (eq? (=/=-lhs rdcrr)  (proxy-var rdcee)) (eq? (=/=-rhs rdcrr)  (proxy-var rdcee))) (values succeed succeed) (check rdcee))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" rdcee)]))

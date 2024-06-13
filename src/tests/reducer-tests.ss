@@ -97,6 +97,8 @@
  (tassert "reduce =/= =/= succeed" (reduce-constraint (=/= x1 2) (=/= x1 1) #f) (list (=/= x1 2) succeed))
  (tassert "reduce =/= conj fail" (reduce-constraint (conj (== x1 1) (=/= x1 1)) (=/= x1 1) #f) (list fail fail))
  (tassert "reduce =/= match succeed" (reduce-constraint (matcho ([(a . d) x1])) (=/= x1 1) #f) (lambda (g) (and (matcho? (car g)) (succeed? (cadr g)))))
+ (tassert "reduce =/= match succeed" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1]))) (=/= x1 1) #f) (lambda (g) (and (matcho? (car g)) (succeed? (cadr g)))))
+ (tassert "reduce =/= match succeed" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x2]))) (=/= x1 1) #f) (lambda (g) (and (matcho? (cadr g)) (succeed? (car g)))))
  (tassert "reduce =/= not match succeed" (reduce-constraint (noto (matcho ([(a . d) x1])))  (=/= x1 1) #f) (lambda (g) (noto? (car g))))
  ;(tassert "reduce =/= proxy" (reduce-constraint (noto (matcho ([(a . d) x1])))  (=/= x1 1) #f) noto?)
  (tassert "reduce =/= =/= satisfied|satisfies" (reduce-constraint (disj (=/= x1 1) (symbolo x1)) (=/= x1 1) #f) (list succeed succeed))
