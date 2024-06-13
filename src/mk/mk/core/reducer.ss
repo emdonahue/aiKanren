@@ -29,16 +29,9 @@
     (if (fail? g) (values fail fail)
      (if (or e-normalized (and r-normalized r-vouches)) (values g succeed) (values succeed g))))
 
-  (define (vouches r e) ; r (==) vouches for e (==) when all vars in e are also in r, implying no walks/rechecks necessary
-    (cert (==? r) (==? e))
-    ;(avouches r e)
-
-    (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
-         (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
-
-  (define (avouches r e)
-    (let ([normalized-vars (attributed-vars r)])
-     (for-all (lambda (v) (member v normalized-vars)) (attributed-vars e))))
+  (define (vouches r e)
+    (let ([n-vars (normalized-vars r)])
+     (for-all (lambda (v) (member v n-vars)) (normalized-vars e))))
 
   (define (matcho-normalized? m s)
     (for-all (lambda (v) (mini-normalized? s v)) (matcho-attributed-vars m)))

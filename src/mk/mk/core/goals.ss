@@ -16,7 +16,7 @@
           noto =/= =/=-lhs =/=-rhs =/=? =/=-member?
           make-disj disj disj? disj-car disj-cdr disj* disj-lhs disj-rhs disj-succeeds? disj-factorize disj-factorized
           fresh-vars fresh exist
-          attributed-vars matcho-attributed-vars pattern-binding? pattern-vars?)
+          attributed-vars matcho-attributed-vars pattern-binding? pattern-vars? normalized-vars)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core utils))
 
   
@@ -383,6 +383,12 @@
         [(pconstraint? g) (fold-left (lambda (vs v) (if (memq v vs) vs (cons v vs))) vs (pconstraint-vars g))]
         [(constraint? g) (attributed-vars (constraint-goal g) vs)]
         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
+
+  (define (normalized-vars g)
+    (if (==? g)
+        (let ([rhs (if (var? (==-rhs g)) (list (==-rhs g)) '())])
+          (if (var? (==-lhs g)) (cons (==-lhs g) rhs) rhs))
+        (attributed-vars g)))
   
   ;; === CONTRACTS ===  
   (define (goal? g)
