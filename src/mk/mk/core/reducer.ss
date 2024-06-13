@@ -26,16 +26,13 @@
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
   (define (vouch g e-normalized r-normalized r-vouches)
-    (if (or e-normalized (and r-normalized r-vouches)) (simplify g) (check g)))
+    (if (fail? g) (values fail fail)
+     (if (or e-normalized (and r-normalized r-vouches)) (values g succeed) (values succeed g))))
 
   (define (vouches r e) ; r (==) vouches for e (==) when all vars in e are also in r, implying no walks/rechecks necessary
     (cert (==? r) (==? e))
     (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
          (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
-
-  (define (==-conflict? x y) ; TODO unused?
-    (not (or (and (equal? (==-lhs x) (==-lhs y)) (equal? (==-rhs x) (==-rhs y)))
-             (and (equal? (==-lhs x) (==-rhs y)) (equal? (==-rhs x) (==-lhs y))))))
 
   (define (matcho-normalized? m s)
     (for-all (lambda (v) (mini-normalized? s v)) (matcho-attributed-vars m)))
