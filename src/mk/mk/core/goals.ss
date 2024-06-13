@@ -385,10 +385,12 @@
         [else (assertion-violation 'attributed-vars "Unrecognized constraint type" g)])]))
 
   (define (normalized-vars g)
-    (if (==? g)
-        (let ([rhs (if (var? (==-rhs g)) (list (==-rhs g)) '())])
-          (if (var? (==-lhs g)) (cons (==-lhs g) rhs) rhs))
-        (attributed-vars g)))
+    (cert (not (conj? g)) (not (disj? g)))
+    (exclusive-cond
+     [(==? g) (let ([rhs (if (var? (==-rhs g)) (list (==-rhs g)) '())])
+                (if (var? (==-lhs g)) (cons (==-lhs g) rhs) rhs))]
+     [(proxy? g) (list (proxy-var g))]
+     [else (attributed-vars g)]))
   
   ;; === CONTRACTS ===  
   (define (goal? g)
