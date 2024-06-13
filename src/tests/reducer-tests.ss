@@ -52,6 +52,8 @@
    (tassert "reduce == & match simplified" (reduce-constraint (matcho ([(a . d) x1] [(a . d) x2]))
                                                               (list (cons x1 (cons 2 3)) (cons x2 (cons 2 x3))) #f)
             (list succeed (== (cons 2 x3) (cons 2 3))))
+   (tassert "reduce == & match" (reduce-constraint (matcho ([(a . d) x2])) x1=1 #f) (lambda (s-r) (and (matcho? (car s-r)) (succeed? (cadr s-r)))))
+   (tassert "reduce == & match" (reduce-constraint (disj (== x1 2) (matcho ([(a . d) x2]))) x1=1 #f) (lambda (s-r) (and (matcho? (cadr s-r)) (succeed? (car s-r)))))
    
    (tassert "reduce == & ==!|==?" (reduce-constraint (disj (== x1 2) (== x2 3)) x1=1 #f) (list succeed (== x2 3)))
    (tassert "reduce == & ==?|==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1 #f) (list (disj (== x2 2) (== x2 3)) succeed))   

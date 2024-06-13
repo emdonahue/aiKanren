@@ -18,17 +18,30 @@
     ;; TODO we may need to worry about failure if we do something less than full unification, so maybe we need a mini-disunify
     (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
 
-  (define (simplify g) (if (fail? g) (values fail fail) (values g succeed)))
+  (define simplify
+    (case-lambda
+      [(g) (simplify g succeed)] ; TODO 2 arg simplify should probably be its own fn
+      [(g recheck) (if (or (fail? g) (fail? recheck)) (values fail fail) (values g recheck))]))
 
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
-  (define (vouch g e-normalized r-normalized r-vouches)
-    (if (or e-normalized (and r-normalized r-vouches)) (simplify g) (check g)))
+  (define vouch
+    (case-lambda
+      [(g e-normalized r-normalized r-vouches)
+       (vouch g e-normalized r-normalized r-vouches succeed)]
+      [(g e-normalized r-normalized r-vouches recheck)
+       (vouch g e-normalized r-normalized r-vouches succeed recheck)]
+      [(g e-normalized r-normalized r-vouches simplified recheck)
+       (if (or e-normalized (and r-normalized r-vouches)) (simplify (conj simplified g) recheck) (simplify simplified (conj g recheck)))]))
 
-  (define (vouches r e) ; r vouches for e when all vars in e are also in r, implying no walks/rechecks necessary
+  (define (vouches r e) ; r (==) vouches for e (==) when all vars in e are also in r, implying no walks/rechecks necessary
+    (cert (==? r) (==? e))
     (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
          (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
 
+  (define (matcho-normalized? m s)
+    (for-all (lambda (v) (mini-normalized? s v)) (matcho-attributed-vars m)))
+  
   ;; === REDUCEE ===
   (define reduce-constraint
     ;; Reduce existing constraint g using new constraint c.
@@ -117,11 +130,11 @@
                     (vouch (== lhs rhs) e-normalized r-normalized (and (var? lhs) lhs-normalized? rhs-normalized?)))]
      [(=/=? rdcee) (let-values ([(rdcee r-vouches) (mini-disunify/normalized s (=/=-lhs rdcee) (=/=-rhs rdcee))])
                  (vouch rdcee e-normalized r-normalized r-vouches))]
-     [(matcho? rdcee) (let*-values ([(expanded? rdcee ==s) (matcho/expand rdcee s)]
-                                    [(==s/simplified ==s/recheck) (reduce-constraint ==s s e-free r-disjunction #f r-normalized)])
-                        (if expanded? ;TODO should matcho's ==s/contents be recheck or satisfied?
+     [(matcho? rdcee) (let-values ([(expanded? rdcee ==s) (matcho/expand rdcee s)])
+                        (if expanded?
                             (reduce-constraint (conj ==s rdcee) s e-free r-disjunction #f r-normalized)
-                            (values (conj ==s/simplified rdcee) ==s/recheck)))]
+                            (let-values ([(==s/simplified ==s/recheck) (reduce-constraint ==s s e-free r-disjunction #f r-normalized)])
+                              (vouch rdcee e-normalized r-normalized (matcho-normalized? rdcee s)  ==s/simplified ==s/recheck))))]
      [(pconstraint? rdcee) (==/pconstraint-reduce rdcee s e-free r-disjunction e-normalized r-normalized)]
      [(proxy? rdcee) (simplify (if (mini-normalized? s (proxy-var rdcee)) succeed rdcee))] ;TODO does reduce == proxy need to be rechecked?
      [else (assertion-violation '==-reduce "Unrecognized constraint type" rdcee)]))
