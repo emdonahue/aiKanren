@@ -54,6 +54,17 @@
             (list succeed (== (cons 2 x3) (cons 2 3))))
    (tassert "reduce == & match" (reduce-constraint (matcho ([(a . d) x2])) x1=1 #f) (lambda (s-r) (and (matcho? (car s-r)) (succeed? (cadr s-r)))))
    (tassert "reduce == & match" (reduce-constraint (disj (== x1 2) (matcho ([(a . d) x2]))) x1=1 #f) (lambda (s-r) (and (matcho? (cadr s-r)) (succeed? (car s-r)))))
+   (tassert "reduce == & match simplified" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1] [(a . d) x2] [(b . c) x3])))
+                                                              x1=23 #f)
+            (lambda (s-r) (and (succeed? (car s-r)) (conj? (cadr s-r)) (matcho? (conj-lhs (cadr s-r))) (equal? (conj-rhs (cadr s-r)) (== x2 (cons 2 3))))))
+   (tassert "reduce == & match simplified" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1] [(a . d) x2] [(b . c) x3])))
+                                                              (list (cons x1 (cons 2 3)) (cons x3 x4)) #f)
+            (lambda (s-r) (and (matcho? (car s-r)) (equal? (cadr s-r) (== x2 '(2 . 3))))))
+   ;; TODO possible bug in matcho expander:
+   #;
+   (tassert "reduce == & match simplified" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1] [(a . d) x2] [(b . c) x3])))
+                                                              (list (cons x1 (cons 2 3)) (cons x3 x2)) #f)
+            (lambda (s-r) (and (matcho? (car s-r)) (equal? (cadr s-r) (== x2 '(2 . 3))))))
    
    (tassert "reduce == & ==!|==?" (reduce-constraint (disj (== x1 2) (== x2 3)) x1=1 #f) (list succeed (== x2 3)))
    (tassert "reduce == & ==?|==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1 #f) (list (disj (== x2 2) (== x2 3)) succeed))   
