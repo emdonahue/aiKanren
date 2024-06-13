@@ -25,19 +25,17 @@
 
   (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
-  (define vouch
-    (org-case-lambda
-      [(g e-normalized r-normalized r-vouches)
-       (vouch g e-normalized r-normalized r-vouches succeed)]
-      [(g e-normalized r-normalized r-vouches recheck)
-       (vouch g e-normalized r-normalized r-vouches succeed recheck)]
-      [(g e-normalized r-normalized r-vouches simplified recheck)
-       (if (or e-normalized (and r-normalized r-vouches)) (simplify (conj simplified g) recheck) (simplify simplified (conj g recheck)))]))
+  (define (vouch g e-normalized r-normalized r-vouches)
+    (if (or e-normalized (and r-normalized r-vouches)) (simplify g) (check g)))
 
   (define (vouches r e) ; r (==) vouches for e (==) when all vars in e are also in r, implying no walks/rechecks necessary
     (cert (==? r) (==? e))
     (and (or (not (var? (==-lhs e))) (==-member? (==-lhs e) r))
          (or (not (var? (==-rhs e))) (==-member? (==-rhs e) r))))
+
+  (define (==-conflict? x y) ; TODO unused?
+    (not (or (and (equal? (==-lhs x) (==-lhs y)) (equal? (==-rhs x) (==-rhs y)))
+             (and (equal? (==-lhs x) (==-rhs y)) (equal? (==-rhs x) (==-lhs y))))))
 
   (define (matcho-normalized? m s)
     (for-all (lambda (v) (mini-normalized? s v)) (matcho-attributed-vars m)))
@@ -47,7 +45,7 @@
     ;; Reduce existing constraint g using new constraint c.
     ;; e-free => g is a e-free constraint (not in the store). for a e-free =/=, this means that =/= in the store won't simplify it away, so that we can turn around and use it to simplify the =/= already in the story, which may in turn simplify containing disj. e-free mode preserves some information. #f=store mode goes all out to simplify the store.
     (case-lambda
-      [(rdcee rdcrr e-free) (reduce-constraint rdcee rdcrr e-free #f #t #t)]
+      [(rdcee rdcrr e-free) (reduce-constraint rdcee rdcrr e-free #f #t #t)] ; TODO can we combine e-free and r-disjunction, or are they ever used separately?
       [(rdcee rdcrr e-free r-disjunction e-normalized r-normalized) ;TODO split normalized into reducer/reducee
        (cert (goal? rdcee) (or (fail? rdcee) (not (fail? rdcrr))) (or (goal? rdcrr) (mini-substitution? rdcrr))) ; -> simplified recheck
        (if (succeed? rdcrr) (simplify rdcee)
@@ -134,31 +132,26 @@
      [(matcho? rdcee) (let-values ([(expanded? rdcee ==s) (matcho/expand rdcee s)])
                         (if expanded?
                             (reduce-constraint (conj ==s rdcee) s e-free r-disjunction #f r-normalized)
-                            (let-values ([(==s/simplified ==s/recheck) (reduce-constraint ==s s e-free r-disjunction #f r-normalized)])
-                              (vouch rdcee e-normalized r-normalized (matcho-normalized? rdcee s)  ==s/simplified ==s/recheck))))]
+                            (let-values ([(==s/simplified ==s/recheck) (reduce-constraint ==s s e-free r-disjunction #f r-normalized)]
+                                         [(rdcee rdcee/recheck) (vouch rdcee e-normalized r-normalized (matcho-normalized? rdcee s))])
+                              (values (conj ==s/simplified rdcee) (conj ==s/recheck rdcee/recheck)))))]
      [(pconstraint? rdcee) (==/pconstraint-reduce rdcee s e-free r-disjunction e-normalized r-normalized)]
-     [(proxy? rdcee) ; Proxies only come out of the store. 
-      (if (and r-normalized (mini-normalized? s (proxy-var rdcee))) ; If we can vouch that they have already been walked,
-          (values succeed succeed) ; discard. 
-          (values succeed rdcee))] ; Otherwise, we will have to walk them, 
+     [(proxy? rdcee) ; If we can vouch that they have already been walked, discard. Otherwise we have to walk them (cant be stored). 
+      (if (and r-normalized (mini-normalized? s (proxy-var rdcee))) (values succeed succeed) (values succeed rdcee))] 
      [else (assertion-violation '==-reduce "Unrecognized constraint type" rdcee)]))
 
   (org-define (=/=-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
               ;; =/= can only simplify ==->fail and =/=->succeed
               (cert (=/=? rdcrr))
     (exclusive-cond
-     [(==? rdcee) ; -> fail,  ==
-      (simplify (let* ([s (=/=->substitution rdcrr)] ; TODO make a pure =/= x =/= system that doesnt have tu fully unify
-                       [s^ (mini-unify s (==-lhs rdcee) (==-rhs rdcee))])
-                  (if (eq? s s^) fail rdcee)))]
+     [(==? rdcee) ; -> fail?. Simple equality check ok because 1) we ignore list unifications for performance reasons, constants will already succeed or fail, and == orders vars by id
+      (vouch (if (equal? rdcee (noto-goal rdcrr)) fail rdcee) e-normalized r-normalized (vouches (noto-goal rdcrr) rdcee))]
      [(=/=? rdcee) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs rdcee))))
-      (cond
-       [(and e-free r-disjunction) (vouch rdcee e-normalized #f #f)] ; If reducer is in a disjunction, and reducee is free, we don't want to do any reducing because we want the reducee to later simplify the reducer an take out the disjunction in the store rather than having the disjunction take out the simpler free =/=
-       ;; TODO can unequal =/= cancel? eg can x=/=y and y=/=x both show up in reducer?
-       [(equal? rdcee rdcrr) (values succeed succeed)] ; Identical =/= can cancel
-       [else ; We can vouch for reducee when it's already normalized, or when reducer is and has all the same vars.
-        (vouch rdcee e-normalized r-normalized (vouches (noto-goal rdcrr) (noto-goal rdcee)))])]
+      (if (and (not (and e-free r-disjunction)) (equal? rdcee rdcrr)) ; If reducer is in a disjunction, and reducee is free, we don't want to do any reducing because we want the reducee to later simplify the reducer an take out the disjunction in the store rather than having the disjunction take out the simpler free =/=
+          (values succeed succeed) ; Identical =/= can cancel
+          (vouch rdcee e-normalized r-normalized (and (not (and e-free r-disjunction))
+                                                      (vouches (noto-goal rdcrr) (noto-goal rdcee)))))]
      [(or (matcho? rdcee) (pconstraint? rdcee)) (simplify rdcee)]
      [(proxy? rdcee) (if (or (eq? (=/=-lhs rdcrr)  (proxy-var rdcee)) (eq? (=/=-rhs rdcrr)  (proxy-var rdcee))) (values succeed succeed) (check rdcee))]
      [else (assertion-violation '=/=-reduce "Unrecognized constraint type" rdcee)]))
