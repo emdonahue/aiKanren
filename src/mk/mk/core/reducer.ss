@@ -144,7 +144,7 @@
       (vouch (if (equal? rdcee (noto-goal rdcrr)) fail rdcee) e-normalized r-normalized (vouches? (noto-goal rdcrr) rdcee))]
      [(=/=? rdcee) ; -> succeed, =/=
       (cert (not (pair? (=/=-lhs rdcee))))
-      (if (and (not (and e-free r-disjunction)) (equal? rdcee rdcrr)) ; If reducer is in a disjunction, and reducee is free, we don't want to do any reducing because we want the reducee to later simplify the reducer an take out the disjunction in the store rather than having the disjunction take out the simpler free =/=
+      (if (and (not (and e-free r-disjunction)) (equal? rdcee rdcrr)) ; If reducee is free and reducer is in a disjunction, we must negate our usual symmetric equality check and preserve the reducee so it can later simplify the reducer.
           (values succeed succeed) ; Identical =/= can cancel
           (vouch rdcee e-normalized r-normalized (and (not (and e-free r-disjunction))
                                                       (vouches? (noto-goal rdcrr) (noto-goal rdcee)))))]
@@ -176,15 +176,18 @@
 
   (define (matcho-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
     (exclusive-cond
-     [(==? rdcee) (if (failure? (mini-unify-substitution (matcho-substitution rdcrr) (==->substitution rdcee))) (values fail fail) (simplify rdcee))]
+     [(==? rdcee) (if (failure? (mini-unify-substitution (matcho-substitution rdcrr) (==->substitution rdcee)))
+                      (values fail fail)
+                      (vouch rdcee e-normalized r-normalized (vouches? rdcrr rdcee)))]
      [(=/=? rdcee) ; -> succeed, =/=
       (if (failure? (mini-unify-substitution (matcho-substitution rdcrr) (=/=->substitution rdcee)))
-          (values succeed succeed) (simplify rdcee))] ;TODO could a =/= of lists simultaneously fail?
+          (values succeed succeed)
+          (vouch rdcee e-normalized r-normalized (vouches? rdcrr rdcee)))] ;TODO could a =/= of lists simultaneously fail?
      ;;TODO matchos with eq? lambda can cancel
      [else (assertion-violation 'matcho-reduce "Unrecognized constraint type" rdcee)]))
 
   (define (noto-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
-    (let-values ([(simplified recheck) (reduce-constraint rdcrr (if (noto? rdcee) (noto rdcee) rdcee) e-free r-disjunction e-normalized r-normalized)])
+    (let-values ([(simplified recheck) (reduce-constraint rdcrr (if (noto? rdcee) (noto-goal rdcee) rdcee) e-free r-disjunction e-normalized r-normalized)])
       (if (and (succeed? simplified) (succeed? recheck))
           (if (noto? rdcee) (values succeed succeed) (values fail fail))
-          (simplify rdcee)))))
+          (vouch rdcee e-normalized r-normalized (vouches? rdcrr rdcee))))))

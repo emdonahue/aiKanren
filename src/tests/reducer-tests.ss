@@ -156,7 +156,8 @@
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 1) (=/= x1 2)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 x2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
- 
+
+ (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (disj (=/= x1 1) (=/= x1 1)) #t) (list (disj (=/= x1 1) (=/= x1 1)) succeed))
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1))) 
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list succeed (=/= x2 1))) ; the store x2 in the head of the disj has been walked so it can vouch for the free x2
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 x3)) (== x1 1)) #t) (list succeed (=/= x2 1))) 
@@ -182,6 +183,7 @@
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x2 2)) (=/= x1 1) #f) (list succeed (=/= x2 2)))
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 x2)) (=/= x1 1) #f) (list succeed (=/= x1 x2))) ; x2 may never have had a proxy attached, so we need to recheck.
+ (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (disj (=/= x1 1) (=/= x1 1)) #f) (list succeed succeed))
 
  ;; === CONJUNCTION ===
  (tassert "reduce conj =/= first simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x2 2)) #f) (list succeed succeed))
@@ -231,27 +233,19 @@
  (tassert "reduce !pconstraint ==" (reduce-constraint (== x1 1) (noto (symbolo x1)) #f) (list (== x1 1) succeed)) ; fail, fail
  (tassert "reduce !pconstraint =/=!" (reduce-constraint (=/= x1 1) (noto (numbero x1)) #f) (list succeed succeed)) ; =/=, numbero
  (tassert "reduce !pconstraint =/=" (reduce-constraint (=/= x1 1) (noto (symbolo x1)) #f) (list (=/= x1 1) succeed)) ; succeed, symbolo
- (tassert "reduce !pconstraint ==!^" (reduce-constraint (== x2 1) (noto (numbero x1)) #f) (list (== x2 1) succeed))
- (tassert "reduce !pconstraint =/=!" (reduce-constraint (=/= x2 1) (noto (numbero x1)) #f) (list (=/= x2 1) succeed))
-
- ;(tassert "reduce pconstraint simplifies|entailed" (simplify-pconstraint (disj (== x1 1) (matcho ([x1 (a d)]))) (pairo x1)) (lambda (g) (and (equal? (car g) (pairo x1)) (succeed? (cadr g)) (succeed? (cadddr g)) (matcho-test-eq? (caddr g) (list x1) '()))))
-
- ;;TODO test proxies
+ (tassert "reduce !pconstraint ==!^" (reduce-constraint (== x2 1) (noto (numbero x1)) #f) (list succeed (== x2 1)))
+ (tassert "reduce !pconstraint =/=!" (reduce-constraint (=/= x2 1) (noto (numbero x1)) #f) (list succeed (=/= x2 1)))
 
  ;; === MATCHO ===
 
  (tassert "reduce matcho ==" (reduce-constraint (== x1 (cons x2 x3)) (matcho ([(a . d) x1])) #f) (list (== x1 (cons x2 x3)) succeed))
+ (tassert "reduce matcho ==" (reduce-constraint (== x1 (cons x2 x3)) (matcho ([(a . d) x2])) #f) (list succeed (== x1 (cons x2 x3))))
+ (tassert "reduce matcho ==" (reduce-constraint (== x1 (cons x2 x3)) (matcho ([(a . d) x1])) #t) (list (== x1 (cons x2 x3)) succeed))
  (tassert "reduce matcho ==!" (reduce-constraint (== x1 1) (matcho ([(a . d) x1])) #f) (list fail fail))
  (tassert "reduce matcho =/=" (reduce-constraint (=/= x1 (cons x2 x3)) (matcho ([(a . d) x1])) #f) (list (=/= x1 (cons x2 x3)) succeed))
+ (tassert "reduce matcho =/=" (reduce-constraint (=/= x1 (cons x2 x3)) (matcho ([(a . d) x2])) #f) (list succeed (=/= x1 (cons x2 x3))))
  (tassert "reduce matcho =/=!" (reduce-constraint (=/= x1 1) (matcho ([(a . d) x1])) #f) (list succeed succeed))
-  #;
- (begin
-   (tassert "reduce pconstraint match!" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x1)) (list fail fail succeed (numbero x1)))
-   (tassert "reduce pconstraint match" (simplify-pconstraint (matcho ([x1 (a . d)])) (pairo x1)) (lambda (a) (and (succeed? (car a)) (matcho? (cadr a)))))
-   (tassert "reduce pconstraint match?" (simplify-pconstraint (matcho ([x1 (a . d)])) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (matcho? (cadr a)))))
-   (tassert "reduce pconstraint not match!" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x1)) (lambda (a) (and (equal? (car a) (numbero x1)) (succeed? (cadr a)))))
-   (tassert "reduce pconstraint not match" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (pairo x1)) (lambda (a) (and (equal? (car a) (pairo x1)) (noto? (cadr a)))))
- (tassert "reduce pconstraint not match?" (simplify-pconstraint (noto (matcho ([x1 (a . d)]))) (numbero x2)) (lambda (a) (and (equal? (car a) (numbero x2)) (noto? (cadr a))))))
+ 
 
  ;; === PROXY ===
  (tassert "reduce proxy ==" (reduce-constraint (== x1 1) (proxy x1) #f) (list (== x1 1) succeed))
