@@ -44,7 +44,7 @@
       [(rdcee rdcrr e-free) (reduce-constraint rdcee rdcrr e-free #f e-free (not e-free))] ; TODO can we combine e-free and r-disjunction, or are they ever used separately?
       [(rdcee rdcrr e-free r-disjunction e-normalized r-normalized) ;TODO split normalized into reducer/reducee
        (cert (goal? rdcee) (or (fail? rdcee) (not (fail? rdcrr))) (or (goal? rdcrr) (mini-substitution? rdcrr))) ; -> simplified recheck
-       (if (succeed? rdcrr) (simplify rdcee)
+       (if (succeed? rdcrr) (values rdcee succeed)
            (exclusive-cond
             [(or (fail? rdcee) (succeed? rdcee)) (values rdcee rdcee)]
             [(conj? rdcee) (reduce-conj rdcee rdcrr e-free r-disjunction e-normalized r-normalized)]
