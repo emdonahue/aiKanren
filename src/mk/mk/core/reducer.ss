@@ -69,12 +69,10 @@
       (exclusive-cond
        [(and (succeed? simplified-lhs) (succeed? recheck-lhs)) (values succeed succeed)]
        [(fail? simplified-lhs) (reduce-constraint (disj-rhs rdcee) rdcrr e-free r-disjunction #f r-normalized)]
-       [else (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs rdcee) rdcrr e-free r-disjunction #f r-normalized)])
-               (let ([d (disj (conj simplified-lhs recheck-lhs)
-                              (conj simplified-rhs recheck-rhs))])
-                 (if (not (succeed? recheck-lhs))
-                     (check d)
-                     (simplify d))))])))
+       [else
+        (let-values ([(simplified-rhs recheck-rhs) (reduce-constraint (disj-rhs rdcee) rdcrr e-free r-disjunction #f r-normalized)])
+          (vouch (disj (conj simplified-lhs recheck-lhs) (conj simplified-rhs recheck-rhs))
+                 e-normalized r-normalized (succeed? recheck-lhs)))])))
   
   (define (reduce-noto rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
     (let-values ([(simplified recheck) (reduce-constraint (noto-goal rdcee) rdcrr e-free r-disjunction e-normalized r-normalized)])
@@ -99,23 +97,19 @@
     (let*-values ([(simplified recheck) (reduce-constraint rdcee (conj-lhs rdcrr) e-free r-disjunction e-normalized r-normalized)]
                   [(simplified/simplified simplified/recheck) (reduce-constraint simplified (conj-rhs rdcrr) e-free r-disjunction e-normalized r-normalized)]
                   [(recheck/simplified recheck/recheck) (reduce-constraint recheck (conj-rhs rdcrr) e-free r-disjunction e-normalized r-normalized)])
-      (values (conj simplified/simplified (conj simplified/recheck recheck/simplified)) recheck/recheck)
-      #;
-      (values simplified/simplified (conj simplified/recheck (conj recheck/simplified recheck/recheck)))))
+      (values (conj simplified/simplified (conj simplified/recheck recheck/simplified)) recheck/recheck)))
   
   (org-define (disj-reduce rdcee rdcrr e-free e-normalized r-normalized)
-              (cert (disj? rdcrr)) ; TODO can we remove r-disj boolean and handle it inside disj-r fn
+              (cert (disj? rdcrr))
     (let-values ([(simplified-lhs recheck-lhs) (reduce-constraint rdcee (disj-lhs rdcrr) e-free #t e-normalized r-normalized)]
                  [(simplified-rhs recheck-rhs) (reduce-constraint rdcee (disj-rhs rdcrr) e-free #t e-normalized #f)])
       (org-cond
-       #;
-       [e-free (if (and (trivial? simplified-lhs) (eq? simplified-lhs simplified-rhs))
-                       (simplify simplified-lhs) (simplify g))]
        [(fail? simplified-lhs) (values simplified-rhs recheck-rhs)]
        [(fail? simplified-rhs) (values simplified-lhs recheck-lhs)]
        [(and (succeed? simplified-lhs) (succeed? simplified-rhs) (succeed? recheck-lhs) (succeed? recheck-rhs))
-        (values succeed succeed)] ;TODO can just some of the children vouch in a disj?
-       [else (vouch rdcee e-normalized r-normalized (and (succeed? recheck-lhs) (succeed? recheck-rhs)))])))
+        (values succeed succeed)]
+       [else (vouch rdcee e-normalized r-normalized (or (and (succeed? recheck-lhs) (not (succeed? simplified-lhs)))
+                                                        (and (succeed? recheck-rhs) (not (succeed? simplified-rhs)))))])))
 
   (org-define (==-reduce rdcee s e-free r-disjunction e-normalized r-normalized)
     (cert (goal? rdcee) (mini-substitution? s))

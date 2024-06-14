@@ -203,7 +203,7 @@
  (tassert "reduce disj =/= =/= ==!" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x1 1)) #f) (list succeed succeed))
  (tassert "reduce disj =/= lhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 1)) #f) (list (=/= x2 1) succeed))
  (tassert "reduce disj =/= rhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 x2)) #f) (list succeed (=/= x2 1)))
- ;(tassert "reduce disj =/= both reduce" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 x2)) #f) (list (=/= x2 1) succeed))
+ (tassert "reduce disj =/= both reduce" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 x2)) #f) (list (=/= x1 1) succeed))
 
  ;; === ASYMMETRIC ===
  (tassert "reduce asym =/= =/=|=/=" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x1 1)) #t) (list (=/= x1 1) succeed))
