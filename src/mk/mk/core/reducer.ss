@@ -41,7 +41,7 @@
     ;; Reduce existing constraint g using new constraint c.
     ;; e-free => g is a e-free constraint (not in the store). for a e-free =/=, this means that =/= in the store won't simplify it away, so that we can turn around and use it to simplify the =/= already in the story, which may in turn simplify containing disj. e-free mode preserves some information. #f=store mode goes all out to simplify the store.
     (case-lambda
-      [(rdcee rdcrr e-free) (reduce-constraint rdcee rdcrr e-free #f #t #t)] ; TODO can we combine e-free and r-disjunction, or are they ever used separately?
+      [(rdcee rdcrr e-free) (reduce-constraint rdcee rdcrr e-free #f e-free (not e-free))] ; TODO can we combine e-free and r-disjunction, or are they ever used separately?
       [(rdcee rdcrr e-free r-disjunction e-normalized r-normalized) ;TODO split normalized into reducer/reducee
        (cert (goal? rdcee) (or (fail? rdcee) (not (fail? rdcrr))) (or (goal? rdcrr) (mini-substitution? rdcrr))) ; -> simplified recheck
        (if (succeed? rdcrr) (simplify rdcee)

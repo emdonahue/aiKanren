@@ -16,10 +16,10 @@
    ;; nothing=ground succeed, !=ground conflict, ?=free var, ^=bound var
    (tassert "reduce == & ==" (reduce-constraint (== x1 1) x1=1 #f) (list succeed succeed))
    (tassert "reduce == & ==!" (reduce-constraint (== x1 2) x1=1 #f) (list fail fail))
-   (tassert "reduce == & ==?" (reduce-constraint (== x1 x2) x1=1 #f) (list (== x2 1) succeed))
-   (tassert "reduce == & ?==" (reduce-constraint (== x2 2) x1=1 #f) (list (== x2 2) succeed))
+   (tassert "reduce == & ==?" (reduce-constraint (== x1 x2) x1=1 #f) (list succeed (== x2 1)))
+   (tassert "reduce == & ?==" (reduce-constraint (== x2 2) x1=1 #f) (list succeed (== x2 2)))
    (tassert "reduce == & ^==" (reduce-constraint (== x1 2) x1=x2 #f) (list (== x2 2) succeed))
-   (tassert "reduce == & ==*" (reduce-constraint (== x1 '(2 . 3)) x1=x2x3 #f) (list (== (cons x2 x3) '(2 . 3)) succeed))
+   (tassert "reduce == & ==*" (reduce-constraint (== x1 '(2 . 3)) x1=x2x3 #f) (list succeed (== (cons x2 x3) '(2 . 3))))
 
    (tassert "reduce == & ==!&==" (reduce-constraint (conj (== x1 2) (== x1 1)) x1=1 #f) (list fail fail))
    (tassert "reduce == & ==&==!" (reduce-constraint (conj (== x1 1) (== x1 2)) x1=1 #f) (list fail fail))
@@ -42,17 +42,19 @@
    (tassert "reduce == & match no vars succeed" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x2])) `((,x1 . (1 . 2)) (,x2 . (3 . 4))) #f) (list succeed succeed))
    (tassert "reduce == & match no vars fail" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x2]) (== a 2)) `((,x1 . (1 . 2)) (,x2 . (3 . 4))) #f) (list fail fail))
    (tassert "reduce == & match unified out vars" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x2])) x1=x2 #f) (lambda (g) (and (matcho? (car g)) (equal? (list x2) (matcho-attributed-vars (car g))))))
-   (tassert "reduce == & match recheck unnormalized vars" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x3])) x1=x2x3 #f) (lambda (g) (and (matcho? (car g)) (equal? (list x3) (matcho-attributed-vars (car g))))))
+
+
+   (tassert "reduce == & match recheck unnormalized vars" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x3])) x1=x2x3 #f) (lambda (g) (and (succeed? (car g)) (matcho? (cadr g)) (equal? (list x3) (matcho-attributed-vars (cadr g))))))
    (tassert "reduce == & match simplify normalized vars" (reduce-constraint (matcho ([(a . d) x1] [(b . c) x2])) (list (cons x1 '(1 . 2)) (cons x2 x3)) #f) (lambda (g) (and (matcho? (car g)) (equal? (matcho-attributed-vars (car g)) (list x3)))))
    (tassert "reduce == & not match succeed" (reduce-constraint (noto (matcho ([(a . d) x1]))) x1=1 #f) (list succeed succeed))
    (tassert "reduce == & not match simplified" (reduce-constraint (noto (matcho ([(a . d) x1]))) x1=x2 #f) (lambda (g) (and (noto? (car g)) (matcho? (noto-goal (car g))) (equal? x2 (car (matcho-attributed-vars (noto-goal (car g))))))))
-   (tassert "reduce == & not match recheck" (reduce-constraint (noto (matcho ([(a . d) x1] [(b . c) x2]))) x1=x2x3 #f) (lambda (g) (and (noto? (car g)) (matcho? (noto-goal (car g))) (equal? (matcho-attributed-vars (noto-goal (car g))) (list x2)))))
+   (tassert "reduce == & not match recheck" (reduce-constraint (noto (matcho ([(a . d) x1] [(b . c) x2]))) x1=x2x3 #f) (lambda (g) (and (noto? (cadr g)) (matcho? (noto-goal (cadr g))) (equal? (matcho-attributed-vars (noto-goal (cadr g))) (list x2)))))
    (tassert "reduce == & match" (reduce-constraint (matcho ([(a . d) x1] [(a . d) x2])) x1=23 #f) (list succeed (== x2 (cons 2 3))))
    (tassert "reduce == & match" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1] [(a . d) x2]))) x1=23 #f) (list succeed (== x2 (cons 2 3))))
    (tassert "reduce == & match simplified" (reduce-constraint (matcho ([(a . d) x1] [(a . d) x2]))
                                                               (list (cons x1 (cons 2 3)) (cons x2 (cons 2 x3))) #f)
             (list succeed (== (cons 2 x3) (cons 2 3))))
-   (tassert "reduce == & match" (reduce-constraint (matcho ([(a . d) x2])) x1=1 #f) (lambda (s-r) (and (matcho? (car s-r)) (succeed? (cadr s-r)))))
+   (tassert "reduce == & match" (reduce-constraint (matcho ([(a . d) x2])) x1=1 #f) (lambda (s-r) (and (matcho? (cadr s-r)) (succeed? (car s-r)))))
    (tassert "reduce == & match" (reduce-constraint (disj (== x1 2) (matcho ([(a . d) x2]))) x1=1 #f) (lambda (s-r) (and (matcho? (cadr s-r)) (succeed? (car s-r)))))
    (tassert "reduce == & match simplified" (reduce-constraint (disj (== x1 1) (matcho ([(a . d) x1] [(a . d) x2] [(b . c) x3])))
                                                               x1=23 #f)
@@ -67,9 +69,9 @@
             (lambda (s-r) (and (matcho? (car s-r)) (equal? (cadr s-r) (== x2 '(2 . 3))))))
    
    (tassert "reduce == & ==!|==?" (reduce-constraint (disj (== x1 2) (== x2 3)) x1=1 #f) (list succeed (== x2 3)))
-   (tassert "reduce == & ==?|==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1 #f) (list (disj (== x2 2) (== x2 3)) succeed))   
+   (tassert "reduce == & ==?|==?" (reduce-constraint (disj (== x2 2) (== x2 3)) x1=1 #f) (list succeed (disj (== x2 2) (== x2 3))))   
    (tassert "reduce == & match|unsatisfiable" (reduce-constraint (disj (matcho ([(a . d) x1]) (== a 1) (== d 2)) (=/= x1 (cons x2 x3))) x1=x2x3 #f) (list succeed (conj (== x2 1) (== x3 2))))
-   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1 #f) (list (disj (=/= x2 2) (== x2 2)) succeed))
+   (tassert "reduce == & =/=|unsatisfiable|undecidable" (reduce-constraint (disj (disj (=/= x2 2) (=/= x1 1)) (== x2 2)) x1=1 #f) (list succeed (disj (=/= x2 2) (== x2 2))))
 
    (tassert "reduce == & proxy succeed" (reduce-constraint (proxy x1) x1=1 #f) (list succeed succeed))
    (tassert "reduce == & proxy undecidable" (reduce-constraint (proxy x2) x1=1 #f) (list succeed (proxy x2)))
@@ -187,21 +189,21 @@
  ;; === CONJUNCTION ===
  (tassert "reduce conj =/= first simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x2 2)) #f) (list succeed succeed))
  (tassert "reduce conj =/= second simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x2 2) (=/= x1 1)) #f) (list succeed succeed))
- (tassert "reduce conj =/= neither simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x2 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
+ (tassert "reduce conj =/= neither simplifies" (reduce-constraint (=/= x1 1) (conj (=/= x2 1) (=/= x2 2)) #f) (list succeed (=/= x1 1)))
  (tassert "reduce conj =/= both simplify" (reduce-constraint (=/= x1 1) (conj (=/= x1 1) (=/= x1 1)) #f) (list succeed succeed))
 
  ;; === DISJUNCTION ===
- (tassert "reduce disj =/= lhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
- (tassert "reduce disj =/= rhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (=/= x1 1)) #f) (list (=/= x1 1) succeed))
- (tassert "reduce disj =/= neither succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
+ (tassert "reduce disj =/= lhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x2 2)) #f) (list succeed (=/= x1 1)))
+ (tassert "reduce disj =/= rhs succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (=/= x1 1)) #f) (list succeed (=/= x1 1)))
+ (tassert "reduce disj =/= neither succeeds" (reduce-constraint (=/= x1 1) (disj (=/= x2 1) (=/= x2 2)) #f) (list succeed (=/= x1 1)))
  (tassert "reduce disj =/= both succeed" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (=/= x1 1)) #f) (list succeed succeed))
- (tassert "reduce disj =/= lhs fails" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x2 2)) #f) (list (=/= x1 1) succeed))
- (tassert "reduce disj =/= rhs fails" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (== x1 1)) #f) (list (=/= x1 1) succeed))
+ (tassert "reduce disj =/= lhs fails" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x2 2)) #f) (list succeed (=/= x1 1)))
+ (tassert "reduce disj =/= rhs fails" (reduce-constraint (=/= x1 1) (disj (=/= x2 2) (== x1 1)) #f) (list succeed (=/= x1 1)))
  (tassert "reduce disj =/= both fail" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 1)) #f) (list fail fail))
  (tassert "reduce disj =/= ==! =/=" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (== x1 1)) #f) (list succeed succeed))
  (tassert "reduce disj =/= =/= ==!" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x1 1)) #f) (list succeed succeed))
  (tassert "reduce disj =/= lhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 1)) #f) (list (=/= x2 1) succeed))
- (tassert "reduce disj =/= rhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 x2)) #f) (list (=/= x2 1) succeed))
+ (tassert "reduce disj =/= rhs reduces" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 x2)) #f) (list succeed (=/= x2 1)))
  ;(tassert "reduce disj =/= both reduce" (reduce-constraint (=/= x1 1) (disj (== x1 x2) (== x1 x2)) #f) (list (=/= x2 1) succeed))
 
  ;; === ASYMMETRIC ===
