@@ -220,13 +220,15 @@
  
  ;; === PCONSTRAINT ===
  (tassert "reduce pconstraint ==" (reduce-constraint (== x1 1) (numbero x1) #f) (list (== x1 1) succeed))
+ (tassert "reduce pconstraint ==" (reduce-constraint (== x1 1) (numbero x2) #f) (list succeed (== x1 1)))
  (tassert "reduce pconstraint ==!" (reduce-constraint (== x1 'symbol) (numbero x1) #f) (list fail fail))
- (tassert "reduce pconstraint ?==" (reduce-constraint (== x2 1) (numbero x1) #f) (list (== x2 1) succeed))
- (tassert "reduce pconstraint ?==!" (reduce-constraint (== x2 'symbol) (numbero x1) #f) (list (== x2 'symbol) succeed))
+ (tassert "reduce pconstraint ?==" (reduce-constraint (== x2 1) (numbero x1) #f) (list succeed (== x2 1)))
+ (tassert "reduce pconstraint ?==!" (reduce-constraint (== x2 'symbol) (numbero x1) #f) (list succeed (== x2 'symbol)))
  (tassert "reduce pconstraint =/=" (reduce-constraint (=/= x1 1) (numbero x1) #f) (list (=/= x1 1) succeed))
+ (tassert "reduce pconstraint =/=" (reduce-constraint (=/= x1 1) (numbero x2) #f) (list succeed (=/= x1 1)))
  (tassert "reduce pconstraint =/=!" (reduce-constraint (=/= x1 'symbol) (numbero x1) #f) (list succeed succeed))
- (tassert "reduce pconstraint ?==" (reduce-constraint (=/= x2 1) (numbero x1) #f) (list (=/= x2 1) succeed))
- (tassert "reduce pconstraint ?==!" (reduce-constraint (=/= x2 'symbol) (numbero x1) #f) (list (=/= x2 'symbol) succeed))
+ (tassert "reduce pconstraint ?==" (reduce-constraint (=/= x2 1) (numbero x1) #f) (list succeed (=/= x2 1)))
+ (tassert "reduce pconstraint ?==!" (reduce-constraint (=/= x2 'symbol) (numbero x1) #f) (list succeed (=/= x2 'symbol)))
 
  ;; If the noto fails with the values, negate the success with the =/= if available
  (tassert "reduce !pconstraint ==!" (reduce-constraint (== x1 1) (noto (numbero x1)) #f) (list fail fail)) ; ==, succeed

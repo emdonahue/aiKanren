@@ -17,13 +17,6 @@
     ;; TODO try only extracting the already bound variables from =/= substitution without unifying each time
     ;; TODO we may need to worry about failure if we do something less than full unification, so maybe we need a mini-disunify
     (mini-unify '() (=/=-lhs g) (=/=-rhs g)))
-  
-  (define simplify
-    (case-lambda
-      [(g) (simplify g succeed)] ; TODO 2 arg simplify should probably be its own fn
-      [(g recheck) (if (or (fail? g) (fail? recheck)) (values fail fail) (values g recheck))]))
-
-  (define (check g) (if (fail? g) (values fail fail) (values succeed g)))
 
   (define (vouch g e-normalized r-normalized r-vouches)
     (if (fail? g) (values fail fail)
@@ -150,10 +143,10 @@
     (cert (pconstraint? r))
     (exclusive-cond
      [(==? e) (let-values ([(simplified recheck) (==/pconstraint-reduce r (==->substitution e) e-free r-disjunction e-normalized r-normalized)])
-                (if (fail? simplified) (values fail fail) (simplify e)))]
+                (if (fail? simplified) (values fail fail) (vouch e e-normalized r-normalized (vouches? r e))))]
      [(=/=? e) ; -> succeed, =/=
       (let-values ([(simplified recheck) (==/pconstraint-reduce r (=/=->substitution e) e-free r-disjunction e-normalized r-normalized)])
-        (if (fail? simplified) (values succeed succeed) (simplify e)))]
+        (if (fail? simplified) (values succeed succeed) (vouch e e-normalized r-normalized (vouches? r e))))]
      [else (assertion-violation 'pconstraint-reduce "Unrecognized constraint type" e)]))
 
   (define ==/pconstraint-reduce ;TODO extract an expander for pconstraints analagous to matcho/expand
