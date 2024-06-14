@@ -12,6 +12,7 @@
   ;; TODO can we return the contents of matcho on the ==s channel and remove the expanded? channel, or are ==s already normalized in an important way that the contents wouldnt be?
   ;; TODO syntax analysis on the body to identify out of scope identifiers and insert a fresh to avoid divergence (make sure to strip single renames that dont destructure first)
   ;; TODO syntax analysis to skip occurs check (add to exist too)
+  ;; TODO make ctn #f when its just succeed so we can write tests with equals? against matcho instead of destructuring with lambdas
 
   (define (matcho/run g s)
     (let*-values ([(sub vid) (fresh-substitution (matcho-substitution g) (state-varid s))] ; Replace pattern vars with fresh vars

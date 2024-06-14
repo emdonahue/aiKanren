@@ -1,5 +1,5 @@
 (library (mk core mini-substitution)
-  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution? mini-disunify mini-disunify/normalized)
+  (export mini-walk mini-unify mini-reify mini-diff mini-simplify ->mini-substitution mini-walk-normalized mini-reify-normalized mini-substitution? mini-normalized? mini-unify-substitution mini-reify-substitution mini-substitution? mini-disunify mini-disunify/normalized mini-unify/normalized)
   (import (chezscheme) (mk core variables) (mk core streams) (mk core goals) (mk core utils))
   
   (define (->mini-substitution g)
@@ -90,6 +90,22 @@
         (let ([s (mini-unify s (car x) (car y))])
           (if (failure? s) s (mini-unify s (cdr x) (cdr y))))]
        [else failure])))
+
+  (define (mini-unify/normalized s x y)
+    (cert (list? s))
+    (let-values ([(x-n? x) (mini-walk-normalized s x)]
+                 [(y-n? y) (mini-walk-normalized s y)])
+      (let ([n? (and x-n? y-n?)])
+       (cond
+        [(eq? x y) (values s n?)]
+        [(var? x) (values (extend s x y) n?)]
+        [(var? y) (values (extend s y x) n?)]
+        [(and (pair? x) (pair? y))
+         (let-values ([(s _) (mini-unify/normalized s (car x) (car y))])
+           (if (failure? s) (values failure #f)
+               (let-values ([(s _) (mini-unify/normalized s (cdr x) (cdr y))])
+                           (values s #t))))] ; If x and y are both ground, they are normalized no matter if they contain unnormalized children
+        [else (values failure #f)]))))
 
   (define (mini-disunify s x y) ;TODO is mini-disunify used?
     (let-values ([(d n?) (mini-disunify/normalized s x y)]) d))

@@ -19,7 +19,14 @@
    (tassert "reduce == & ==?" (reduce-constraint (== x1 x2) x1=1 #f) (list succeed (== x2 1)))
    (tassert "reduce == & ?==" (reduce-constraint (== x2 2) x1=1 #f) (list succeed (== x2 2)))
    (tassert "reduce == & ^==" (reduce-constraint (== x1 2) x1=x2 #f) (list (== x2 2) succeed))
+   (tassert "reduce == & ^==" (reduce-constraint (== x1 x2) x1=x2 #f) (list succeed succeed))
+   (tassert "reduce == & ^==" (reduce-constraint (== x2 x1) x1=x2 #f) (list succeed succeed))
+   (tassert "reduce == & ^==" (reduce-constraint (== x1 x3) x1=x2 #f) (list succeed (== x2 x3)))
+   (tassert "reduce == & ^==" (reduce-constraint (== x2 x3) x1=x2 #f) (list succeed (== x2 x3)))
+   (tassert "reduce == & ^==" (reduce-constraint (== x3 x1) x1=x2 #f) (list succeed (== x3 x2)))
+   (tassert "reduce == & ^==" (reduce-constraint (== x3 x2) x1=x2 #f) (list succeed (== x3 x2)))
    (tassert "reduce == & ==*" (reduce-constraint (== x1 '(2 . 3)) x1=x2x3 #f) (list succeed (== (cons x2 x3) '(2 . 3))))
+
 
    (tassert "reduce == & ==!&==" (reduce-constraint (conj (== x1 2) (== x1 1)) x1=1 #f) (list fail fail))
    (tassert "reduce == & ==&==!" (reduce-constraint (conj (== x1 1) (== x1 2)) x1=1 #f) (list fail fail))

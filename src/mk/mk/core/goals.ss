@@ -361,7 +361,7 @@
 
   (define attributed-vars
     ;; Extracts the free variables in the constraint to which it should be attributed.
-    (org-case-lambda attributed-vars
+    (case-lambda
       [(g) (attributed-vars g '())]
       [(g vs)
        (cert (goal? g) (not (proxy? g)))
