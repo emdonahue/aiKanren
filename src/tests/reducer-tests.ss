@@ -152,37 +152,34 @@
  (tassert "reduce disunify free =/= |" (reduce-constraint (=/= x1 1) (disj (== x1 1) (== x1 1)) #t) (list fail fail))
  (tassert "reduce disunify free =/= |" (reduce-constraint (=/= x1 1) (disj (=/= x1 1) (== x1 1)) #t) (list (=/= x1 1) succeed))
  (tassert "reduce disunify free =/= |" (reduce-constraint (=/= x1 1) (disj (== x1 1) (=/= x1 1)) #t) (list (=/= x1 1) succeed))
- #;
- (tassert "reduce disunify free =/= &" (reduce-constraint (disj (=/= x2 2) (=/= x1 x2))
-                                                          (disj (conj (=/= x1 1) (== x2 2))
-                                                                (conj (=/= x1 1) (== x2 2))) #t)
-          (list (=/= x1 2) succeed)) ; We would need to combine the two elements of the conj to realize that x1 x2 reduces to only x1, which is normalized. This is a job for another nesting of mk in the reducer, which may defeat the purpose of a quick optimization check.
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 1) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 1) (=/= x1 2)) (=/= x1 1) #t) (list succeed succeed))
  (tassert "reduce disunify free | =/=" (reduce-constraint (disj (=/= x1 x2) (=/= x1 1)) (=/= x1 1) #t) (list succeed succeed))
  
- (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1)))
- 
+ (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1))) 
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list succeed (=/= x2 1))) ; the store x2 in the head of the disj has been walked so it can vouch for the free x2
- ;;(tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 x3)) (== x1 1)) #t) (list (=/= x3 1) succeed))
-
- 
+ (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (conj (== x1 1) (=/= x2 x3)) (== x1 1)) #t) (list succeed (=/= x2 1))) 
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= x2 1)) (disj (== x1 1) (conj (== x1 1) (=/= x2 2))) #t) (list succeed (=/= x2 1))) ; store x2 is now in the non-normalized position, so it cant vouch for the free x2
-
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x2) '(1))) (disj (== x1 1) (== x1 1)) #t) (list succeed (=/= x2 1)))
- (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x2) '(1))) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list succeed (=/= (list x2) '(1))))
+ (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x2) '(1))) (disj (conj (== x1 1) (=/= x2 2)) (== x1 1)) #t) (list succeed (=/= x2 '1)))
  (tassert "reduce disunify free | |" (reduce-constraint (disj (=/= x1 1) (=/= (list x1) '(1))) (disj (== x1 1) (== x1 1)) #t) (list fail fail))
+
+ #;; Impossible with current system. We would need to combine the two elements of the conj to realize that x1 x2 reduces to only x1, which is normalized. This is a job for another nesting of mk in the reducer, which may defeat the purpose of a quick optimization check.
+ (tassert "reduce disunify free =/= &" 
+(reduce-constraint (disj (=/= x2 2) (=/= x1 x2))
+ (disj (conj (=/= x1 1) (== x2 2))
+ (conj (=/= x1 1) (== x2 2))) #t) (list (=/= x1 2) succeed))
 
   ;; = free simplifying store =
  ;; We should not simplify symmetric =/= when inside a disjunction, so that we can later use it to simplify ourselves
  (tassert "reduce disunify =/= =/=" (reduce-constraint (=/= x1 1) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce disunify =/= |" (reduce-constraint (disj (=/= x1 2) (=/= x1 1)) (=/= x1 1) #f) (list succeed succeed))
  (tassert "reduce disunify =/= |" (reduce-constraint (disj (=/= x1 2) (== x1 1)) (=/= x1 1) #f) (list (=/= x1 2) succeed))
- ;(tassert "reduce disunify =/= |" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; store x1 can vouch for free x1
+ (tassert "reduce disunify =/= |" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; store x1 can vouch for free x1
  ;; The interesting disj case is when the lhs fails. When can we still guarantee the rhs is normalized?
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 1)) (=/= x1 1) #f) (list succeed succeed))
- ;;(tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
+ (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 2)) (=/= x1 1) #f) (list (=/= x1 2) succeed)) ; We've already walked x so we can confirm this is ok despite the failure
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x2 2)) (=/= x1 1) #f) (list succeed (=/= x2 2)))
  (tassert "reduce disunify == ==|=/=" (reduce-constraint (disj (== x1 1) (=/= x1 x2)) (=/= x1 1) #f) (list succeed (=/= x1 x2))) ; x2 may never have had a proxy attached, so we need to recheck.
 
