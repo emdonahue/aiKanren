@@ -248,8 +248,8 @@
  
 
  ;; === PROXY ===
- (tassert "reduce proxy ==" (reduce-constraint (== x1 1) (proxy x1) #f) (list (== x1 1) succeed))
- (tassert "reduce proxy proxy" (reduce-constraint (proxy x1) (proxy x1) #f) (list succeed succeed))
+ (tassert "reduce proxy ==" (reduce-constraint (== x1 1) (proxy x1) #t) (list (== x1 1) succeed))
+ (tassert "reduce proxy ==" (reduce-constraint (== x1 1) (proxy x1) #f) (list succeed (== x1 1)))
 
  (begin ;TODO remove simplify-pconstraint tests
   (tassert "reduce pconstraint satisfies|satisfied" (simplify-pconstraint (disj (numbero x1) (== x1 1)) (numbero x1)) (list succeed succeed succeed (numbero x1)))

@@ -76,8 +76,7 @@
   
   (define (reduce-noto rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
     (let-values ([(simplified recheck) (reduce-constraint (noto-goal rdcee) rdcrr e-free r-disjunction e-normalized r-normalized)])
-      (let ([d (disj (noto simplified) (noto recheck))])
-        (if (not (succeed? recheck)) (check d) (simplify d)))))
+      (vouch (disj (noto simplified) (noto recheck)) e-normalized r-normalized (succeed? recheck))))
 
   ;; === REDUCER ===
   (define (constraint-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
@@ -90,7 +89,7 @@
      [(disj? rdcrr) (disj-reduce rdcee rdcrr e-free e-normalized r-normalized)]
      [(noto? rdcrr) (noto-reduce rdcee (noto-goal rdcrr) e-free r-disjunction e-normalized r-normalized)]
      [(matcho? rdcrr) (matcho-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)]
-     [(proxy? rdcrr) (if (and (proxy? rdcee) (fx= (proxy-id rdcee) (proxy-id rdcrr))) (values succeed succeed) (simplify rdcee))]
+     [(proxy? rdcrr) (vouch rdcee e-normalized r-normalized #f)] ; Proxies are never normalized and so can vouch for nothing
      [else (assertion-violation 'reduce-constraint "Unrecognized constraint type" (cons rdcee rdcrr))]))
   
   (define (conj-reduce rdcee rdcrr e-free r-disjunction e-normalized r-normalized)
